@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage3FoundationTests",
+  "Id": "ea4956f6-9e67-4e6c-988e-10042d076407",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage3FoundationTests-ea4956f6-9e67-4e6c-988e-10042d076407.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

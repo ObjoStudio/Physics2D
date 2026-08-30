@@ -4,13 +4,1209 @@
 # Do not edit by hand: changes will be overwritten and will desynchronise
 # the generated module from its canonical source.
 #
+# Input: BitSet-32ba5db1-d4a3-41d8-978f-6020100c45db.objobasic 1625c50d37848f57f6d82ee58302562750774ebbebf4243d84ea610e95d630d7
+# Input: CosSin-5c078a22-97ea-4e99-99f1-aeb228b29070.objobasic 336ba8c66991bb2a6b9e11d51e21d0ec630188fedb577d2613eb7dee28dae4ca
+# Input: DoubleList-bf54ef29-8eae-4760-bd6b-fae9a46f6114.objobasic 88f6cd11834dcbdad3bd27ec627e3538f2f2427177020c6047c557ecb4019516
+# Input: GenerationalPool-a7eb56c1-ce86-4368-ae3c-458ea741dd55.objobasic 124a545390769606488fb8c6855cbaba9cc135170e8f24120127ef1a60b22d9e
+# Input: IdPool-fbf7c609-ee86-443b-8d23-078728df5ac9.objobasic 626645c06f0424bccaa91f2354eb2c1e8c952ca239b17686b7bfbe1631e11c27
+# Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
+# Input: PairKeySet-7d0b7f56-d56b-4fa5-a84f-5f9f8e86c8b1.objobasic e9ed9cfcac78bbfa2b440fbcc2b61d7c2ad25393624cd226b00a22f274b068b0
 # Input: Physics2D-7e9c2aae.objobasic a482a18a11941d5220f84b085c0175ac07d421ba3760abd25e67ef39e73d443d
+# Input: PhysicsConstants-cc1468ea-13f1-45de-b144-e417e51bf847.objobasic 6ee507d283ebb7885421347ecbded14041bbe8a7ba206a4874353b3e9d440d03
+# Input: PhysicsMaths-907a0865-dfe0-466e-92d2-dc339e472d3a.objobasic 8a4d23cd5753583595fa4a535638351b18ea673d1a1667d81fcd7429f6a181a5
 #
-# Source content checksum (SHA-256): 47dfe0b2b3398ae7e1f24e6c08c92a8b9167cad08b54f4fb44495546dbcf0de4
+# Source content checksum (SHA-256): 4ed5a6b58c235857a4a8caab9815eed7f44dde1becba2502997530c9b5fea6dd
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
 
 Module Physics2D
 
+
+# Bit set over 64-bit words, ported from Box2D 3.1.1 bitset.c/bitset.h.
+#
+# Used by the engine to mark solver-set membership, enlarged proxies, and
+# awake islands. Each word is one Objo Integer holding 64 bits; bit 63 is
+# handled with two's-complement arithmetic, so no special case is needed.
+#
+# Layout mirrors upstream: Words.Count is the word capacity, WordCount is
+# the number of words currently in use, and words above WordCount stay zero.
+# After capacity warm-up, set/clear/get/union/collect allocate nothing;
+# SetBitGrow and SetCountAndClear allocate only when capacity must grow.
+Class BitSet
+## Backing words. Its Count is the word capacity.
+Property Words() As Integer
+## Number of words currently in use in [0, WordCount).
+Property WordCount As Integer
+
+## Creates a set covering bit indices [0, bitCapacity) with all bits clear.
+## Unlike upstream, which creates an empty set and calls SetBitCountAndClear
+## before first use, the constructor makes the reserved range immediately
+## usable; SetCountAndClear remains the step-loop reset path.
+Constructor(bitCapacity As Integer)
+Me.Words = New Array(Of Integer)
+Me.WordCount = 0
+Var wordCapacity As Integer = (bitCapacity + 63) \ 64
+Me.ReserveWords(wordCapacity)
+Me.WordCount = wordCapacity
+End Constructor
+
+## Sets the used word count for the given bit count and clears those words.
+## Grows capacity with the upstream 1.5x policy when needed; capacity is
+## otherwise retained so repeated steps reuse the same storage.
+Sub SetCountAndClear(bitCount As Integer)
+Var wordCount As Integer = (bitCount + 63) \ 64
+If Me.Words.Count < wordCount Then
+Me.ReserveWords(bitCount + (bitCount \ 2))
+End If
+Me.WordCount = wordCount
+For i As Integer = 0 To Me.WordCount - 1
+Me.Words[i] = 0
+Next i
+End Sub
+
+## Sets one bit. The bit must be inside the current word count.
+Sub SetBit(bitIndex As Integer)
+Var wordIndex As Integer = bitIndex \ 64
+Var bitMask As Integer = 1.ShiftLeft(bitIndex Mod 64)
+If wordIndex >= Me.WordCount Then
+Throw New InvalidArgumentException("BitSet.SetBit index outside word count")
+End If
+Me.Words[wordIndex] = Me.Words[wordIndex].BitOr(bitMask)
+End Sub
+
+## Sets one bit, growing the used word count (and capacity when needed).
+Sub SetBitGrow(bitIndex As Integer)
+Var wordIndex As Integer = bitIndex \ 64
+Var bitMask As Integer = 1.ShiftLeft(bitIndex Mod 64)
+If wordIndex >= Me.WordCount Then
+Me.Grow(wordIndex + 1)
+End If
+Me.Words[wordIndex] = Me.Words[wordIndex].BitOr(bitMask)
+End Sub
+
+## Clears one bit. Clearing beyond the used word count does nothing,
+## matching upstream.
+Sub ClearBit(bitIndex As Integer)
+Var wordIndex As Integer = bitIndex \ 64
+Var bitMask As Integer = 1.ShiftLeft(bitIndex Mod 64)
+If wordIndex >= Me.WordCount Then
+Return
+End If
+Me.Words[wordIndex] = Me.Words[wordIndex].BitAnd(bitMask.BitNot())
+End Sub
+
+## Returns True when the bit is set. Bits beyond the used word count are clear.
+Function GetBit(bitIndex As Integer) As Boolean
+Var wordIndex As Integer = bitIndex \ 64
+If wordIndex >= Me.WordCount Then
+Return False
+End If
+Return Me.Words[wordIndex].BitAnd(1.ShiftLeft(bitIndex Mod 64)) <> 0
+End Function
+
+## Grows the used word count to exactly wordCount words (covering bits up to
+## wordCount * 64 - 1), expanding capacity by the upstream 1.5x policy when
+## required. Existing bits are preserved. Matches upstream b2GrowBitSet.
+Sub Grow(wordCount As Integer)
+If wordCount <= Me.WordCount Then
+Throw New InvalidArgumentException("BitSet.Grow count must exceed current words")
+End If
+If Me.Words.Count < wordCount Then
+Me.ReserveWords(wordCount + (wordCount \ 2))
+End If
+For i As Integer = Me.WordCount To wordCount - 1
+Me.Words[i] = 0
+Next i
+Me.WordCount = wordCount
+End Sub
+
+## Union of other into this set in place. Both sets must have the same used
+## word count, matching upstream b2InPlaceUnion.
+Sub InPlaceUnion(other As BitSet)
+If other.WordCount <> Me.WordCount Then
+Throw New InvalidArgumentException("BitSet union word counts differ")
+End If
+For i As Integer = 0 To Me.WordCount - 1
+Me.Words[i] = Me.Words[i].BitOr(other.Words[i])
+Next i
+End Sub
+
+## Appends every set bit index, ascending, to the sink list without clearing
+## it. Clear the sink first when reusing it across steps. Allocation-free
+## once the sink has capacity.
+Sub CollectSetBits(sink As IntegerList)
+For i As Integer = 0 To Me.WordCount - 1
+Var word As Integer = Me.Words[i]
+While word <> 0
+Var bit As Integer = PhysicsMaths.TrailingZeros(word)
+sink.Append(i * 64 + bit)
+word = word.BitAnd(word - 1)
+Wend
+Next i
+End Sub
+
+## Number of set bits.
+Function CountSetBits() As Integer
+Var tally As Integer = 0
+For i As Integer = 0 To Me.WordCount - 1
+Var word As Integer = Me.Words[i]
+While word <> 0
+word = word.BitAnd(word - 1)
+tally = tally + 1
+Wend
+Next i
+Return tally
+End Function
+
+## True when at least one bit is set.
+Function AnySet() As Boolean
+For i As Integer = 0 To Me.WordCount - 1
+If Me.Words[i] <> 0 Then
+Return True
+End If
+Next i
+Return False
+End Function
+
+## Validates internal invariants: word bounds and zeroed words above WordCount.
+Sub Validate()
+If Me.WordCount < 0 Or Me.WordCount > Me.Words.Count Then
+Throw New RuntimeException("BitSet word count outside capacity")
+End If
+For i As Integer = Me.WordCount To Me.Words.Count - 1
+If Me.Words[i] <> 0 Then
+Throw New RuntimeException("BitSet has bits above the used word count")
+End If
+Next i
+End Sub
+
+## Ensures room for wordCapacity words, extending with zeros when needed.
+Private Sub ReserveWords(wordCapacity As Integer)
+While Me.Words.Count < wordCapacity
+Me.Words.Append(0)
+Wend
+End Sub
+End Class
+
+# Deterministic cosine/sine pair used to build rotations.
+#
+# Mirrors the upstream b2CosSin struct from include/box2d/math_functions.h.
+# Instances are small and reusable: warm code passes a caller-owned object
+# to PhysicsMaths.ComputeCosSin(radians, out) instead of allocating.
+Class CosSin
+## Sine of the angle.
+Property Sin As Double
+## Cosine of the angle.
+Property Cos As Double
+
+## Creates a pair with both components zero.
+Constructor()
+Me.Sin = 0.0
+Me.Cos = 0.0
+End Constructor
+
+## Creates a pair from components.
+Constructor(sinValue As Double, cosValue As Double)
+Me.Sin = sinValue
+Me.Cos = cosValue
+End Constructor
+
+## Resets both components.
+Sub SetPair(sinValue As Double, cosValue As Double)
+Me.Sin = sinValue
+Me.Cos = cosValue
+End Sub
+End Class
+
+# Dense double scratch and storage list with reserve, grow, swap-remove, and clear.
+#
+# The Double twin of IntegerList; see that class for the representation and
+# capacity contract. Used by engine code for growable floating-point
+# sequences such as warm-start impulse queues and scalar scratch blocks.
+Class DoubleList
+## Backing array. Its Count is the capacity; index it directly only within [0, Count).
+Property Items() As Double
+## Number of valid elements in [0, Count).
+Property Count As Integer
+
+## Creates an empty list.
+Constructor()
+Me.Items = New Array(Of Double)
+Me.Count = 0
+End Constructor
+
+## Creates an empty list with room for the given element count.
+Constructor(capacityHint As Integer)
+Me.Items = New Array(Of Double)
+Me.Count = 0
+Me.Reserve(capacityHint)
+End Constructor
+
+## Ensures room for at least capacity elements. Extends the backing array
+## with zeros when needed; never shrinks and never changes Count.
+Sub Reserve(capacity As Integer)
+While Me.Items.Count < capacity
+Me.Items.Append(0.0)
+Wend
+End Sub
+
+## Appends a value, growing capacity by the upstream factor (half again,
+## minimum two) when the backing array is full.
+Sub Append(value As Double)
+If Me.Count = Me.Items.Count Then
+Me.Reserve(Me.GrowCapacity())
+End If
+Me.Items[Me.Count] = value
+Me.Count = Me.Count + 1
+End Sub
+
+## Removes and returns the last element.
+Function Pop() As Double
+If Me.Count = 0 Then
+Throw New RuntimeException("DoubleList.Pop on empty list")
+End If
+Me.Count = Me.Count - 1
+Return Me.Items[Me.Count]
+End Function
+
+## Returns the index of the last element, or -1 when empty.
+Function LastIndex() As Integer
+Return Me.Count - 1
+End Function
+
+## Reads the element at index. Cold-path convenience; hot code indexes Items directly.
+Function At(index As Integer) As Double
+If index < 0 Or index >= Me.Count Then
+Throw New InvalidArgumentException("DoubleList.At index out of range")
+End If
+Return Me.Items[index]
+End Function
+
+## Writes the element at index. Cold-path convenience; hot code indexes Items directly.
+Sub SetAt(index As Integer, value As Double)
+If index < 0 Or index >= Me.Count Then
+Throw New InvalidArgumentException("DoubleList.SetAt index out of range")
+End If
+Me.Items[index] = value
+End Sub
+
+## Removes the element at index by moving the last element into its place.
+## Returns the index the removed element's replacement came from, or -1
+## when the last element itself was removed. Order is not preserved; this
+## matches the upstream b2 RemoveSwap contract.
+Function RemoveSwap(index As Integer) As Integer
+If index < 0 Or index >= Me.Count Then
+Throw New InvalidArgumentException("DoubleList.RemoveSwap index out of range")
+End If
+Var movedIndex As Integer = PhysicsConstants.NULL_INDEX
+If index <> Me.Count - 1 Then
+movedIndex = Me.Count - 1
+Me.Items[index] = Me.Items[movedIndex]
+End If
+Me.Count = Me.Count - 1
+Return movedIndex
+End Function
+
+## Resets the logical count to zero. Capacity is retained so a warmed list
+## keeps operating without allocation.
+Sub Clear()
+Me.Count = 0
+End Sub
+
+## Current capacity, equal to Items.Count.
+Function Capacity() As Integer
+Return Me.Items.Count
+End Function
+
+## Validates internal invariants.
+Sub Validate()
+If Me.Count < 0 Or Me.Count > Me.Items.Count Then
+Throw New RuntimeException("DoubleList count outside capacity")
+End If
+End Sub
+
+## Upstream growth policy: double from empty, otherwise add half again.
+Private Function GrowCapacity() As Integer
+If Me.Items.Count < 2 Then
+Return 2
+End If
+Return Me.Items.Count + (Me.Items.Count \ 2)
+End Function
+End Class
+
+# Generational slot allocation: slots that stay safe to reference across reuse.
+#
+# Physics2D identifies bodies, shapes, joints, and similar records by a slot
+# index plus a generation counter, mirroring the Box2D 3.1.1 id scheme
+# (include/box2d/id.h and the per-record generation fields in src/body.c and
+# src/world.c). The rules are:
+#
+# - A slot's generation starts at INVALID_GENERATION (0) and is incremented
+#   each time the slot becomes live, so issued generations are 1, 2, 3, ...
+# - FreeSlot keeps the generation; the next AllocSlot on that slot bumps it.
+#   A handle created before the free therefore stops validating after the
+#   slot is reused.
+# - Clear returns the pool to empty and zeroes every generation, so handles
+#   from a previous lifetime never validate. This backs World.Clear reuse.
+# - Free slots stop validating immediately (the live flag clears), closing
+#   the window where a stale handle would otherwise match the not-yet-bumped
+#   generation.
+#
+# Generations and live flags are parallel IntegerList stores addressed by
+# slot, following the Stage 2 parallel-scalar-array decision. After a
+# capacity warm-up, AllocSlot and FreeSlot allocate nothing.
+Class GenerationalPool
+## Slot allocator supplying recycled and fresh slot indices.
+Private Property mIds As IdPool
+## Generation counter per slot; zero until the slot first becomes live.
+Private Property mGenerations As IntegerList
+## Live flag per slot: 1 live, 0 free.
+Private Property mLive As IntegerList
+
+## Creates a pool with room for the given slot count before any growth.
+Constructor(capacityHint As Integer)
+Me.mIds = New IdPool()
+Me.mGenerations = New IntegerList()
+Me.mLive = New IntegerList()
+Me.mGenerations.Reserve(capacityHint)
+Me.mLive.Reserve(capacityHint)
+End Constructor
+
+## Allocates one slot and returns it. The slot's generation increments and
+## becomes live; pair the returned slot with GenerationOf to build handles.
+Function AllocSlot() As Integer
+Var slot As Integer = Me.mIds.AllocId()
+While Me.mGenerations.Count <= slot
+Me.mGenerations.Append(0)
+Me.mLive.Append(0)
+Wend
+Me.mGenerations.SetAt(slot, Me.mGenerations.At(slot) + 1)
+Me.mLive.SetAt(slot, 1)
+Return slot
+End Function
+
+## Returns one live slot to the pool. The generation is preserved until the
+## slot's next allocation.
+Sub FreeSlot(slot As Integer)
+If Not Me.IsLive(slot) Then
+Throw New InvalidArgumentException("GenerationalPool.FreeSlot slot is not live")
+End If
+Me.mLive.SetAt(slot, 0)
+Me.mIds.FreeId(slot)
+End Sub
+
+## True when the slot is live and its generation matches the given one.
+## This is the runtime handle check.
+Function IsValid(slot As Integer, generation As Integer) As Boolean
+If slot < 0 Or slot >= Me.mGenerations.Count Then
+Return False
+End If
+Return Me.mLive.Items[slot] = 1 And Me.mGenerations.Items[slot] = generation
+End Function
+
+## True when the slot is currently live.
+Function IsLive(slot As Integer) As Boolean
+If slot < 0 Or slot >= Me.mLive.Count Then
+Return False
+End If
+Return Me.mLive.Items[slot] = 1
+End Function
+
+## Current generation of one slot, or INVALID_GENERATION when the slot has
+## never been live or is out of range.
+Function GenerationOf(slot As Integer) As Integer
+If slot < 0 Or slot >= Me.mGenerations.Count Then
+Return PhysicsConstants.INVALID_GENERATION
+End If
+Return Me.mGenerations.Items[slot]
+End Function
+
+## Number of live slots.
+Function SlotCount() As Integer
+Return Me.mIds.IdCount()
+End Function
+
+## High-water mark of slots ever allocated.
+Function SlotCapacity() As Integer
+Return Me.mIds.IdCapacity()
+End Function
+
+## Validates internal invariants, including that live flags agree with the
+## underlying slot pool.
+Sub Validate()
+Me.mIds.Validate()
+If Me.mGenerations.Count <> Me.mLive.Count Then
+Throw New RuntimeException("GenerationalPool generation and live lengths differ")
+End If
+Var liveTally As Integer = 0
+For i As Integer = 0 To Me.mLive.Count - 1
+Var flag As Integer = Me.mLive.Items[i]
+If flag <> 0 And flag <> 1 Then
+Throw New RuntimeException("GenerationalPool live flag is not a flag")
+End If
+If flag = 1 Then
+liveTally = liveTally + 1
+If Me.mGenerations.Items[i] <= PhysicsConstants.INVALID_GENERATION Then
+Throw New RuntimeException("GenerationalPool live slot has invalid generation")
+End If
+End If
+Next i
+If liveTally <> Me.mIds.IdCount() Then
+Throw New RuntimeException("GenerationalPool live tally disagrees with slot pool")
+End If
+End Sub
+
+## Returns the pool to its initial empty state and zeroes every generation,
+## invalidating all outstanding handles.
+Sub Clear()
+Me.mIds.Clear()
+Var capacity As Integer = Me.mGenerations.Capacity()
+For i As Integer = 0 To capacity - 1
+Me.mGenerations.Items[i] = 0
+Me.mLive.Items[i] = 0
+Next i
+Me.mGenerations.Clear()
+Me.mLive.Clear()
+End Sub
+End Class
+
+# Slot allocator with free-list recycling, ported from Box2D 3.1.1 id_pool.c.
+#
+# AllocId hands out recycled slots first (most recently freed first) and then
+# fresh slots. nextIndex is the high-water mark, so the number of live slots
+# is nextIndex minus the free-list depth. Records keyed by these slots carry
+# their own generation counters; see GenerationalPool for the combination.
+#
+# A warmed pool allocates nothing: the free list is an IntegerList reserved
+# up front and FreeId only pushes onto it.
+Class IdPool
+## Free slot stack, most recently freed slot on top.
+Private Property mFreeIds As IntegerList
+## High-water mark of slots ever allocated.
+Private Property mNextIndex As Integer
+
+## Creates a pool with an initial free-list reserve.
+Constructor()
+Me.mFreeIds = New IntegerList(32)
+Me.mNextIndex = 0
+End Constructor
+
+## Allocates one slot: a recycled slot when available, otherwise a fresh one.
+Function AllocId() As Integer
+If Me.mFreeIds.Count > 0 Then
+Return Me.mFreeIds.Pop()
+End If
+Var id As Integer = Me.mNextIndex
+Me.mNextIndex = Me.mNextIndex + 1
+Return id
+End Function
+
+## Returns one slot to the pool.
+Sub FreeId(id As Integer)
+If Me.mNextIndex <= 0 Or id < 0 Or id >= Me.mNextIndex Then
+Throw New InvalidArgumentException("IdPool.FreeId slot out of range")
+End If
+Me.mFreeIds.Append(id)
+End Sub
+
+## Number of live (allocated and not freed) slots.
+Function IdCount() As Integer
+Return Me.mNextIndex - Me.mFreeIds.Count
+End Function
+
+## Number of slots ever allocated, the high-water mark.
+Function IdCapacity() As Integer
+Return Me.mNextIndex
+End Function
+
+## Throws when the slot is not currently in the free list.
+Sub ValidateFreeId(id As Integer)
+Var freeCount As Integer = Me.mFreeIds.Count
+For i As Integer = 0 To freeCount - 1
+If Me.mFreeIds.Items[i] = id Then
+Return
+End If
+Next i
+Throw New RuntimeException("IdPool expected slot in free list")
+End Sub
+
+## Throws when the slot is currently in the free list.
+Sub ValidateUsedId(id As Integer)
+Var freeCount As Integer = Me.mFreeIds.Count
+For i As Integer = 0 To freeCount - 1
+If Me.mFreeIds.Items[i] = id Then
+Throw New RuntimeException("IdPool slot unexpectedly free")
+End If
+Next i
+End Sub
+
+## Validates internal invariants: free-list bounds and uniqueness.
+Sub Validate()
+If Me.mFreeIds.Count > Me.mNextIndex Then
+Throw New RuntimeException("IdPool free list exceeds slot range")
+End If
+If Me.IdCount() < 0 Then
+Throw New RuntimeException("IdPool live count is negative")
+End If
+Var freeCount As Integer = Me.mFreeIds.Count
+For i As Integer = 0 To freeCount - 1
+Var id As Integer = Me.mFreeIds.Items[i]
+If id < 0 Or id >= Me.mNextIndex Then
+Throw New RuntimeException("IdPool free slot out of range")
+End If
+For j As Integer = 0 To i - 1
+If Me.mFreeIds.Items[j] = id Then
+Throw New RuntimeException("IdPool duplicate free slot")
+End If
+Next j
+Next i
+End Sub
+
+## Returns the pool to its initial empty state. All previously allocated
+## slots are invalidated; callers pairing slots with generations must clear
+## those generations in the same breath (GenerationalPool.Clear does).
+Sub Clear()
+Me.mFreeIds.Clear()
+Me.mNextIndex = 0
+End Sub
+End Class
+
+# Dense integer scratch and storage list with reserve, grow, swap-remove, and clear.
+#
+# Objo arrays cannot reserve capacity without changing Count, and they offer
+# no swap-remove, so engine code uses this list wherever a growable integer
+# sequence is needed (free lists, pair buffers, traversal stacks, event
+# queues). The representation follows the Stage 2 bake-off decision: one
+# backing array plus a logical count.
+#
+# Capacity and count are deliberately separate:
+# - Items.Count is the capacity. The backing array only grows via Reserve.
+# - Count is the number of valid elements. Only indices below Count are
+#   valid data; hot engine code may index Items directly inside [0, Count).
+#
+# After the capacity has been warmed by Reserve, every operation here
+# allocates nothing: Append writes into existing capacity, Clear only resets
+# the logical count, and RemoveSwap moves the last element into the removed
+# slot. This is the foundation of the zero-allocation step path.
+Class IntegerList
+## Backing array. Its Count is the capacity; index it directly only within [0, Count).
+Property Items() As Integer
+## Number of valid elements in [0, Count).
+Property Count As Integer
+
+## Creates an empty list.
+Constructor()
+Me.Items = New Array(Of Integer)
+Me.Count = 0
+End Constructor
+
+## Creates an empty list with room for the given element count.
+Constructor(capacityHint As Integer)
+Me.Items = New Array(Of Integer)
+Me.Count = 0
+Me.Reserve(capacityHint)
+End Constructor
+
+## Ensures room for at least capacity elements. Extends the backing array
+## with zeros when needed; never shrinks and never changes Count.
+Sub Reserve(capacity As Integer)
+While Me.Items.Count < capacity
+Me.Items.Append(0)
+Wend
+End Sub
+
+## Appends a value, growing capacity by the upstream factor (half again,
+## minimum two) when the backing array is full.
+Sub Append(value As Integer)
+If Me.Count = Me.Items.Count Then
+Me.Reserve(Me.GrowCapacity())
+End If
+Me.Items[Me.Count] = value
+Me.Count = Me.Count + 1
+End Sub
+
+## Removes and returns the last element.
+Function Pop() As Integer
+If Me.Count = 0 Then
+Throw New RuntimeException("IntegerList.Pop on empty list")
+End If
+Me.Count = Me.Count - 1
+Return Me.Items[Me.Count]
+End Function
+
+## Returns the index of the last element, or -1 when empty.
+Function LastIndex() As Integer
+Return Me.Count - 1
+End Function
+
+## Reads the element at index. Cold-path convenience; hot code indexes Items directly.
+Function At(index As Integer) As Integer
+If index < 0 Or index >= Me.Count Then
+Throw New InvalidArgumentException("IntegerList.At index out of range")
+End If
+Return Me.Items[index]
+End Function
+
+## Writes the element at index. Cold-path convenience; hot code indexes Items directly.
+Sub SetAt(index As Integer, value As Integer)
+If index < 0 Or index >= Me.Count Then
+Throw New InvalidArgumentException("IntegerList.SetAt index out of range")
+End If
+Me.Items[index] = value
+End Sub
+
+## Removes the element at index by moving the last element into its place.
+## Returns the index the removed element's replacement came from, or -1
+## when the last element itself was removed. Order is not preserved; this
+## matches the upstream b2 RemoveSwap contract.
+Function RemoveSwap(index As Integer) As Integer
+If index < 0 Or index >= Me.Count Then
+Throw New InvalidArgumentException("IntegerList.RemoveSwap index out of range")
+End If
+Var movedIndex As Integer = PhysicsConstants.NULL_INDEX
+If index <> Me.Count - 1 Then
+movedIndex = Me.Count - 1
+Me.Items[index] = Me.Items[movedIndex]
+End If
+Me.Count = Me.Count - 1
+Return movedIndex
+End Function
+
+## Resets the logical count to zero. Capacity is retained so a warmed list
+## keeps operating without allocation.
+Sub Clear()
+Me.Count = 0
+End Sub
+
+## Current capacity, equal to Items.Count.
+Function Capacity() As Integer
+Return Me.Items.Count
+End Function
+
+## Validates internal invariants.
+Sub Validate()
+If Me.Count < 0 Or Me.Count > Me.Items.Count Then
+Throw New RuntimeException("IntegerList count outside capacity")
+End If
+End Sub
+
+## Upstream growth policy: double from empty, otherwise add half again.
+Private Function GrowCapacity() As Integer
+If Me.Items.Count < 2 Then
+Return 2
+End If
+Return Me.Items.Count + (Me.Items.Count \ 2)
+End Function
+End Class
+
+# Deterministic integer pair-key hash set, ported from Box2D 3.1.1 table.c.
+#
+# The broad phase stores shape pair keys here so the same pair is not turned
+# into a contact twice (upstream b2HashSet used as the broad-phase pairSet).
+# It is an open-addressing table over power-of-two capacity with linear
+# probing and backshift removal, so there are no tombstones and no per-entry
+# objects. Storage is two parallel Integer arrays (keys and hashes) following
+# the Stage 2 parallel-scalar-array decision.
+#
+# Sentinel rules, matching upstream:
+# - Key 0 is reserved and rejected; pair keys of distinct nonzero ids are
+#   always nonzero.
+# - Stored hash 0 marks an empty slot. Upstream asserts the computed hash is
+#   never zero; this port deterministically maps a zero hash to 1 instead.
+# - Hashes are full 32-bit values reduced from the 64-bit Murmur finaliser.
+#
+# After capacity warm-up, Add, Remove, and Contains allocate nothing. Clear
+# is linear in capacity, matching the upstream memset.
+Class PairKeySet
+## Backing keys. Empty slots hold 0. Index directly only in hot engine code.
+Property Keys() As Integer
+## Backing hashes; 0 marks an empty slot.
+Property Hashes() As Integer
+## Number of stored keys.
+Property Count As Integer
+## Table capacity in slots; always a power of two.
+Private Property mCapacity As Integer
+
+## Creates a set. Capacity rounds up to a power of two, minimum 16.
+Constructor(capacityHint As Integer)
+Var capacity As Integer = 16
+If capacityHint > 16 Then
+capacity = PhysicsMaths.RoundUpPowerOfTwo(capacityHint)
+End If
+Me.Keys = New Array(Of Integer)
+Me.Hashes = New Array(Of Integer)
+Me.Count = 0
+Me.mCapacity = capacity
+Me.ReserveArrays(Me.mCapacity)
+End Constructor
+
+## Builds the canonical pair key for one unordered pair. Values are packed
+## as 32-bit halves, matching upstream; engine ids are always non-negative.
+## Keys of distinct nonzero values are nonzero; the result is reserved as a
+## set key.
+Shared Function PairKey(a As Integer, b As Integer) As Integer
+Var small As Integer = a
+Var large As Integer = b
+If a > b Then
+small = b
+large = a
+End If
+Var key As Integer = small.ShiftLeft(32).BitOr(large.BitAnd(4294967295))
+If key = 0 Then
+Throw New InvalidArgumentException("PairKey(0, 0) is the reserved empty key")
+End If
+Return key
+End Function
+
+## Adds one key. Returns True when the key was already present.
+Function Add(key As Integer) As Boolean
+If key = 0 Then
+Throw New InvalidArgumentException("PairKeySet key 0 is reserved")
+End If
+Var hash As Integer = PhysicsMaths.HashKey(key)
+If hash = 0 Then
+hash = 1
+End If
+Var index As Integer = Me.FindSlot(key, hash)
+If Me.Hashes[index] <> 0 Then
+Return True
+End If
+If 2 * Me.Count >= Me.mCapacity Then
+Me.Grow()
+index = Me.FindSlot(key, hash)
+End If
+Me.Keys[index] = key
+Me.Hashes[index] = hash
+Me.Count = Me.Count + 1
+Return False
+End Function
+
+## Removes one key. Returns True when the key was found. Removal backshifts
+## later probe-chain entries so every stored key stays reachable.
+Function Remove(key As Integer) As Boolean
+Var hash As Integer = PhysicsMaths.HashKey(key)
+If hash = 0 Then
+hash = 1
+End If
+Var i As Integer = Me.FindSlot(key, hash)
+If Me.Hashes[i] = 0 Then
+Return False
+End If
+
+Me.Keys[i] = 0
+Me.Hashes[i] = 0
+Me.Count = Me.Count - 1
+
+# Backshift: close the gap so probe chains from every hash still reach
+# their slot. The cyclic-interval test decides which neighbours to move.
+Var j As Integer = i
+Var scanning As Boolean = True
+While scanning
+j = (j + 1).BitAnd(Me.mCapacity - 1)
+If Me.Hashes[j] = 0 Then
+scanning = False
+Else
+Var k As Integer = Me.Hashes[j].BitAnd(Me.mCapacity - 1)
+Var skipMove As Boolean = False
+If i <= j Then
+If i < k And k <= j Then
+skipMove = True
+End If
+Else
+If i < k Or k <= j Then
+skipMove = True
+End If
+End If
+If Not skipMove Then
+Me.Keys[i] = Me.Keys[j]
+Me.Hashes[i] = Me.Hashes[j]
+Me.Keys[j] = 0
+Me.Hashes[j] = 0
+i = j
+End If
+End If
+Wend
+Return True
+End Function
+
+## Returns True when the key is present. Zero is rejected because it is the
+## reserved empty marker, matching the upstream assertion.
+Function Contains(key As Integer) As Boolean
+If key = 0 Then
+Throw New InvalidArgumentException("PairKeySet key 0 is reserved")
+End If
+Var hash As Integer = PhysicsMaths.HashKey(key)
+If hash = 0 Then
+hash = 1
+End If
+Var index As Integer = Me.FindSlot(key, hash)
+Return Me.Keys[index] = key
+End Function
+
+## Empties the set. Capacity is retained; zeroing matches the upstream memset.
+Sub Clear()
+For i As Integer = 0 To Me.mCapacity - 1
+Me.Keys[i] = 0
+Me.Hashes[i] = 0
+Next i
+Me.Count = 0
+End Sub
+
+## Current table capacity in slots; always a power of two.
+Function Capacity() As Integer
+Return Me.mCapacity
+End Function
+
+## Validates internal invariants: capacity is a power of two, every stored
+## key is nonzero with a matching stored hash, counts agree, and every key
+## still probes to its own slot.
+Sub Validate()
+If Not PhysicsMaths.IsPowerOfTwo(Me.mCapacity) Then
+Throw New RuntimeException("PairKeySet capacity is not a power of two")
+End If
+If Me.Count < 0 Or Me.Count > Me.mCapacity Then
+Throw New RuntimeException("PairKeySet count outside capacity")
+End If
+Var tally As Integer = 0
+For i As Integer = 0 To Me.mCapacity - 1
+If Me.Hashes[i] <> 0 Then
+tally = tally + 1
+If Me.Keys[i] = 0 Then
+Throw New RuntimeException("PairKeySet empty key in occupied slot")
+End If
+Var expectedHash As Integer = PhysicsMaths.HashKey(Me.Keys[i])
+If expectedHash = 0 Then
+expectedHash = 1
+End If
+If Me.Hashes[i] <> expectedHash Then
+Throw New RuntimeException("PairKeySet stored hash mismatch")
+End If
+If Me.FindSlot(Me.Keys[i], Me.Hashes[i]) <> i Then
+Throw New RuntimeException("PairKeySet key does not probe to its slot")
+End If
+End If
+Next i
+If tally <> Me.Count Then
+Throw New RuntimeException("PairKeySet tally disagrees with count")
+End If
+End Sub
+
+## Walks the probe chain until the key or an empty slot is found.
+Private Function FindSlot(key As Integer, hash As Integer) As Integer
+Var index As Integer = hash.BitAnd(Me.mCapacity - 1)
+While Me.Hashes[index] <> 0 And Me.Keys[index] <> key
+index = (index + 1).BitAnd(Me.mCapacity - 1)
+Wend
+Return index
+End Function
+
+## Doubles the capacity and reinserts every stored key.
+Private Sub Grow()
+Var oldKeys() As Integer = Me.Keys
+Var oldHashes() As Integer = Me.Hashes
+Var oldCapacity As Integer = Me.mCapacity
+Me.mCapacity = oldCapacity * 2
+Me.Keys = New Array(Of Integer)
+Me.Hashes = New Array(Of Integer)
+Me.ReserveArrays(Me.mCapacity)
+Me.Count = 0
+For i As Integer = 0 To oldCapacity - 1
+If oldHashes[i] <> 0 Then
+Me.InsertHaveCapacity(oldKeys[i], oldHashes[i])
+End If
+Next i
+End Sub
+
+## Inserts a key known to fit, used only by Grow.
+Private Sub InsertHaveCapacity(key As Integer, hash As Integer)
+Var index As Integer = Me.FindSlot(key, hash)
+Me.Keys[index] = key
+Me.Hashes[index] = hash
+Me.Count = Me.Count + 1
+End Sub
+
+## Ensures both backing arrays have room for capacity zeroed slots.
+Private Sub ReserveArrays(capacity As Integer)
+While Me.Keys.Count < capacity
+Me.Keys.Append(0)
+Me.Hashes.Append(0)
+Wend
+End Sub
+End Class
+
+# Physics tuning constants and identity sentinels.
+#
+# Ported from Box2D 3.1.1 src/constants.h, plus the null-index sentinel from
+# src/core.h. Units are metres, kilograms, seconds, and radians. Upstream
+# scales several lengths by a user-settable b2_lengthUnitsPerMeter; Physics2D
+# fixes one metre per length unit, so every length here is a plain metre
+# value. B2_MAX_WORKERS and B2_MAX_WORLDS are excluded because Physics2D has
+# no task system and worlds are ordinary Objo objects.
+#
+# These values are internal infrastructure: they shape solver behaviour and
+# must not change without re-baselining the golden fixtures.
+Class PhysicsConstants
+## Sentinel slot index meaning "no slot". Never confuse it with slot 0.
+Public Const NULL_INDEX As Integer = -1
+
+## Sentinel generation that can never validate. Issued generations start at 1.
+Public Const INVALID_GENERATION As Integer = 0
+
+## Position magnitude treated as a runaway simulation (metres). Upstream B2_HUGE.
+Public Const POSITION_LIMIT As Double = 100000.0
+
+## Small length used as a collision and constraint tolerance (metres). 0.5 cm.
+## Changing this materially affects stability.
+Public Const LINEAR_SLOP As Double = 0.005
+
+## Maximum rotation of a body per time step (radians). Prevents numerical
+## problems; values of half pi or more would break continuous collision.
+Public Const MAX_ROTATION As Double = 0.7853981633974483
+
+## Limited speculative collision distance (metres). Reduces jitter. 2 cm.
+## Changing this materially affects performance and stability.
+Public Const SPECULATIVE_DISTANCE As Double = 0.02
+
+## Extra margin added to dynamic tree bounds (metres). Lets proxies move a
+## small amount without triggering a tree adjustment. 5 cm.
+Public Const AABB_MARGIN As Double = 0.05
+
+## Time a body must stay slow before it may sleep (seconds).
+Public Const TIME_TO_SLEEP As Double = 0.5
+
+## Default joint stiffness in hertz.
+Public Const JOINT_CONSTRAINT_HERTZ As Double = 60.0
+
+## Default joint damping ratio.
+Public Const JOINT_CONSTRAINT_DAMPING_RATIO As Double = 2.0
+
+## Constraint graph colour count. Constraints that cannot find a colour join
+## the overflow set, which is solved single-threaded.
+Public Const GRAPH_COLOUR_COUNT As Integer = 12
+
+## Dynamic tree node flag: the node slot is allocated.
+Public Const NODE_ALLOCATED_FLAG As Integer = 1
+
+## Dynamic tree node flag: the node bounds were enlarged past their margin.
+Public Const NODE_ENLARGED_FLAG As Integer = 2
+
+## Dynamic tree node flag: the node is a leaf holding a proxy.
+Public Const NODE_LEAF_FLAG As Integer = 4
+End Class
+
+# Deterministic maths helpers required by the Box2D 3.1.1 algorithms.
+#
+# Ported from upstream src/math_functions.c. Box2D deliberately avoids
+# platform trigonometric library calls so simulations behave identically on
+# every machine; Physics2D preserves that intent by porting the same
+# approximations over Double arithmetic. These functions are internal
+# infrastructure used by rotation, joint, and solver code.
+#
+# Error notes (measured against the platform library on the reference
+# machine, double arithmetic):
+# - Atan2 differs from the platform atan2 by at most about 2.8e-5 radians.
+# - ComputeCosSin differs from the platform sin/cos by at most about 1.7e-3,
+#   the intrinsic error of upstream's Bhaskara-style approximation; after
+#   normalisation the pair stays on the unit circle to rounding precision.
+Class PhysicsMaths
+## Two pi as a Double.
+Public Const TWO_PI As Double = 6.283185307179586
+
+## Wraps any angle into [-pi, pi] the way upstream b2UnwindAngle does.
+## Upstream calls remainder(radians, 2 pi), which rounds the quotient
+## half-to-even; the same policy is applied here.
+Shared Function UnwindAngle(radians As Double) As Double
+Var quotient As Double = radians / TWO_PI
+Var rounded As Double = Maths.Round(quotient, RoundingMode.ToEven)
+Return radians - rounded * TWO_PI
+End Function
+
+## Deterministic arctangent ported from upstream b2Atan2. The minimax
+## polynomial was tuned for 32-bit floats; Physics2D keeps the same formula
+## and constants so angle results follow upstream behaviour.
+Shared Function Atan2(y As Double, x As Double) As Double
+# Added check for (0,0) to match atan2 and avoid NaN.
+If x = 0.0 And y = 0.0 Then
+Return 0.0
+End If
+
+Var ax As Double = Maths.Abs(x)
+Var ay As Double = Maths.Abs(y)
+Var mx As Double = Maths.Max(ay, ax)
+Var mn As Double = Maths.Min(ay, ax)
+Var a As Double = mn / mx
+
+# Minimax polynomial approximation to atan(a) on [0, 1].
+Var s As Double = a * a
+Var c As Double = s * a
+Var q As Double = s * s
+Var r As Double = 0.024840285 * q + 0.18681418
+Var t As Double = -0.094097948 * q - 0.33213072
+r = r * s + t
+r = r * c + a
+
+# Map to the full circle.
+If ay > ax Then
+r = 1.57079637 - r
+End If
+
+If x < 0.0 Then
+r = 3.14159274 - r
+End If
+
+If y < 0.0 Then
+r = -r
+End If
+
+Return r
+End Function
+
+## Computes the deterministic cosine and sine pair from upstream
+## b2ComputeCosSin into a caller-owned result object and returns it. The
+## result is normalised to the unit circle. Use this form in warm code to
+## avoid allocation; the single-argument overload is the allocating form.
+Shared Function ComputeCosSin(radians As Double, out As CosSin) As CosSin
+Var x As Double = UnwindAngle(radians)
+Var pi2 As Double = Maths.PI * Maths.PI
+
+# Cosine needs the angle in [-pi/2, pi/2].
+Var c As Double = 0.0
+If x < -1.5707963267948966 Then
+Var y As Double = x + Maths.PI
+Var y2 As Double = y * y
+c = -(pi2 - 4.0 * y2) / (pi2 + y2)
+ElseIf x > 1.5707963267948966 Then
+Var y As Double = x - Maths.PI
+Var y2 As Double = y * y
+c = -(pi2 - 4.0 * y2) / (pi2 + y2)
+Else
+Var y2 As Double = x * x
+c = (pi2 - 4.0 * y2) / (pi2 + y2)
+End If
+
+# Sine needs the angle in [0, pi].
+Var s As Double = 0.0
+If x < 0.0 Then
+Var y As Double = x + Maths.PI
+s = -16.0 * y * (Maths.PI - y) / (5.0 * pi2 - 4.0 * y * (Maths.PI - y))
+Else
+s = 16.0 * x * (Maths.PI - x) / (5.0 * pi2 - 4.0 * x * (Maths.PI - x))
+End If
+
+Var mag As Double = Maths.Sqrt(s * s + c * c)
+Var invMag As Double = 0.0
+If mag > 0.0 Then
+invMag = 1.0 / mag
+End If
+
+out.Cos = c * invMag
+out.Sin = s * invMag
+Return out
+End Function
+
+## Allocating convenience overload of ComputeCosSin. Suitable for cold paths
+## such as construction and examples; step-loop code should use the
+## caller-owned output overload.
+Shared Function ComputeCosSin(radians As Double) As CosSin
+Return ComputeCosSin(radians, New CosSin)
+End Function
+
+## Counts trailing zero bits of a nonzero Integer. Returns 64 for zero,
+## a defined value the caller must not treat as a bit index. Objo has no
+## intrinsic for this, so a comparison ladder keeps it allocation-free.
+Shared Function TrailingZeros(value As Integer) As Integer
+If value = 0 Then
+Return 64
+End If
+
+Var count As Integer = 0
+Var v As Integer = value
+If v.BitAnd(4294967295) = 0 Then
+count = count + 32
+v = v.ShiftRight(32)
+End If
+If v.BitAnd(65535) = 0 Then
+count = count + 16
+v = v.ShiftRight(16)
+End If
+If v.BitAnd(255) = 0 Then
+count = count + 8
+v = v.ShiftRight(8)
+End If
+If v.BitAnd(15) = 0 Then
+count = count + 4
+v = v.ShiftRight(4)
+End If
+If v.BitAnd(3) = 0 Then
+count = count + 2
+v = v.ShiftRight(2)
+End If
+If v.BitAnd(1) = 0 Then
+count = count + 1
+End If
+Return count
+End Function
+
+## Returns True when the value is a positive power of two. Unlike upstream
+## b2IsPowerOf2, zero is rejected here because capacity callers never pass
+## zero and a positive-only contract avoids surprising results.
+Shared Function IsPowerOfTwo(value As Integer) As Boolean
+Return value > 0 And value.BitAnd(value - 1) = 0
+End Function
+
+## Number of bits needed to hold any value up to value - 1, ported from
+## upstream b2BoundingPowerOf2: the minimum is one and the result is
+## ceiling(log2(value)) for values above two.
+Shared Function BoundingPowerOfTwo(value As Integer) As Integer
+If value <= 1 Then
+Return 1
+End If
+Var v As Integer = value - 1
+Var bits As Integer = 1
+While v > 1
+v = v.ShiftRight(1)
+bits = bits + 1
+Wend
+Return bits
+End Function
+
+## Rounds the value up to the nearest power of two, ported from upstream
+## b2RoundUpPowerOf2. Values of one or less round to one.
+Shared Function RoundUpPowerOfTwo(value As Integer) As Integer
+If value <= 1 Then
+Return 1
+End If
+
+Var v As Integer = value - 1
+v = v.BitOr(v.ShiftRight(1))
+v = v.BitOr(v.ShiftRight(2))
+v = v.BitOr(v.ShiftRight(4))
+v = v.BitOr(v.ShiftRight(8))
+v = v.BitOr(v.ShiftRight(16))
+v = v.BitOr(v.ShiftRight(32))
+Return v + 1
+End Function
+
+## Murmur3 64-bit finaliser over the key, reduced to 32 bits, ported from
+## upstream b2KeyHash. Pair keys built from ordered integer pairs mix well
+## with this hash. Deterministic on every platform because it uses only
+## integer arithmetic; shifts are logical, matching the unsigned upstream
+## form.
+Shared Function HashKey(key As Integer) As Integer
+Var h As Integer = key
+h = h.BitXor(LogicalShiftRight(h, 33))
+h = h * -49064778989728563
+h = h.BitXor(LogicalShiftRight(h, 33))
+h = h * -4265267296055464877
+h = h.BitXor(LogicalShiftRight(h, 33))
+Return h.BitAnd(4294967295)
+End Function
+
+## Logical (unsigned) right shift. Objo's ShiftRight is arithmetic, so the
+## sign bits are masked off afterwards to match the unsigned C form.
+Private Shared Function LogicalShiftRight(value As Integer, count As Integer) As Integer
+Return value.ShiftRight(count).BitAnd((1.ShiftLeft(64 - count)) - 1)
+End Function
+End Class
 End Module

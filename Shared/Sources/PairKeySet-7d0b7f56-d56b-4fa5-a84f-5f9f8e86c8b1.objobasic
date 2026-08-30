@@ -1,0 +1,234 @@
+# Deterministic integer pair-key hash set, ported from Box2D 3.1.1 table.c.
+#
+# The broad phase stores shape pair keys here so the same pair is not turned
+# into a contact twice (upstream b2HashSet used as the broad-phase pairSet).
+# It is an open-addressing table over power-of-two capacity with linear
+# probing and backshift removal, so there are no tombstones and no per-entry
+# objects. Storage is two parallel Integer arrays (keys and hashes) following
+# the Stage 2 parallel-scalar-array decision.
+#
+# Sentinel rules, matching upstream:
+# - Key 0 is reserved and rejected; pair keys of distinct nonzero ids are
+#   always nonzero.
+# - Stored hash 0 marks an empty slot. Upstream asserts the computed hash is
+#   never zero; this port deterministically maps a zero hash to 1 instead.
+# - Hashes are full 32-bit values reduced from the 64-bit Murmur finaliser.
+#
+# After capacity warm-up, Add, Remove, and Contains allocate nothing. Clear
+# is linear in capacity, matching the upstream memset.
+Class PairKeySet
+## Backing keys. Empty slots hold 0. Index directly only in hot engine code.
+Property Keys() As Integer
+## Backing hashes; 0 marks an empty slot.
+Property Hashes() As Integer
+## Number of stored keys.
+Property Count As Integer
+## Table capacity in slots; always a power of two.
+Private Property mCapacity As Integer
+
+## Creates a set. Capacity rounds up to a power of two, minimum 16.
+Constructor(capacityHint As Integer)
+Var capacity As Integer = 16
+If capacityHint > 16 Then
+capacity = PhysicsMaths.RoundUpPowerOfTwo(capacityHint)
+End If
+Me.Keys = New Array(Of Integer)
+Me.Hashes = New Array(Of Integer)
+Me.Count = 0
+Me.mCapacity = capacity
+Me.ReserveArrays(Me.mCapacity)
+End Constructor
+
+## Builds the canonical pair key for one unordered pair. Values are packed
+## as 32-bit halves, matching upstream; engine ids are always non-negative.
+## Keys of distinct nonzero values are nonzero; the result is reserved as a
+## set key.
+Shared Function PairKey(a As Integer, b As Integer) As Integer
+Var small As Integer = a
+Var large As Integer = b
+If a > b Then
+small = b
+large = a
+End If
+Var key As Integer = small.ShiftLeft(32).BitOr(large.BitAnd(4294967295))
+If key = 0 Then
+Throw New InvalidArgumentException("PairKey(0, 0) is the reserved empty key")
+End If
+Return key
+End Function
+
+## Adds one key. Returns True when the key was already present.
+Function Add(key As Integer) As Boolean
+If key = 0 Then
+Throw New InvalidArgumentException("PairKeySet key 0 is reserved")
+End If
+Var hash As Integer = PhysicsMaths.HashKey(key)
+If hash = 0 Then
+hash = 1
+End If
+Var index As Integer = Me.FindSlot(key, hash)
+If Me.Hashes[index] <> 0 Then
+Return True
+End If
+If 2 * Me.Count >= Me.mCapacity Then
+Me.Grow()
+index = Me.FindSlot(key, hash)
+End If
+Me.Keys[index] = key
+Me.Hashes[index] = hash
+Me.Count = Me.Count + 1
+Return False
+End Function
+
+## Removes one key. Returns True when the key was found. Removal backshifts
+## later probe-chain entries so every stored key stays reachable.
+Function Remove(key As Integer) As Boolean
+Var hash As Integer = PhysicsMaths.HashKey(key)
+If hash = 0 Then
+hash = 1
+End If
+Var i As Integer = Me.FindSlot(key, hash)
+If Me.Hashes[i] = 0 Then
+Return False
+End If
+
+Me.Keys[i] = 0
+Me.Hashes[i] = 0
+Me.Count = Me.Count - 1
+
+# Backshift: close the gap so probe chains from every hash still reach
+# their slot. The cyclic-interval test decides which neighbours to move.
+Var j As Integer = i
+Var scanning As Boolean = True
+While scanning
+j = (j + 1).BitAnd(Me.mCapacity - 1)
+If Me.Hashes[j] = 0 Then
+scanning = False
+Else
+Var k As Integer = Me.Hashes[j].BitAnd(Me.mCapacity - 1)
+Var skipMove As Boolean = False
+If i <= j Then
+If i < k And k <= j Then
+skipMove = True
+End If
+Else
+If i < k Or k <= j Then
+skipMove = True
+End If
+End If
+If Not skipMove Then
+Me.Keys[i] = Me.Keys[j]
+Me.Hashes[i] = Me.Hashes[j]
+Me.Keys[j] = 0
+Me.Hashes[j] = 0
+i = j
+End If
+End If
+Wend
+Return True
+End Function
+
+## Returns True when the key is present. Zero is rejected because it is the
+## reserved empty marker, matching the upstream assertion.
+Function Contains(key As Integer) As Boolean
+If key = 0 Then
+Throw New InvalidArgumentException("PairKeySet key 0 is reserved")
+End If
+Var hash As Integer = PhysicsMaths.HashKey(key)
+If hash = 0 Then
+hash = 1
+End If
+Var index As Integer = Me.FindSlot(key, hash)
+Return Me.Keys[index] = key
+End Function
+
+## Empties the set. Capacity is retained; zeroing matches the upstream memset.
+Sub Clear()
+For i As Integer = 0 To Me.mCapacity - 1
+Me.Keys[i] = 0
+Me.Hashes[i] = 0
+Next i
+Me.Count = 0
+End Sub
+
+## Current table capacity in slots; always a power of two.
+Function Capacity() As Integer
+Return Me.mCapacity
+End Function
+
+## Validates internal invariants: capacity is a power of two, every stored
+## key is nonzero with a matching stored hash, counts agree, and every key
+## still probes to its own slot.
+Sub Validate()
+If Not PhysicsMaths.IsPowerOfTwo(Me.mCapacity) Then
+Throw New RuntimeException("PairKeySet capacity is not a power of two")
+End If
+If Me.Count < 0 Or Me.Count > Me.mCapacity Then
+Throw New RuntimeException("PairKeySet count outside capacity")
+End If
+Var tally As Integer = 0
+For i As Integer = 0 To Me.mCapacity - 1
+If Me.Hashes[i] <> 0 Then
+tally = tally + 1
+If Me.Keys[i] = 0 Then
+Throw New RuntimeException("PairKeySet empty key in occupied slot")
+End If
+Var expectedHash As Integer = PhysicsMaths.HashKey(Me.Keys[i])
+If expectedHash = 0 Then
+expectedHash = 1
+End If
+If Me.Hashes[i] <> expectedHash Then
+Throw New RuntimeException("PairKeySet stored hash mismatch")
+End If
+If Me.FindSlot(Me.Keys[i], Me.Hashes[i]) <> i Then
+Throw New RuntimeException("PairKeySet key does not probe to its slot")
+End If
+End If
+Next i
+If tally <> Me.Count Then
+Throw New RuntimeException("PairKeySet tally disagrees with count")
+End If
+End Sub
+
+## Walks the probe chain until the key or an empty slot is found.
+Private Function FindSlot(key As Integer, hash As Integer) As Integer
+Var index As Integer = hash.BitAnd(Me.mCapacity - 1)
+While Me.Hashes[index] <> 0 And Me.Keys[index] <> key
+index = (index + 1).BitAnd(Me.mCapacity - 1)
+Wend
+Return index
+End Function
+
+## Doubles the capacity and reinserts every stored key.
+Private Sub Grow()
+Var oldKeys() As Integer = Me.Keys
+Var oldHashes() As Integer = Me.Hashes
+Var oldCapacity As Integer = Me.mCapacity
+Me.mCapacity = oldCapacity * 2
+Me.Keys = New Array(Of Integer)
+Me.Hashes = New Array(Of Integer)
+Me.ReserveArrays(Me.mCapacity)
+Me.Count = 0
+For i As Integer = 0 To oldCapacity - 1
+If oldHashes[i] <> 0 Then
+Me.InsertHaveCapacity(oldKeys[i], oldHashes[i])
+End If
+Next i
+End Sub
+
+## Inserts a key known to fit, used only by Grow.
+Private Sub InsertHaveCapacity(key As Integer, hash As Integer)
+Var index As Integer = Me.FindSlot(key, hash)
+Me.Keys[index] = key
+Me.Hashes[index] = hash
+Me.Count = Me.Count + 1
+End Sub
+
+## Ensures both backing arrays have room for capacity zeroed slots.
+Private Sub ReserveArrays(capacity As Integer)
+While Me.Keys.Count < capacity
+Me.Keys.Append(0)
+Me.Hashes.Append(0)
+Wend
+End Sub
+End Class

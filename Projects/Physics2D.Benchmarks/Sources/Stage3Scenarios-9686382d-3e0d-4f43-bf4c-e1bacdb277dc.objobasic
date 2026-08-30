@@ -1,0 +1,145 @@
+# Stage 3 foundation benchmark scenarios.
+#
+# Thin BenchmarkScenario wrappers around the four container workloads. Every
+# scenario runs five unmeasured warm-up iterations and twenty measured
+# iterations; identical folded checksums across runs prove the workload did
+# not shrink.
+Class Stage3SlotPoolScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As Stage3Workload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage3-slot-pool"
+Me.Description = "GenerationalPool churn: 4096 slots allocated, every third freed, 1365 reused."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mWorkload = New SlotPoolWorkload
+End Constructor
+
+## Describes the slot churn parameters.
+Override Function Parameters() As String
+Return "slots=4096,replacements=1365"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured churn iteration.
+Override Sub Run()
+Me.mWorkload.Execute()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.FoldedChecksum()
+End Function
+End Class
+
+Class Stage3BitSetScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As Stage3Workload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage3-bit-set"
+Me.Description = "BitSet mark, clear, union, and full iteration over 16384 bits."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mWorkload = New BitSetWorkload
+End Constructor
+
+## Describes the bit set parameters.
+Override Function Parameters() As String
+Return "bits=16384,unionSource=4096,clearStride=5"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured marking iteration.
+Override Sub Run()
+Me.mWorkload.Execute()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.FoldedChecksum()
+End Function
+End Class
+
+Class Stage3PairKeySetScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As Stage3Workload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage3-pair-key-set"
+Me.Description = "PairKeySet add, remove, and probe churn over 2000 pair keys."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mWorkload = New PairKeySetWorkload
+End Constructor
+
+## Describes the pair key parameters.
+Override Function Parameters() As String
+Return "keys=2000,probes=1000,capacity=8192"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured set iteration.
+Override Sub Run()
+Me.mWorkload.Execute()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.FoldedChecksum()
+End Function
+End Class
+
+Class Stage3ScratchListsScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As Stage3Workload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage3-scratch-lists"
+Me.Description = "IntegerList and DoubleList scratch arenas: fill 10000, 3000 swap removals, 100 pops."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mWorkload = New ScratchListWorkload
+End Constructor
+
+## Describes the scratch parameters.
+Override Function Parameters() As String
+Return "elements=10000,removals=3000,pops=100"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured scratch iteration.
+Override Sub Run()
+Me.mWorkload.Execute()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.FoldedChecksum()
+End Function
+End Class

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "BitSet",
+  "Id": "32ba5db1-d4a3-41d8-978f-6020100c45db",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "BitSet-32ba5db1-d4a3-41d8-978f-6020100c45db.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

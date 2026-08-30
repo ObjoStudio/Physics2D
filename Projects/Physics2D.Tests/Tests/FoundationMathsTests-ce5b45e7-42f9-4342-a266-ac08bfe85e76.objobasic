@@ -1,0 +1,177 @@
+# Tests for the deterministic maths helpers and constants.
+#
+# The Atan2 and ComputeCosSin tolerances come from Tolerances.ATAN2_ABS and
+# Tolerances.TRIG_ABS with recorded rationale; the hash expectations are
+# exact values computed from the pinned upstream Murmur finaliser.
+Import Physics2D
+
+Class FoundationMathsTests Inherits TestCase
+## Reused output object for the sweep test.
+Private Property mPair As CosSin
+
+Public Sub TestConstantsMatchUpstreamValues()
+Assert.Equal(-1, PhysicsConstants.NULL_INDEX)
+Assert.Equal(0, PhysicsConstants.INVALID_GENERATION)
+Assert.Equal(100000.0, PhysicsConstants.POSITION_LIMIT)
+Assert.Equal(0.005, PhysicsConstants.LINEAR_SLOP)
+Assert.Equal(0.02, PhysicsConstants.SPECULATIVE_DISTANCE)
+Assert.Equal(0.05, PhysicsConstants.AABB_MARGIN)
+Assert.Equal(0.5, PhysicsConstants.TIME_TO_SLEEP)
+Assert.Equal(60.0, PhysicsConstants.JOINT_CONSTRAINT_HERTZ)
+Assert.Equal(2.0, PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO)
+Assert.Equal(12, PhysicsConstants.GRAPH_COLOUR_COUNT)
+Assert.Equal(1, PhysicsConstants.NODE_ALLOCATED_FLAG)
+Assert.Equal(2, PhysicsConstants.NODE_ENLARGED_FLAG)
+Assert.Equal(4, PhysicsConstants.NODE_LEAF_FLAG)
+PhysicsAssert.Near(0.25 * Maths.PI, PhysicsConstants.MAX_ROTATION, 0.000000000000001, 0.0)
+End Sub
+
+Public Sub TestUnwindAngleStaysInRangeAndWraps()
+PhysicsAssert.Near(0.0, PhysicsMaths.UnwindAngle(0.0), Tolerances.INTERNAL_ABS, 0.0)
+PhysicsAssert.Near(Maths.PI, PhysicsMaths.UnwindAngle(Maths.PI), Tolerances.INTERNAL_ABS, 0.0)
+PhysicsAssert.Near(0.0, PhysicsMaths.UnwindAngle(2.0 * Maths.PI), Tolerances.INTERNAL_ABS, 0.0)
+PhysicsAssert.Near(-0.5 * Maths.PI, PhysicsMaths.UnwindAngle(3.5 * Maths.PI), Tolerances.INTERNAL_ABS, 0.0)
+PhysicsAssert.Near(0.75 * Maths.PI, PhysicsMaths.UnwindAngle(-7.25 * Maths.PI), Tolerances.INTERNAL_ABS, 0.0)
+PhysicsAssert.Near(-0.25 * Maths.PI, PhysicsMaths.UnwindAngle(-0.25 * Maths.PI), Tolerances.INTERNAL_ABS, 0.0)
+For i As Integer = -40 To 40
+Var angle As Double = i * 0.37
+Var unwound As Double = PhysicsMaths.UnwindAngle(angle)
+Assert.True(unwound >= -Maths.PI - 0.000000000001 And unwound <= Maths.PI + 0.000000000001, "unwound angle outside [-pi, pi]")
+PhysicsAssert.Near(Maths.Sin(angle), Maths.Sin(unwound), 0.000000000001, 0.000000000001, "unwound sine")
+Next i
+End Sub
+
+Public Sub TestAtan2MatchesPlatformArctangent()
+PhysicsAssert.Near(0.0, PhysicsMaths.Atan2(0.0, 0.0), 0.0, 0.0)
+PhysicsAssert.Near(0.7853981633974483, PhysicsMaths.Atan2(1.0, 1.0), Tolerances.ATAN2_ABS, 0.0)
+PhysicsAssert.Near(1.5707963267948966, PhysicsMaths.Atan2(1.0, 0.0), Tolerances.ATAN2_ABS, 0.0)
+PhysicsAssert.Near(-2.356194490192345, PhysicsMaths.Atan2(-1.0, -1.0), Tolerances.ATAN2_ABS, 0.0)
+For i As Integer = 0 To 200
+Var y As Double = -10.0 + 20.0 * i / 200.0
+For j As Integer = 0 To 200
+Var x As Double = -10.0 + 20.0 * j / 200.0
+If x = 0.0 And y = 0.0 Then
+Continue
+End If
+PhysicsAssert.Near(Maths.Atan2(y, x), PhysicsMaths.Atan2(y, x), Tolerances.ATAN2_ABS, 0.0, "atan2 grid")
+Next j
+Next i
+End Sub
+
+Public Sub TestComputeCosSinMatchesPlatformTrig()
+Var pair As New CosSin
+For i As Integer = 0 To 400
+Var angle As Double = -4.0 * Maths.PI + 8.0 * Maths.PI * i / 400.0
+PhysicsMaths.ComputeCosSin(angle, pair)
+PhysicsAssert.Near(Maths.Sin(angle), pair.Sin, Tolerances.TRIG_ABS, 0.0, "sine")
+PhysicsAssert.Near(Maths.Cos(angle), pair.Cos, Tolerances.TRIG_ABS, 0.0, "cosine")
+Var norm As Double = pair.Sin * pair.Sin + pair.Cos * pair.Cos
+PhysicsAssert.Near(1.0, norm, Tolerances.TRIG_NORM_ABS, 0.0, "unit norm")
+Next i
+PhysicsAssert.Near(0.0, pair.Sin, Tolerances.TRIG_ABS, 0.0, "identity sine")
+PhysicsAssert.Near(1.0, pair.Cos, Tolerances.TRIG_ABS, 0.0, "identity cosine")
+End Sub
+
+Public Sub TestComputeCosSinAllocatingFormMatchesOutputForm()
+Var reused As New CosSin
+PhysicsMaths.ComputeCosSin(1.234, reused)
+Var allocated As CosSin = PhysicsMaths.ComputeCosSin(1.234)
+PhysicsAssert.Near(reused.Sin, allocated.Sin, 0.0, 0.0)
+PhysicsAssert.Near(reused.Cos, allocated.Cos, 0.0, 0.0)
+End Sub
+
+Public Sub TestTrailingZerosMatchesNaiveReference()
+Var random As New TestRandom(20260830)
+Assert.Equal(64, PhysicsMaths.TrailingZeros(0))
+Assert.Equal(0, PhysicsMaths.TrailingZeros(1))
+Assert.Equal(1, PhysicsMaths.TrailingZeros(2))
+Assert.Equal(0, PhysicsMaths.TrailingZeros(3))
+Assert.Equal(40, PhysicsMaths.TrailingZeros(1.ShiftLeft(40)))
+Assert.Equal(63, PhysicsMaths.TrailingZeros(1.ShiftLeft(63)))
+Assert.Equal(63, PhysicsMaths.TrailingZeros(-9223372036854775807 - 1))
+For i As Integer = 0 To 4999
+Var value As Integer = random.NextValue()
+If value = 0 Then
+Continue
+End If
+Var expected As Integer = 0
+Var v As Integer = value
+While v.BitAnd(1) = 0
+expected = expected + 1
+v = v.ShiftRight(1)
+Wend
+Assert.Equal(expected, PhysicsMaths.TrailingZeros(value), "trailing zeros")
+Next i
+End Sub
+
+Public Sub TestPowerOfTwoHelpers()
+Assert.True(PhysicsMaths.IsPowerOfTwo(1))
+Assert.True(PhysicsMaths.IsPowerOfTwo(2))
+Assert.True(PhysicsMaths.IsPowerOfTwo(4096))
+Assert.False(PhysicsMaths.IsPowerOfTwo(0))
+Assert.False(PhysicsMaths.IsPowerOfTwo(3))
+Assert.False(PhysicsMaths.IsPowerOfTwo(6))
+Assert.False(PhysicsMaths.IsPowerOfTwo(-2))
+Assert.Equal(1, PhysicsMaths.RoundUpPowerOfTwo(0))
+Assert.Equal(1, PhysicsMaths.RoundUpPowerOfTwo(1))
+Assert.Equal(2, PhysicsMaths.RoundUpPowerOfTwo(2))
+Assert.Equal(4, PhysicsMaths.RoundUpPowerOfTwo(3))
+Assert.Equal(32, PhysicsMaths.RoundUpPowerOfTwo(17))
+Assert.Equal(131072, PhysicsMaths.RoundUpPowerOfTwo(65537))
+# Values from the upstream table test.
+Assert.Equal(12, PhysicsMaths.BoundingPowerOfTwo(3008))
+Assert.Equal(4096, PhysicsMaths.RoundUpPowerOfTwo(3008))
+Assert.Equal(1, PhysicsMaths.BoundingPowerOfTwo(0))
+Assert.Equal(1, PhysicsMaths.BoundingPowerOfTwo(1))
+Assert.Equal(1, PhysicsMaths.BoundingPowerOfTwo(2))
+Assert.Equal(2, PhysicsMaths.BoundingPowerOfTwo(3))
+Assert.Equal(2, PhysicsMaths.BoundingPowerOfTwo(4))
+Assert.Equal(3, PhysicsMaths.BoundingPowerOfTwo(5))
+End Sub
+
+Public Sub TestUpstreamMathSweep()
+# Port of test_math.c: sweep angles, compare the deterministic rotation
+# pair against the platform trig within 0.002, keep UnwindAngle in range,
+# and recover the angle with Atan2 within the upstream 4e-4 tolerance.
+Me.mPair = New CosSin
+For i As Integer = 0 To 1999
+Var t As Double = -10.0 + 0.01 * i
+Var angle As Double = Maths.PI * t
+PhysicsMaths.ComputeCosSin(angle, Me.mPair)
+PhysicsAssert.Near(Maths.Cos(angle), Me.mPair.Cos, 0.002, 0.0, "upstream sweep cosine")
+PhysicsAssert.Near(Maths.Sin(angle), Me.mPair.Sin, 0.002, 0.0, "upstream sweep sine")
+Var unwound As Double = PhysicsMaths.UnwindAngle(angle)
+Assert.True(-Maths.PI <= unwound And unwound <= Maths.PI, "upstream sweep unwind range")
+Var recovered As Double = PhysicsMaths.Atan2(Me.mPair.Sin, Me.mPair.Cos)
+Assert.True(recovered.IsFinite(), "upstream sweep atan2 finite")
+Var diff As Double = (recovered - unwound).Abs()
+If diff > Maths.PI Then
+diff = diff - 2.0 * Maths.PI
+End If
+Assert.True(diff.Abs() <= Tolerances.TRIG_RECOVERY_ABS, "upstream sweep atan recovery, t=" + t.ToString())
+Next i
+End Sub
+
+Public Sub TestHashKeyMatchesUpstreamFinaliser()
+# Exact values computed with the pinned upstream b2KeyHash (Murmur3 64-bit
+# finaliser over unsigned arithmetic, reduced to 32 bits).
+Assert.Equal(885181228, PhysicsMaths.HashKey(1))
+Assert.Equal(1694925799, PhysicsMaths.HashKey(2))
+Assert.Equal(167303374, PhysicsMaths.HashKey(3))
+Assert.Equal(3481758862, PhysicsMaths.HashKey(78187493520))
+Assert.Equal(337744490, PhysicsMaths.HashKey(4294967298))
+Assert.Equal(3351686752, PhysicsMaths.HashKey(21474836489))
+Assert.Equal(1970104542, PhysicsMaths.HashKey(12345678901234))
+Assert.Equal(0, PhysicsMaths.HashKey(0))
+End Sub
+
+Public Sub TestTrigHelpersAllocateNothingOnReusedOutput()
+Var pair As New CosSin
+Var before As Integer = System.AllocationCount
+For i As Integer = 0 To 999
+PhysicsMaths.ComputeCosSin(0.01 * i, pair)
+Next i
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "ComputeCosSin output form must not allocate")
+End Sub
+End Class

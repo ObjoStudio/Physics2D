@@ -1,0 +1,59 @@
+# Physics tuning constants and identity sentinels.
+#
+# Ported from Box2D 3.1.1 src/constants.h, plus the null-index sentinel from
+# src/core.h. Units are metres, kilograms, seconds, and radians. Upstream
+# scales several lengths by a user-settable b2_lengthUnitsPerMeter; Physics2D
+# fixes one metre per length unit, so every length here is a plain metre
+# value. B2_MAX_WORKERS and B2_MAX_WORLDS are excluded because Physics2D has
+# no task system and worlds are ordinary Objo objects.
+#
+# These values are internal infrastructure: they shape solver behaviour and
+# must not change without re-baselining the golden fixtures.
+Class PhysicsConstants
+## Sentinel slot index meaning "no slot". Never confuse it with slot 0.
+Public Const NULL_INDEX As Integer = -1
+
+## Sentinel generation that can never validate. Issued generations start at 1.
+Public Const INVALID_GENERATION As Integer = 0
+
+## Position magnitude treated as a runaway simulation (metres). Upstream B2_HUGE.
+Public Const POSITION_LIMIT As Double = 100000.0
+
+## Small length used as a collision and constraint tolerance (metres). 0.5 cm.
+## Changing this materially affects stability.
+Public Const LINEAR_SLOP As Double = 0.005
+
+## Maximum rotation of a body per time step (radians). Prevents numerical
+## problems; values of half pi or more would break continuous collision.
+Public Const MAX_ROTATION As Double = 0.7853981633974483
+
+## Limited speculative collision distance (metres). Reduces jitter. 2 cm.
+## Changing this materially affects performance and stability.
+Public Const SPECULATIVE_DISTANCE As Double = 0.02
+
+## Extra margin added to dynamic tree bounds (metres). Lets proxies move a
+## small amount without triggering a tree adjustment. 5 cm.
+Public Const AABB_MARGIN As Double = 0.05
+
+## Time a body must stay slow before it may sleep (seconds).
+Public Const TIME_TO_SLEEP As Double = 0.5
+
+## Default joint stiffness in hertz.
+Public Const JOINT_CONSTRAINT_HERTZ As Double = 60.0
+
+## Default joint damping ratio.
+Public Const JOINT_CONSTRAINT_DAMPING_RATIO As Double = 2.0
+
+## Constraint graph colour count. Constraints that cannot find a colour join
+## the overflow set, which is solved single-threaded.
+Public Const GRAPH_COLOUR_COUNT As Integer = 12
+
+## Dynamic tree node flag: the node slot is allocated.
+Public Const NODE_ALLOCATED_FLAG As Integer = 1
+
+## Dynamic tree node flag: the node bounds were enlarged past their margin.
+Public Const NODE_ENLARGED_FLAG As Integer = 2
+
+## Dynamic tree node flag: the node is a leaf holding a proxy.
+Public Const NODE_LEAF_FLAG As Integer = 4
+End Class

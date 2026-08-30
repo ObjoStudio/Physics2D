@@ -1,0 +1,232 @@
+# Tests for IdPool and GenerationalPool: allocation order, recycling,
+# generation rules, stale handles, clear invalidation, seeded stress, and
+# zero-allocation churn after warm-up.
+Import Physics2D
+
+Class FoundationIdentityTests Inherits TestCase
+Public Sub TestIdPoolSequentialAllocation()
+Var pool As New IdPool
+For i As Integer = 0 To 99
+Assert.Equal(i, pool.AllocId(), "fresh ids are sequential")
+Next i
+Assert.Equal(100, pool.IdCount())
+Assert.Equal(100, pool.IdCapacity())
+pool.Validate()
+For i As Integer = 0 To 99
+pool.ValidateUsedId(i)
+Next i
+End Sub
+
+Public Sub TestIdPoolRecyclesMostRecentlyFreedFirst()
+Var pool As New IdPool
+pool.AllocId()
+pool.AllocId()
+pool.AllocId()
+pool.FreeId(1)
+pool.FreeId(0)
+pool.ValidateFreeId(1)
+pool.ValidateFreeId(0)
+pool.ValidateUsedId(2)
+Assert.Equal(0, pool.AllocId())
+Assert.Equal(1, pool.AllocId())
+Assert.Equal(3, pool.AllocId())
+Assert.Equal(4, pool.IdCount())
+Assert.Equal(4, pool.IdCapacity())
+pool.Validate()
+End Sub
+
+Public Sub TestIdPoolRejectsInvalidUse()
+Var pool As New IdPool
+pool.AllocId()
+Try
+pool.FreeId(5)
+Assert.Fail("FreeId out of range should throw")
+Catch e As Exception
+Assert.Contains("out of range", e.Message)
+End Try
+Try
+pool.FreeId(-1)
+Assert.Fail("FreeId below zero should throw")
+Catch e As Exception
+Assert.Contains("out of range", e.Message)
+End Try
+pool.FreeId(0)
+Try
+pool.ValidateUsedId(0)
+Assert.Fail("ValidateUsedId should reject a free slot")
+Catch e As Exception
+Assert.Contains("unexpectedly free", e.Message)
+End Try
+pool.FreeId(0)
+Try
+pool.Validate()
+Assert.Fail("Validate should reject a duplicated free slot")
+Catch e As Exception
+Assert.Contains("IdPool", e.Message)
+End Try
+End Sub
+
+Public Sub TestIdPoolClearReturnsToEmpty()
+Var pool As New IdPool
+For i As Integer = 0 To 9
+pool.AllocId()
+Next i
+pool.Clear()
+Assert.Equal(0, pool.IdCount())
+Assert.Equal(0, pool.IdCapacity())
+Assert.Equal(0, pool.AllocId())
+pool.Validate()
+End Sub
+
+Public Sub TestGenerationalPoolGenerationsIncrementPerAllocation()
+Var pool As New GenerationalPool(8)
+Var first As Integer = pool.AllocSlot()
+Assert.Equal(1, pool.GenerationOf(first))
+Assert.True(pool.IsValid(first, 1))
+Assert.False(pool.IsValid(first, 0))
+pool.FreeSlot(first)
+Assert.Equal(1, pool.GenerationOf(first))
+Var second As Integer = pool.AllocSlot()
+Assert.Equal(first, second)
+Assert.Equal(2, pool.GenerationOf(second))
+Assert.True(pool.IsValid(second, 2))
+Assert.False(pool.IsValid(second, 1))
+pool.Validate()
+End Sub
+
+Public Sub TestStaleHandlesNeverValidateAfterFree()
+Var pool As New GenerationalPool(8)
+Var slot As Integer = pool.AllocSlot()
+Var generation As Integer = pool.GenerationOf(slot)
+pool.FreeSlot(slot)
+Assert.False(pool.IsLive(slot))
+Assert.False(pool.IsValid(slot, generation))
+Assert.Equal(generation, pool.GenerationOf(slot))
+Try
+pool.FreeSlot(slot)
+Assert.Fail("FreeSlot on a freed slot should throw")
+Catch e As Exception
+Assert.Contains("not live", e.Message)
+End Try
+pool.Validate()
+End Sub
+
+Public Sub TestClearInvalidatesEveryHandle()
+Var pool As New GenerationalPool(4)
+Var slots() As Integer
+slots = New Array(Of Integer)
+For i As Integer = 0 To 31
+slots.Append(pool.AllocSlot())
+Next i
+pool.Clear()
+Assert.Equal(0, pool.SlotCount())
+Assert.Equal(0, pool.SlotCapacity())
+For i As Integer = 0 To slots.Count - 1
+Assert.False(pool.IsValid(slots[i], pool.GenerationOf(slots[i])))
+Assert.Equal(PhysicsConstants.INVALID_GENERATION, pool.GenerationOf(slots[i]))
+Assert.False(pool.IsLive(slots[i]))
+Next i
+Var afterClear As Integer = pool.AllocSlot()
+Assert.Equal(1, pool.GenerationOf(afterClear))
+pool.Validate()
+End Sub
+
+Public Sub TestGenerationalPoolSeededStress()
+# One million seeded allocate/free operations with a bounded live
+# population so every slot is recycled deeply. Halfway through, the pool is
+# cleared and reused, mirroring repeated world reuse. A local live-slot list
+# provides independent bookkeeping; validation runs periodically.
+Var pool As New GenerationalPool(64)
+Var live As New IntegerList(2048)
+Var random As New TestRandom(31337)
+Var operations As Integer = 1000000
+For op As Integer = 0 To operations - 1
+If op = operations \ 2 Then
+pool.Clear()
+live.Clear()
+pool.Validate()
+End If
+Var doAlloc As Boolean = live.Count < 600
+If Not doAlloc And live.Count < 1200 Then
+doAlloc = random.NextInt(0, 1) = 0
+End If
+If doAlloc Then
+Var slot As Integer = pool.AllocSlot()
+Assert.True(pool.IsLive(slot), "allocated slot must be live")
+Assert.True(pool.IsValid(slot, pool.GenerationOf(slot)), "fresh handle must validate")
+live.Append(slot)
+Else
+Var pick As Integer = random.NextInt(0, live.Count - 1)
+Var slot As Integer = live.Items[pick]
+Var generation As Integer = pool.GenerationOf(slot)
+pool.FreeSlot(slot)
+live.RemoveSwap(pick)
+Assert.False(pool.IsValid(slot, generation), "freed handle must not validate")
+Assert.Equal(generation, pool.GenerationOf(slot), "generation is preserved until reuse")
+End If
+If op Mod 4096 = 0 Then
+pool.Validate()
+Assert.Equal(live.Count, pool.SlotCount(), "live tally")
+End If
+Next op
+pool.Validate()
+Assert.Equal(live.Count, pool.SlotCount())
+End Sub
+
+Public Sub TestIdPoolSeededStress()
+Var pool As New IdPool
+Var live As New IntegerList(2048)
+Var random As New TestRandom(424242)
+Var operations As Integer = 1000000
+For op As Integer = 0 To 999999
+If op = operations \ 2 Then
+pool.Clear()
+live.Clear()
+pool.Validate()
+End If
+Var doAlloc As Boolean = live.Count < 600
+If Not doAlloc And live.Count < 1200 Then
+doAlloc = random.NextInt(0, 1) = 0
+End If
+If doAlloc Then
+live.Append(pool.AllocId())
+Else
+Var pick As Integer = random.NextInt(0, live.Count - 1)
+Var id As Integer = live.Items[pick]
+pool.FreeId(id)
+live.RemoveSwap(pick)
+End If
+If op Mod 8192 = 0 Then
+pool.Validate()
+Assert.Equal(live.Count, pool.IdCount())
+End If
+Next op
+pool.Validate()
+Assert.Equal(live.Count, pool.IdCount())
+End Sub
+
+Public Sub TestGenerationalPoolWarmChurnAllocatesNothing()
+Var peakSlots As Integer = 4096
+Var pool As New GenerationalPool(peakSlots)
+Var live As New IntegerList(peakSlots)
+# Warm-up: reach the peak slot count and grow every generation once.
+For i As Integer = 0 To peakSlots - 1
+live.Append(pool.AllocSlot())
+Next i
+While live.Count > 0
+pool.FreeSlot(live.Pop())
+Wend
+Var before As Integer = System.AllocationCount
+For round As Integer = 0 To 9
+For i As Integer = 0 To peakSlots - 1
+live.Append(pool.AllocSlot())
+Next i
+While live.Count > 0
+pool.FreeSlot(live.Pop())
+Wend
+Next round
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed generational churn must not allocate")
+pool.Validate()
+End Sub
+End Class

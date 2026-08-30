@@ -1,0 +1,200 @@
+# Tests for IntegerList and DoubleList: reserve semantics, swap removal,
+# clear retention, growth, validation errors, and the zero-allocation
+# guarantee after warm-up.
+Import Physics2D
+
+Class FoundationListTests Inherits TestCase
+Public Sub TestIntegerListAppendPopAndLastIndex()
+Var list As New IntegerList
+Assert.Equal(0, list.Count)
+Assert.Equal(-1, list.LastIndex())
+list.Append(10)
+list.Append(20)
+list.Append(30)
+Assert.Equal(3, list.Count)
+Assert.Equal(2, list.LastIndex())
+Assert.Equal(30, list.Pop())
+Assert.Equal(2, list.Count)
+Assert.Equal(20, list.At(1))
+End Sub
+
+Public Sub TestIntegerListReserveThenIndexedWrites()
+# Objo Array.Reserve does not extend Count, so the list contract is:
+# Reserve capacity, append defaults, then write by index. All of it must be
+# allocation-free once capacity exists.
+Var list As New IntegerList
+list.Reserve(1000)
+Assert.Equal(0, list.Count)
+Assert.True(list.Capacity() >= 1000)
+Var before As Integer = System.AllocationCount
+For i As Integer = 0 To 999
+list.Append(0)
+Next i
+For i As Integer = 0 To 999
+list.Items[i] = i * 3
+Next i
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "reserve + append + indexed writes must not allocate")
+Assert.Equal(999 * 3, list.Items[999])
+Assert.Equal(1000, list.Count)
+list.Validate()
+End Sub
+
+Public Sub TestIntegerListRemoveSwapMovesLastElement()
+Var list As New IntegerList
+For i As Integer = 1 To 5
+list.Append(i)
+Next i
+Var moved As Integer = list.RemoveSwap(2)
+Assert.Equal(4, moved)
+Assert.Equal(4, list.Count)
+Assert.Equal(5, list.At(2))
+Assert.Equal(4, list.At(3))
+moved = list.RemoveSwap(3)
+Assert.Equal(-1, moved)
+Assert.Equal(3, list.Count)
+Assert.Equal(1, list.At(0))
+Assert.Equal(2, list.At(1))
+Assert.Equal(5, list.At(2))
+End Sub
+
+Public Sub TestIntegerListClearRetainsCapacity()
+Var list As New IntegerList(64)
+list.Append(7)
+Var capacity As Integer = list.Capacity()
+list.Clear()
+Assert.Equal(0, list.Count)
+Assert.Equal(capacity, list.Capacity())
+list.Append(9)
+Assert.Equal(9, list.At(0))
+End Sub
+
+Public Sub TestIntegerListGrowsAutomatically()
+Var list As New IntegerList
+For i As Integer = 0 To 999
+list.Append(i)
+Next i
+Assert.Equal(1000, list.Count)
+For i As Integer = 0 To 999
+Assert.Equal(i, list.At(i), "growth preserved value")
+Next i
+list.Validate()
+End Sub
+
+Public Sub TestIntegerListRejectsInvalidUse()
+Var list As New IntegerList
+list.Append(1)
+Try
+list.At(1)
+Assert.Fail("At past the end should throw")
+Catch e As Exception
+Assert.Contains("index out of range", e.Message)
+End Try
+Try
+list.At(-1)
+Assert.Fail("At below zero should throw")
+Catch e As Exception
+Assert.Contains("index out of range", e.Message)
+End Try
+Try
+list.SetAt(0, 5)
+list.SetAt(1, 5)
+Assert.Fail("SetAt past the end should throw")
+Catch e As Exception
+Assert.Contains("index out of range", e.Message)
+End Try
+Var empty As New IntegerList
+Try
+empty.Pop()
+Assert.Fail("Pop on empty should throw")
+Catch e As Exception
+Assert.Contains("empty", e.Message)
+End Try
+Try
+list.RemoveSwap(9)
+Assert.Fail("RemoveSwap out of range should throw")
+Catch e As Exception
+Assert.Contains("index out of range", e.Message)
+End Try
+End Sub
+
+Public Sub TestIntegerListValidateDetectsCorruption()
+Var list As New IntegerList(8)
+list.Append(1)
+list.Validate()
+list.Count = 9
+Try
+list.Validate()
+Assert.Fail("Validate should reject count above capacity")
+Catch e As Exception
+Assert.Contains("outside capacity", e.Message)
+End Try
+End Sub
+
+Public Sub TestIntegerListWarmOperationsAllocateNothing()
+Var list As New IntegerList(4096)
+For i As Integer = 0 To 4095
+list.Append(i)
+Next i
+Var before As Integer = System.AllocationCount
+For round As Integer = 0 To 19
+list.Clear()
+For i As Integer = 0 To 2047
+list.Append(i)
+Next i
+While list.Count > 512
+list.Pop()
+Wend
+Var removed As Integer = 0
+While removed < 256
+list.RemoveSwap(list.Count - 2)
+removed = removed + 1
+Wend
+Var tally As Integer = 0
+For i As Integer = 0 To list.Count - 1
+tally = tally + list.Items[i]
+Next i
+Next round
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed IntegerList operations must not allocate")
+End Sub
+
+Public Sub TestDoubleListBasics()
+Var list As New DoubleList(16)
+list.Append(1.5)
+list.Append(-2.25)
+Assert.Equal(2, list.Count)
+Assert.Equal(-2.25, list.Pop())
+Assert.Equal(1.5, list.At(0))
+list.SetAt(0, 3.75)
+Assert.Equal(3.75, list.At(0))
+Var moved As Integer = list.RemoveSwap(0)
+Assert.Equal(-1, moved)
+Assert.Equal(0, list.Count)
+list.Validate()
+End Sub
+
+Public Sub TestDoubleListWarmOperationsAllocateNothing()
+Var list As New DoubleList(4096)
+For i As Integer = 0 To 4095
+list.Append(i.ToDouble())
+Next i
+Var before As Integer = System.AllocationCount
+For round As Integer = 0 To 19
+list.Clear()
+For i As Integer = 0 To 2047
+list.Append(i.ToDouble() * 0.5)
+Next i
+While list.Count > 512
+list.Pop()
+Wend
+list.RemoveSwap(0)
+Var tally As Double = 0.0
+For i As Integer = 0 To list.Count - 1
+tally = tally + list.Items[i]
+Next i
+Next round
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed DoubleList operations must not allocate")
+End Sub
+End Class

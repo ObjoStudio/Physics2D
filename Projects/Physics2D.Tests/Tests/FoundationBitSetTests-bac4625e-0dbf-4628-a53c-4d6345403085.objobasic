@@ -1,0 +1,194 @@
+# Tests for BitSet: bit addressing across word boundaries, grow, union,
+# iteration against a simple reference implementation, and the
+# zero-allocation guarantee after warm-up.
+Import Physics2D
+
+Class FoundationBitSetTests Inherits TestCase
+Public Sub TestSetGetClearAcrossWordBoundaries()
+Var bitSet As New BitSet(200)
+For Each index As Integer In [0, 1, 62, 63, 64, 65, 127, 128, 191, 192, 199]
+bitSet.SetBit(index)
+Assert.True(bitSet.GetBit(index), "bit " + index.ToString())
+Next index
+Assert.Equal(11, bitSet.CountSetBits())
+For Each index As Integer In [0, 1, 62, 63, 64, 65, 127, 128, 191, 192, 199]
+bitSet.ClearBit(index)
+Assert.False(bitSet.GetBit(index), "cleared bit " + index.ToString())
+Next index
+Assert.Equal(0, bitSet.CountSetBits())
+Assert.False(bitSet.AnySet())
+End Sub
+
+Public Sub TestBitsAboveWordCountReadClear()
+Var bitSet As New BitSet(64)
+Assert.Equal(1, bitSet.WordCount)
+Assert.False(bitSet.GetBit(64))
+bitSet.ClearBit(500)
+Assert.False(bitSet.GetBit(500))
+bitSet.SetBit(0)
+Try
+bitSet.SetBit(64)
+Assert.Fail("SetBit above word count should throw")
+Catch e As Exception
+Assert.Contains("outside word count", e.Message)
+End Try
+bitSet.Validate()
+End Sub
+
+Public Sub TestSetCountAndClearResetsBits()
+Var bitSet As New BitSet(256)
+bitSet.SetBit(5)
+bitSet.SetBit(200)
+bitSet.SetCountAndClear(256)
+Assert.Equal(4, bitSet.WordCount)
+Assert.Equal(0, bitSet.CountSetBits())
+bitSet.SetBit(255)
+Assert.True(bitSet.GetBit(255))
+bitSet.Validate()
+End Sub
+
+Public Sub TestSetBitGrowPreservesExistingBits()
+Var bitSet As New BitSet(64)
+bitSet.SetBit(3)
+bitSet.SetBit(63)
+bitSet.SetBitGrow(500)
+Assert.True(bitSet.GetBit(3))
+Assert.True(bitSet.GetBit(63))
+Assert.True(bitSet.GetBit(500))
+Assert.Equal(8, bitSet.WordCount)
+Assert.Equal(3, bitSet.CountSetBits())
+bitSet.Validate()
+Try
+bitSet.Grow(4)
+Assert.Fail("Grow to fewer words should throw")
+Catch e As Exception
+Assert.Contains("exceed current words", e.Message)
+End Try
+End Sub
+
+Public Sub TestInPlaceUnionAccumulates()
+Var a As New BitSet(128)
+Var b As New BitSet(128)
+a.SetBit(0)
+a.SetBit(70)
+b.SetBit(65)
+b.SetBit(70)
+a.InPlaceUnion(b)
+Assert.True(a.GetBit(0))
+Assert.True(a.GetBit(65))
+Assert.True(a.GetBit(70))
+Assert.Equal(3, a.CountSetBits())
+Var mismatched As New BitSet(64)
+Try
+a.InPlaceUnion(mismatched)
+Assert.Fail("union with different word counts should throw")
+Catch e As Exception
+Assert.Contains("word counts differ", e.Message)
+End Try
+End Sub
+
+Public Sub TestIterationMatchesBooleanReference()
+# Seeded stress: the bit bitSet must agree with a plain Boolean-array
+# reference implementation through random bitSet/clear churn and full
+# iteration.
+Var bitCount As Integer = 4096
+Var bitSet As New BitSet(bitCount)
+Var reference() As Boolean
+reference = New Array(Of Boolean)
+For i As Integer = 0 To bitCount - 1
+reference.Append(False)
+Next i
+Var random As New TestRandom(777)
+For op As Integer = 0 To 4999
+Var index As Integer = random.NextInt(0, bitCount - 1)
+If random.NextInt(0, 1) = 0 Then
+bitSet.SetBit(index)
+reference[index] = True
+Else
+bitSet.ClearBit(index)
+reference[index] = False
+End If
+If op Mod 500 = 0 Then
+bitSet.Validate()
+Var expectedCount As Integer = 0
+For i As Integer = 0 To bitCount - 1
+If reference[i] Then
+expectedCount = expectedCount + 1
+End If
+Next i
+Assert.Equal(expectedCount, bitSet.CountSetBits(), "reference tally")
+End If
+Next op
+
+Var collected As New IntegerList(bitCount)
+bitSet.CollectSetBits(collected)
+Var cursor As Integer = 0
+For i As Integer = 0 To bitCount - 1
+If reference[i] Then
+Assert.True(cursor < collected.Count, "missing bitSet bit " + i.ToString())
+Assert.Equal(i, collected.Items[cursor], "collected order")
+cursor = cursor + 1
+End If
+Next i
+Assert.Equal(collected.Count, cursor)
+End Sub
+
+Public Sub TestUpstreamFibonacciBitPattern()
+# Port of test_bitset.c: set bit 0 and every Fibonacci index below 169,
+# then compare every bit against a Boolean reference.
+Var count As Integer = 169
+Var bitSet As New BitSet(count)
+bitSet.SetCountAndClear(count)
+Var values() As Boolean
+values = New Array(Of Boolean)
+For i As Integer = 0 To count - 1
+values.Append(False)
+Next i
+Var i1 As Integer = 0
+Var i2 As Integer = 1
+bitSet.SetBit(i1)
+values[i1] = True
+While i2 < count
+bitSet.SetBit(i2)
+values[i2] = True
+Var nextFib As Integer = i1 + i2
+i1 = i2
+i2 = nextFib
+Wend
+For i As Integer = 0 To count - 1
+Assert.Equal(values[i], bitSet.GetBit(i), "fibonacci bit " + i.ToString())
+Next i
+bitSet.Validate()
+End Sub
+
+Public Sub TestWarmOperationsAllocateNothing()
+Var bitCount As Integer = 8192
+Var bitSet As New BitSet(bitCount)
+Var other As New BitSet(bitCount)
+Var sink As New IntegerList(bitCount)
+bitSet.SetCountAndClear(bitCount)
+other.SetCountAndClear(bitCount)
+For i As Integer = 0 To bitCount - 1 Step 7
+bitSet.SetBit(i)
+other.SetBit(i Mod 64)
+Next i
+bitSet.CollectSetBits(sink)
+Var before As Integer = System.AllocationCount
+For round As Integer = 0 To 9
+bitSet.SetCountAndClear(bitCount)
+For i As Integer = 0 To bitCount - 1 Step 11
+bitSet.SetBit(i)
+Next i
+For i As Integer = 1 To bitCount - 1 Step 23
+bitSet.ClearBit(i)
+Next i
+bitSet.InPlaceUnion(other)
+sink.Clear()
+bitSet.CollectSetBits(sink)
+bitSet.CountSetBits()
+bitSet.AnySet()
+Next round
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed bit bitSet operations must not allocate")
+End Sub
+End Class

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "IdPool",
+  "Id": "fbf7c609-ee86-443b-8d23-078728df5ac9",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "IdPool-fbf7c609-ee86-443b-8d23-078728df5ac9.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

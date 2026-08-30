@@ -34,6 +34,26 @@ Const SCENE_REL As Double = 0.002
 Const INTERNAL_ABS As Double = 0.000000000001
 Const INTERNAL_REL As Double = 0.000000000001
 
+# Upstream deterministic trigonometric approximations compared against the
+# platform library. Physics2D ports b2Atan2 (float-precision minimax
+# coefficients; measured maximum deviation about 2.8e-5 radians) and
+# b2ComputeCosSin (Bhaskara-style approximation; measured maximum deviation
+# about 1.7e-3). The tolerances sit above those measured bounds.
+Const ATAN2_ABS As Double = 0.00005
+Const TRIG_ABS As Double = 0.0025
+
+# Upstream test_math.c recovers an angle with b2Atan2 over the approximate
+# sin/cos pair and compares against the unwound angle using 4e-4. In Double
+# the approximate components carry up to about 1.7e-3 of angular error
+# themselves, which the atan recovery propagates; the measured maximum over
+# the upstream sweep is about 1.7e-3 radians, so this tolerance sits above
+# that bound instead of the upstream constant.
+Const TRIG_RECOVERY_ABS As Double = 0.0025
+
+# The ComputeCosSin pair is normalised to the unit circle in Double, so its
+# length deviates by rounding only.
+Const TRIG_NORM_ABS As Double = 0.000000000001
+
 # Deterministic checksums must match exactly.
 Const EXACT As Double = 0.0
 End Module

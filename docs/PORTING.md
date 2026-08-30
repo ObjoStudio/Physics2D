@@ -56,6 +56,14 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
 9. **Precision-sensitive constants.** Constants such as epsilon thresholds keep
    upstream values; where `float`/`double` differences would change behaviour,
    the change is recorded in a decision document under `docs/decisions/`.
+10. **Deterministic hash sentinel.** Upstream `b2AddKey` asserts the computed
+   32-bit hash is never zero; Physics2D deterministically maps a zero hash to
+   one instead, so release behaviour stays correct without debug assertions.
+   Key 0 remains reserved exactly as upstream.
+11. **Bit set construction.** Upstream creates an empty `b2BitSet` and calls
+   `b2SetBitCountAndClear` before first use; the Physics2D `BitSet`
+   constructor makes its reserved range immediately usable, with
+   `SetCountAndClear` remaining the step-loop reset path.
 
 ## Public Symbol Inventory
 
@@ -492,11 +500,11 @@ Mapping conventions:
 
 | Upstream symbol | Physics2D mapping | Stage |
 |---|---|---|
-| `b2Atan2` | Maths.Atan2 (Objo standard library) | 3 |
-| `b2ComputeCosSin` | Protected internal C | 3 |
+| `b2Atan2` | PhysicsMaths.Atan2 (deterministic upstream port) | 3 |
+| `b2ComputeCosSin` | PhysicsMaths.ComputeCosSin + CosSin | 3 |
 | `b2ComputeRotationBetweenUnitVectors` | Protected internal C | 3 |
 | `b2IsValidAABB` | Protected internal I | 3 |
-| `b2IsValidFloat` | Protected internal I | 3 |
+| `b2IsValidFloat` | Double.IsFinite (Objo standard library, issue #1302) | 3 |
 | `b2IsValidPlane` | Protected internal I | 3 |
 | `b2IsValidRotation` | Protected internal I | 3 |
 | `b2IsValidVec2` | Protected internal I | 3 |
@@ -538,7 +546,7 @@ Mapping conventions:
 
 | Upstream symbol | Physics2D mapping | Stage |
 |---|---|---|
-| `b2Hash` | Protected internal hash used by the pair table | 3 |
+| `b2Hash` | PhysicsMaths.HashKey (Murmur3 finaliser behind PairKeySet) | 3 |
 
 ### Approved version 1 exclusions (9 symbols)
 
@@ -563,9 +571,10 @@ Upstream line counts are for orientation only.
 
 | Upstream source | Physics2D source item | Stage |
 |---|---|---|
-| `src/constants.h`, `src/core.[ch]`, `src/math_functions.[ch]` | `PhysicsConstants`, `PhysicsMath` | 3 |
-| `src/table.[ch]`, `src/ctz.h` | `HashTable` | 3 |
-| `src/id_pool.[ch]`, `src/array.[ch]` | `IdPool`, dense stores in `PhysicsStores` | 3 |
+| `src/constants.h`, `src/core.[ch]` (sentinels), `src/math_functions.[ch]` (deterministic helpers) | `PhysicsConstants`, `PhysicsMaths`, `CosSin` | 3 |
+| `src/table.[ch]`, `src/ctz.h` | `PairKeySet` plus `PhysicsMaths.HashKey`/`TrailingZeros` | 3 |
+| `src/id_pool.[ch]`, `src/array.[ch]` | `IdPool`, `GenerationalPool`, `IntegerList`, `DoubleList` | 3 |
+| `src/bitset.[ch]` | `BitSet` | 3 |
 | `src/hull.c` | `PolygonHull` | 4 |
 | `src/geometry.c` | `Geometry` | 4 |
 | `src/distance.c` | `Distance` (GJK) | 4 |
@@ -592,8 +601,8 @@ Golden numeric fixtures are generated from the pinned upstream source.
 
 | Upstream test | Physics2D test source item | Stage |
 |---|---|---|
-| `test/test_math.c` | `PhysicsMathTests` | 3 |
-| `test/test_table.c`, `test/test_bitset.c`, `test/test_id.c` | `ContainerTests` | 3 |
+| `test/test_math.c` | `FoundationMathsTests` | 3 |
+| `test/test_table.c`, `test/test_bitset.c`, `test/test_id.c` | `FoundationPairKeySetTests`, `FoundationBitSetTests`, `FoundationIdentityTests` | 3 |
 | `test/test_collision.c` | `GeometryTests`, `DistanceTests`, `ManifoldTests`, `CastTests` | 4 |
 | `test/test_shape.c` | `ShapeGeometryTests` | 4 |
 | `test/test_world.c` | `WorldTests`, `BodyTests`, `QueryTests` | 6 |

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "FoundationPairKeySetTests",
+  "Id": "36823c64-e429-49f5-969b-fef542d41092",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "FoundationPairKeySetTests-36823c64-e429-49f5-969b-fef542d41092.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "FoundationMathsTests",
+  "Id": "ce5b45e7-42f9-4342-a266-ac08bfe85e76",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "FoundationMathsTests-ce5b45e7-42f9-4342-a266-ac08bfe85e76.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

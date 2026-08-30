@@ -1,0 +1,115 @@
+# Dense double scratch and storage list with reserve, grow, swap-remove, and clear.
+#
+# The Double twin of IntegerList; see that class for the representation and
+# capacity contract. Used by engine code for growable floating-point
+# sequences such as warm-start impulse queues and scalar scratch blocks.
+Class DoubleList
+## Backing array. Its Count is the capacity; index it directly only within [0, Count).
+Property Items() As Double
+## Number of valid elements in [0, Count).
+Property Count As Integer
+
+## Creates an empty list.
+Constructor()
+Me.Items = New Array(Of Double)
+Me.Count = 0
+End Constructor
+
+## Creates an empty list with room for the given element count.
+Constructor(capacityHint As Integer)
+Me.Items = New Array(Of Double)
+Me.Count = 0
+Me.Reserve(capacityHint)
+End Constructor
+
+## Ensures room for at least capacity elements. Extends the backing array
+## with zeros when needed; never shrinks and never changes Count.
+Sub Reserve(capacity As Integer)
+While Me.Items.Count < capacity
+Me.Items.Append(0.0)
+Wend
+End Sub
+
+## Appends a value, growing capacity by the upstream factor (half again,
+## minimum two) when the backing array is full.
+Sub Append(value As Double)
+If Me.Count = Me.Items.Count Then
+Me.Reserve(Me.GrowCapacity())
+End If
+Me.Items[Me.Count] = value
+Me.Count = Me.Count + 1
+End Sub
+
+## Removes and returns the last element.
+Function Pop() As Double
+If Me.Count = 0 Then
+Throw New RuntimeException("DoubleList.Pop on empty list")
+End If
+Me.Count = Me.Count - 1
+Return Me.Items[Me.Count]
+End Function
+
+## Returns the index of the last element, or -1 when empty.
+Function LastIndex() As Integer
+Return Me.Count - 1
+End Function
+
+## Reads the element at index. Cold-path convenience; hot code indexes Items directly.
+Function At(index As Integer) As Double
+If index < 0 Or index >= Me.Count Then
+Throw New InvalidArgumentException("DoubleList.At index out of range")
+End If
+Return Me.Items[index]
+End Function
+
+## Writes the element at index. Cold-path convenience; hot code indexes Items directly.
+Sub SetAt(index As Integer, value As Double)
+If index < 0 Or index >= Me.Count Then
+Throw New InvalidArgumentException("DoubleList.SetAt index out of range")
+End If
+Me.Items[index] = value
+End Sub
+
+## Removes the element at index by moving the last element into its place.
+## Returns the index the removed element's replacement came from, or -1
+## when the last element itself was removed. Order is not preserved; this
+## matches the upstream b2 RemoveSwap contract.
+Function RemoveSwap(index As Integer) As Integer
+If index < 0 Or index >= Me.Count Then
+Throw New InvalidArgumentException("DoubleList.RemoveSwap index out of range")
+End If
+Var movedIndex As Integer = PhysicsConstants.NULL_INDEX
+If index <> Me.Count - 1 Then
+movedIndex = Me.Count - 1
+Me.Items[index] = Me.Items[movedIndex]
+End If
+Me.Count = Me.Count - 1
+Return movedIndex
+End Function
+
+## Resets the logical count to zero. Capacity is retained so a warmed list
+## keeps operating without allocation.
+Sub Clear()
+Me.Count = 0
+End Sub
+
+## Current capacity, equal to Items.Count.
+Function Capacity() As Integer
+Return Me.Items.Count
+End Function
+
+## Validates internal invariants.
+Sub Validate()
+If Me.Count < 0 Or Me.Count > Me.Items.Count Then
+Throw New RuntimeException("DoubleList count outside capacity")
+End If
+End Sub
+
+## Upstream growth policy: double from empty, otherwise add half again.
+Private Function GrowCapacity() As Integer
+If Me.Items.Count < 2 Then
+Return 2
+End If
+Return Me.Items.Count + (Me.Items.Count \ 2)
+End Function
+End Class

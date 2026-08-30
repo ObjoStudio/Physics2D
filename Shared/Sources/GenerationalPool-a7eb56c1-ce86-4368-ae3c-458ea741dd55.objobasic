@@ -1,0 +1,135 @@
+# Generational slot allocation: slots that stay safe to reference across reuse.
+#
+# Physics2D identifies bodies, shapes, joints, and similar records by a slot
+# index plus a generation counter, mirroring the Box2D 3.1.1 id scheme
+# (include/box2d/id.h and the per-record generation fields in src/body.c and
+# src/world.c). The rules are:
+#
+# - A slot's generation starts at INVALID_GENERATION (0) and is incremented
+#   each time the slot becomes live, so issued generations are 1, 2, 3, ...
+# - FreeSlot keeps the generation; the next AllocSlot on that slot bumps it.
+#   A handle created before the free therefore stops validating after the
+#   slot is reused.
+# - Clear returns the pool to empty and zeroes every generation, so handles
+#   from a previous lifetime never validate. This backs World.Clear reuse.
+# - Free slots stop validating immediately (the live flag clears), closing
+#   the window where a stale handle would otherwise match the not-yet-bumped
+#   generation.
+#
+# Generations and live flags are parallel IntegerList stores addressed by
+# slot, following the Stage 2 parallel-scalar-array decision. After a
+# capacity warm-up, AllocSlot and FreeSlot allocate nothing.
+Class GenerationalPool
+## Slot allocator supplying recycled and fresh slot indices.
+Private Property mIds As IdPool
+## Generation counter per slot; zero until the slot first becomes live.
+Private Property mGenerations As IntegerList
+## Live flag per slot: 1 live, 0 free.
+Private Property mLive As IntegerList
+
+## Creates a pool with room for the given slot count before any growth.
+Constructor(capacityHint As Integer)
+Me.mIds = New IdPool()
+Me.mGenerations = New IntegerList()
+Me.mLive = New IntegerList()
+Me.mGenerations.Reserve(capacityHint)
+Me.mLive.Reserve(capacityHint)
+End Constructor
+
+## Allocates one slot and returns it. The slot's generation increments and
+## becomes live; pair the returned slot with GenerationOf to build handles.
+Function AllocSlot() As Integer
+Var slot As Integer = Me.mIds.AllocId()
+While Me.mGenerations.Count <= slot
+Me.mGenerations.Append(0)
+Me.mLive.Append(0)
+Wend
+Me.mGenerations.SetAt(slot, Me.mGenerations.At(slot) + 1)
+Me.mLive.SetAt(slot, 1)
+Return slot
+End Function
+
+## Returns one live slot to the pool. The generation is preserved until the
+## slot's next allocation.
+Sub FreeSlot(slot As Integer)
+If Not Me.IsLive(slot) Then
+Throw New InvalidArgumentException("GenerationalPool.FreeSlot slot is not live")
+End If
+Me.mLive.SetAt(slot, 0)
+Me.mIds.FreeId(slot)
+End Sub
+
+## True when the slot is live and its generation matches the given one.
+## This is the runtime handle check.
+Function IsValid(slot As Integer, generation As Integer) As Boolean
+If slot < 0 Or slot >= Me.mGenerations.Count Then
+Return False
+End If
+Return Me.mLive.Items[slot] = 1 And Me.mGenerations.Items[slot] = generation
+End Function
+
+## True when the slot is currently live.
+Function IsLive(slot As Integer) As Boolean
+If slot < 0 Or slot >= Me.mLive.Count Then
+Return False
+End If
+Return Me.mLive.Items[slot] = 1
+End Function
+
+## Current generation of one slot, or INVALID_GENERATION when the slot has
+## never been live or is out of range.
+Function GenerationOf(slot As Integer) As Integer
+If slot < 0 Or slot >= Me.mGenerations.Count Then
+Return PhysicsConstants.INVALID_GENERATION
+End If
+Return Me.mGenerations.Items[slot]
+End Function
+
+## Number of live slots.
+Function SlotCount() As Integer
+Return Me.mIds.IdCount()
+End Function
+
+## High-water mark of slots ever allocated.
+Function SlotCapacity() As Integer
+Return Me.mIds.IdCapacity()
+End Function
+
+## Validates internal invariants, including that live flags agree with the
+## underlying slot pool.
+Sub Validate()
+Me.mIds.Validate()
+If Me.mGenerations.Count <> Me.mLive.Count Then
+Throw New RuntimeException("GenerationalPool generation and live lengths differ")
+End If
+Var liveTally As Integer = 0
+For i As Integer = 0 To Me.mLive.Count - 1
+Var flag As Integer = Me.mLive.Items[i]
+If flag <> 0 And flag <> 1 Then
+Throw New RuntimeException("GenerationalPool live flag is not a flag")
+End If
+If flag = 1 Then
+liveTally = liveTally + 1
+If Me.mGenerations.Items[i] <= PhysicsConstants.INVALID_GENERATION Then
+Throw New RuntimeException("GenerationalPool live slot has invalid generation")
+End If
+End If
+Next i
+If liveTally <> Me.mIds.IdCount() Then
+Throw New RuntimeException("GenerationalPool live tally disagrees with slot pool")
+End If
+End Sub
+
+## Returns the pool to its initial empty state and zeroes every generation,
+## invalidating all outstanding handles.
+Sub Clear()
+Me.mIds.Clear()
+Var capacity As Integer = Me.mGenerations.Capacity()
+For i As Integer = 0 To capacity - 1
+Me.mGenerations.Items[i] = 0
+Me.mLive.Items[i] = 0
+Next i
+Me.mGenerations.Clear()
+Me.mLive.Clear()
+End Sub
+End Class

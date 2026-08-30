@@ -1,0 +1,82 @@
+# Stage 3 foundation container gates.
+#
+# Every workload must be deterministic (identical folded checksums across
+# consecutive iterations) and must execute a warmed iteration without any
+# allocation, which is the foundation requirement for the zero-allocation
+# step path.
+Import Physics2D
+
+Class Stage3FoundationTests Inherits TestCase
+Public Sub TestSlotPoolWorkloadIsDeterministicAndAllocationFree()
+Var workload As New SlotPoolWorkload
+workload.Prepare()
+workload.Execute()
+Var checksum As Integer = workload.FoldedChecksum()
+workload.Execute()
+Assert.Equal(checksum, workload.FoldedChecksum(), "slot pool workload diverged between iterations")
+Var before As Integer = System.AllocationCount
+workload.Execute()
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed slot pool iteration must not allocate")
+End Sub
+
+Public Sub TestBitSetWorkloadIsDeterministicAndAllocationFree()
+Var workload As New BitSetWorkload
+workload.Prepare()
+workload.Execute()
+Var checksum As Integer = workload.FoldedChecksum()
+workload.Execute()
+Assert.Equal(checksum, workload.FoldedChecksum(), "bit set workload diverged between iterations")
+Var before As Integer = System.AllocationCount
+workload.Execute()
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed bit set iteration must not allocate")
+End Sub
+
+Public Sub TestPairKeySetWorkloadIsDeterministicAndAllocationFree()
+Var workload As New PairKeySetWorkload
+workload.Prepare()
+workload.Execute()
+Var checksum As Integer = workload.FoldedChecksum()
+workload.Execute()
+Assert.Equal(checksum, workload.FoldedChecksum(), "pair key set workload diverged between iterations")
+Var before As Integer = System.AllocationCount
+workload.Execute()
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed pair key set iteration must not allocate")
+End Sub
+
+Public Sub TestScratchListWorkloadIsDeterministicAndAllocationFree()
+Var workload As New ScratchListWorkload
+workload.Prepare()
+workload.Execute()
+Var checksum As Integer = workload.FoldedChecksum()
+workload.Execute()
+Assert.Equal(checksum, workload.FoldedChecksum(), "scratch list workload diverged between iterations")
+Var before As Integer = System.AllocationCount
+workload.Execute()
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed scratch list iteration must not allocate")
+End Sub
+
+Public Sub TestWorkloadSampleBuffersAreSized()
+Var workloads() As Stage3Workload
+workloads = New Array(Of Stage3Workload)
+workloads.Append(New SlotPoolWorkload)
+workloads.Append(New BitSetWorkload)
+workloads.Append(New PairKeySetWorkload)
+workloads.Append(New ScratchListWorkload)
+Var expectedSamples() As Integer
+expectedSamples = New Array(Of Integer)
+expectedSamples.Append(3)
+expectedSamples.Append(4)
+expectedSamples.Append(2)
+expectedSamples.Append(3)
+For i As Integer = 0 To workloads.Count - 1
+workloads[i].Prepare()
+workloads[i].Execute()
+Assert.Equal(expectedSamples[i], workloads[i].SampleCount, "workload " + i.ToString() + " must fill exactly its declared samples")
+Assert.True(workloads[i].FoldedChecksum() <> 0, "workload " + i.ToString() + " checksum must be nonzero")
+Next i
+End Sub
+End Class

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "FoundationBitSetTests",
+  "Id": "bac4625e-0dbf-4628-a53c-4d6345403085",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "FoundationBitSetTests-bac4625e-0dbf-4628-a53c-4d6345403085.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

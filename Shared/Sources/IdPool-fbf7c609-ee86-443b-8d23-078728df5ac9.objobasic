@@ -1,0 +1,100 @@
+# Slot allocator with free-list recycling, ported from Box2D 3.1.1 id_pool.c.
+#
+# AllocId hands out recycled slots first (most recently freed first) and then
+# fresh slots. nextIndex is the high-water mark, so the number of live slots
+# is nextIndex minus the free-list depth. Records keyed by these slots carry
+# their own generation counters; see GenerationalPool for the combination.
+#
+# A warmed pool allocates nothing: the free list is an IntegerList reserved
+# up front and FreeId only pushes onto it.
+Class IdPool
+## Free slot stack, most recently freed slot on top.
+Private Property mFreeIds As IntegerList
+## High-water mark of slots ever allocated.
+Private Property mNextIndex As Integer
+
+## Creates a pool with an initial free-list reserve.
+Constructor()
+Me.mFreeIds = New IntegerList(32)
+Me.mNextIndex = 0
+End Constructor
+
+## Allocates one slot: a recycled slot when available, otherwise a fresh one.
+Function AllocId() As Integer
+If Me.mFreeIds.Count > 0 Then
+Return Me.mFreeIds.Pop()
+End If
+Var id As Integer = Me.mNextIndex
+Me.mNextIndex = Me.mNextIndex + 1
+Return id
+End Function
+
+## Returns one slot to the pool.
+Sub FreeId(id As Integer)
+If Me.mNextIndex <= 0 Or id < 0 Or id >= Me.mNextIndex Then
+Throw New InvalidArgumentException("IdPool.FreeId slot out of range")
+End If
+Me.mFreeIds.Append(id)
+End Sub
+
+## Number of live (allocated and not freed) slots.
+Function IdCount() As Integer
+Return Me.mNextIndex - Me.mFreeIds.Count
+End Function
+
+## Number of slots ever allocated, the high-water mark.
+Function IdCapacity() As Integer
+Return Me.mNextIndex
+End Function
+
+## Throws when the slot is not currently in the free list.
+Sub ValidateFreeId(id As Integer)
+Var freeCount As Integer = Me.mFreeIds.Count
+For i As Integer = 0 To freeCount - 1
+If Me.mFreeIds.Items[i] = id Then
+Return
+End If
+Next i
+Throw New RuntimeException("IdPool expected slot in free list")
+End Sub
+
+## Throws when the slot is currently in the free list.
+Sub ValidateUsedId(id As Integer)
+Var freeCount As Integer = Me.mFreeIds.Count
+For i As Integer = 0 To freeCount - 1
+If Me.mFreeIds.Items[i] = id Then
+Throw New RuntimeException("IdPool slot unexpectedly free")
+End If
+Next i
+End Sub
+
+## Validates internal invariants: free-list bounds and uniqueness.
+Sub Validate()
+If Me.mFreeIds.Count > Me.mNextIndex Then
+Throw New RuntimeException("IdPool free list exceeds slot range")
+End If
+If Me.IdCount() < 0 Then
+Throw New RuntimeException("IdPool live count is negative")
+End If
+Var freeCount As Integer = Me.mFreeIds.Count
+For i As Integer = 0 To freeCount - 1
+Var id As Integer = Me.mFreeIds.Items[i]
+If id < 0 Or id >= Me.mNextIndex Then
+Throw New RuntimeException("IdPool free slot out of range")
+End If
+For j As Integer = 0 To i - 1
+If Me.mFreeIds.Items[j] = id Then
+Throw New RuntimeException("IdPool duplicate free slot")
+End If
+Next j
+Next i
+End Sub
+
+## Returns the pool to its initial empty state. All previously allocated
+## slots are invalidated; callers pairing slots with generations must clear
+## those generations in the same breath (GenerationalPool.Clear does).
+Sub Clear()
+Me.mFreeIds.Clear()
+Me.mNextIndex = 0
+End Sub
+End Class

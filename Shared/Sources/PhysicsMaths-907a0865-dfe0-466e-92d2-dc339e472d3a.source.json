@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "PhysicsMaths",
+  "Id": "907a0865-dfe0-466e-92d2-dc339e472d3a",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "PhysicsMaths-907a0865-dfe0-466e-92d2-dc339e472d3a.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

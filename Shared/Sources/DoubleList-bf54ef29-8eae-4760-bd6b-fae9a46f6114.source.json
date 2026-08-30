@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "DoubleList",
+  "Id": "bf54ef29-8eae-4760-bd6b-fae9a46f6114",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "DoubleList-bf54ef29-8eae-4760-bd6b-fae9a46f6114.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

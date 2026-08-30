@@ -46,6 +46,10 @@ runner.Add(New Stage2DenseNodesScenario())
 runner.Add(New Stage2MemoryBlockScenario())
 runner.Add(New Stage2TreeIndexedScenario())
 runner.Add(New Stage2TreeLinkedScenario())
+runner.Add(New Stage3SlotPoolScenario())
+runner.Add(New Stage3BitSetScenario())
+runner.Add(New Stage3PairKeySetScenario())
+runner.Add(New Stage3ScratchListsScenario())
 
 Var results() As BenchmarkResult = runner.RunAll()
 

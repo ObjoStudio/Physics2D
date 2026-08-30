@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "FoundationListTests",
+  "Id": "9968b7c2-f818-4e97-a676-a921604523d8",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "FoundationListTests-9968b7c2-f818-4e97-a676-a921604523d8.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

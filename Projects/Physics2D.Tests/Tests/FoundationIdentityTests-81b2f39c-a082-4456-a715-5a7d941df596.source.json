@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "FoundationIdentityTests",
+  "Id": "81b2f39c-a082-4456-a715-5a7d941df596",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "FoundationIdentityTests-81b2f39c-a082-4456-a715-5a7d941df596.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

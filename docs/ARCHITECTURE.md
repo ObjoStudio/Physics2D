@@ -1,0 +1,236 @@
+# Physics2D Architecture
+
+This document explains how Physics2D is structured inside the single
+`Physics2D` module: the data layout, the identity rules, and the reasoning
+behind non-obvious representations. Public API documentation lives in
+`docs/API.md`; upstream provenance and symbol mapping live in
+`docs/PORTING.md`.
+
+```text
+Physics2D public API (later stages)
+├── World / Body / Shape / Chain / Joint façades
+├── Definitions, geometry values, query results, and events
+└── DebugRenderer
+        │
+        ▼
+Protected indexed core
+├── Foundation: constants, deterministic maths, identity, containers   ← this document
+├── Collision: hulls, distance, manifolds, casts, time of impact
+├── BroadPhase: bounds, dynamic tree, move/pair buffers
+├── Dynamics: body/shape/contact/joint stores and solver sets
+├── Solver: islands, graph colours, contacts, joints, sleeping, CCD
+└── Diagnostics: validation, statistics, debug drawing
+```
+
+## Design Rules
+
+1. **Parallel scalar arrays for hot state.** The Stage 2 bake-off (decision
+   0004) measured parallel x/y `Double` arrays fastest for body, solver,
+   contact, and joint state (185.1 ms median, zero allocations per
+   iteration) and node objects fastest for the dynamic tree (321.5 ms).
+   Foundation containers follow the same evidence: growable sequences keep
+   one backing array plus a logical count, and the pair table keeps two
+   parallel scalar arrays. Nothing in the hot path stores one object per
+   element.
+2. **Zero steady-state allocation.** After a capacity warm-up, every
+   container operation on this page allocates nothing: growth happens only
+   in `Reserve`-style calls, `Clear` resets a logical count or zeroes in
+   place, and removal is swap-based. Each container exposes a `Validate`
+   method used aggressively by tests and later by debug world validation.
+3. **Determinism.** Container traversal and probe order are fixed by
+   construction (linear probing with power-of-two capacity, ascending bit
+   iteration, LIFO slot reuse). Trigonometry uses the ported upstream
+   approximations rather than platform library calls, so results do not
+   depend on the host maths library.
+4. **Internal names stay teachable.** The foundation classes below are
+   implementation infrastructure, not the stable public API; they may move
+   behind narrower visibility when the public surface freezes. Their names
+   still follow the public naming rules (no `b2` prefixes, full words).
+
+## Foundation Containers
+
+### IntegerList and DoubleList
+
+Dense growable sequences — the Objo counterpart of the upstream typed
+dynamic arrays in `src/array.h`. Objo's built-in `Array` cannot reserve
+capacity without changing `Count` and has no swap-remove, so engine code
+uses these lists for free lists, pair buffers, traversal stacks, and event
+queues.
+
+```text
+IntegerList
+┌───────────────────────────────────────────────┐
+│ Items: [ 10 | 20 | 30 |  0 |  0 |  0 | ... ]  │  backing Array, length = capacity
+└───────────────────────────────────────────────┘
+  Count = 3 (valid prefix)   capacity = Items.Count
+```
+
+- `Reserve(capacity)` extends the backing array with zeros; it never
+  changes `Count`. Callers warm capacity up front and then append defaults
+  before indexed writes, because `Array.Reserve` does not extend `Count`.
+- `Append` grows by the upstream factor (half again, minimum two) only when
+  the backing array is full.
+- `RemoveSwap(index)` moves the last element into the removed slot and
+  returns where it came from (`NULL_INDEX` when the last element was
+  removed). Order is not preserved; nothing ever shifts.
+- `Clear` resets `Count` to zero and keeps capacity.
+- Complexity: index read/write O(1); append amortised O(1); swap-remove
+  O(1); clear O(1).
+
+Hot engine code reads `Items[i]` directly within `[0, Count)` to avoid
+call overhead; `At`/`SetAt` are the bounds-checked cold-path forms.
+
+### IdPool
+
+Port of `src/id_pool.c`. A free-list slot allocator: `AllocId` pops the
+most recently freed slot, otherwise issues `nextIndex++`.
+
+```text
+IdPool
+  nextIndex = 5
+  freeIds (stack): [ 3 | 1 ]        ← IntegerList, LIFO
+  live slots: { 0, 2, 4 }           ← nextIndex - freeIds.Count
+```
+
+- Recycling is LIFO, so the hottest slots stay cache-warm, matching
+  upstream behaviour.
+- `ValidateFreeId` / `ValidateUsedId` mirror the upstream validation
+  entry points; `Validate` additionally rejects duplicate or out-of-range
+  free entries.
+- `Clear` returns the pool to empty (upstream destroys it; Physics2D adds
+  clear-and-reuse to support `World.Clear`).
+- Complexity: alloc/free O(1); validation O(free list).
+
+### GenerationalPool
+
+Generational identity over slots — the mechanism behind Box2D 3.1.1's
+`b2BodyId`-style handles (index + generation + world), expressed as one
+reusable container. It combines an `IdPool` with two parallel integer
+stores addressed by slot: the generation counter and a live flag.
+
+```text
+slot:        0    1    2    3    4
+generations: 3    0    1    2    0     ← 0 means never issued (or cleared)
+live:        1    0    1    1    0
+             └── free list in IdPool: { 1, 4 }
+```
+
+- A slot's generation starts at `INVALID_GENERATION` (0) and increments
+  each time the slot becomes live; issued generations are 1, 2, 3, ...
+- `FreeSlot` clears the live flag and preserves the generation. The next
+  `AllocSlot` on that slot bumps it, so handles issued before a free stop
+  validating after reuse.
+- The live flag closes the reuse window: a freed handle does not validate
+  even before its slot is handed out again.
+- `Clear` zeroes every generation and returns the pool to empty, so
+  handles from a previous world lifetime never validate.
+- `IsValid(slot, generation)` is the runtime handle check: O(1), two array
+  reads and comparisons after one bounds test.
+- Complexity: alloc/free O(1) amortised; validation O(capacity).
+
+### BitSet
+
+Port of `src/bitset.c`/`bitset.h` with 64-bit words stored as `Integer`.
+Used for solver-set membership, enlarged-proxy flags, and awake islands.
+
+```text
+BitSet (WordCount = 3 of capacity 8)
+  Words: [ 0b...101 | 0 | 0b110 | 0 | 0 | 0 | 0 | 0 ]
+             word 0    word 1  word 2   ← words above WordCount stay zero
+```
+
+- Bit *b* lives in word `b \ 64` at bit `b Mod 64`; bit 63 is handled with
+  two's-complement arithmetic (`1.ShiftLeft(63)` is the sign bit and
+  `BitAnd`/`BitOr`/`BitNot` work uniformly).
+- `SetCountAndClear(bitCount)` is the step-loop reset; `Grow(wordCount)`
+  expands the used range by whole words; both follow the upstream 1.5x
+  capacity policy. Unlike upstream, the constructor leaves the reserved
+  range immediately usable.
+- `InPlaceUnion` ORs word-by-word and requires equal used word counts.
+- `CollectSetBits(sink)` appends set indices in ascending order to an
+  `IntegerList`, scanning each word with `PhysicsMaths.TrailingZeros` and
+  clearing the lowest bit per step (`word BitAnd (word - 1)`).
+- Complexity: set/clear/get O(1); union O(words); iteration O(words + set
+  bits); `CountSetBits` O(words).
+
+### PairKeySet
+
+Port of `src/table.c` (`b2HashSet`), used by the broad phase to
+deduplicate shape pair keys. Objo's built-in `HashSet` is a
+general-purpose, allocation-per-operation type that is banned in hot
+paths, so the engine carries this fixed-shape integer table instead.
+
+```text
+PairKeySet (capacity 16, Count 3)
+  slot:     0     1     2     3    ...   15
+  keys:     0   4294967298  0  8589934593 ... 0     ← 0 = empty (reserved)
+  hashes:   0   337744490   0  ...          0     ← 0 = empty marker
+```
+
+- Keys are 64-bit values built by `PairKeySet.PairKey(a, b)`:
+  `(min << 32) | max`, which is order-independent and nonzero for distinct
+  nonzero ids. Key 0 is reserved and rejected by `Add`.
+- The hash is the Murmur3 64-bit finaliser (upstream `b2KeyHash`), computed
+  with logical shifts over signed 64-bit arithmetic and reduced to 32 bits.
+  A computed hash of 0 maps deterministically to 1 (upstream asserts this
+  cannot happen).
+- Open addressing with linear probing; `index = hash BitAnd (capacity - 1)`
+  with capacity a power of two, minimum 16, doubling on `2 * Count >=
+  capacity`.
+- Removal backshifts later probe-chain entries (the cyclic-interval test
+  from upstream) so no tombstones are needed and every stored key still
+  probes to its own slot.
+- `Validate` recomputes every stored key's probe path and stored hash.
+- Complexity: add/remove/contains O(1) expected; grow O(count); clear
+  O(capacity); validation O(capacity).
+
+Determinism note: unlike the built-in `HashSet`, iteration and probe order
+here are fully determined by the keys and capacity, never by object
+hashing or insertion history beyond what the algorithm prescribes.
+
+## Deterministic Maths
+
+`PhysicsMaths` ports the upstream trigonometric approximations so
+simulation results do not depend on the platform maths library:
+
+| Member | Upstream | Notes |
+|---|---|---|
+| `UnwindAngle(radians)` | `b2UnwindAngle` | Wraps to [-pi, pi] with half-to-even quotient rounding, like C `remainder`. |
+| `Atan2(y, x)` | `b2Atan2` | Minimax polynomial tuned for 32-bit floats; kept verbatim in Double. Maximum deviation from the platform atan2 is about 2.8e-5 radians. |
+| `ComputeCosSin(radians, out)` | `b2ComputeCosSin` | Bhaskara-style approximation, normalised to the unit circle; caller-owned output object avoids allocation. Deviation from platform sin/cos is about 1.7e-3, intrinsic to the upstream formula. |
+| `TrailingZeros(value)` | `ctz.h` | Comparison ladder; returns 64 for zero. |
+| `IsPowerOfTwo`, `BoundingPowerOfTwo`, `RoundUpPowerOfTwo` | `ctz.h` | Capacity helpers; zero is rejected as a power of two (upstream accepts it). |
+| `HashKey(key)` | `b2KeyHash` | Murmur3 64-bit finaliser with logical shifts. |
+
+`CosSin` mirrors the upstream `b2CosSin` struct as a small reusable object.
+
+## Constants and Identity Sentinels
+
+`PhysicsConstants` ports `src/constants.h` in metre units (upstream scales
+some lengths by a user-settable `b2_lengthUnitsPerMeter`; Physics2D fixes
+one metre per unit) and adds the identity sentinels from `src/core.h`:
+
+- `NULL_INDEX = -1` — "no slot". Never interchangeable with slot 0.
+- `INVALID_GENERATION = 0` — a generation that can never validate; issued
+  generations start at 1.
+
+`B2_MAX_WORKERS` and `B2_MAX_WORLDS` are excluded: Physics2D has no task
+system and worlds are ordinary Objo objects.
+
+## Foundation Performance Envelope
+
+Release results on the Stage 2 reference machine (Mac, `objo` 26.9.1, see
+`benchmarks/results/stage3-foundation-2026-08-30T21-41-14.json`) keep every
+foundation container inside the Stage 2 representation envelope — per-element
+costs at or below the accepted scalar-array kernel (~182 ms for the full
+10,000-body kernel set) and zero allocations in every measured scenario:
+
+| Scenario | Work per iteration | Median | Allocations |
+|---|---|---|---|
+| `stage3-slot-pool` | 4096 allocs + 1365 frees + 1365 reuses + fold | 10.8 ms | 0 |
+| `stage3-bit-set` | 16384 sets + 3277 clears + union + full iteration | 22.2 ms | 0 |
+| `stage3-pair-key-set` | 2000 adds + 500 removes + 1000 probes + 1000 re-adds | 6.5 ms | 0 |
+| `stage3-scratch-lists` | 20000 appends + 3000 swap removals + 200 pops | 7.1 ms | 0 |
+
+Growth and `Clear` costs are warm-up costs by design: capacity persists
+across `Clear`, so a warmed engine step never re-grows.

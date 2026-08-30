@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "IntegerList",
+  "Id": "76ca8a3e-5730-4585-8ad6-90163340b90f",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

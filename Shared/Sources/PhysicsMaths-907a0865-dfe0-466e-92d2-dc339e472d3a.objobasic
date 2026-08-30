@@ -1,0 +1,214 @@
+# Deterministic maths helpers required by the Box2D 3.1.1 algorithms.
+#
+# Ported from upstream src/math_functions.c. Box2D deliberately avoids
+# platform trigonometric library calls so simulations behave identically on
+# every machine; Physics2D preserves that intent by porting the same
+# approximations over Double arithmetic. These functions are internal
+# infrastructure used by rotation, joint, and solver code.
+#
+# Error notes (measured against the platform library on the reference
+# machine, double arithmetic):
+# - Atan2 differs from the platform atan2 by at most about 2.8e-5 radians.
+# - ComputeCosSin differs from the platform sin/cos by at most about 1.7e-3,
+#   the intrinsic error of upstream's Bhaskara-style approximation; after
+#   normalisation the pair stays on the unit circle to rounding precision.
+Class PhysicsMaths
+## Two pi as a Double.
+Public Const TWO_PI As Double = 6.283185307179586
+
+## Wraps any angle into [-pi, pi] the way upstream b2UnwindAngle does.
+## Upstream calls remainder(radians, 2 pi), which rounds the quotient
+## half-to-even; the same policy is applied here.
+Shared Function UnwindAngle(radians As Double) As Double
+Var quotient As Double = radians / TWO_PI
+Var rounded As Double = Maths.Round(quotient, RoundingMode.ToEven)
+Return radians - rounded * TWO_PI
+End Function
+
+## Deterministic arctangent ported from upstream b2Atan2. The minimax
+## polynomial was tuned for 32-bit floats; Physics2D keeps the same formula
+## and constants so angle results follow upstream behaviour.
+Shared Function Atan2(y As Double, x As Double) As Double
+# Added check for (0,0) to match atan2 and avoid NaN.
+If x = 0.0 And y = 0.0 Then
+Return 0.0
+End If
+
+Var ax As Double = Maths.Abs(x)
+Var ay As Double = Maths.Abs(y)
+Var mx As Double = Maths.Max(ay, ax)
+Var mn As Double = Maths.Min(ay, ax)
+Var a As Double = mn / mx
+
+# Minimax polynomial approximation to atan(a) on [0, 1].
+Var s As Double = a * a
+Var c As Double = s * a
+Var q As Double = s * s
+Var r As Double = 0.024840285 * q + 0.18681418
+Var t As Double = -0.094097948 * q - 0.33213072
+r = r * s + t
+r = r * c + a
+
+# Map to the full circle.
+If ay > ax Then
+r = 1.57079637 - r
+End If
+
+If x < 0.0 Then
+r = 3.14159274 - r
+End If
+
+If y < 0.0 Then
+r = -r
+End If
+
+Return r
+End Function
+
+## Computes the deterministic cosine and sine pair from upstream
+## b2ComputeCosSin into a caller-owned result object and returns it. The
+## result is normalised to the unit circle. Use this form in warm code to
+## avoid allocation; the single-argument overload is the allocating form.
+Shared Function ComputeCosSin(radians As Double, out As CosSin) As CosSin
+Var x As Double = UnwindAngle(radians)
+Var pi2 As Double = Maths.PI * Maths.PI
+
+# Cosine needs the angle in [-pi/2, pi/2].
+Var c As Double = 0.0
+If x < -1.5707963267948966 Then
+Var y As Double = x + Maths.PI
+Var y2 As Double = y * y
+c = -(pi2 - 4.0 * y2) / (pi2 + y2)
+ElseIf x > 1.5707963267948966 Then
+Var y As Double = x - Maths.PI
+Var y2 As Double = y * y
+c = -(pi2 - 4.0 * y2) / (pi2 + y2)
+Else
+Var y2 As Double = x * x
+c = (pi2 - 4.0 * y2) / (pi2 + y2)
+End If
+
+# Sine needs the angle in [0, pi].
+Var s As Double = 0.0
+If x < 0.0 Then
+Var y As Double = x + Maths.PI
+s = -16.0 * y * (Maths.PI - y) / (5.0 * pi2 - 4.0 * y * (Maths.PI - y))
+Else
+s = 16.0 * x * (Maths.PI - x) / (5.0 * pi2 - 4.0 * x * (Maths.PI - x))
+End If
+
+Var mag As Double = Maths.Sqrt(s * s + c * c)
+Var invMag As Double = 0.0
+If mag > 0.0 Then
+invMag = 1.0 / mag
+End If
+
+out.Cos = c * invMag
+out.Sin = s * invMag
+Return out
+End Function
+
+## Allocating convenience overload of ComputeCosSin. Suitable for cold paths
+## such as construction and examples; step-loop code should use the
+## caller-owned output overload.
+Shared Function ComputeCosSin(radians As Double) As CosSin
+Return ComputeCosSin(radians, New CosSin)
+End Function
+
+## Counts trailing zero bits of a nonzero Integer. Returns 64 for zero,
+## a defined value the caller must not treat as a bit index. Objo has no
+## intrinsic for this, so a comparison ladder keeps it allocation-free.
+Shared Function TrailingZeros(value As Integer) As Integer
+If value = 0 Then
+Return 64
+End If
+
+Var count As Integer = 0
+Var v As Integer = value
+If v.BitAnd(4294967295) = 0 Then
+count = count + 32
+v = v.ShiftRight(32)
+End If
+If v.BitAnd(65535) = 0 Then
+count = count + 16
+v = v.ShiftRight(16)
+End If
+If v.BitAnd(255) = 0 Then
+count = count + 8
+v = v.ShiftRight(8)
+End If
+If v.BitAnd(15) = 0 Then
+count = count + 4
+v = v.ShiftRight(4)
+End If
+If v.BitAnd(3) = 0 Then
+count = count + 2
+v = v.ShiftRight(2)
+End If
+If v.BitAnd(1) = 0 Then
+count = count + 1
+End If
+Return count
+End Function
+
+## Returns True when the value is a positive power of two. Unlike upstream
+## b2IsPowerOf2, zero is rejected here because capacity callers never pass
+## zero and a positive-only contract avoids surprising results.
+Shared Function IsPowerOfTwo(value As Integer) As Boolean
+Return value > 0 And value.BitAnd(value - 1) = 0
+End Function
+
+## Number of bits needed to hold any value up to value - 1, ported from
+## upstream b2BoundingPowerOf2: the minimum is one and the result is
+## ceiling(log2(value)) for values above two.
+Shared Function BoundingPowerOfTwo(value As Integer) As Integer
+If value <= 1 Then
+Return 1
+End If
+Var v As Integer = value - 1
+Var bits As Integer = 1
+While v > 1
+v = v.ShiftRight(1)
+bits = bits + 1
+Wend
+Return bits
+End Function
+
+## Rounds the value up to the nearest power of two, ported from upstream
+## b2RoundUpPowerOf2. Values of one or less round to one.
+Shared Function RoundUpPowerOfTwo(value As Integer) As Integer
+If value <= 1 Then
+Return 1
+End If
+
+Var v As Integer = value - 1
+v = v.BitOr(v.ShiftRight(1))
+v = v.BitOr(v.ShiftRight(2))
+v = v.BitOr(v.ShiftRight(4))
+v = v.BitOr(v.ShiftRight(8))
+v = v.BitOr(v.ShiftRight(16))
+v = v.BitOr(v.ShiftRight(32))
+Return v + 1
+End Function
+
+## Murmur3 64-bit finaliser over the key, reduced to 32 bits, ported from
+## upstream b2KeyHash. Pair keys built from ordered integer pairs mix well
+## with this hash. Deterministic on every platform because it uses only
+## integer arithmetic; shifts are logical, matching the unsigned upstream
+## form.
+Shared Function HashKey(key As Integer) As Integer
+Var h As Integer = key
+h = h.BitXor(LogicalShiftRight(h, 33))
+h = h * -49064778989728563
+h = h.BitXor(LogicalShiftRight(h, 33))
+h = h * -4265267296055464877
+h = h.BitXor(LogicalShiftRight(h, 33))
+Return h.BitAnd(4294967295)
+End Function
+
+## Logical (unsigned) right shift. Objo's ShiftRight is arithmetic, so the
+## sign bits are masked off afterwards to match the unsigned C form.
+Private Shared Function LogicalShiftRight(value As Integer, count As Integer) As Integer
+Return value.ShiftRight(count).BitAnd((1.ShiftLeft(64 - count)) - 1)
+End Function
+End Class

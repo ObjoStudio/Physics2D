@@ -1,0 +1,241 @@
+# Stage 3 foundation container workloads.
+#
+# Each workload drives one foundation container through the operation mix
+# later engine subsystems will use: slot churn with generations, bit-set
+# marking and iteration, pair-key deduplication, and scratch-list arena
+# usage. Every iteration rebuilds from a cleared state, so each measured
+# iteration performs identical work and produces an identical folded
+# checksum. Capacities are warmed in Prepare so measured iterations never
+# allocate.
+Import Physics2D
+
+Abstract Class Stage3Workload
+## Checksum sample buffer, preallocated by PrepareSamples.
+Property Samples() As Double
+## Number of valid samples in the buffer.
+Property SampleCount As Integer
+
+## Rebuilds workload state and reserves all capacity.
+Abstract Sub Prepare()
+
+## Runs one workload iteration, appending checksum samples.
+Abstract Sub RunKernels()
+
+## Allocates the shared checksum sample buffer. Call from Prepare.
+Sub PrepareSamples()
+Me.Samples = New Array(Of Double)
+Me.Samples.Reserve(16)
+For i As Integer = 1 To 16
+Me.Samples.Append(0.0)
+Next i
+Me.SampleCount = 0
+End Sub
+
+## Resets the sample buffer and runs all kernels once.
+Sub Execute()
+Me.SampleCount = 0
+Me.RunKernels()
+End Sub
+
+## Appends one checksum sample.
+Sub AddSample(value As Double)
+Me.Samples[Me.SampleCount] = value
+Me.SampleCount = Me.SampleCount + 1
+End Sub
+
+## Folds the appended samples into a deterministic checksum.
+Function FoldedChecksum() As Integer
+Return Stage2Config.FoldSamples(Stage2Config.NewChecksum(), Me.Samples, Me.SampleCount)
+End Function
+End Class
+
+## Churns a GenerationalPool: sequential allocation, every-third free,
+## replacement reuse, then a generation-tallied fold.
+Class SlotPoolWorkload Inherits Stage3Workload
+## Slot count allocated each iteration.
+Const SLOT_COUNT As Integer = 4096
+## Replacement allocations that reuse freed slots.
+Const REPLACEMENTS As Integer = 1365
+## Pool under test.
+Property Pool As GenerationalPool
+## Live slot bookkeeping used to drive frees.
+Property LiveSlots As IntegerList
+
+## Builds the pool and warms every capacity.
+Sub Prepare()
+Me.Pool = New GenerationalPool(SLOT_COUNT)
+Me.LiveSlots = New IntegerList(SLOT_COUNT)
+Me.PrepareSamples()
+End Sub
+
+## Runs one full churn iteration.
+Sub RunKernels()
+Me.Pool.Clear()
+Me.LiveSlots.Clear()
+For i As Integer = 1 To SLOT_COUNT
+Me.LiveSlots.Append(Me.Pool.AllocSlot())
+Next i
+For i As Integer = SLOT_COUNT - 1 To 0 Step -1
+If (i Mod 3) = 2 Then
+Me.Pool.FreeSlot(Me.LiveSlots.Items[i])
+Me.LiveSlots.RemoveSwap(i)
+End If
+Next i
+For i As Integer = 1 To REPLACEMENTS
+Me.LiveSlots.Append(Me.Pool.AllocSlot())
+Next i
+Var tally As Double = 0.0
+For i As Integer = 0 To Me.LiveSlots.Count - 1
+Var slot As Integer = Me.LiveSlots.Items[i]
+tally = tally + (Me.Pool.GenerationOf(slot) * (slot + 1)).ToDouble()
+Next i
+Me.AddSample(tally)
+Me.AddSample(Me.Pool.SlotCount().ToDouble())
+Me.AddSample(Me.Pool.SlotCapacity().ToDouble())
+End Sub
+End Class
+
+## Marks, clears, unions, and iterates a 16k bit set with deterministic
+## stride patterns.
+Class BitSetWorkload Inherits Stage3Workload
+## Bits addressed each iteration.
+Const BIT_COUNT As Integer = 16384
+## Primary set under test.
+Property SetA As BitSet
+## Union source set.
+Property SetB As BitSet
+## Preallocated iteration sink.
+Property Sink As IntegerList
+
+## Builds the sets and warms every capacity.
+Sub Prepare()
+Me.SetA = New BitSet(BIT_COUNT)
+Me.SetB = New BitSet(BIT_COUNT)
+Me.Sink = New IntegerList(BIT_COUNT)
+Me.PrepareSamples()
+End Sub
+
+## Runs one marking and iteration pass.
+Sub RunKernels()
+Me.SetA.SetCountAndClear(BIT_COUNT)
+Me.SetB.SetCountAndClear(BIT_COUNT)
+Me.Sink.Clear()
+For i As Integer = 0 To BIT_COUNT - 1
+Me.SetA.SetBit((i * 7) Mod BIT_COUNT)
+Next i
+For i As Integer = 0 To BIT_COUNT - 1 Step 5
+Me.SetA.ClearBit((i * 3) Mod BIT_COUNT)
+Next i
+For i As Integer = 0 To 4095
+Me.SetB.SetBit((i * 4 + 1) Mod BIT_COUNT)
+Next i
+Me.SetA.InPlaceUnion(Me.SetB)
+Me.SetA.CollectSetBits(Me.Sink)
+Var tally As Double = 0.0
+For i As Integer = 0 To Me.Sink.Count - 1
+tally = tally + Me.Sink.Items[i].ToDouble()
+Next i
+Me.AddSample(tally)
+Me.AddSample(Me.SetA.CountSetBits().ToDouble())
+Me.AddSample(Me.SetB.CountSetBits().ToDouble())
+Me.AddSample(Me.Sink.Count.ToDouble())
+End Sub
+End Class
+
+## Adds, removes, and probes pair keys through a presized PairKeySet.
+Class PairKeySetWorkload Inherits Stage3Workload
+## Distinct pair keys cycled each iteration.
+Const KEY_COUNT As Integer = 2000
+## Contains probes per iteration.
+Const PROBES As Integer = 1000
+## Set under test, presized so no growth happens mid-iteration.
+Property PairSet As PairKeySet
+## Stable key list reused every iteration.
+Property Keys As IntegerList
+
+## Builds the set and key list.
+Sub Prepare()
+Me.PairSet = New PairKeySet(8192)
+Me.Keys = New IntegerList(KEY_COUNT)
+For i As Integer = 1 To KEY_COUNT
+Me.Keys.Append(PairKeySet.PairKey(i, KEY_COUNT + i))
+Next i
+Me.PrepareSamples()
+End Sub
+
+## Runs one add/remove/probe iteration.
+Sub RunKernels()
+Me.PairSet.Clear()
+Var hits As Integer = 0
+For i As Integer = 0 To Me.Keys.Count - 1
+If Not Me.PairSet.Add(Me.Keys.Items[i]) Then
+hits = hits + 1
+End If
+Next i
+For i As Integer = 0 To Me.Keys.Count - 1 Step 4
+Me.PairSet.Remove(Me.Keys.Items[i])
+Next i
+For i As Integer = 0 To PROBES - 1
+If Me.PairSet.Contains(Me.Keys.Items[i]) Then
+hits = hits + 1
+End If
+Next i
+For i As Integer = 1 To Me.Keys.Count - 1 Step 2
+If Not Me.PairSet.Add(Me.Keys.Items[i]) Then
+hits = hits + 1
+End If
+Next i
+Me.AddSample(hits.ToDouble())
+Me.AddSample(Me.PairSet.Count.ToDouble())
+End Sub
+End Class
+
+## Exercises IntegerList and DoubleList as scratch arenas: clear, fill,
+## scattered swap removal, pops, and strided folds.
+Class ScratchListWorkload Inherits Stage3Workload
+## Elements appended each iteration.
+Const ELEMENTS As Integer = 10000
+## Swap removals per iteration.
+Const REMOVALS As Integer = 3000
+## Pops per iteration.
+Const POPS As Integer = 100
+## Integer scratch list.
+Property Ints As IntegerList
+## Double scratch list.
+Property Dbls As DoubleList
+
+## Builds both lists and warms capacity.
+Sub Prepare()
+Me.Ints = New IntegerList(ELEMENTS)
+Me.Dbls = New DoubleList(ELEMENTS)
+Me.PrepareSamples()
+End Sub
+
+## Runs one fill and drain iteration.
+Sub RunKernels()
+Me.Ints.Clear()
+Me.Dbls.Clear()
+For i As Integer = 0 To ELEMENTS - 1
+Me.Ints.Append(i)
+Me.Dbls.Append(i.ToDouble() * 0.5)
+Next i
+For k As Integer = REMOVALS - 1 To 0 Step -1
+Var index As Integer = (k * 13) Mod Me.Ints.Count
+Me.Ints.RemoveSwap(index)
+Me.Dbls.RemoveSwap(index)
+Next k
+For i As Integer = 1 To POPS
+Me.Ints.Pop()
+Me.Dbls.Pop()
+Next i
+Var intTally As Double = 0.0
+Var dblTally As Double = 0.0
+For i As Integer = 0 To Me.Ints.Count - 1 Step 17
+intTally = intTally + Me.Ints.Items[i].ToDouble()
+dblTally = dblTally + Me.Dbls.Items[i]
+Next i
+Me.AddSample(intTally)
+Me.AddSample(dblTally)
+Me.AddSample(Me.Ints.Count.ToDouble())
+End Sub
+End Class

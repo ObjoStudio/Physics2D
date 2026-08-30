@@ -1,0 +1,29 @@
+# Deterministic cosine/sine pair used to build rotations.
+#
+# Mirrors the upstream b2CosSin struct from include/box2d/math_functions.h.
+# Instances are small and reusable: warm code passes a caller-owned object
+# to PhysicsMaths.ComputeCosSin(radians, out) instead of allocating.
+Class CosSin
+## Sine of the angle.
+Property Sin As Double
+## Cosine of the angle.
+Property Cos As Double
+
+## Creates a pair with both components zero.
+Constructor()
+Me.Sin = 0.0
+Me.Cos = 0.0
+End Constructor
+
+## Creates a pair from components.
+Constructor(sinValue As Double, cosValue As Double)
+Me.Sin = sinValue
+Me.Cos = cosValue
+End Constructor
+
+## Resets both components.
+Sub SetPair(sinValue As Double, cosValue As Double)
+Me.Sin = sinValue
+Me.Cos = cosValue
+End Sub
+End Class

@@ -1,0 +1,230 @@
+# Tests for PairKeySet: key semantics, add/remove/contains behaviour, a
+# seeded comparison against a simple scan-list reference implementation,
+# collision and growth pressure, clear reuse, and zero-allocation after
+# warm-up.
+Import Physics2D
+
+Class FoundationPairKeySetTests Inherits TestCase
+Public Sub TestPairKeyIsOrderIndependentAndNonzero()
+Assert.Equal(PairKeySet.PairKey(3, 7), PairKeySet.PairKey(7, 3))
+Assert.Equal(4294967298, PairKeySet.PairKey(1, 2))
+Assert.Equal(21474836489, PairKeySet.PairKey(9, 5))
+Try
+PairKeySet.PairKey(0, 0)
+Assert.Fail("PairKey(0, 0) should throw")
+Catch e As Exception
+Assert.Contains("reserved", e.Message)
+End Try
+End Sub
+
+Public Sub TestAddContainsRemoveLifecycle()
+Var keySet As New PairKeySet(16)
+Var key As Integer = PairKeySet.PairKey(1, 2)
+Assert.Equal(False, keySet.Add(key))
+Assert.Equal(True, keySet.Contains(key))
+Assert.Equal(True, keySet.Add(key))
+Assert.Equal(1, keySet.Count)
+Assert.Equal(True, keySet.Remove(key))
+Assert.Equal(False, keySet.Contains(key))
+Assert.Equal(False, keySet.Remove(key))
+Assert.Equal(0, keySet.Count)
+keySet.Validate()
+End Sub
+
+Public Sub TestKeyZeroIsRejected()
+Var keySet As New PairKeySet(16)
+Try
+keySet.Add(0)
+Assert.Fail("Add(0) should throw")
+Catch e As Exception
+Assert.Contains("reserved", e.Message)
+End Try
+Try
+keySet.Contains(0)
+Assert.Fail("Contains(0) should throw")
+Catch e As Exception
+Assert.Contains("reserved", e.Message)
+End Try
+# Upstream RemoveKey performs no zero-key assertion; a zero key simply
+# matches no stored entry.
+Assert.Equal(False, keySet.Remove(0))
+Assert.Equal(0, keySet.Count)
+keySet.Validate()
+End Sub
+
+Public Sub TestMatchesScanListReference()
+# Seeded operations over a bounded key space, checked after every
+# operation against a linear-scan reference list. This is the simple
+# reference implementation required by the stage gate.
+Var keySet As New PairKeySet(16)
+Var reference As New IntegerList(64)
+Var random As New TestRandom(90210)
+Var keySpace As Integer = 400
+For op As Integer = 0 To 19999
+Var a As Integer = random.NextInt(1, keySpace)
+Var b As Integer = random.NextInt(1, keySpace)
+Var key As Integer = PairKeySet.PairKey(a, b)
+Var choice As Integer = random.NextInt(0, 2)
+If choice = 0 Then
+Var referenceHad As Boolean = False
+For i As Integer = 0 To reference.Count - 1
+If reference.Items[i] = key Then
+referenceHad = True
+Exit For
+End If
+Next i
+Var added As Boolean = keySet.Add(key)
+Assert.Equal(referenceHad, added, "Add return must match reference")
+If Not referenceHad Then
+reference.Append(key)
+End If
+ElseIf choice = 1 Then
+Var referenceHad As Boolean = False
+For i As Integer = 0 To reference.Count - 1
+If reference.Items[i] = key Then
+referenceHad = True
+Exit For
+End If
+Next i
+Var removed As Boolean = keySet.Remove(key)
+Assert.Equal(referenceHad, removed, "Remove return must match reference")
+If referenceHad Then
+For i As Integer = 0 To reference.Count - 1
+If reference.Items[i] = key Then
+reference.RemoveSwap(i)
+Exit For
+End If
+Next i
+End If
+Else
+Var referenceHas As Boolean = False
+For i As Integer = 0 To reference.Count - 1
+If reference.Items[i] = key Then
+referenceHas = True
+Exit For
+End If
+Next i
+Assert.Equal(referenceHas, keySet.Contains(key), "Contains must match reference")
+End If
+If op Mod 512 = 0 Then
+keySet.Validate()
+Assert.Equal(reference.Count, keySet.Count, "counts must match reference")
+End If
+Next op
+keySet.Validate()
+Assert.Equal(reference.Count, keySet.Count)
+End Sub
+
+Public Sub TestSequentialKeysGrowAndStayReachable()
+# Dense sequential keys exercise repeated capacity doubling and long probe
+# chains; after growth every key must still be reachable.
+Var keySet As New PairKeySet(16)
+Var keyCount As Integer = 4000
+For i As Integer = 1 To keyCount
+keySet.Add(PairKeySet.PairKey(i, keyCount + i))
+Next i
+Assert.Equal(keyCount, keySet.Count)
+keySet.Validate()
+For i As Integer = 1 To keyCount
+Assert.True(keySet.Contains(PairKeySet.PairKey(i, keyCount + i)), "key survived growth")
+Next i
+For i As Integer = 1 To keyCount Step 2
+Assert.True(keySet.Remove(PairKeySet.PairKey(i, keyCount + i)))
+Next i
+keySet.Validate()
+Assert.Equal(keyCount \ 2, keySet.Count)
+For i As Integer = 2 To keyCount Step 2
+Assert.True(keySet.Contains(PairKeySet.PairKey(i, keyCount + i)), "even key must remain")
+Next i
+End Sub
+
+Public Sub TestUpstreamPairFillRemoveSearch()
+# Port of test_table.c: fill every unordered pair from a 317-key span,
+# remove adjacent pairs, search with swapped key order, then remove all.
+Var span As Integer = 317
+Var itemCount As Integer = (span * span - span) \ 2
+Var keySet As New PairKeySet(16)
+For i As Integer = 0 To span - 1
+For j As Integer = i + 1 To span - 1
+keySet.Add(PairKeySet.PairKey(i, j))
+Next j
+Next i
+Assert.Equal(itemCount, keySet.Count)
+Var removedTotal As Integer = 0
+For i As Integer = 0 To span - 1
+For j As Integer = i + 1 To span - 1
+If j = i + 1 Then
+Assert.True(keySet.Remove(PairKeySet.PairKey(i, j)))
+removedTotal = removedTotal + 1
+End If
+Next j
+Next i
+Assert.Equal(itemCount - removedTotal, keySet.Count)
+For i As Integer = 0 To span - 1
+For j As Integer = i + 1 To span - 1
+Var key As Integer = PairKeySet.PairKey(j, i)
+If j = i + 1 Then
+Assert.False(keySet.Contains(key), "removed pair must be absent")
+Else
+Assert.True(keySet.Contains(key), "kept pair must be present")
+End If
+Next j
+Next i
+For i As Integer = 0 To span - 1
+For j As Integer = i + 1 To span - 1
+# Upstream removes every key and ignores the return value; adjacent
+# pairs were already removed above.
+keySet.Remove(PairKeySet.PairKey(i, j))
+Next j
+Next i
+Assert.Equal(0, keySet.Count)
+keySet.Validate()
+End Sub
+
+Public Sub TestClearAllowsReuse()
+Var keySet As New PairKeySet(16)
+keySet.Add(PairKeySet.PairKey(1, 2))
+keySet.Add(PairKeySet.PairKey(3, 4))
+Var capacity As Integer = keySet.Capacity()
+keySet.Clear()
+Assert.Equal(0, keySet.Count)
+Assert.Equal(capacity, keySet.Capacity())
+Assert.Equal(False, keySet.Contains(PairKeySet.PairKey(1, 2)))
+keySet.Add(PairKeySet.PairKey(5, 6))
+Assert.Equal(1, keySet.Count)
+keySet.Validate()
+End Sub
+
+Public Sub TestWarmOperationsAllocateNothing()
+# Pre-size the table above the peak so no growth happens during measured
+# work, then verify add/remove/contains churn allocates nothing.
+Var keySet As New PairKeySet(8192)
+Var keyCount As Integer = 2000
+Var keys As New IntegerList(keyCount)
+For i As Integer = 1 To keyCount
+keys.Append(PairKeySet.PairKey(i, keyCount + i))
+Next i
+For i As Integer = 0 To keys.Count - 1
+keySet.Add(keys.Items[i])
+Next i
+Var before As Integer = System.AllocationCount
+For round As Integer = 0 To 9
+keySet.Clear()
+For i As Integer = 0 To keys.Count - 1
+keySet.Add(keys.Items[i])
+Next i
+For i As Integer = 0 To keys.Count - 1 Step 2
+keySet.Remove(keys.Items[i])
+Next i
+For i As Integer = 0 To keys.Count - 1
+keySet.Contains(keys.Items[i])
+Next i
+For i As Integer = 1 To keys.Count - 1 Step 2
+keySet.Add(keys.Items[i])
+Next i
+Next round
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed pair key keySet operations must not allocate")
+keySet.Validate()
+End Sub
+End Class

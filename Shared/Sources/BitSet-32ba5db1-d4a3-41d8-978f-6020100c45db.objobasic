@@ -1,0 +1,165 @@
+# Bit set over 64-bit words, ported from Box2D 3.1.1 bitset.c/bitset.h.
+#
+# Used by the engine to mark solver-set membership, enlarged proxies, and
+# awake islands. Each word is one Objo Integer holding 64 bits; bit 63 is
+# handled with two's-complement arithmetic, so no special case is needed.
+#
+# Layout mirrors upstream: Words.Count is the word capacity, WordCount is
+# the number of words currently in use, and words above WordCount stay zero.
+# After capacity warm-up, set/clear/get/union/collect allocate nothing;
+# SetBitGrow and SetCountAndClear allocate only when capacity must grow.
+Class BitSet
+## Backing words. Its Count is the word capacity.
+Property Words() As Integer
+## Number of words currently in use in [0, WordCount).
+Property WordCount As Integer
+
+## Creates a set covering bit indices [0, bitCapacity) with all bits clear.
+## Unlike upstream, which creates an empty set and calls SetBitCountAndClear
+## before first use, the constructor makes the reserved range immediately
+## usable; SetCountAndClear remains the step-loop reset path.
+Constructor(bitCapacity As Integer)
+Me.Words = New Array(Of Integer)
+Me.WordCount = 0
+Var wordCapacity As Integer = (bitCapacity + 63) \ 64
+Me.ReserveWords(wordCapacity)
+Me.WordCount = wordCapacity
+End Constructor
+
+## Sets the used word count for the given bit count and clears those words.
+## Grows capacity with the upstream 1.5x policy when needed; capacity is
+## otherwise retained so repeated steps reuse the same storage.
+Sub SetCountAndClear(bitCount As Integer)
+Var wordCount As Integer = (bitCount + 63) \ 64
+If Me.Words.Count < wordCount Then
+Me.ReserveWords(bitCount + (bitCount \ 2))
+End If
+Me.WordCount = wordCount
+For i As Integer = 0 To Me.WordCount - 1
+Me.Words[i] = 0
+Next i
+End Sub
+
+## Sets one bit. The bit must be inside the current word count.
+Sub SetBit(bitIndex As Integer)
+Var wordIndex As Integer = bitIndex \ 64
+Var bitMask As Integer = 1.ShiftLeft(bitIndex Mod 64)
+If wordIndex >= Me.WordCount Then
+Throw New InvalidArgumentException("BitSet.SetBit index outside word count")
+End If
+Me.Words[wordIndex] = Me.Words[wordIndex].BitOr(bitMask)
+End Sub
+
+## Sets one bit, growing the used word count (and capacity when needed).
+Sub SetBitGrow(bitIndex As Integer)
+Var wordIndex As Integer = bitIndex \ 64
+Var bitMask As Integer = 1.ShiftLeft(bitIndex Mod 64)
+If wordIndex >= Me.WordCount Then
+Me.Grow(wordIndex + 1)
+End If
+Me.Words[wordIndex] = Me.Words[wordIndex].BitOr(bitMask)
+End Sub
+
+## Clears one bit. Clearing beyond the used word count does nothing,
+## matching upstream.
+Sub ClearBit(bitIndex As Integer)
+Var wordIndex As Integer = bitIndex \ 64
+Var bitMask As Integer = 1.ShiftLeft(bitIndex Mod 64)
+If wordIndex >= Me.WordCount Then
+Return
+End If
+Me.Words[wordIndex] = Me.Words[wordIndex].BitAnd(bitMask.BitNot())
+End Sub
+
+## Returns True when the bit is set. Bits beyond the used word count are clear.
+Function GetBit(bitIndex As Integer) As Boolean
+Var wordIndex As Integer = bitIndex \ 64
+If wordIndex >= Me.WordCount Then
+Return False
+End If
+Return Me.Words[wordIndex].BitAnd(1.ShiftLeft(bitIndex Mod 64)) <> 0
+End Function
+
+## Grows the used word count to exactly wordCount words (covering bits up to
+## wordCount * 64 - 1), expanding capacity by the upstream 1.5x policy when
+## required. Existing bits are preserved. Matches upstream b2GrowBitSet.
+Sub Grow(wordCount As Integer)
+If wordCount <= Me.WordCount Then
+Throw New InvalidArgumentException("BitSet.Grow count must exceed current words")
+End If
+If Me.Words.Count < wordCount Then
+Me.ReserveWords(wordCount + (wordCount \ 2))
+End If
+For i As Integer = Me.WordCount To wordCount - 1
+Me.Words[i] = 0
+Next i
+Me.WordCount = wordCount
+End Sub
+
+## Union of other into this set in place. Both sets must have the same used
+## word count, matching upstream b2InPlaceUnion.
+Sub InPlaceUnion(other As BitSet)
+If other.WordCount <> Me.WordCount Then
+Throw New InvalidArgumentException("BitSet union word counts differ")
+End If
+For i As Integer = 0 To Me.WordCount - 1
+Me.Words[i] = Me.Words[i].BitOr(other.Words[i])
+Next i
+End Sub
+
+## Appends every set bit index, ascending, to the sink list without clearing
+## it. Clear the sink first when reusing it across steps. Allocation-free
+## once the sink has capacity.
+Sub CollectSetBits(sink As IntegerList)
+For i As Integer = 0 To Me.WordCount - 1
+Var word As Integer = Me.Words[i]
+While word <> 0
+Var bit As Integer = PhysicsMaths.TrailingZeros(word)
+sink.Append(i * 64 + bit)
+word = word.BitAnd(word - 1)
+Wend
+Next i
+End Sub
+
+## Number of set bits.
+Function CountSetBits() As Integer
+Var tally As Integer = 0
+For i As Integer = 0 To Me.WordCount - 1
+Var word As Integer = Me.Words[i]
+While word <> 0
+word = word.BitAnd(word - 1)
+tally = tally + 1
+Wend
+Next i
+Return tally
+End Function
+
+## True when at least one bit is set.
+Function AnySet() As Boolean
+For i As Integer = 0 To Me.WordCount - 1
+If Me.Words[i] <> 0 Then
+Return True
+End If
+Next i
+Return False
+End Function
+
+## Validates internal invariants: word bounds and zeroed words above WordCount.
+Sub Validate()
+If Me.WordCount < 0 Or Me.WordCount > Me.Words.Count Then
+Throw New RuntimeException("BitSet word count outside capacity")
+End If
+For i As Integer = Me.WordCount To Me.Words.Count - 1
+If Me.Words[i] <> 0 Then
+Throw New RuntimeException("BitSet has bits above the used word count")
+End If
+Next i
+End Sub
+
+## Ensures room for wordCapacity words, extending with zeros when needed.
+Private Sub ReserveWords(wordCapacity As Integer)
+While Me.Words.Count < wordCapacity
+Me.Words.Append(0)
+Wend
+End Sub
+End Class
