@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage2Config",
+  "Id": "4ad020f5-ba6e-4c29-82e3-e88ca679dae8",
+  "Kind": "Module",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage2Config-4ad020f5.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

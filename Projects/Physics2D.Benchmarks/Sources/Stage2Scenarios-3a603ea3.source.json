@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage2Scenarios",
+  "Id": "3a603ea3-2531-4a01-ae7b-94c8d97cc394",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage2Scenarios-3a603ea3.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

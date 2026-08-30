@@ -1,0 +1,198 @@
+# Shared kernel support for the Stage 2 representation bake-off.
+#
+# The pair grid and contact data are representation-independent benchmark
+# infrastructure: every candidate uses identical instances so only the body
+# state representation differs between candidates.
+Class Stage2PairGrid
+## Flattened bucket storage, BUCKET_CAPACITY bodies per cell.
+Property BucketData() As Integer
+## Bodies stored per cell.
+Property BucketCounts() As Integer
+## Deduplication table keys; 0 marks an empty slot.
+Property Keys() As Integer
+## Occupied table slots, reused to clear the table cheaply.
+Property UsedSlots() As Integer
+## Number of occupied table slots.
+Property UsedCount As Integer
+## Unique pairs found by the last GeneratePairs call.
+Property PairCount As Integer
+## Sum of inserted pair keys, proving table traffic.
+Property KeySum As Integer
+
+## Preallocates every buffer so warm generation passes never allocate.
+Constructor()
+Me.BucketData = New Array(Of Integer)
+Me.BucketCounts = New Array(Of Integer)
+Me.Keys = New Array(Of Integer)
+Me.UsedSlots = New Array(Of Integer)
+Var cells As Integer = Stage2Config.GRID_CELLS * Stage2Config.GRID_CELLS
+Me.BucketData.Reserve(cells * Stage2Config.BUCKET_CAPACITY)
+Me.BucketCounts.Reserve(cells)
+Me.Keys.Reserve(Stage2Config.PAIR_TABLE_CAPACITY)
+Me.UsedSlots.Reserve(Stage2Config.PAIR_TABLE_CAPACITY)
+For i As Integer = 1 To cells * Stage2Config.BUCKET_CAPACITY
+Me.BucketData.Append(0)
+Next i
+For i As Integer = 1 To cells
+Me.BucketCounts.Append(0)
+Next i
+For i As Integer = 1 To Stage2Config.PAIR_TABLE_CAPACITY
+Me.Keys.Append(0)
+Me.UsedSlots.Append(0)
+Next i
+Me.UsedCount = 0
+End Constructor
+
+## Empties every grid cell before a generation pass.
+Sub ClearCells()
+For i As Integer = 0 To Me.BucketCounts.Count - 1
+Me.BucketCounts[i] = 0
+Next i
+End Sub
+
+## Adds one body to its cell. Positions outside the grid clamp to the edge.
+Sub AddBody(index As Integer, px As Double, py As Double)
+Var cx As Integer = Integer(Maths.Floor(px / Stage2Config.CELL_SIZE))
+Var cy As Integer = Integer(Maths.Floor(py / Stage2Config.CELL_SIZE))
+If cx < 0 Then
+cx = 0
+End If
+If cx > Stage2Config.GRID_CELLS - 1 Then
+cx = Stage2Config.GRID_CELLS - 1
+End If
+If cy < 0 Then
+cy = 0
+End If
+If cy > Stage2Config.GRID_CELLS - 1 Then
+cy = Stage2Config.GRID_CELLS - 1
+End If
+Var cell As Integer = cy * Stage2Config.GRID_CELLS + cx
+Var slot As Integer = Me.BucketCounts[cell]
+If slot < Stage2Config.BUCKET_CAPACITY Then
+Me.BucketData[cell * Stage2Config.BUCKET_CAPACITY + slot] = index
+Me.BucketCounts[cell] = slot + 1
+End If
+End Sub
+
+## Generates candidate pairs from populated cells. Each unordered pair is
+## produced at most once by construction, and the deduplication table proves
+## that while exercising the probe pattern used by the broad phase.
+Sub GeneratePairs()
+Me.PairCount = 0
+Me.KeySum = 0
+For i As Integer = 0 To Me.UsedCount - 1
+Me.Keys[Me.UsedSlots[i]] = 0
+Next i
+Me.UsedCount = 0
+For cy As Integer = 0 To Stage2Config.GRID_CELLS - 1
+For cx As Integer = 0 To Stage2Config.GRID_CELLS - 1
+Var cell As Integer = cy * Stage2Config.GRID_CELLS + cx
+Var n As Integer = Me.BucketCounts[cell]
+If n > 0 Then
+Var base As Integer = cell * Stage2Config.BUCKET_CAPACITY
+For a As Integer = 0 To n - 1
+For b As Integer = a + 1 To n - 1
+Me.InsertPair(Me.BucketData[base + a], Me.BucketData[base + b])
+Next b
+Next a
+If cx < Stage2Config.GRID_CELLS - 1 Then
+Me.InsertCellPairs(cell, cell + 1)
+End If
+If cy < Stage2Config.GRID_CELLS - 1 Then
+Me.InsertCellPairs(cell, cell + Stage2Config.GRID_CELLS)
+End If
+If cx < Stage2Config.GRID_CELLS - 1 And cy < Stage2Config.GRID_CELLS - 1 Then
+Me.InsertCellPairs(cell, cell + Stage2Config.GRID_CELLS + 1)
+End If
+End If
+Next cx
+Next cy
+End Sub
+
+## Inserts every body pair between two neighbouring cells.
+Private Sub InsertCellPairs(cellA As Integer, cellB As Integer)
+Var baseA As Integer = cellA * Stage2Config.BUCKET_CAPACITY
+Var baseB As Integer = cellB * Stage2Config.BUCKET_CAPACITY
+Var nA As Integer = Me.BucketCounts[cellA]
+Var nB As Integer = Me.BucketCounts[cellB]
+For a As Integer = 0 To nA - 1
+For b As Integer = 0 To nB - 1
+Me.InsertPair(Me.BucketData[baseA + a], Me.BucketData[baseB + b])
+Next b
+Next a
+End Sub
+
+## Deduplicates and counts one candidate pair.
+Private Sub InsertPair(indexA As Integer, indexB As Integer)
+Var key As Integer = indexA * Stage2Config.PAIR_BODY_COUNT + indexB + 1
+Var slot As Integer = (key * 1099511628211).BitAnd(Stage2Config.PAIR_TABLE_CAPACITY - 1)
+While Me.Keys[slot] <> 0 And Me.Keys[slot] <> key
+slot = (slot + 1).BitAnd(Stage2Config.PAIR_TABLE_CAPACITY - 1)
+Wend
+If Me.Keys[slot] = 0 Then
+Me.Keys[slot] = key
+Me.UsedSlots[Me.UsedCount] = slot
+Me.UsedCount = Me.UsedCount + 1
+Me.PairCount = Me.PairCount + 1
+Me.KeySum = Me.KeySum + key
+End If
+End Sub
+End Class
+
+# Deterministic contact inputs shared by every candidate's constraint kernel.
+Class Stage2ContactData
+## Body index of the first anchor.
+Property BodyA() As Integer
+## Body index of the second anchor.
+Property BodyB() As Integer
+## Anchor A x offset from body A origin.
+Property AnchorAX() As Double
+## Anchor A y offset from body A origin.
+Property AnchorAY() As Double
+## Anchor B x offset from body B origin.
+Property AnchorBX() As Double
+## Anchor B y offset from body B origin.
+Property AnchorBY() As Double
+## Contact normal x component.
+Property NormalX() As Double
+## Contact normal y component.
+Property NormalY() As Double
+## Accumulated normal impulse (warm-start data).
+Property Impulse() As Double
+
+## Builds deterministic contact inputs and reserves every array.
+Sub Prepare()
+Me.BodyA = New Array(Of Integer)
+Me.BodyB = New Array(Of Integer)
+Me.AnchorAX = New Array(Of Double)
+Me.AnchorAY = New Array(Of Double)
+Me.AnchorBX = New Array(Of Double)
+Me.AnchorBY = New Array(Of Double)
+Me.NormalX = New Array(Of Double)
+Me.NormalY = New Array(Of Double)
+Me.Impulse = New Array(Of Double)
+Me.BodyA.Reserve(Stage2Config.CONTACT_COUNT)
+Me.BodyB.Reserve(Stage2Config.CONTACT_COUNT)
+Me.AnchorAX.Reserve(Stage2Config.CONTACT_COUNT)
+Me.AnchorAY.Reserve(Stage2Config.CONTACT_COUNT)
+Me.AnchorBX.Reserve(Stage2Config.CONTACT_COUNT)
+Me.AnchorBY.Reserve(Stage2Config.CONTACT_COUNT)
+Me.NormalX.Reserve(Stage2Config.CONTACT_COUNT)
+Me.NormalY.Reserve(Stage2Config.CONTACT_COUNT)
+Me.Impulse.Reserve(Stage2Config.CONTACT_COUNT)
+For c As Integer = 0 To Stage2Config.CONTACT_COUNT - 1
+Var a As Integer = (c * 7) Mod Stage2Config.BODY_COUNT
+Var b As Integer = (a + 3 + (c Mod 5)) Mod Stage2Config.BODY_COUNT
+Var ang As Double = (c Mod 64) * 0.09817477042468103
+Me.BodyA.Append(a)
+Me.BodyB.Append(b)
+Me.AnchorAX.Append(((c Mod 9) - 4) * 0.1)
+Me.AnchorAY.Append(((c Mod 7) - 3) * 0.1)
+Me.AnchorBX.Append(((c Mod 11) - 5) * 0.1)
+Me.AnchorBY.Append(((c Mod 13) - 6) * 0.1)
+Me.NormalX.Append(Maths.Cos(ang))
+Me.NormalY.Append(Maths.Sin(ang))
+Me.Impulse.Append((c Mod 100) * 0.001)
+Next c
+End Sub
+End Class

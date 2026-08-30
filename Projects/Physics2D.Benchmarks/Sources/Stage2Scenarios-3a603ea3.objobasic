@@ -1,0 +1,285 @@
+# Stage 2 representation bake-off scenarios.
+#
+# Thin BenchmarkScenario wrappers around the six body-state store candidates
+# and the two tree candidates. Every scenario runs five unmeasured warm-up
+# iterations and twenty measured iterations; the folded store checksums prove
+# all candidates performed identical work.
+Class Stage2ObjectNodesScenario Inherits BenchmarkScenario
+## Wrapped store candidate.
+Private Property mStore As Stage2BodyStore
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage2-object-nodes"
+Me.Description = "10k bodies as objects with Vector2 children running full body kernels."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mStore = New ObjectNodeBodyStore
+End Constructor
+
+## Describes the shared body kernel parameters.
+Override Function Parameters() As String
+Return "bodies=10000,substeps=4,contacts=1500"
+End Function
+
+## Builds store state.
+Override Sub Prepare()
+Me.mStore.Prepare()
+End Sub
+
+## Runs one measured iteration of every body kernel.
+Override Sub Run()
+Me.mStore.Execute()
+End Sub
+
+## Returns the store's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mStore.FoldedChecksum()
+End Function
+End Class
+
+Class Stage2VectorArraysScenario Inherits BenchmarkScenario
+## Wrapped store candidate.
+Private Property mStore As Stage2BodyStore
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage2-vector-arrays"
+Me.Description = "10k bodies as parallel Vector2 and scalar arrays running full body kernels."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mStore = New VectorArrayBodyStore
+End Constructor
+
+## Describes the shared body kernel parameters.
+Override Function Parameters() As String
+Return "bodies=10000,substeps=4,contacts=1500"
+End Function
+
+## Builds store state.
+Override Sub Prepare()
+Me.mStore.Prepare()
+End Sub
+
+## Runs one measured iteration of every body kernel.
+Override Sub Run()
+Me.mStore.Execute()
+End Sub
+
+## Returns the store's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mStore.FoldedChecksum()
+End Function
+End Class
+
+Class Stage2ScalarArraysScenario Inherits BenchmarkScenario
+## Wrapped store candidate.
+Private Property mStore As Stage2BodyStore
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage2-scalar-arrays"
+Me.Description = "10k bodies as parallel x/y double arrays running full body kernels."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mStore = New ScalarArrayBodyStore
+End Constructor
+
+## Describes the shared body kernel parameters.
+Override Function Parameters() As String
+Return "bodies=10000,substeps=4,contacts=1500"
+End Function
+
+## Builds store state.
+Override Sub Prepare()
+Me.mStore.Prepare()
+End Sub
+
+## Runs one measured iteration of every body kernel.
+Override Sub Run()
+Me.mStore.Execute()
+End Sub
+
+## Returns the store's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mStore.FoldedChecksum()
+End Function
+End Class
+
+Class Stage2FlatBlockScenario Inherits BenchmarkScenario
+## Wrapped store candidate.
+Private Property mStore As Stage2BodyStore
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage2-flat-block"
+Me.Description = "10k bodies in one flattened double array with stride 11 running full body kernels."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mStore = New FlatBlockBodyStore
+End Constructor
+
+## Describes the shared body kernel parameters.
+Override Function Parameters() As String
+Return "bodies=10000,substeps=4,contacts=1500"
+End Function
+
+## Builds store state.
+Override Sub Prepare()
+Me.mStore.Prepare()
+End Sub
+
+## Runs one measured iteration of every body kernel.
+Override Sub Run()
+Me.mStore.Execute()
+End Sub
+
+## Returns the store's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mStore.FoldedChecksum()
+End Function
+End Class
+
+Class Stage2DenseNodesScenario Inherits BenchmarkScenario
+## Wrapped store candidate.
+Private Property mStore As Stage2BodyStore
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage2-dense-nodes"
+Me.Description = "10k bodies as compact scalar-only node objects running full body kernels."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mStore = New DenseNodeBodyStore
+End Constructor
+
+## Describes the shared body kernel parameters.
+Override Function Parameters() As String
+Return "bodies=10000,substeps=4,contacts=1500"
+End Function
+
+## Builds store state.
+Override Sub Prepare()
+Me.mStore.Prepare()
+End Sub
+
+## Runs one measured iteration of every body kernel.
+Override Sub Run()
+Me.mStore.Execute()
+End Sub
+
+## Returns the store's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mStore.FoldedChecksum()
+End Function
+End Class
+
+Class Stage2MemoryBlockScenario Inherits BenchmarkScenario
+## Wrapped store candidate.
+Private Property mStore As Stage2BodyStore
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage2-memory-block"
+Me.Description = "10k bodies in one MemoryBlock with 88-byte stride running full body kernels."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mStore = New MemoryBlockBodyStore
+End Constructor
+
+## Describes the shared body kernel parameters.
+Override Function Parameters() As String
+Return "bodies=10000,substeps=4,contacts=1500"
+End Function
+
+## Builds store state.
+Override Sub Prepare()
+Me.mStore.Prepare()
+End Sub
+
+## Runs one measured iteration of every body kernel.
+Override Sub Run()
+Me.mStore.Execute()
+End Sub
+
+## Returns the store's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mStore.FoldedChecksum()
+End Function
+End Class
+
+Class Stage2TreeIndexedScenario Inherits BenchmarkScenario
+## Wrapped tree candidate.
+Private Property mTree As Stage2TreeCandidate
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage2-tree-indexed"
+Me.Description = "Dynamic tree workload over a parallel-array node pool with free list."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mTree = New IndexedTreeCandidate
+End Constructor
+
+## Describes the shared tree workload parameters.
+Override Function Parameters() As String
+Return "proxies=2000,queries=1000,moves=800,churn=200"
+End Function
+
+## Builds tree storage.
+Override Sub Prepare()
+Me.mTree.Prepare()
+End Sub
+
+## Runs one measured iteration of the tree workload.
+Override Sub Run()
+Me.mTree.Execute()
+End Sub
+
+## Returns the tree's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mTree.FoldedChecksum()
+End Function
+End Class
+
+Class Stage2TreeLinkedScenario Inherits BenchmarkScenario
+## Wrapped tree candidate.
+Private Property mTree As Stage2TreeCandidate
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage2-tree-linked"
+Me.Description = "Dynamic tree workload over one allocated node object per node."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mTree = New LinkedTreeCandidate
+End Constructor
+
+## Describes the shared tree workload parameters.
+Override Function Parameters() As String
+Return "proxies=2000,queries=1000,moves=800,churn=200"
+End Function
+
+## Builds tree storage.
+Override Sub Prepare()
+Me.mTree.Prepare()
+End Sub
+
+## Runs one measured iteration of the tree workload.
+Override Sub Run()
+Me.mTree.Execute()
+End Sub
+
+## Returns the tree's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mTree.FoldedChecksum()
+End Function
+End Class

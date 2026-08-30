@@ -38,6 +38,14 @@ Wend
 
 Var runner As New BenchmarkRunner
 runner.Add(New RunnerSelfTestScenario(10000))
+runner.Add(New Stage2ObjectNodesScenario())
+runner.Add(New Stage2VectorArraysScenario())
+runner.Add(New Stage2ScalarArraysScenario())
+runner.Add(New Stage2FlatBlockScenario())
+runner.Add(New Stage2DenseNodesScenario())
+runner.Add(New Stage2MemoryBlockScenario())
+runner.Add(New Stage2TreeIndexedScenario())
+runner.Add(New Stage2TreeLinkedScenario())
 
 Var results() As BenchmarkResult = runner.RunAll()
 

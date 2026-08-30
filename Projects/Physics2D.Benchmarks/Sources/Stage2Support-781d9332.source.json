@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage2Support",
+  "Id": "781d9332-6a09-4119-b678-be885f889138",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage2Support-781d9332.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

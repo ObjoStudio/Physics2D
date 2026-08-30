@@ -1,0 +1,1132 @@
+# Stage 2 representation bake-off broad-phase tree candidates.
+#
+# Both candidates port the Box2D 3.1.1 dynamic tree algorithms faithfully:
+# the cost-based FindBestSibling descent, the four-case RotateNodes rebalance,
+# InsertLeaf with ancestor refit, and RemoveLeaf with sibling hoisting. The
+# workload, random stream, and sample order are identical, so both candidates
+# must produce the same folded checksum; only storage and timing differ.
+#
+# Candidate 6a keeps the node pool in parallel arrays with a free list.
+# Candidate 6b keeps one allocated node object per tree node and drops
+# references on removal, exercising allocation and cycle collection.
+Abstract Class Stage2TreeCandidate
+## Checksum sample buffer, preallocated by Prepare.
+Property Samples() As Double
+## Number of valid samples in the buffer.
+Property SampleCount As Integer
+## Traversal stack shared by the query and metric passes.
+Property Stack() As Integer
+
+## Allocates the sample buffer and traversal stack. Call from Prepare.
+Sub PrepareCommon()
+Me.Samples = New Array(Of Double)
+Me.Samples.Reserve(8)
+For i As Integer = 1 To 8
+Me.Samples.Append(0.0)
+Next i
+Me.SampleCount = 0
+Me.Stack = New Array(Of Integer)
+Me.Stack.Reserve(Stage2Config.TREE_STACK_CAPACITY)
+For i As Integer = 1 To Stage2Config.TREE_STACK_CAPACITY
+Me.Stack.Append(-1)
+Next i
+End Sub
+
+## Resets the sample buffer and runs the full tree workload once.
+Sub Execute()
+Me.SampleCount = 0
+Me.RunWorkload()
+End Sub
+
+## Appends one checksum sample.
+Sub AddSample(value As Double)
+Me.Samples[Me.SampleCount] = value
+Me.SampleCount = Me.SampleCount + 1
+End Sub
+
+## Folds the appended samples into a deterministic checksum.
+Function FoldedChecksum() As Integer
+Return Stage2Config.FoldSamples(Stage2Config.NewChecksum(), Me.Samples, Me.SampleCount)
+End Function
+
+## Returns the larger of two integers.
+Function MaxInt(a As Integer, b As Integer) As Integer
+If a > b Then
+Return a
+End If
+Return b
+End Function
+
+## Runs the full deterministic tree workload once and appends four samples.
+Sub RunWorkload()
+Me.ResetTree()
+For i As Integer = 0 To Stage2Config.TREE_PROXY_COUNT - 1
+Me.InsertProxy(i)
+Next i
+Var r As Integer = 12345
+For k As Integer = 1 To Stage2Config.TREE_MOVE_COUNT
+r = Stage2Config.NextRandom(r)
+Var j As Integer = r.BitAnd(16383) Mod Stage2Config.TREE_PROXY_COUNT
+Me.MoveProxy(j)
+Next k
+Var hits1 As Integer = 0
+For k As Integer = 1 To Stage2Config.TREE_QUERY_COUNT
+r = Stage2Config.NextRandom(r)
+Var q As Integer = r.BitAnd(16383) Mod Stage2Config.TREE_PROXY_COUNT
+Var qx As Double = (q Mod 64) * 2.0
+Var qy As Double = (q \ 64) * 2.0
+hits1 = hits1 + Me.QueryCount(qx - 3.0, qy - 3.0, qx + 3.0, qy + 3.0)
+Next k
+For k As Integer = 1 To Stage2Config.TREE_MOVE_COUNT
+r = Stage2Config.NextRandom(r)
+Var j2 As Integer = r.BitAnd(16383) Mod Stage2Config.TREE_PROXY_COUNT
+Me.MoveProxy(j2)
+Next k
+Var hits2 As Integer = 0
+For k As Integer = 1 To Stage2Config.TREE_QUERY_COUNT
+r = Stage2Config.NextRandom(r)
+Var q2 As Integer = r.BitAnd(16383) Mod Stage2Config.TREE_PROXY_COUNT
+Var qx2 As Double = (q2 Mod 64) * 2.0
+Var qy2 As Double = (q2 \ 64) * 2.0
+hits2 = hits2 + Me.QueryCount(qx2 - 3.0, qy2 - 3.0, qx2 + 3.0, qy2 + 3.0)
+Next k
+For k As Integer = 1 To Stage2Config.TREE_CHURN_COUNT
+r = Stage2Config.NextRandom(r)
+Var jc As Integer = r.BitAnd(16383) Mod Stage2Config.TREE_PROXY_COUNT
+Me.RemoveProxy(jc)
+Me.InsertProxy(jc)
+Next k
+Me.Rebuild()
+Me.AddSample(hits1.ToDouble())
+Me.AddSample(hits2.ToDouble())
+Me.AddSample(Me.TreeHeight().ToDouble())
+Me.AddSample(Me.AreaRatio())
+End Sub
+
+## Discards every node and reinserts all proxies in index order.
+Sub Rebuild()
+Me.ResetTree()
+For i As Integer = 0 To Stage2Config.TREE_PROXY_COUNT - 1
+Me.InsertProxy(i)
+Next i
+End Sub
+
+## Discards every node, leaving an empty tree.
+Abstract Sub ResetTree()
+
+## Inserts one proxy with its canonical bounds.
+Abstract Sub InsertProxy(id As Integer)
+
+## Removes one proxy.
+Abstract Sub RemoveProxy(id As Integer)
+
+## Removes one proxy, shifts its canonical bounds, and reinserts it.
+Abstract Sub MoveProxy(id As Integer)
+
+## Counts leaves overlapping the query box.
+Abstract Function QueryCount(minX As Double, minY As Double, maxX As Double, maxY As Double) As Integer
+
+## Returns the current stored tree height.
+Abstract Function TreeHeight() As Integer
+
+## Returns the branch-to-leaf perimeter ratio.
+Abstract Function AreaRatio() As Double
+
+## Allocates storage. Call once before the first Execute.
+Abstract Sub Prepare()
+End Class
+
+# Candidate 6a node pool in parallel arrays with a free list. Proxy ids are
+# stable benchmark identifiers mapped to node slots through ProxyToNode.
+Class IndexedTreeCandidate Inherits Stage2TreeCandidate
+## Root node index or -1 when empty.
+Property Root As Integer
+## Number of allocated node slots.
+Property NodeCount As Integer
+## Node parent indices.
+Property Parent() As Integer
+## Node first-child indices.
+Property Child1() As Integer
+## Node second-child indices.
+Property Child2() As Integer
+## Node AABB minimum x.
+Property MinX() As Double
+## Node AABB minimum y.
+Property MinY() As Double
+## Node AABB maximum x.
+Property MaxX() As Double
+## Node AABB maximum y.
+Property MaxY() As Double
+## Node heights; 0 marks a leaf.
+Property NodeHeight() As Integer
+## Free node slot stack.
+Property FreeStack() As Integer
+## Free node slot stack depth.
+Property FreeCount As Integer
+## Proxy id to node slot mapping.
+Property ProxyToNode() As Integer
+
+## Allocates the node pool and proxy mapping.
+Override Sub Prepare()
+Me.PrepareCommon()
+Me.Root = -1
+Me.NodeCount = 0
+Me.FreeCount = 0
+Me.Parent = New Array(Of Integer)
+Me.Child1 = New Array(Of Integer)
+Me.Child2 = New Array(Of Integer)
+Me.MinX = New Array(Of Double)
+Me.MinY = New Array(Of Double)
+Me.MaxX = New Array(Of Double)
+Me.MaxY = New Array(Of Double)
+Me.NodeHeight = New Array(Of Integer)
+Me.FreeStack = New Array(Of Integer)
+Me.Parent.Reserve(Stage2Config.TREE_NODE_CAPACITY)
+Me.Child1.Reserve(Stage2Config.TREE_NODE_CAPACITY)
+Me.Child2.Reserve(Stage2Config.TREE_NODE_CAPACITY)
+Me.MinX.Reserve(Stage2Config.TREE_NODE_CAPACITY)
+Me.MinY.Reserve(Stage2Config.TREE_NODE_CAPACITY)
+Me.MaxX.Reserve(Stage2Config.TREE_NODE_CAPACITY)
+Me.MaxY.Reserve(Stage2Config.TREE_NODE_CAPACITY)
+Me.NodeHeight.Reserve(Stage2Config.TREE_NODE_CAPACITY)
+Me.FreeStack.Reserve(Stage2Config.TREE_NODE_CAPACITY)
+For i As Integer = 1 To Stage2Config.TREE_NODE_CAPACITY
+Me.Parent.Append(-1)
+Me.Child1.Append(-1)
+Me.Child2.Append(-1)
+Me.MinX.Append(0.0)
+Me.MinY.Append(0.0)
+Me.MaxX.Append(0.0)
+Me.MaxY.Append(0.0)
+Me.NodeHeight.Append(0)
+Me.FreeStack.Append(0)
+Next i
+Me.ProxyToNode = New Array(Of Integer)
+Me.ProxyToNode.Reserve(Stage2Config.TREE_PROXY_COUNT)
+For i As Integer = 1 To Stage2Config.TREE_PROXY_COUNT
+Me.ProxyToNode.Append(-1)
+Next i
+End Sub
+
+## Discards every node, leaving an empty tree.
+Override Sub ResetTree()
+Me.Root = -1
+Me.NodeCount = 0
+Me.FreeCount = 0
+End Sub
+
+## Takes one node slot from the free list or the pool tail.
+Function AllocNode() As Integer
+If Me.FreeCount > 0 Then
+Me.FreeCount = Me.FreeCount - 1
+Return Me.FreeStack[Me.FreeCount]
+End If
+Var id As Integer = Me.NodeCount
+Me.NodeCount = Me.NodeCount + 1
+Return id
+End Function
+
+## Returns one node slot to the free list.
+Sub FreeNode(id As Integer)
+Me.FreeStack[Me.FreeCount] = id
+Me.FreeCount = Me.FreeCount + 1
+End Sub
+
+## Sets the canonical bounds for a proxy, optionally shifted one metre.
+Sub SetCanonicalBounds(node As Integer, id As Integer, shifted As Boolean)
+Var half As Double = 0.5 + (id Mod 3) * 0.1
+Var x As Double = (id Mod 64) * 2.0
+If shifted Then
+x = x + 1.0
+End If
+Var y As Double = (id \ 64) * 2.0
+Me.MinX[node] = x - half
+Me.MinY[node] = y - half
+Me.MaxX[node] = x + half
+Me.MaxY[node] = y + half
+End Sub
+
+## Inserts one proxy with its canonical bounds.
+Override Sub InsertProxy(id As Integer)
+Var node As Integer = Me.AllocNode()
+Me.ProxyToNode[id] = node
+Me.SetCanonicalBounds(node, id, False)
+Me.InsertLeaf(node, True)
+End Sub
+
+## Removes one proxy.
+Override Sub RemoveProxy(id As Integer)
+Var node As Integer = Me.ProxyToNode[id]
+Me.RemoveLeaf(node)
+Me.FreeNode(node)
+End Sub
+
+## Removes one proxy, shifts its canonical bounds, and reinserts it.
+Override Sub MoveProxy(id As Integer)
+Var node As Integer = Me.ProxyToNode[id]
+Me.RemoveLeaf(node)
+Me.SetCanonicalBounds(node, id, True)
+Me.InsertLeaf(node, False)
+End Sub
+
+## Returns the node AABB perimeter.
+Function Perimeter(node As Integer) As Double
+Return 2.0 * ((Me.MaxX[node] - Me.MinX[node]) + (Me.MaxY[node] - Me.MinY[node]))
+End Function
+
+## Returns the perimeter of the union of two node AABBs.
+Function UnionPerimeter(a As Integer, b As Integer) As Double
+Return 2.0 * ((Maths.Max(Me.MaxX[a], Me.MaxX[b]) - Maths.Min(Me.MinX[a], Me.MinX[b])) + (Maths.Max(Me.MaxY[a], Me.MaxY[b]) - Maths.Min(Me.MinY[a], Me.MinY[b])))
+End Function
+
+## Ports b2FindBestSibling: a single greedy descent by insertion cost.
+Function FindBestSibling(leaf As Integer) As Integer
+Var areaD As Double = Me.Perimeter(leaf)
+Var areaBase As Double = Me.Perimeter(Me.Root)
+Var directCost As Double = Me.UnionPerimeter(Me.Root, leaf)
+Var inheritedCost As Double = 0.0
+Var bestSibling As Integer = Me.Root
+Var bestCost As Double = directCost
+Var index As Integer = Me.Root
+While Me.NodeHeight[index] > 0
+Var child1 As Integer = Me.Child1[index]
+Var child2 As Integer = Me.Child2[index]
+Var cost As Double = directCost + inheritedCost
+If cost < bestCost Then
+bestSibling = index
+bestCost = cost
+End If
+inheritedCost = inheritedCost + directCost - areaBase
+Var leaf1 As Boolean = Me.NodeHeight[child1] = 0
+Var leaf2 As Boolean = Me.NodeHeight[child2] = 0
+Var lowerCost1 As Double = 1.0e30
+Var directCost1 As Double = Me.UnionPerimeter(child1, leaf)
+Var area1 As Double = 0.0
+If leaf1 Then
+Var cost1 As Double = directCost1 + inheritedCost
+If cost1 < bestCost Then
+bestSibling = child1
+bestCost = cost1
+End If
+Else
+area1 = Me.Perimeter(child1)
+lowerCost1 = inheritedCost + directCost1 + Maths.Min(areaD - area1, 0.0)
+End If
+Var lowerCost2 As Double = 1.0e30
+Var directCost2 As Double = Me.UnionPerimeter(child2, leaf)
+Var area2 As Double = 0.0
+If leaf2 Then
+Var cost2 As Double = directCost2 + inheritedCost
+If cost2 < bestCost Then
+bestSibling = child2
+bestCost = cost2
+End If
+Else
+area2 = Me.Perimeter(child2)
+lowerCost2 = inheritedCost + directCost2 + Maths.Min(areaD - area2, 0.0)
+End If
+If leaf1 And leaf2 Then
+Exit While
+End If
+If bestCost <= lowerCost1 And bestCost <= lowerCost2 Then
+Exit While
+End If
+If lowerCost1 = lowerCost2 And leaf1 = False Then
+Var d1x As Double = (Me.MinX[child1] + Me.MaxX[child1]) * 0.5 - (Me.MinX[leaf] + Me.MaxX[leaf]) * 0.5
+Var d1y As Double = (Me.MinY[child1] + Me.MaxY[child1]) * 0.5 - (Me.MinY[leaf] + Me.MaxY[leaf]) * 0.5
+Var d2x As Double = (Me.MinX[child2] + Me.MaxX[child2]) * 0.5 - (Me.MinX[leaf] + Me.MaxX[leaf]) * 0.5
+Var d2y As Double = (Me.MinY[child2] + Me.MaxY[child2]) * 0.5 - (Me.MinY[leaf] + Me.MaxY[leaf]) * 0.5
+lowerCost1 = d1x * d1x + d1y * d1y
+lowerCost2 = d2x * d2x + d2y * d2y
+End If
+If lowerCost1 < lowerCost2 And leaf1 = False Then
+index = child1
+areaBase = area1
+directCost = directCost1
+Else
+index = child2
+areaBase = area2
+directCost = directCost2
+End If
+Wend
+Return bestSibling
+End Function
+
+## Ports b2RotateNodes: one rebalancing rotation at an imbalanced node.
+Sub RotateNodes(iA As Integer)
+If Me.NodeHeight[iA] < 2 Then
+Return
+End If
+Var iB As Integer = Me.Child1[iA]
+Var iC As Integer = Me.Child2[iA]
+If Me.NodeHeight[iB] = 0 Then
+Var iL As Integer = Me.Child1[iC]
+Var iG As Integer = Me.Child2[iC]
+Var costBase As Double = Me.Perimeter(iC)
+Var costBF As Double = Me.UnionPerimeter(iB, iG)
+Var costBG As Double = Me.UnionPerimeter(iB, iL)
+If costBase < costBF And costBase < costBG Then
+Return
+End If
+If costBF < costBG Then
+Me.Child1[iA] = iL
+Me.Child1[iC] = iB
+Me.Parent[iB] = iC
+Me.Parent[iL] = iA
+Me.MinX[iC] = Maths.Min(Me.MinX[iB], Me.MinX[iG])
+Me.MinY[iC] = Maths.Min(Me.MinY[iB], Me.MinY[iG])
+Me.MaxX[iC] = Maths.Max(Me.MaxX[iB], Me.MaxX[iG])
+Me.MaxY[iC] = Maths.Max(Me.MaxY[iB], Me.MaxY[iG])
+Me.NodeHeight[iC] = 1 + Me.MaxInt(Me.NodeHeight[iB], Me.NodeHeight[iG])
+Me.NodeHeight[iA] = 1 + Me.MaxInt(Me.NodeHeight[iC], Me.NodeHeight[iL])
+Else
+Me.Child1[iA] = iG
+Me.Child2[iC] = iB
+Me.Parent[iB] = iC
+Me.Parent[iG] = iA
+Me.MinX[iC] = Maths.Min(Me.MinX[iB], Me.MinX[iL])
+Me.MinY[iC] = Maths.Min(Me.MinY[iB], Me.MinY[iL])
+Me.MaxX[iC] = Maths.Max(Me.MaxX[iB], Me.MaxX[iL])
+Me.MaxY[iC] = Maths.Max(Me.MaxY[iB], Me.MaxY[iL])
+Me.NodeHeight[iC] = 1 + Me.MaxInt(Me.NodeHeight[iB], Me.NodeHeight[iL])
+Me.NodeHeight[iA] = 1 + Me.MaxInt(Me.NodeHeight[iC], Me.NodeHeight[iG])
+End If
+ElseIf Me.NodeHeight[iC] = 0 Then
+Var iD As Integer = Me.Child1[iB]
+Var iE As Integer = Me.Child2[iB]
+Var costBase As Double = Me.Perimeter(iB)
+Var costCD As Double = Me.UnionPerimeter(iC, iE)
+Var costCE As Double = Me.UnionPerimeter(iC, iD)
+If costBase < costCD And costBase < costCE Then
+Return
+End If
+If costCD < costCE Then
+Me.Child2[iA] = iD
+Me.Child1[iB] = iC
+Me.Parent[iC] = iB
+Me.Parent[iD] = iA
+Me.MinX[iB] = Maths.Min(Me.MinX[iC], Me.MinX[iE])
+Me.MinY[iB] = Maths.Min(Me.MinY[iC], Me.MinY[iE])
+Me.MaxX[iB] = Maths.Max(Me.MaxX[iC], Me.MaxX[iE])
+Me.MaxY[iB] = Maths.Max(Me.MaxY[iC], Me.MaxY[iE])
+Me.NodeHeight[iB] = 1 + Me.MaxInt(Me.NodeHeight[iC], Me.NodeHeight[iE])
+Me.NodeHeight[iA] = 1 + Me.MaxInt(Me.NodeHeight[iB], Me.NodeHeight[iD])
+Else
+Me.Child2[iA] = iE
+Me.Child2[iB] = iC
+Me.Parent[iC] = iB
+Me.Parent[iE] = iA
+Me.MinX[iB] = Maths.Min(Me.MinX[iC], Me.MinX[iD])
+Me.MinY[iB] = Maths.Min(Me.MinY[iC], Me.MinY[iD])
+Me.MaxX[iB] = Maths.Max(Me.MaxX[iC], Me.MaxX[iD])
+Me.MaxY[iB] = Maths.Max(Me.MaxY[iC], Me.MaxY[iD])
+Me.NodeHeight[iB] = 1 + Me.MaxInt(Me.NodeHeight[iC], Me.NodeHeight[iD])
+Me.NodeHeight[iA] = 1 + Me.MaxInt(Me.NodeHeight[iB], Me.NodeHeight[iE])
+End If
+Else
+Me.RotateFourCase(iA, iB, iC)
+End If
+End Sub
+
+## Selects and applies one of the four balanced-node rotations.
+Sub RotateFourCase(iA As Integer, iB As Integer, iC As Integer)
+Var iD As Integer = Me.Child1[iB]
+Var iE As Integer = Me.Child2[iB]
+Var iL As Integer = Me.Child1[iC]
+Var iG As Integer = Me.Child2[iC]
+Var areaB As Double = Me.Perimeter(iB)
+Var areaC As Double = Me.Perimeter(iC)
+Var costBase As Double = areaB + areaC
+Var bestRotation As Integer = 0
+Var bestCost As Double = costBase
+Var costBF As Double = areaB + Me.UnionPerimeter(iB, iG)
+If costBF < bestCost Then
+bestRotation = 1
+bestCost = costBF
+End If
+Var costBG As Double = areaB + Me.UnionPerimeter(iB, iL)
+If costBG < bestCost Then
+bestRotation = 2
+bestCost = costBG
+End If
+Var costCD As Double = areaC + Me.UnionPerimeter(iC, iE)
+If costCD < bestCost Then
+bestRotation = 3
+bestCost = costCD
+End If
+Var costCE As Double = areaC + Me.UnionPerimeter(iC, iD)
+If costCE < bestCost Then
+bestRotation = 4
+End If
+If bestRotation = 0 Then
+Return
+End If
+If bestRotation = 1 Then
+Me.Child1[iA] = iL
+Me.Child1[iC] = iB
+Me.Parent[iB] = iC
+Me.Parent[iL] = iA
+Me.MinX[iC] = Maths.Min(Me.MinX[iB], Me.MinX[iG])
+Me.MinY[iC] = Maths.Min(Me.MinY[iB], Me.MinY[iG])
+Me.MaxX[iC] = Maths.Max(Me.MaxX[iB], Me.MaxX[iG])
+Me.MaxY[iC] = Maths.Max(Me.MaxY[iB], Me.MaxY[iG])
+Me.NodeHeight[iC] = 1 + Me.MaxInt(Me.NodeHeight[iB], Me.NodeHeight[iG])
+Me.NodeHeight[iA] = 1 + Me.MaxInt(Me.NodeHeight[iC], Me.NodeHeight[iL])
+ElseIf bestRotation = 2 Then
+Me.Child1[iA] = iG
+Me.Child2[iC] = iB
+Me.Parent[iB] = iC
+Me.Parent[iG] = iA
+Me.MinX[iC] = Maths.Min(Me.MinX[iB], Me.MinX[iL])
+Me.MinY[iC] = Maths.Min(Me.MinY[iB], Me.MinY[iL])
+Me.MaxX[iC] = Maths.Max(Me.MaxX[iB], Me.MaxX[iL])
+Me.MaxY[iC] = Maths.Max(Me.MaxY[iB], Me.MaxY[iL])
+Me.NodeHeight[iC] = 1 + Me.MaxInt(Me.NodeHeight[iB], Me.NodeHeight[iL])
+Me.NodeHeight[iA] = 1 + Me.MaxInt(Me.NodeHeight[iC], Me.NodeHeight[iG])
+ElseIf bestRotation = 3 Then
+Me.Child2[iA] = iD
+Me.Child1[iB] = iC
+Me.Parent[iC] = iB
+Me.Parent[iD] = iA
+Me.MinX[iB] = Maths.Min(Me.MinX[iC], Me.MinX[iE])
+Me.MinY[iB] = Maths.Min(Me.MinY[iC], Me.MinY[iE])
+Me.MaxX[iB] = Maths.Max(Me.MaxX[iC], Me.MaxX[iE])
+Me.MaxY[iB] = Maths.Max(Me.MaxY[iC], Me.MaxY[iE])
+Me.NodeHeight[iB] = 1 + Me.MaxInt(Me.NodeHeight[iC], Me.NodeHeight[iE])
+Me.NodeHeight[iA] = 1 + Me.MaxInt(Me.NodeHeight[iB], Me.NodeHeight[iD])
+Else
+Me.Child2[iA] = iE
+Me.Child2[iB] = iC
+Me.Parent[iC] = iB
+Me.Parent[iE] = iA
+Me.MinX[iB] = Maths.Min(Me.MinX[iC], Me.MinX[iD])
+Me.MinY[iB] = Maths.Min(Me.MinY[iC], Me.MinY[iD])
+Me.MaxX[iB] = Maths.Max(Me.MaxX[iC], Me.MaxX[iD])
+Me.MaxY[iB] = Maths.Max(Me.MaxY[iC], Me.MaxY[iD])
+Me.NodeHeight[iB] = 1 + Me.MaxInt(Me.NodeHeight[iC], Me.NodeHeight[iD])
+Me.NodeHeight[iA] = 1 + Me.MaxInt(Me.NodeHeight[iB], Me.NodeHeight[iE])
+End If
+End Sub
+
+## Ports b2InsertLeaf: best sibling, new parent, ancestor refit.
+Sub InsertLeaf(leaf As Integer, shouldRotate As Boolean)
+If Me.Root = -1 Then
+Me.Root = leaf
+Me.Parent[leaf] = -1
+Return
+End If
+Var sibling As Integer = Me.FindBestSibling(leaf)
+Var oldParent As Integer = Me.Parent[sibling]
+Var newParent As Integer = Me.AllocNode()
+Me.Parent[newParent] = oldParent
+Me.MinX[newParent] = Maths.Min(Me.MinX[leaf], Me.MinX[sibling])
+Me.MinY[newParent] = Maths.Min(Me.MinY[leaf], Me.MinY[sibling])
+Me.MaxX[newParent] = Maths.Max(Me.MaxX[leaf], Me.MaxX[sibling])
+Me.MaxY[newParent] = Maths.Max(Me.MaxY[leaf], Me.MaxY[sibling])
+Me.NodeHeight[newParent] = Me.NodeHeight[sibling] + 1
+If oldParent <> -1 Then
+If Me.Child1[oldParent] = sibling Then
+Me.Child1[oldParent] = newParent
+Else
+Me.Child2[oldParent] = newParent
+End If
+Else
+Me.Root = newParent
+End If
+Me.Child1[newParent] = sibling
+Me.Child2[newParent] = leaf
+Me.Parent[sibling] = newParent
+Me.Parent[leaf] = newParent
+Var index As Integer = Me.Parent[leaf]
+While index <> -1
+Var c1 As Integer = Me.Child1[index]
+Var c2 As Integer = Me.Child2[index]
+Me.MinX[index] = Maths.Min(Me.MinX[c1], Me.MinX[c2])
+Me.MinY[index] = Maths.Min(Me.MinY[c1], Me.MinY[c2])
+Me.MaxX[index] = Maths.Max(Me.MaxX[c1], Me.MaxX[c2])
+Me.MaxY[index] = Maths.Max(Me.MaxY[c1], Me.MaxY[c2])
+Me.NodeHeight[index] = 1 + Me.MaxInt(Me.NodeHeight[c1], Me.NodeHeight[c2])
+If shouldRotate Then
+Me.RotateNodes(index)
+End If
+index = Me.Parent[index]
+Wend
+End Sub
+
+## Ports b2RemoveLeaf: hoists the sibling and refits ancestors.
+Sub RemoveLeaf(leaf As Integer)
+If leaf = Me.Root Then
+Me.Root = -1
+Return
+End If
+Var parent As Integer = Me.Parent[leaf]
+Var grandParent As Integer = Me.Parent[parent]
+Var sibling As Integer
+If Me.Child1[parent] = leaf Then
+sibling = Me.Child2[parent]
+Else
+sibling = Me.Child1[parent]
+End If
+If grandParent <> -1 Then
+If Me.Child1[grandParent] = parent Then
+Me.Child1[grandParent] = sibling
+Else
+Me.Child2[grandParent] = sibling
+End If
+Me.Parent[sibling] = grandParent
+Me.FreeNode(parent)
+Var index As Integer = grandParent
+While index <> -1
+Var c1 As Integer = Me.Child1[index]
+Var c2 As Integer = Me.Child2[index]
+Me.MinX[index] = Maths.Min(Me.MinX[c1], Me.MinX[c2])
+Me.MinY[index] = Maths.Min(Me.MinY[c1], Me.MinY[c2])
+Me.MaxX[index] = Maths.Max(Me.MaxX[c1], Me.MaxX[c2])
+Me.MaxY[index] = Maths.Max(Me.MaxY[c1], Me.MaxY[c2])
+Me.NodeHeight[index] = 1 + Me.MaxInt(Me.NodeHeight[c1], Me.NodeHeight[c2])
+index = Me.Parent[index]
+Wend
+Else
+Me.Root = sibling
+Me.Parent[sibling] = -1
+Me.FreeNode(parent)
+End If
+End Sub
+
+## Counts leaves overlapping the query box.
+Override Function QueryCount(minX As Double, minY As Double, maxX As Double, maxY As Double) As Integer
+If Me.Root = -1 Then
+Return 0
+End If
+Var count As Integer = 0
+Var stackPtr As Integer = 0
+Me.Stack[stackPtr] = Me.Root
+stackPtr = stackPtr + 1
+While stackPtr > 0
+stackPtr = stackPtr - 1
+Var nodeId As Integer = Me.Stack[stackPtr]
+If minX <= Me.MaxX[nodeId] And maxX >= Me.MinX[nodeId] And minY <= Me.MaxY[nodeId] And maxY >= Me.MinY[nodeId] Then
+If Me.NodeHeight[nodeId] = 0 Then
+count = count + 1
+Else
+Me.Stack[stackPtr] = Me.Child1[nodeId]
+stackPtr = stackPtr + 1
+Me.Stack[stackPtr] = Me.Child2[nodeId]
+stackPtr = stackPtr + 1
+End If
+End If
+Wend
+Return count
+End Function
+
+## Returns the current stored tree height.
+Override Function TreeHeight() As Integer
+If Me.Root = -1 Then
+Return 0
+End If
+Return Me.NodeHeight[Me.Root]
+End Function
+
+## Returns the branch-to-leaf perimeter ratio.
+Override Function AreaRatio() As Double
+If Me.Root = -1 Then
+Return 0.0
+End If
+Var branchSum As Double = 0.0
+Var leafSum As Double = 0.0
+Var stackPtr As Integer = 0
+Me.Stack[stackPtr] = Me.Root
+stackPtr = stackPtr + 1
+While stackPtr > 0
+stackPtr = stackPtr - 1
+Var nodeId As Integer = Me.Stack[stackPtr]
+If Me.NodeHeight[nodeId] = 0 Then
+leafSum = leafSum + Me.Perimeter(nodeId)
+Else
+branchSum = branchSum + Me.Perimeter(nodeId)
+Me.Stack[stackPtr] = Me.Child1[nodeId]
+stackPtr = stackPtr + 1
+Me.Stack[stackPtr] = Me.Child2[nodeId]
+stackPtr = stackPtr + 1
+End If
+Wend
+If leafSum = 0.0 Then
+Return 0.0
+End If
+Return branchSum / leafSum
+End Function
+End Class
+
+# Candidate 6b node object per tree node. One allocation per created node
+# and reference drops on removal; parent and child links form reference
+# cycles that exercise the ARC cycle collector.
+Class Stage2TreeNode
+## AABB minimum x.
+Property MinX As Double
+## AABB minimum y.
+Property MinY As Double
+## AABB maximum x.
+Property MaxX As Double
+## AABB maximum y.
+Property MaxY As Double
+## Parent node or Nothing for the root.
+Property Parent As Stage2TreeNode
+## First child or Nothing for a leaf.
+Property Child1 As Stage2TreeNode
+## Second child or Nothing for a leaf.
+Property Child2 As Stage2TreeNode
+## Node height; 0 marks a leaf.
+Property Height As Integer
+End Class
+
+Class LinkedTreeCandidate Inherits Stage2TreeCandidate
+## Root node or Nothing when empty.
+Property Root As Stage2TreeNode
+## Proxy id to node object mapping.
+Property ProxyNodes() As Stage2TreeNode
+## Traversal stack of node references.
+Property NodeStack() As Stage2TreeNode
+
+## Allocates the proxy mapping and clears the root.
+Override Sub Prepare()
+Me.PrepareCommon()
+Me.Root = Nothing
+Me.ProxyNodes = New Array(Of Stage2TreeNode)
+Me.ProxyNodes.Reserve(Stage2Config.TREE_PROXY_COUNT)
+Me.NodeStack = New Array(Of Stage2TreeNode)
+Me.NodeStack.Reserve(Stage2Config.TREE_STACK_CAPACITY)
+For i As Integer = 1 To Stage2Config.TREE_PROXY_COUNT
+Me.ProxyNodes.Append(Nothing)
+Next i
+For i As Integer = 1 To Stage2Config.TREE_STACK_CAPACITY
+Me.NodeStack.Append(Nothing)
+Next i
+End Sub
+
+## Discards every node, leaving an empty tree.
+Override Sub ResetTree()
+Me.Root = Nothing
+End Sub
+
+## Inserts one proxy with its canonical bounds.
+Override Sub InsertProxy(id As Integer)
+Var node As New Stage2TreeNode
+Me.ProxyNodes[id] = node
+Me.SetCanonicalBounds(node, id, False)
+Me.InsertLeaf(node, True)
+End Sub
+
+## Removes one proxy and drops its node reference.
+Override Sub RemoveProxy(id As Integer)
+Var node As Stage2TreeNode = Me.ProxyNodes[id]
+Me.RemoveLeaf(node)
+Me.ProxyNodes[id] = Nothing
+End Sub
+
+## Removes one proxy, shifts its canonical bounds, and reinserts it.
+Override Sub MoveProxy(id As Integer)
+Var node As Stage2TreeNode = Me.ProxyNodes[id]
+Me.RemoveLeaf(node)
+Me.SetCanonicalBounds(node, id, True)
+Me.InsertLeaf(node, False)
+End Sub
+
+## Sets the canonical bounds for a proxy, optionally shifted one metre.
+Sub SetCanonicalBounds(node As Stage2TreeNode, id As Integer, shifted As Boolean)
+Var half As Double = 0.5 + (id Mod 3) * 0.1
+Var x As Double = (id Mod 64) * 2.0
+If shifted Then
+x = x + 1.0
+End If
+Var y As Double = (id \ 64) * 2.0
+node.MinX = x - half
+node.MinY = y - half
+node.MaxX = x + half
+node.MaxY = y + half
+End Sub
+
+## Returns the node AABB perimeter.
+Function Perimeter(node As Stage2TreeNode) As Double
+Return 2.0 * ((node.MaxX - node.MinX) + (node.MaxY - node.MinY))
+End Function
+
+## Returns the perimeter of the union of two node AABBs.
+Function UnionPerimeter(a As Stage2TreeNode, b As Stage2TreeNode) As Double
+Return 2.0 * ((Maths.Max(a.MaxX, b.MaxX) - Maths.Min(a.MinX, b.MinX)) + (Maths.Max(a.MaxY, b.MaxY) - Maths.Min(a.MinY, b.MinY)))
+End Function
+
+## Ports b2FindBestSibling: a single greedy descent by insertion cost.
+Function FindBestSibling(leaf As Stage2TreeNode) As Stage2TreeNode
+Var areaD As Double = Me.Perimeter(leaf)
+Var areaBase As Double = Me.Perimeter(Me.Root)
+Var directCost As Double = Me.UnionPerimeter(Me.Root, leaf)
+Var inheritedCost As Double = 0.0
+Var bestSibling As Stage2TreeNode = Me.Root
+Var bestCost As Double = directCost
+Var index As Stage2TreeNode = Me.Root
+While index.Height > 0
+Var child1 As Stage2TreeNode = index.Child1
+Var child2 As Stage2TreeNode = index.Child2
+Var cost As Double = directCost + inheritedCost
+If cost < bestCost Then
+bestSibling = index
+bestCost = cost
+End If
+inheritedCost = inheritedCost + directCost - areaBase
+Var leaf1 As Boolean = child1.Height = 0
+Var leaf2 As Boolean = child2.Height = 0
+Var lowerCost1 As Double = 1.0e30
+Var directCost1 As Double = Me.UnionPerimeter(child1, leaf)
+Var area1 As Double = 0.0
+If leaf1 Then
+Var cost1 As Double = directCost1 + inheritedCost
+If cost1 < bestCost Then
+bestSibling = child1
+bestCost = cost1
+End If
+Else
+area1 = Me.Perimeter(child1)
+lowerCost1 = inheritedCost + directCost1 + Maths.Min(areaD - area1, 0.0)
+End If
+Var lowerCost2 As Double = 1.0e30
+Var directCost2 As Double = Me.UnionPerimeter(child2, leaf)
+Var area2 As Double = 0.0
+If leaf2 Then
+Var cost2 As Double = directCost2 + inheritedCost
+If cost2 < bestCost Then
+bestSibling = child2
+bestCost = cost2
+End If
+Else
+area2 = Me.Perimeter(child2)
+lowerCost2 = inheritedCost + directCost2 + Maths.Min(areaD - area2, 0.0)
+End If
+If leaf1 And leaf2 Then
+Exit While
+End If
+If bestCost <= lowerCost1 And bestCost <= lowerCost2 Then
+Exit While
+End If
+If lowerCost1 = lowerCost2 And leaf1 = False Then
+Var d1x As Double = (child1.MinX + child1.MaxX) * 0.5 - (leaf.MinX + leaf.MaxX) * 0.5
+Var d1y As Double = (child1.MinY + child1.MaxY) * 0.5 - (leaf.MinY + leaf.MaxY) * 0.5
+Var d2x As Double = (child2.MinX + child2.MaxX) * 0.5 - (leaf.MinX + leaf.MaxX) * 0.5
+Var d2y As Double = (child2.MinY + child2.MaxY) * 0.5 - (leaf.MinY + leaf.MaxY) * 0.5
+lowerCost1 = d1x * d1x + d1y * d1y
+lowerCost2 = d2x * d2x + d2y * d2y
+End If
+If lowerCost1 < lowerCost2 And leaf1 = False Then
+index = child1
+areaBase = area1
+directCost = directCost1
+Else
+index = child2
+areaBase = area2
+directCost = directCost2
+End If
+Wend
+Return bestSibling
+End Function
+
+## Ports b2RotateNodes: one rebalancing rotation at an imbalanced node.
+Sub RotateNodes(a As Stage2TreeNode)
+If a.Height < 2 Then
+Return
+End If
+Var b As Stage2TreeNode = a.Child1
+Var c As Stage2TreeNode = a.Child2
+If b.Height = 0 Then
+Var f As Stage2TreeNode = c.Child1
+Var g As Stage2TreeNode = c.Child2
+Var costBase As Double = Me.Perimeter(c)
+Var costBF As Double = Me.UnionPerimeter(b, g)
+Var costBG As Double = Me.UnionPerimeter(b, f)
+If costBase < costBF And costBase < costBG Then
+Return
+End If
+If costBF < costBG Then
+a.Child1 = f
+c.Child1 = b
+b.Parent = c
+f.Parent = a
+c.MinX = Maths.Min(b.MinX, g.MinX)
+c.MinY = Maths.Min(b.MinY, g.MinY)
+c.MaxX = Maths.Max(b.MaxX, g.MaxX)
+c.MaxY = Maths.Max(b.MaxY, g.MaxY)
+c.Height = 1 + Me.MaxInt(b.Height, g.Height)
+a.Height = 1 + Me.MaxInt(c.Height, f.Height)
+Else
+a.Child1 = g
+c.Child2 = b
+b.Parent = c
+g.Parent = a
+c.MinX = Maths.Min(b.MinX, f.MinX)
+c.MinY = Maths.Min(b.MinY, f.MinY)
+c.MaxX = Maths.Max(b.MaxX, f.MaxX)
+c.MaxY = Maths.Max(b.MaxY, f.MaxY)
+c.Height = 1 + Me.MaxInt(b.Height, f.Height)
+a.Height = 1 + Me.MaxInt(c.Height, g.Height)
+End If
+ElseIf c.Height = 0 Then
+Var d As Stage2TreeNode = b.Child1
+Var e As Stage2TreeNode = b.Child2
+Var costBase As Double = Me.Perimeter(b)
+Var costCD As Double = Me.UnionPerimeter(c, e)
+Var costCE As Double = Me.UnionPerimeter(c, d)
+If costBase < costCD And costBase < costCE Then
+Return
+End If
+If costCD < costCE Then
+a.Child2 = d
+b.Child1 = c
+c.Parent = b
+d.Parent = a
+b.MinX = Maths.Min(c.MinX, e.MinX)
+b.MinY = Maths.Min(c.MinY, e.MinY)
+b.MaxX = Maths.Max(c.MaxX, e.MaxX)
+b.MaxY = Maths.Max(c.MaxY, e.MaxY)
+b.Height = 1 + Me.MaxInt(c.Height, e.Height)
+a.Height = 1 + Me.MaxInt(b.Height, d.Height)
+Else
+a.Child2 = e
+b.Child2 = c
+c.Parent = b
+e.Parent = a
+b.MinX = Maths.Min(c.MinX, d.MinX)
+b.MinY = Maths.Min(c.MinY, d.MinY)
+b.MaxX = Maths.Max(c.MaxX, d.MaxX)
+b.MaxY = Maths.Max(c.MaxY, d.MaxY)
+b.Height = 1 + Me.MaxInt(c.Height, d.Height)
+a.Height = 1 + Me.MaxInt(b.Height, e.Height)
+End If
+Else
+Me.RotateFourCase(a, b, c)
+End If
+End Sub
+
+## Selects and applies one of the four balanced-node rotations.
+Sub RotateFourCase(a As Stage2TreeNode, b As Stage2TreeNode, c As Stage2TreeNode)
+Var d As Stage2TreeNode = b.Child1
+Var e As Stage2TreeNode = b.Child2
+Var f As Stage2TreeNode = c.Child1
+Var g As Stage2TreeNode = c.Child2
+Var areaB As Double = Me.Perimeter(b)
+Var areaC As Double = Me.Perimeter(c)
+Var costBase As Double = areaB + areaC
+Var bestRotation As Integer = 0
+Var bestCost As Double = costBase
+Var costBF As Double = areaB + Me.UnionPerimeter(b, g)
+If costBF < bestCost Then
+bestRotation = 1
+bestCost = costBF
+End If
+Var costBG As Double = areaB + Me.UnionPerimeter(b, f)
+If costBG < bestCost Then
+bestRotation = 2
+bestCost = costBG
+End If
+Var costCD As Double = areaC + Me.UnionPerimeter(c, e)
+If costCD < bestCost Then
+bestRotation = 3
+bestCost = costCD
+End If
+Var costCE As Double = areaC + Me.UnionPerimeter(c, d)
+If costCE < bestCost Then
+bestRotation = 4
+End If
+If bestRotation = 0 Then
+Return
+End If
+If bestRotation = 1 Then
+a.Child1 = f
+c.Child1 = b
+b.Parent = c
+f.Parent = a
+c.MinX = Maths.Min(b.MinX, g.MinX)
+c.MinY = Maths.Min(b.MinY, g.MinY)
+c.MaxX = Maths.Max(b.MaxX, g.MaxX)
+c.MaxY = Maths.Max(b.MaxY, g.MaxY)
+c.Height = 1 + Me.MaxInt(b.Height, g.Height)
+a.Height = 1 + Me.MaxInt(c.Height, f.Height)
+ElseIf bestRotation = 2 Then
+a.Child1 = g
+c.Child2 = b
+b.Parent = c
+g.Parent = a
+c.MinX = Maths.Min(b.MinX, f.MinX)
+c.MinY = Maths.Min(b.MinY, f.MinY)
+c.MaxX = Maths.Max(b.MaxX, f.MaxX)
+c.MaxY = Maths.Max(b.MaxY, f.MaxY)
+c.Height = 1 + Me.MaxInt(b.Height, f.Height)
+a.Height = 1 + Me.MaxInt(c.Height, g.Height)
+ElseIf bestRotation = 3 Then
+a.Child2 = d
+b.Child1 = c
+c.Parent = b
+d.Parent = a
+b.MinX = Maths.Min(c.MinX, e.MinX)
+b.MinY = Maths.Min(c.MinY, e.MinY)
+b.MaxX = Maths.Max(c.MaxX, e.MaxX)
+b.MaxY = Maths.Max(c.MaxY, e.MaxY)
+b.Height = 1 + Me.MaxInt(c.Height, e.Height)
+a.Height = 1 + Me.MaxInt(b.Height, d.Height)
+Else
+a.Child2 = e
+b.Child2 = c
+c.Parent = b
+e.Parent = a
+b.MinX = Maths.Min(c.MinX, d.MinX)
+b.MinY = Maths.Min(c.MinY, d.MinY)
+b.MaxX = Maths.Max(c.MaxX, d.MaxX)
+b.MaxY = Maths.Max(c.MaxY, d.MaxY)
+b.Height = 1 + Me.MaxInt(c.Height, d.Height)
+a.Height = 1 + Me.MaxInt(b.Height, e.Height)
+End If
+End Sub
+
+## Ports b2InsertLeaf: best sibling, new parent, ancestor refit.
+Sub InsertLeaf(leaf As Stage2TreeNode, shouldRotate As Boolean)
+If Me.Root = Nothing Then
+Me.Root = leaf
+leaf.Parent = Nothing
+Return
+End If
+Var sibling As Stage2TreeNode = Me.FindBestSibling(leaf)
+Var oldParent As Stage2TreeNode = sibling.Parent
+Var newParent As New Stage2TreeNode
+newParent.Parent = oldParent
+newParent.MinX = Maths.Min(leaf.MinX, sibling.MinX)
+newParent.MinY = Maths.Min(leaf.MinY, sibling.MinY)
+newParent.MaxX = Maths.Max(leaf.MaxX, sibling.MaxX)
+newParent.MaxY = Maths.Max(leaf.MaxY, sibling.MaxY)
+newParent.Height = sibling.Height + 1
+If oldParent <> Nothing Then
+If oldParent.Child1 = sibling Then
+oldParent.Child1 = newParent
+Else
+oldParent.Child2 = newParent
+End If
+Else
+Me.Root = newParent
+End If
+newParent.Child1 = sibling
+newParent.Child2 = leaf
+sibling.Parent = newParent
+leaf.Parent = newParent
+Var index As Stage2TreeNode = leaf.Parent
+While index <> Nothing
+Var c1 As Stage2TreeNode = index.Child1
+Var c2 As Stage2TreeNode = index.Child2
+index.MinX = Maths.Min(c1.MinX, c2.MinX)
+index.MinY = Maths.Min(c1.MinY, c2.MinY)
+index.MaxX = Maths.Max(c1.MaxX, c2.MaxX)
+index.MaxY = Maths.Max(c1.MaxY, c2.MaxY)
+index.Height = 1 + Me.MaxInt(c1.Height, c2.Height)
+If shouldRotate Then
+Me.RotateNodes(index)
+End If
+index = index.Parent
+Wend
+End Sub
+
+## Ports b2RemoveLeaf: hoists the sibling and refits ancestors.
+Sub RemoveLeaf(leaf As Stage2TreeNode)
+If leaf = Me.Root Then
+Me.Root = Nothing
+Return
+End If
+Var parent As Stage2TreeNode = leaf.Parent
+Var grandParent As Stage2TreeNode = parent.Parent
+Var sibling As Stage2TreeNode
+If parent.Child1 = leaf Then
+sibling = parent.Child2
+Else
+sibling = parent.Child1
+End If
+If grandParent <> Nothing Then
+If grandParent.Child1 = parent Then
+grandParent.Child1 = sibling
+Else
+grandParent.Child2 = sibling
+End If
+sibling.Parent = grandParent
+Var index As Stage2TreeNode = grandParent
+While index <> Nothing
+Var c1 As Stage2TreeNode = index.Child1
+Var c2 As Stage2TreeNode = index.Child2
+index.MinX = Maths.Min(c1.MinX, c2.MinX)
+index.MinY = Maths.Min(c1.MinY, c2.MinY)
+index.MaxX = Maths.Max(c1.MaxX, c2.MaxX)
+index.MaxY = Maths.Max(c1.MaxY, c2.MaxY)
+index.Height = 1 + Me.MaxInt(c1.Height, c2.Height)
+index = index.Parent
+Wend
+Else
+Me.Root = sibling
+sibling.Parent = Nothing
+End If
+End Sub
+
+## Counts leaves overlapping the query box.
+Override Function QueryCount(minX As Double, minY As Double, maxX As Double, maxY As Double) As Integer
+If Me.Root = Nothing Then
+Return 0
+End If
+Var count As Integer = 0
+Var stackPtr As Integer = 0
+Me.NodeStack[stackPtr] = Me.Root
+stackPtr = stackPtr + 1
+While stackPtr > 0
+stackPtr = stackPtr - 1
+Var nodeId As Stage2TreeNode = Me.NodeStack[stackPtr]
+If minX <= nodeId.MaxX And maxX >= nodeId.MinX And minY <= nodeId.MaxY And maxY >= nodeId.MinY Then
+If nodeId.Height = 0 Then
+count = count + 1
+Else
+Me.NodeStack[stackPtr] = nodeId.Child1
+stackPtr = stackPtr + 1
+Me.NodeStack[stackPtr] = nodeId.Child2
+stackPtr = stackPtr + 1
+End If
+End If
+Wend
+Return count
+End Function
+
+## Returns the current stored tree height.
+Override Function TreeHeight() As Integer
+If Me.Root = Nothing Then
+Return 0
+End If
+Return Me.Root.Height
+End Function
+
+## Returns the branch-to-leaf perimeter ratio.
+Override Function AreaRatio() As Double
+If Me.Root = Nothing Then
+Return 0.0
+End If
+Var branchSum As Double = 0.0
+Var leafSum As Double = 0.0
+Var stackPtr As Integer = 0
+Me.NodeStack[stackPtr] = Me.Root
+stackPtr = stackPtr + 1
+While stackPtr > 0
+stackPtr = stackPtr - 1
+Var nodeId As Stage2TreeNode = Me.NodeStack[stackPtr]
+If nodeId.Height = 0 Then
+leafSum = leafSum + Me.Perimeter(nodeId)
+Else
+branchSum = branchSum + Me.Perimeter(nodeId)
+Me.NodeStack[stackPtr] = nodeId.Child1
+stackPtr = stackPtr + 1
+Me.NodeStack[stackPtr] = nodeId.Child2
+stackPtr = stackPtr + 1
+End If
+Wend
+If leafSum = 0.0 Then
+Return 0.0
+End If
+Return branchSum / leafSum
+End Function
+End Class

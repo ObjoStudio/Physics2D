@@ -1,0 +1,75 @@
+# Stage 2 representation bake-off correctness tests.
+#
+# Every body-state candidate runs the same formulas in the same order, so
+# their folded checksums must be identical; likewise both tree candidates.
+# The scalar-array candidate must also execute its kernels without allocating,
+# since it is the reference for the zero-allocation hot-path rule.
+Class Stage2BakeOffTests Inherits TestCase
+Public Sub TestBodyCandidatesProduceIdenticalChecksums()
+Var checksums() As Integer
+checksums = New Array(Of Integer)
+Var stores() As Stage2BodyStore
+stores = New Array(Of Stage2BodyStore)
+stores.Append(New ObjectNodeBodyStore)
+stores.Append(New VectorArrayBodyStore)
+stores.Append(New ScalarArrayBodyStore)
+stores.Append(New FlatBlockBodyStore)
+stores.Append(New DenseNodeBodyStore)
+stores.Append(New MemoryBlockBodyStore)
+For i As Integer = 0 To stores.Count - 1
+stores[i].Prepare()
+stores[i].Execute()
+checksums.Append(stores[i].FoldedChecksum())
+Next i
+For i As Integer = 1 To checksums.Count - 1
+Assert.Equal(checksums[0], checksums[i], "body candidate " + i.ToString() + " diverged from the first candidate")
+Next i
+End Sub
+
+Public Sub TestTreeCandidatesProduceIdenticalChecksums()
+Var indexed As New IndexedTreeCandidate
+indexed.Prepare()
+indexed.Execute()
+Var linked As New LinkedTreeCandidate
+linked.Prepare()
+linked.Execute()
+Assert.Equal(indexed.FoldedChecksum(), linked.FoldedChecksum(), "tree candidates diverged")
+End Sub
+
+Public Sub TestBodySampleBufferIsExactlyFilled()
+Var stores() As Stage2BodyStore
+stores = New Array(Of Stage2BodyStore)
+stores.Append(New ObjectNodeBodyStore)
+stores.Append(New VectorArrayBodyStore)
+stores.Append(New ScalarArrayBodyStore)
+stores.Append(New FlatBlockBodyStore)
+stores.Append(New DenseNodeBodyStore)
+stores.Append(New MemoryBlockBodyStore)
+For i As Integer = 0 To stores.Count - 1
+stores[i].Prepare()
+stores[i].Execute()
+Assert.Equal(104, stores[i].SampleCount, "candidate " + i.ToString() + " must fill exactly 104 samples")
+Next i
+End Sub
+
+Public Sub TestTreeSampleBufferIsExactlyFilled()
+Var indexed As New IndexedTreeCandidate
+indexed.Prepare()
+indexed.Execute()
+Assert.Equal(4, indexed.SampleCount, "indexed tree must fill exactly 4 samples")
+Var linked As New LinkedTreeCandidate
+linked.Prepare()
+linked.Execute()
+Assert.Equal(4, linked.SampleCount, "linked tree must fill exactly 4 samples")
+End Sub
+
+Public Sub TestScalarArrayKernelAllocatesNothing()
+Var store As New ScalarArrayBodyStore
+store.Prepare()
+store.Execute()
+Var before As Integer = System.AllocationCount
+store.Execute()
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "scalar-array kernels must not allocate")
+End Sub
+End Class

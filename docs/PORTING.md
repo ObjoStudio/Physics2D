@@ -609,9 +609,9 @@ upstream source files where the upstream test suite does not isolate them.
 |---|---|
 | Development Studio/CLI version | 26.9.1 (`objo version`, built from the Objo checkout at commit `485c4fab`) |
 | Runtime | .NET 10 SDK per `global.json` in the Objo checkout |
-| Required standard-library features | `Vector2`, `Matrix`, `Maths`, `Array.Reserve`, generic arrays, `TestCase`/`Assert`, modules with nested source items, `System.AllocationCount` (Objo issue #1299) |
+| Required standard-library features | `Vector2`, `Matrix`, `Maths`, `Array.Reserve`, generic arrays, `TestCase`/`Assert`, modules with nested source items, `System.AllocationCount` (Objo issue #1299), `Vector2.LeftPerpendicular`, `Vector2.RightPerpendicular`, `Matrix.Inverse`, `Matrix.InvertSelf`, `Matrix.Solve`, `Double.IsFinite` (Objo issue #1302) |
 | Required Studio features | `.objosln` VCS solutions (format version 4), Test build scope, desktop projects |
-| Documented minimum | Objo Studio 26.8.6, except the benchmark harness and its tests, which require the unreleased `System.AllocationCount` runtime property until Objo ships it |
+| Documented minimum | Objo Studio 26.8.6, except the benchmark harness, bake-off kernels, and their tests, which require the unreleased `System.AllocationCount` runtime property and the Objo issue #1302 standard-library members until Objo ships them |
 
 When Physics2D adopts a newly added standard-library member, the minimum
 version is updated here and in `docs/GETTING_STARTED.md`.

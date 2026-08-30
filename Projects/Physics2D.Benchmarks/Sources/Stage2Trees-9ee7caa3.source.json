@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage2Trees",
+  "Id": "9ee7caa3-1328-4126-baef-a4afd3793f1c",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage2Trees-9ee7caa3.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

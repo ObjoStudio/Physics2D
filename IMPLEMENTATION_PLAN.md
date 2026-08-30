@@ -1050,7 +1050,7 @@ to resume.
 |---|---|---|
 | 0. Bootstrap, provenance, inventory | Complete | `Physics2D.objosln` compiles (all four projects, `objo check` 26.8.6); 422-symbol inventory in `docs/PORTING.md`; provenance in `THIRD_PARTY_NOTICES.md`; decisions 0001/0002 |
 | 1. Test oracle, harnesses, packaging | Complete | 10 golden fixtures + `MANIFEST.md` (regeneration byte-identical); wrong-golden gate demonstrated; `Tolerances`/`PhysicsAssert`/`TestRandom` helpers (16 tests); `tools/assemble_module.py` byte-identical with stale-dist test; `tools/check_distribution.sh` clean-room smoke; benchmark runner with checksums, metadata, JSON + human output; allocation gate via `System.AllocationCount` (Objo #1299, commit 485c4fab) proven by allocating-vs-mutating tests (9 tests); abstract `Checksum` rejects checksum-less scenarios at compile time |
-| 2. Maths audit and representation bake-off | Not started | |
+| 2. Maths audit and representation bake-off | Complete | Stdlib additions via Objo issue #1302 (commit `5fc54453`: `Vector2.Left/RightPerpendicular`, `Matrix.Inverse`/`InvertSelf`/`Solve`, `Double.IsFinite`; engine suite 4183 passed, docs updated); 8 bake-off candidates with bit-identical checksums (`5870864046903980835` bodies, `1585456338644426542` trees); Release results in `benchmarks/results/stage2-bake-off-2026-08-30T19-31-33.json`; decisions 0003/0004 select parallel scalar arrays for body/solver/contact/joint state and node objects for the dynamic tree; `docs/PORTING.md` minimum version updated; bake-off tests gate zero-allocation scalar kernels and checksum equality |
 | 3. Foundation containers and identity | Not started | |
 | 4. Geometry, distance, casts, manifolds | Not started | |
 | 5. Dynamic tree and broad phase | Not started | |

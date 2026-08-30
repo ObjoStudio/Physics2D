@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage2BakeOffTests",
+  "Id": "13030a8f-1bf0-4c5e-97a2-feea02812e7d",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage2BakeOffTests-13030a8f.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

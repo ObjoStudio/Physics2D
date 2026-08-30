@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage2Stores",
+  "Id": "17f059f2-81ee-40ea-b634-c503b32f99d0",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage2Stores-17f059f2.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

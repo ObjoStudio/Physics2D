@@ -1,0 +1,83 @@
+# Shared configuration and helpers for the Stage 2 representation bake-off.
+#
+# Every candidate runs equivalent kernels that compute identical formulas in
+# identical order, so folded checksums must match exactly across candidates;
+# only timing and allocation counts may differ. The kernels deliberately use
+# one preallocated sample buffer instead of allocating per kernel.
+Module Stage2Config
+## Active body count used by the body kernels.
+Const BODY_COUNT As Integer = 10000
+## Substeps used by the integration kernel.
+Const SUBSTEPS As Integer = 4
+## Substep duration in seconds.
+Const H As Double = 0.004166666666666667
+## Uniform gravity for the integration kernel in metres per second squared.
+Const GRAVITY_Y As Double = -10.0
+## Contact count for the constraint iteration kernel.
+Const CONTACT_COUNT As Integer = 1500
+## Velocity iterations per substep in the constraint kernel.
+Const SOLVER_ITERATIONS As Integer = 8
+## Pair grid cell count along each axis.
+Const GRID_CELLS As Integer = 64
+## Pair grid cell size in metres.
+Const CELL_SIZE As Double = 2.0
+## Bodies admitted to the pair generation kernel.
+Const PAIR_BODY_COUNT As Integer = 1000
+## Maximum bodies stored per pair grid cell.
+Const BUCKET_CAPACITY As Integer = 16
+## Pair deduplication table capacity (power of two).
+Const PAIR_TABLE_CAPACITY As Integer = 16384
+## Slot count for the allocation pressure kernel.
+Const PRESSURE_COUNT As Integer = 3000
+## Replacement allocations that reuse freed pressure slots.
+Const PRESSURE_SWAPS As Integer = 1500
+## Flattened Double candidate: doubles per body.
+Const FLAT_STRIDE As Integer = 11
+## MemoryBlock candidate: bytes per body (8 bytes per double).
+Const MEMORY_STRIDE_BYTES As Integer = 88
+## Proxy count for the tree kernels.
+Const TREE_PROXY_COUNT As Integer = 2000
+## Tree query count per pass.
+Const TREE_QUERY_COUNT As Integer = 500
+## Tree proxy moves before the first query pass.
+Const TREE_MOVE_COUNT As Integer = 400
+## Tree destroy/reinsert churn operations.
+Const TREE_CHURN_COUNT As Integer = 200
+## Indexed tree node pool capacity (2 * proxies - 1 rounded up).
+Const TREE_NODE_CAPACITY As Integer = 4096
+## Query and metric traversal stack depth.
+Const TREE_STACK_CAPACITY As Integer = 256
+## Normalisation epsilon squared shared with Vector2.Normalize().
+Const NORMALISE_EPSILON_SQUARED As Double = 0.000000000000000000000001
+
+## Advances the deterministic 64-bit LCG and returns the new state.
+Function NextRandom(state As Integer) As Integer
+Return state * 6364136223846793005 + 1442695040888963407
+End Function
+
+## FNV-1a offset basis expressed for signed 64-bit arithmetic.
+Function NewChecksum() As Integer
+Return -3750763034362895579
+End Function
+
+## Folds one Double sample into an FNV-1a checksum.
+Function FoldDouble(checksum As Integer, value As Double) As Integer
+Var scaled As Integer = Integer(Maths.Round(value * 1000000000.0))
+Var hash As Integer = checksum
+For i As Integer = 0 To 7
+hash = hash.BitXor(scaled.BitAnd(255))
+hash = hash * 1099511628211
+scaled = scaled.ShiftRight(8)
+Next i
+Return hash
+End Function
+
+## Folds the first count samples of a buffer in order.
+Function FoldSamples(checksum As Integer, samples() As Double, count As Integer) As Integer
+Var hash As Integer = checksum
+For i As Integer = 0 To count - 1
+hash = FoldDouble(hash, samples[i])
+Next i
+Return hash
+End Function
+End Module

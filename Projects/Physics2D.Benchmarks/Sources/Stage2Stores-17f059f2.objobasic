@@ -1,0 +1,1598 @@
+# Stage 2 representation bake-off body-state candidates.
+#
+# Six candidate representations of 10,000 active body states run equivalent
+# kernels: integration, transform/inverse-transform, vector maths, sequential
+# and pseudo-random access, pair generation with deduplication, a
+# contact-constraint iteration with warm-start data, and allocation pressure.
+# Every candidate computes the same formulas in the same order so folded
+# checksums must match exactly; only timing and allocation counts differ.
+#
+# Candidate 1 keeps one class instance per body with Vector2 child objects.
+# Candidate 2 keeps arrays of mutable Vector2 values plus scalar arrays.
+# Candidate 3 keeps parallel X/Y Double arrays.
+# Candidate 4 keeps one flattened Double array with documented field offsets.
+# Candidate 5 keeps compact dense node objects with scalar fields.
+# Candidate 6 (tree representations) lives in the tree source item.
+# Candidate 7 keeps one MemoryBlock addressed by byte offsets.
+Abstract Class Stage2BodyStore
+## Checksum sample buffer, preallocated by Prepare.
+Property Samples() As Double
+## Number of valid samples in the buffer.
+Property SampleCount As Integer
+## Pressure slot keys; 0 marks a free slot.
+Property SlotKeys() As Integer
+## Pressure free stack.
+Property FreeSlots() As Integer
+## Pressure free stack depth.
+Property FreeCount As Integer
+## Highest pressure slot handed out this run.
+Property AllocHigh As Integer
+
+## Rebuilds deterministic state and reserves all scratch capacity.
+Abstract Sub Prepare()
+
+## Runs every bake-off kernel once, appending checksum samples.
+Abstract Sub RunKernels()
+
+## Allocates the shared checksum sample buffer. Call from Prepare.
+Sub PrepareSamples()
+Me.Samples = New Array(Of Double)
+Me.Samples.Reserve(128)
+For i As Integer = 1 To 128
+Me.Samples.Append(0.0)
+Next i
+Me.SampleCount = 0
+End Sub
+
+## Resets the sample buffer and runs all kernels once.
+Sub Execute()
+Me.SampleCount = 0
+Me.RunKernels()
+End Sub
+
+## Appends one checksum sample.
+Sub AddSample(value As Double)
+Me.Samples[Me.SampleCount] = value
+Me.SampleCount = Me.SampleCount + 1
+End Sub
+
+## Folds the appended samples into a deterministic checksum.
+Function FoldedChecksum() As Integer
+Return Stage2Config.FoldSamples(Stage2Config.NewChecksum(), Me.Samples, Me.SampleCount)
+End Function
+
+## Notification hook for candidates that allocate a slot object.
+Sub OnAlloc(idx As Integer)
+Pragma Unused idx
+End Sub
+
+## Notification hook for candidates that release a slot object.
+Sub OnFree(idx As Integer)
+Pragma Unused idx
+End Sub
+
+## Allocates one pressure slot with the given key, reusing freed slots first.
+Sub AllocSlot(key As Integer)
+Var idx As Integer = 0
+If Me.FreeCount > 0 Then
+Me.FreeCount = Me.FreeCount - 1
+idx = Me.FreeSlots[Me.FreeCount]
+Else
+idx = Me.AllocHigh
+Me.AllocHigh = Me.AllocHigh + 1
+End If
+Me.SlotKeys[idx] = key
+Me.OnAlloc(idx)
+End Sub
+
+## Releases one pressure slot onto the free stack.
+Sub FreeSlot(idx As Integer)
+Me.SlotKeys[idx] = 0
+Me.FreeSlots[Me.FreeCount] = idx
+Me.FreeCount = Me.FreeCount + 1
+Me.OnFree(idx)
+End Sub
+
+## Runs the allocation pressure kernel. Phase 1 allocates every slot
+## sequentially, phase 2 frees every second slot, and phase 3 allocates
+## replacements that reuse freed slots before growing.
+Sub RunPressure()
+Me.FreeCount = 0
+Me.AllocHigh = 0
+For i As Integer = 1 To Stage2Config.PRESSURE_COUNT
+Me.AllocSlot(i)
+Next i
+Var i As Integer = 1
+While i < Stage2Config.PRESSURE_COUNT
+Me.FreeSlot(i)
+i = i + 2
+Wend
+For i As Integer = 1 To Stage2Config.PRESSURE_SWAPS
+Me.AllocSlot(Stage2Config.PRESSURE_COUNT + i)
+Next i
+Var keySum As Double = 0.0
+For i As Integer = 0 To Stage2Config.PRESSURE_COUNT - 1
+keySum = keySum + Me.SlotKeys[i].ToDouble()
+Next i
+Me.AddSample(keySum)
+Me.AddSample(Me.AllocHigh.ToDouble())
+End Sub
+
+## Body index set sampled by the state kernels.
+Function IsSampleBody(i As Integer) As Boolean
+Return i = 0 Or i = 1777 Or i = 3553 Or i = 5333 Or i = 7111 Or i = 8999
+End Function
+
+## Body index set sampled by the vector-operations kernel.
+Function IsVectorSample(i As Integer) As Boolean
+Return i = 100 Or i = 4100 Or i = 8100
+End Function
+End Class
+
+# Candidate 1 node: one object per body with Vector2 child objects.
+Class ObjectBodyNode
+## World position in metres.
+Property Position As Vector2
+## Linear velocity in metres per second.
+Property Velocity As Vector2
+## Accumulated force in newtons.
+Property Force As Vector2
+## Rotation in radians.
+Property Angle As Double
+## Angular velocity in radians per second.
+Property AngularVelocity As Double
+## Inverse mass in inverse kilograms.
+Property InvMass As Double
+## Inverse rotational inertia.
+Property InvInertia As Double
+## Applied torque in newton metres.
+Property Torque As Double
+
+## Creates a node with zeroed vector state.
+Constructor()
+Me.Position = New Vector2()
+Me.Velocity = New Vector2()
+Me.Force = New Vector2()
+End Constructor
+End Class
+
+# Candidate 5 node: one compact object per body with scalar fields only.
+Class DenseBodyNode
+## World position x in metres.
+Property PositionX As Double
+## World position y in metres.
+Property PositionY As Double
+## Linear velocity x in metres per second.
+Property VelocityX As Double
+## Linear velocity y in metres per second.
+Property VelocityY As Double
+## Rotation in radians.
+Property Angle As Double
+## Angular velocity in radians per second.
+Property AngularVelocity As Double
+## Inverse mass in inverse kilograms.
+Property InvMass As Double
+## Inverse rotational inertia.
+Property InvInertia As Double
+## Accumulated force x in newtons.
+Property ForceX As Double
+## Accumulated force y in newtons.
+Property ForceY As Double
+## Applied torque in newton metres.
+Property Torque As Double
+End Class
+
+# Candidate 1: one class instance per body with Vector2 children.
+Class ObjectNodeBodyStore Inherits Stage2BodyStore
+## Per-body nodes.
+Property Nodes() As ObjectBodyNode
+## Pressure slot objects; freed slots drop their reference.
+Property PressureNodes() As ObjectBodyNode
+## Pair grid shared with every candidate.
+Property Grid As Stage2PairGrid
+## Contact inputs shared with every candidate.
+Property Contacts As Stage2ContactData
+## Scratch matrix.
+Property ScratchMatrix As Matrix
+## Scratch vector A.
+Property ScratchA As Vector2
+## Scratch vector B.
+Property ScratchB As Vector2
+## Scratch vector C.
+Property ScratchC As Vector2
+
+## Rebuilds deterministic state and reserves all scratch capacity.
+Override Sub Prepare()
+Me.PrepareSamples()
+Me.Nodes = New Array(Of ObjectBodyNode)
+Me.Nodes.Reserve(Stage2Config.BODY_COUNT)
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var node As New ObjectBodyNode
+Var col As Integer = i Mod 100
+Var row As Integer = (i - col) \ 100
+node.Position.Set(col * 1.0, row * 1.0 + (i Mod 7) * 0.01)
+node.Angle = (i Mod 7) * 0.1
+node.InvMass = 1.0 + (i Mod 5) * 0.25
+node.InvInertia = node.InvMass * 0.5
+node.Force.Set(((i Mod 13) - 6) * 0.05, ((i Mod 11) - 5) * 0.05)
+node.Torque = ((i Mod 9) - 4) * 0.02
+Me.Nodes.Append(node)
+Next i
+Me.PressureNodes = New Array(Of ObjectBodyNode)
+Me.PressureNodes.Reserve(Stage2Config.PRESSURE_COUNT)
+For i As Integer = 1 To Stage2Config.PRESSURE_COUNT
+Me.PressureNodes.Append(Nothing)
+Next i
+Me.SlotKeys = New Array(Of Integer)
+Me.FreeSlots = New Array(Of Integer)
+Me.SlotKeys.Reserve(Stage2Config.PRESSURE_COUNT)
+Me.FreeSlots.Reserve(Stage2Config.PRESSURE_COUNT)
+For i As Integer = 1 To Stage2Config.PRESSURE_COUNT
+Me.SlotKeys.Append(0)
+Me.FreeSlots.Append(0)
+Next i
+Me.FreeCount = 0
+Me.AllocHigh = 0
+Me.Grid = New Stage2PairGrid
+Me.Contacts = New Stage2ContactData
+Me.Contacts.Prepare()
+Me.ScratchMatrix = New Matrix()
+Me.ScratchA = New Vector2()
+Me.ScratchB = New Vector2()
+Me.ScratchC = New Vector2()
+End Sub
+
+## Runs every bake-off kernel once.
+Override Sub RunKernels()
+Me.RunIntegrate()
+Me.RunTransform()
+Me.RunVectorOps()
+Me.RunAccess()
+Me.RunPairs()
+Me.RunContacts()
+Me.RunPressure()
+End Sub
+
+## Semi-implicit Euler integration of every body.
+Sub RunIntegrate()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var node As ObjectBodyNode = Me.Nodes[i]
+node.Velocity.AddScaled(node.Force, node.InvMass * Stage2Config.H)
+node.Velocity.Y = node.Velocity.Y + Stage2Config.GRAVITY_Y * Stage2Config.H
+node.Position.AddScaled(node.Velocity, Stage2Config.H)
+node.AngularVelocity = node.AngularVelocity + node.Torque * (node.InvInertia * Stage2Config.H)
+node.Angle = node.Angle + node.AngularVelocity * Stage2Config.H
+If Me.IsSampleBody(i) Then
+Me.AddSample(node.Position.X)
+Me.AddSample(node.Position.Y)
+End If
+Next i
+Next substep
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.Nodes[i].Force.Set(0.0, 0.0)
+Me.Nodes[i].Torque = 0.0
+Next i
+End Sub
+
+## Rotates a local point to world and back for every body.
+Sub RunTransform()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var node As ObjectBodyNode = Me.Nodes[i]
+Me.ScratchA.Set((i Mod 50) * 0.02, (i Mod 25) * 0.04)
+Me.ScratchMatrix.SetRotation(node.Angle)
+Me.ScratchMatrix.Transform(Me.ScratchA, Me.ScratchB)
+Me.ScratchMatrix.TransposeSelf()
+Me.ScratchMatrix.Transform(Me.ScratchB, Me.ScratchC)
+If Me.IsSampleBody(i) Then
+Me.AddSample(Me.ScratchB.X)
+Me.AddSample(Me.ScratchB.Y)
+Me.AddSample(Me.ScratchC.X)
+Me.AddSample(Me.ScratchC.Y)
+End If
+Next i
+End Sub
+
+## Dot, cross, perpendicular-normalise, and 2x2 solve workloads.
+Sub RunVectorOps()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var ang As Double = (i Mod 628) * 0.01
+Var ax As Double = Maths.Cos(ang)
+Var ay As Double = Maths.Sin(ang)
+Var bx As Double = ((i Mod 17) - 8) * 0.05
+Var by As Double = ((i Mod 19) - 9) * 0.05
+Me.ScratchA.Set(ax, ay)
+Me.ScratchB.Set(bx, by)
+Var dot As Double = Me.ScratchA.Dot(Me.ScratchB)
+Var cross As Double = Me.ScratchA.Cross(Me.ScratchB)
+Me.ScratchC.Set(ax, ay)
+Me.ScratchC.LeftPerpendicular().Normalize()
+Var px As Double = Me.ScratchC.X
+Var py As Double = Me.ScratchC.Y
+Var k00 As Double = 2.0 + (i Mod 5) * 0.25
+Var k01 As Double = ((i Mod 3) - 1) * 0.1
+Var k10 As Double = k01
+Var k11 As Double = 3.0 + (i Mod 7) * 0.125
+Me.ScratchMatrix.Set(k00, k01, k10, k11)
+Me.ScratchMatrix.Solve(Me.ScratchB, Me.ScratchC)
+If Me.IsVectorSample(i) Then
+Me.AddSample(dot)
+Me.AddSample(cross)
+Me.AddSample(px)
+Me.AddSample(py)
+Me.AddSample(Me.ScratchC.X)
+Me.AddSample(Me.ScratchC.Y)
+End If
+Next i
+End Sub
+
+## Sequential and pseudo-random velocity access over every body.
+Sub RunAccess()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.Nodes[i].Velocity.X = Me.Nodes[i].Velocity.X + 0.0005
+Next i
+Me.AddSample(Me.Nodes[500].Velocity.X)
+Me.AddSample(Me.Nodes[5500].Velocity.X)
+Var r As Integer = 20260830
+For k As Integer = 1 To Stage2Config.BODY_COUNT
+r = Stage2Config.NextRandom(r)
+Var j As Integer = r.BitAnd(16383) Mod Stage2Config.BODY_COUNT
+Me.Nodes[j].Velocity.Y = Me.Nodes[j].Velocity.Y - 0.00025
+Next k
+Me.AddSample(Me.Nodes[501].Velocity.Y)
+Me.AddSample(Me.Nodes[5501].Velocity.Y)
+End Sub
+
+## Broad-phase-style pair generation and deduplication over body positions.
+Sub RunPairs()
+Me.Grid.ClearCells()
+For i As Integer = 0 To Stage2Config.PAIR_BODY_COUNT - 1
+Me.Grid.AddBody(i, Me.Nodes[i].Position.X, Me.Nodes[i].Position.Y)
+Next i
+Me.Grid.GeneratePairs()
+Me.AddSample(Me.Grid.PairCount.ToDouble())
+Me.AddSample(Me.Grid.KeySum.ToDouble())
+End Sub
+
+## Contact-constraint velocity iteration with warm-start impulses.
+Sub RunContacts()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For iteration As Integer = 1 To Stage2Config.SOLVER_ITERATIONS
+For c As Integer = 0 To Stage2Config.CONTACT_COUNT - 1
+Var nodeA As ObjectBodyNode = Me.Nodes[Me.Contacts.BodyA[c]]
+Var nodeB As ObjectBodyNode = Me.Nodes[Me.Contacts.BodyB[c]]
+Var rAx As Double = Me.Contacts.AnchorAX[c]
+Var rAy As Double = Me.Contacts.AnchorAY[c]
+Var rBx As Double = Me.Contacts.AnchorBX[c]
+Var rBy As Double = Me.Contacts.AnchorBY[c]
+Var nx As Double = Me.Contacts.NormalX[c]
+Var ny As Double = Me.Contacts.NormalY[c]
+Var vBpx As Double = nodeB.Velocity.X - nodeB.AngularVelocity * rBy
+Var vBpy As Double = nodeB.Velocity.Y + nodeB.AngularVelocity * rBx
+Var vApx As Double = nodeA.Velocity.X - nodeA.AngularVelocity * rAy
+Var vApy As Double = nodeA.Velocity.Y + nodeA.AngularVelocity * rAx
+Var vrx As Double = vBpx - vApx
+Var vry As Double = vBpy - vApy
+Var vn As Double = vrx * nx + vry * ny
+Var p0 As Double = Me.Contacts.Impulse[c]
+Var pn As Double = p0 - vn
+If pn < 0.0 Then
+pn = 0.0
+End If
+Var dPn As Double = pn - p0
+Me.Contacts.Impulse[c] = pn
+Var impX As Double = nx * dPn
+Var impY As Double = ny * dPn
+nodeA.Velocity.X = nodeA.Velocity.X - nodeA.InvMass * impX
+nodeA.Velocity.Y = nodeA.Velocity.Y - nodeA.InvMass * impY
+nodeA.AngularVelocity = nodeA.AngularVelocity - nodeA.InvInertia * (rAx * impY - rAy * impX)
+nodeB.Velocity.X = nodeB.Velocity.X + nodeB.InvMass * impX
+nodeB.Velocity.Y = nodeB.Velocity.Y + nodeB.InvMass * impY
+nodeB.AngularVelocity = nodeB.AngularVelocity + nodeB.InvInertia * (rBx * impY - rBy * impX)
+Next c
+Next iteration
+Next substep
+Var body3 As ObjectBodyNode = Me.Nodes[3]
+Me.AddSample(Me.Contacts.Impulse[7])
+Me.AddSample(Me.Contacts.Impulse[777])
+Me.AddSample(Me.Contacts.Impulse[1499])
+Me.AddSample(body3.Velocity.X)
+Me.AddSample(body3.Velocity.Y)
+Me.AddSample(body3.AngularVelocity)
+End Sub
+
+## Pressure slots allocate a fresh node object per allocation.
+Override Sub OnAlloc(idx As Integer)
+Me.PressureNodes[idx] = New ObjectBodyNode
+End Sub
+
+## Pressure frees drop the slot object reference.
+Override Sub OnFree(idx As Integer)
+Me.PressureNodes[idx] = Nothing
+End Sub
+End Class
+
+# Candidate 2: arrays of mutable Vector2 values plus scalar arrays.
+Class VectorArrayBodyStore Inherits Stage2BodyStore
+## World positions in metres.
+Property Positions() As Vector2
+## Linear velocities in metres per second.
+Property Velocities() As Vector2
+## Accumulated forces in newtons.
+Property Forces() As Vector2
+## Rotations in radians.
+Property Angles() As Double
+## Angular velocities in radians per second.
+Property AngularVelocities() As Double
+## Inverse masses in inverse kilograms.
+Property InvMasses() As Double
+## Inverse rotational inertias.
+Property InvInertias() As Double
+## Applied torques in newton metres.
+Property Torques() As Double
+## Pair grid shared with every candidate.
+Property Grid As Stage2PairGrid
+## Contact inputs shared with every candidate.
+Property Contacts As Stage2ContactData
+## Scratch matrix.
+Property ScratchMatrix As Matrix
+## Scratch vector A.
+Property ScratchA As Vector2
+## Scratch vector B.
+Property ScratchB As Vector2
+## Scratch vector C.
+Property ScratchC As Vector2
+
+## Rebuilds deterministic state and reserves all scratch capacity.
+Override Sub Prepare()
+Me.PrepareSamples()
+Me.Positions = Vector2.ArrayOf(Stage2Config.BODY_COUNT)
+Me.Velocities = Vector2.ArrayOf(Stage2Config.BODY_COUNT)
+Me.Forces = Vector2.ArrayOf(Stage2Config.BODY_COUNT)
+Me.Angles = New Array(Of Double)
+Me.AngularVelocities = New Array(Of Double)
+Me.InvMasses = New Array(Of Double)
+Me.InvInertias = New Array(Of Double)
+Me.Torques = New Array(Of Double)
+Me.Angles.Reserve(Stage2Config.BODY_COUNT)
+Me.AngularVelocities.Reserve(Stage2Config.BODY_COUNT)
+Me.InvMasses.Reserve(Stage2Config.BODY_COUNT)
+Me.InvInertias.Reserve(Stage2Config.BODY_COUNT)
+Me.Torques.Reserve(Stage2Config.BODY_COUNT)
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var col As Integer = i Mod 100
+Var row As Integer = (i - col) \ 100
+Me.Positions[i].Set(col * 1.0, row * 1.0 + (i Mod 7) * 0.01)
+Me.Angles.Append((i Mod 7) * 0.1)
+Me.AngularVelocities.Append(0.0)
+Me.InvMasses.Append(1.0 + (i Mod 5) * 0.25)
+Me.InvInertias.Append(Me.InvMasses[i] * 0.5)
+Me.Torques.Append(((i Mod 9) - 4) * 0.02)
+Me.Forces[i].Set(((i Mod 13) - 6) * 0.05, ((i Mod 11) - 5) * 0.05)
+Next i
+Me.SlotKeys = New Array(Of Integer)
+Me.FreeSlots = New Array(Of Integer)
+Me.SlotKeys.Reserve(Stage2Config.PRESSURE_COUNT)
+Me.FreeSlots.Reserve(Stage2Config.PRESSURE_COUNT)
+For i As Integer = 1 To Stage2Config.PRESSURE_COUNT
+Me.SlotKeys.Append(0)
+Me.FreeSlots.Append(0)
+Next i
+Me.FreeCount = 0
+Me.AllocHigh = 0
+Me.Grid = New Stage2PairGrid
+Me.Contacts = New Stage2ContactData
+Me.Contacts.Prepare()
+Me.ScratchMatrix = New Matrix()
+Me.ScratchA = New Vector2()
+Me.ScratchB = New Vector2()
+Me.ScratchC = New Vector2()
+End Sub
+
+## Runs every bake-off kernel once.
+Override Sub RunKernels()
+Me.RunIntegrate()
+Me.RunTransform()
+Me.RunVectorOps()
+Me.RunAccess()
+Me.RunPairs()
+Me.RunContacts()
+Me.RunPressure()
+End Sub
+
+## Semi-implicit Euler integration of every body.
+Sub RunIntegrate()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.Velocities[i].AddScaled(Me.Forces[i], Me.InvMasses[i] * Stage2Config.H)
+Me.Velocities[i].Y = Me.Velocities[i].Y + Stage2Config.GRAVITY_Y * Stage2Config.H
+Me.Positions[i].AddScaled(Me.Velocities[i], Stage2Config.H)
+Me.AngularVelocities[i] = Me.AngularVelocities[i] + Me.Torques[i] * (Me.InvInertias[i] * Stage2Config.H)
+Me.Angles[i] = Me.Angles[i] + Me.AngularVelocities[i] * Stage2Config.H
+If Me.IsSampleBody(i) Then
+Me.AddSample(Me.Positions[i].X)
+Me.AddSample(Me.Positions[i].Y)
+End If
+Next i
+Next substep
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.Forces[i].Set(0.0, 0.0)
+Me.Torques[i] = 0.0
+Next i
+End Sub
+
+## Rotates a local point to world and back for every body.
+Sub RunTransform()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.ScratchA.Set((i Mod 50) * 0.02, (i Mod 25) * 0.04)
+Me.ScratchMatrix.SetRotation(Me.Angles[i])
+Me.ScratchMatrix.Transform(Me.ScratchA, Me.ScratchB)
+Me.ScratchMatrix.TransposeSelf()
+Me.ScratchMatrix.Transform(Me.ScratchB, Me.ScratchC)
+If Me.IsSampleBody(i) Then
+Me.AddSample(Me.ScratchB.X)
+Me.AddSample(Me.ScratchB.Y)
+Me.AddSample(Me.ScratchC.X)
+Me.AddSample(Me.ScratchC.Y)
+End If
+Next i
+End Sub
+
+## Dot, cross, perpendicular-normalise, and 2x2 solve workloads.
+Sub RunVectorOps()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var ang As Double = (i Mod 628) * 0.01
+Var ax As Double = Maths.Cos(ang)
+Var ay As Double = Maths.Sin(ang)
+Var bx As Double = ((i Mod 17) - 8) * 0.05
+Var by As Double = ((i Mod 19) - 9) * 0.05
+Me.ScratchA.Set(ax, ay)
+Me.ScratchB.Set(bx, by)
+Var dot As Double = Me.ScratchA.Dot(Me.ScratchB)
+Var cross As Double = Me.ScratchA.Cross(Me.ScratchB)
+Me.ScratchC.Set(ax, ay)
+Me.ScratchC.LeftPerpendicular().Normalize()
+Var px As Double = Me.ScratchC.X
+Var py As Double = Me.ScratchC.Y
+Var k00 As Double = 2.0 + (i Mod 5) * 0.25
+Var k01 As Double = ((i Mod 3) - 1) * 0.1
+Var k10 As Double = k01
+Var k11 As Double = 3.0 + (i Mod 7) * 0.125
+Me.ScratchMatrix.Set(k00, k01, k10, k11)
+Me.ScratchMatrix.Solve(Me.ScratchB, Me.ScratchC)
+If Me.IsVectorSample(i) Then
+Me.AddSample(dot)
+Me.AddSample(cross)
+Me.AddSample(px)
+Me.AddSample(py)
+Me.AddSample(Me.ScratchC.X)
+Me.AddSample(Me.ScratchC.Y)
+End If
+Next i
+End Sub
+
+## Sequential and pseudo-random velocity access over every body.
+Sub RunAccess()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.Velocities[i].X = Me.Velocities[i].X + 0.0005
+Next i
+Me.AddSample(Me.Velocities[500].X)
+Me.AddSample(Me.Velocities[5500].X)
+Var r As Integer = 20260830
+For k As Integer = 1 To Stage2Config.BODY_COUNT
+r = Stage2Config.NextRandom(r)
+Var j As Integer = r.BitAnd(16383) Mod Stage2Config.BODY_COUNT
+Me.Velocities[j].Y = Me.Velocities[j].Y - 0.00025
+Next k
+Me.AddSample(Me.Velocities[501].Y)
+Me.AddSample(Me.Velocities[5501].Y)
+End Sub
+
+## Broad-phase-style pair generation and deduplication over body positions.
+Sub RunPairs()
+Me.Grid.ClearCells()
+For i As Integer = 0 To Stage2Config.PAIR_BODY_COUNT - 1
+Me.Grid.AddBody(i, Me.Positions[i].X, Me.Positions[i].Y)
+Next i
+Me.Grid.GeneratePairs()
+Me.AddSample(Me.Grid.PairCount.ToDouble())
+Me.AddSample(Me.Grid.KeySum.ToDouble())
+End Sub
+
+## Contact-constraint velocity iteration with warm-start impulses.
+Sub RunContacts()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For iteration As Integer = 1 To Stage2Config.SOLVER_ITERATIONS
+For c As Integer = 0 To Stage2Config.CONTACT_COUNT - 1
+Var velA As Vector2 = Me.Velocities[Me.Contacts.BodyA[c]]
+Var velB As Vector2 = Me.Velocities[Me.Contacts.BodyB[c]]
+Var wA As Double = Me.AngularVelocities[Me.Contacts.BodyA[c]]
+Var wB As Double = Me.AngularVelocities[Me.Contacts.BodyB[c]]
+Var rAx As Double = Me.Contacts.AnchorAX[c]
+Var rAy As Double = Me.Contacts.AnchorAY[c]
+Var rBx As Double = Me.Contacts.AnchorBX[c]
+Var rBy As Double = Me.Contacts.AnchorBY[c]
+Var nx As Double = Me.Contacts.NormalX[c]
+Var ny As Double = Me.Contacts.NormalY[c]
+Var vBpx As Double = velB.X - wB * rBy
+Var vBpy As Double = velB.Y + wB * rBx
+Var vApx As Double = velA.X - wA * rAy
+Var vApy As Double = velA.Y + wA * rAx
+Var vrx As Double = vBpx - vApx
+Var vry As Double = vBpy - vApy
+Var vn As Double = vrx * nx + vry * ny
+Var p0 As Double = Me.Contacts.Impulse[c]
+Var pn As Double = p0 - vn
+If pn < 0.0 Then
+pn = 0.0
+End If
+Var dPn As Double = pn - p0
+Me.Contacts.Impulse[c] = pn
+Var impX As Double = nx * dPn
+Var impY As Double = ny * dPn
+Me.Velocities[Me.Contacts.BodyA[c]].X = velA.X - Me.InvMasses[Me.Contacts.BodyA[c]] * impX
+Me.Velocities[Me.Contacts.BodyA[c]].Y = velA.Y - Me.InvMasses[Me.Contacts.BodyA[c]] * impY
+Me.AngularVelocities[Me.Contacts.BodyA[c]] = wA - Me.InvInertias[Me.Contacts.BodyA[c]] * (rAx * impY - rAy * impX)
+Me.Velocities[Me.Contacts.BodyB[c]].X = velB.X + Me.InvMasses[Me.Contacts.BodyB[c]] * impX
+Me.Velocities[Me.Contacts.BodyB[c]].Y = velB.Y + Me.InvMasses[Me.Contacts.BodyB[c]] * impY
+Me.AngularVelocities[Me.Contacts.BodyB[c]] = wB + Me.InvInertias[Me.Contacts.BodyB[c]] * (rBx * impY - rBy * impX)
+Next c
+Next iteration
+Next substep
+Me.AddSample(Me.Contacts.Impulse[7])
+Me.AddSample(Me.Contacts.Impulse[777])
+Me.AddSample(Me.Contacts.Impulse[1499])
+Me.AddSample(Me.Velocities[3].X)
+Me.AddSample(Me.Velocities[3].Y)
+Me.AddSample(Me.AngularVelocities[3])
+End Sub
+End Class
+
+# Candidate 3: parallel X/Y Double arrays.
+Class ScalarArrayBodyStore Inherits Stage2BodyStore
+## World position x in metres.
+Property PosX() As Double
+## World position y in metres.
+Property PosY() As Double
+## Linear velocity x in metres per second.
+Property VelX() As Double
+## Linear velocity y in metres per second.
+Property VelY() As Double
+## Rotations in radians.
+Property Angles() As Double
+## Angular velocities in radians per second.
+Property AngVel() As Double
+## Inverse masses in inverse kilograms.
+Property InvMass() As Double
+## Inverse rotational inertias.
+Property InvI() As Double
+## Accumulated force x in newtons.
+Property ForceX() As Double
+## Accumulated force y in newtons.
+Property ForceY() As Double
+## Applied torques in newton metres.
+Property Torque() As Double
+## Pair grid shared with every candidate.
+Property Grid As Stage2PairGrid
+## Contact inputs shared with every candidate.
+Property Contacts As Stage2ContactData
+
+## Rebuilds deterministic state and reserves all scratch capacity.
+Override Sub Prepare()
+Me.PrepareSamples()
+Me.PosX = New Array(Of Double)
+Me.PosY = New Array(Of Double)
+Me.VelX = New Array(Of Double)
+Me.VelY = New Array(Of Double)
+Me.Angles = New Array(Of Double)
+Me.AngVel = New Array(Of Double)
+Me.InvMass = New Array(Of Double)
+Me.InvI = New Array(Of Double)
+Me.ForceX = New Array(Of Double)
+Me.ForceY = New Array(Of Double)
+Me.Torque = New Array(Of Double)
+Me.PosX.Reserve(Stage2Config.BODY_COUNT)
+Me.PosY.Reserve(Stage2Config.BODY_COUNT)
+Me.VelX.Reserve(Stage2Config.BODY_COUNT)
+Me.VelY.Reserve(Stage2Config.BODY_COUNT)
+Me.Angles.Reserve(Stage2Config.BODY_COUNT)
+Me.AngVel.Reserve(Stage2Config.BODY_COUNT)
+Me.InvMass.Reserve(Stage2Config.BODY_COUNT)
+Me.InvI.Reserve(Stage2Config.BODY_COUNT)
+Me.ForceX.Reserve(Stage2Config.BODY_COUNT)
+Me.ForceY.Reserve(Stage2Config.BODY_COUNT)
+Me.Torque.Reserve(Stage2Config.BODY_COUNT)
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var col As Integer = i Mod 100
+Var row As Integer = (i - col) \ 100
+Me.PosX.Append(col * 1.0)
+Me.PosY.Append(row * 1.0 + (i Mod 7) * 0.01)
+Me.VelX.Append(0.0)
+Me.VelY.Append(0.0)
+Me.Angles.Append((i Mod 7) * 0.1)
+Me.AngVel.Append(0.0)
+Me.InvMass.Append(1.0 + (i Mod 5) * 0.25)
+Me.InvI.Append(Me.InvMass[i] * 0.5)
+Me.ForceX.Append(((i Mod 13) - 6) * 0.05)
+Me.ForceY.Append(((i Mod 11) - 5) * 0.05)
+Me.Torque.Append(((i Mod 9) - 4) * 0.02)
+Next i
+Me.SlotKeys = New Array(Of Integer)
+Me.FreeSlots = New Array(Of Integer)
+Me.SlotKeys.Reserve(Stage2Config.PRESSURE_COUNT)
+Me.FreeSlots.Reserve(Stage2Config.PRESSURE_COUNT)
+For i As Integer = 1 To Stage2Config.PRESSURE_COUNT
+Me.SlotKeys.Append(0)
+Me.FreeSlots.Append(0)
+Next i
+Me.FreeCount = 0
+Me.AllocHigh = 0
+Me.Grid = New Stage2PairGrid
+Me.Contacts = New Stage2ContactData
+Me.Contacts.Prepare()
+End Sub
+
+## Runs every bake-off kernel once.
+Override Sub RunKernels()
+Me.RunIntegrate()
+Me.RunTransform()
+Me.RunVectorOps()
+Me.RunAccess()
+Me.RunPairs()
+Me.RunContacts()
+Me.RunPressure()
+End Sub
+
+## Semi-implicit Euler integration of every body.
+Sub RunIntegrate()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var linearScale As Double = Me.InvMass[i] * Stage2Config.H
+Me.VelX[i] = Me.VelX[i] + Me.ForceX[i] * linearScale
+Me.VelY[i] = Me.VelY[i] + Me.ForceY[i] * linearScale
+Me.VelY[i] = Me.VelY[i] + Stage2Config.GRAVITY_Y * Stage2Config.H
+Me.PosX[i] = Me.PosX[i] + Me.VelX[i] * Stage2Config.H
+Me.PosY[i] = Me.PosY[i] + Me.VelY[i] * Stage2Config.H
+Var angularScale As Double = Me.InvI[i] * Stage2Config.H
+Me.AngVel[i] = Me.AngVel[i] + Me.Torque[i] * angularScale
+Me.Angles[i] = Me.Angles[i] + Me.AngVel[i] * Stage2Config.H
+If Me.IsSampleBody(i) Then
+Me.AddSample(Me.PosX[i])
+Me.AddSample(Me.PosY[i])
+End If
+Next i
+Next substep
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.ForceX[i] = 0.0
+Me.ForceY[i] = 0.0
+Me.Torque[i] = 0.0
+Next i
+End Sub
+
+## Rotates a local point to world and back for every body.
+Sub RunTransform()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var lx As Double = (i Mod 50) * 0.02
+Var ly As Double = (i Mod 25) * 0.04
+Var c As Double = Maths.Cos(Me.Angles[i])
+Var s As Double = Maths.Sin(Me.Angles[i])
+Var wx As Double = c * lx - s * ly
+Var wy As Double = s * lx + c * ly
+Var lx2 As Double = c * wx + s * wy
+Var ly2 As Double = -s * wx + c * wy
+If Me.IsSampleBody(i) Then
+Me.AddSample(wx)
+Me.AddSample(wy)
+Me.AddSample(lx2)
+Me.AddSample(ly2)
+End If
+Next i
+End Sub
+
+## Dot, cross, perpendicular-normalise, and 2x2 solve workloads.
+Sub RunVectorOps()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var ang As Double = (i Mod 628) * 0.01
+Var ax As Double = Maths.Cos(ang)
+Var ay As Double = Maths.Sin(ang)
+Var bx As Double = ((i Mod 17) - 8) * 0.05
+Var by As Double = ((i Mod 19) - 9) * 0.05
+Var dot As Double = ax * bx + ay * by
+Var cross As Double = ax * by - ay * bx
+Var px As Double = -ay
+Var py As Double = ax
+Var len2 As Double = px * px + py * py
+If len2 <= Stage2Config.NORMALISE_EPSILON_SQUARED Then
+px = 0.0
+py = 0.0
+Else
+Var invLength As Double = 1.0 / Maths.Sqrt(len2)
+px = px * invLength
+py = py * invLength
+End If
+Var k00 As Double = 2.0 + (i Mod 5) * 0.25
+Var k01 As Double = ((i Mod 3) - 1) * 0.1
+Var k10 As Double = k01
+Var k11 As Double = 3.0 + (i Mod 7) * 0.125
+Var det As Double = k00 * k11 - k01 * k10
+Var invDet As Double = 0.0
+If det <> 0.0 Then
+invDet = 1.0 / det
+End If
+Var sx As Double = invDet * (k11 * bx - k01 * by)
+Var sy As Double = invDet * (k00 * by - k10 * bx)
+If Me.IsVectorSample(i) Then
+Me.AddSample(dot)
+Me.AddSample(cross)
+Me.AddSample(px)
+Me.AddSample(py)
+Me.AddSample(sx)
+Me.AddSample(sy)
+End If
+Next i
+End Sub
+
+## Sequential and pseudo-random velocity access over every body.
+Sub RunAccess()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.VelX[i] = Me.VelX[i] + 0.0005
+Next i
+Me.AddSample(Me.VelX[500])
+Me.AddSample(Me.VelX[5500])
+Var r As Integer = 20260830
+For k As Integer = 1 To Stage2Config.BODY_COUNT
+r = Stage2Config.NextRandom(r)
+Var j As Integer = r.BitAnd(16383) Mod Stage2Config.BODY_COUNT
+Me.VelY[j] = Me.VelY[j] - 0.00025
+Next k
+Me.AddSample(Me.VelY[501])
+Me.AddSample(Me.VelY[5501])
+End Sub
+
+## Broad-phase-style pair generation and deduplication over body positions.
+Sub RunPairs()
+Me.Grid.ClearCells()
+For i As Integer = 0 To Stage2Config.PAIR_BODY_COUNT - 1
+Me.Grid.AddBody(i, Me.PosX[i], Me.PosY[i])
+Next i
+Me.Grid.GeneratePairs()
+Me.AddSample(Me.Grid.PairCount.ToDouble())
+Me.AddSample(Me.Grid.KeySum.ToDouble())
+End Sub
+
+## Contact-constraint velocity iteration with warm-start impulses.
+Sub RunContacts()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For iteration As Integer = 1 To Stage2Config.SOLVER_ITERATIONS
+For c As Integer = 0 To Stage2Config.CONTACT_COUNT - 1
+Var ia As Integer = Me.Contacts.BodyA[c]
+Var ib As Integer = Me.Contacts.BodyB[c]
+Var rAx As Double = Me.Contacts.AnchorAX[c]
+Var rAy As Double = Me.Contacts.AnchorAY[c]
+Var rBx As Double = Me.Contacts.AnchorBX[c]
+Var rBy As Double = Me.Contacts.AnchorBY[c]
+Var nx As Double = Me.Contacts.NormalX[c]
+Var ny As Double = Me.Contacts.NormalY[c]
+Var vBpx As Double = Me.VelX[ib] - Me.AngVel[ib] * rBy
+Var vBpy As Double = Me.VelY[ib] + Me.AngVel[ib] * rBx
+Var vApx As Double = Me.VelX[ia] - Me.AngVel[ia] * rAy
+Var vApy As Double = Me.VelY[ia] + Me.AngVel[ia] * rAx
+Var vrx As Double = vBpx - vApx
+Var vry As Double = vBpy - vApy
+Var vn As Double = vrx * nx + vry * ny
+Var p0 As Double = Me.Contacts.Impulse[c]
+Var pn As Double = p0 - vn
+If pn < 0.0 Then
+pn = 0.0
+End If
+Var dPn As Double = pn - p0
+Me.Contacts.Impulse[c] = pn
+Var impX As Double = nx * dPn
+Var impY As Double = ny * dPn
+Me.VelX[ia] = Me.VelX[ia] - Me.InvMass[ia] * impX
+Me.VelY[ia] = Me.VelY[ia] - Me.InvMass[ia] * impY
+Me.AngVel[ia] = Me.AngVel[ia] - Me.InvI[ia] * (rAx * impY - rAy * impX)
+Me.VelX[ib] = Me.VelX[ib] + Me.InvMass[ib] * impX
+Me.VelY[ib] = Me.VelY[ib] + Me.InvMass[ib] * impY
+Me.AngVel[ib] = Me.AngVel[ib] + Me.InvI[ib] * (rBx * impY - rBy * impX)
+Next c
+Next iteration
+Next substep
+Me.AddSample(Me.Contacts.Impulse[7])
+Me.AddSample(Me.Contacts.Impulse[777])
+Me.AddSample(Me.Contacts.Impulse[1499])
+Me.AddSample(Me.VelX[3])
+Me.AddSample(Me.VelY[3])
+Me.AddSample(Me.AngVel[3])
+End Sub
+End Class
+
+# Candidate 4: one flattened Double array with documented field offsets.
+#
+# Per-body stride of 11 doubles: 0 posX, 1 posY, 2 velX, 3 velY, 4 angle,
+# 5 angular velocity, 6 inverse mass, 7 inverse inertia, 8 forceX, 9 forceY,
+# 10 torque.
+Class FlatBlockBodyStore Inherits Stage2BodyStore
+## Flattened body data.
+Property Data() As Double
+## Pair grid shared with every candidate.
+Property Grid As Stage2PairGrid
+## Contact inputs shared with every candidate.
+Property Contacts As Stage2ContactData
+
+## Rebuilds deterministic state and reserves all scratch capacity.
+Override Sub Prepare()
+Me.PrepareSamples()
+Me.Data = New Array(Of Double)
+Me.Data.Reserve(Stage2Config.BODY_COUNT * Stage2Config.FLAT_STRIDE)
+For i As Integer = 1 To Stage2Config.BODY_COUNT * Stage2Config.FLAT_STRIDE
+Me.Data.Append(0.0)
+Next i
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var col As Integer = i Mod 100
+Var row As Integer = (i - col) \ 100
+Var base As Integer = i * Stage2Config.FLAT_STRIDE
+Me.Data[base] = col * 1.0
+Me.Data[base + 1] = row * 1.0 + (i Mod 7) * 0.01
+Me.Data[base + 4] = (i Mod 7) * 0.1
+Me.Data[base + 6] = 1.0 + (i Mod 5) * 0.25
+Me.Data[base + 7] = Me.Data[base + 6] * 0.5
+Me.Data[base + 8] = ((i Mod 13) - 6) * 0.05
+Me.Data[base + 9] = ((i Mod 11) - 5) * 0.05
+Me.Data[base + 10] = ((i Mod 9) - 4) * 0.02
+Next i
+Me.SlotKeys = New Array(Of Integer)
+Me.FreeSlots = New Array(Of Integer)
+Me.SlotKeys.Reserve(Stage2Config.PRESSURE_COUNT)
+Me.FreeSlots.Reserve(Stage2Config.PRESSURE_COUNT)
+For i As Integer = 1 To Stage2Config.PRESSURE_COUNT
+Me.SlotKeys.Append(0)
+Me.FreeSlots.Append(0)
+Next i
+Me.FreeCount = 0
+Me.AllocHigh = 0
+Me.Grid = New Stage2PairGrid
+Me.Contacts = New Stage2ContactData
+Me.Contacts.Prepare()
+End Sub
+
+## Runs every bake-off kernel once.
+Override Sub RunKernels()
+Me.RunIntegrate()
+Me.RunTransform()
+Me.RunVectorOps()
+Me.RunAccess()
+Me.RunPairs()
+Me.RunContacts()
+Me.RunPressure()
+End Sub
+
+## Semi-implicit Euler integration of every body.
+Sub RunIntegrate()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var base As Integer = i * Stage2Config.FLAT_STRIDE
+Var linearScale As Double = Me.Data[base + 6] * Stage2Config.H
+Me.Data[base + 2] = Me.Data[base + 2] + Me.Data[base + 8] * linearScale
+Me.Data[base + 3] = Me.Data[base + 3] + Me.Data[base + 9] * linearScale
+Me.Data[base + 3] = Me.Data[base + 3] + Stage2Config.GRAVITY_Y * Stage2Config.H
+Me.Data[base] = Me.Data[base] + Me.Data[base + 2] * Stage2Config.H
+Me.Data[base + 1] = Me.Data[base + 1] + Me.Data[base + 3] * Stage2Config.H
+Var angularScale As Double = Me.Data[base + 7] * Stage2Config.H
+Me.Data[base + 5] = Me.Data[base + 5] + Me.Data[base + 10] * angularScale
+Me.Data[base + 4] = Me.Data[base + 4] + Me.Data[base + 5] * Stage2Config.H
+If Me.IsSampleBody(i) Then
+Me.AddSample(Me.Data[base])
+Me.AddSample(Me.Data[base + 1])
+End If
+Next i
+Next substep
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var base As Integer = i * Stage2Config.FLAT_STRIDE
+Me.Data[base + 8] = 0.0
+Me.Data[base + 9] = 0.0
+Me.Data[base + 10] = 0.0
+Next i
+End Sub
+
+## Rotates a local point to world and back for every body.
+Sub RunTransform()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var base As Integer = i * Stage2Config.FLAT_STRIDE
+Var lx As Double = (i Mod 50) * 0.02
+Var ly As Double = (i Mod 25) * 0.04
+Var c As Double = Maths.Cos(Me.Data[base + 4])
+Var s As Double = Maths.Sin(Me.Data[base + 4])
+Var wx As Double = c * lx - s * ly
+Var wy As Double = s * lx + c * ly
+Var lx2 As Double = c * wx + s * wy
+Var ly2 As Double = -s * wx + c * wy
+If Me.IsSampleBody(i) Then
+Me.AddSample(wx)
+Me.AddSample(wy)
+Me.AddSample(lx2)
+Me.AddSample(ly2)
+End If
+Next i
+End Sub
+
+## Dot, cross, perpendicular-normalise, and 2x2 solve workloads.
+Sub RunVectorOps()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var ang As Double = (i Mod 628) * 0.01
+Var ax As Double = Maths.Cos(ang)
+Var ay As Double = Maths.Sin(ang)
+Var bx As Double = ((i Mod 17) - 8) * 0.05
+Var by As Double = ((i Mod 19) - 9) * 0.05
+Var dot As Double = ax * bx + ay * by
+Var cross As Double = ax * by - ay * bx
+Var px As Double = -ay
+Var py As Double = ax
+Var len2 As Double = px * px + py * py
+If len2 <= Stage2Config.NORMALISE_EPSILON_SQUARED Then
+px = 0.0
+py = 0.0
+Else
+Var invLength As Double = 1.0 / Maths.Sqrt(len2)
+px = px * invLength
+py = py * invLength
+End If
+Var k00 As Double = 2.0 + (i Mod 5) * 0.25
+Var k01 As Double = ((i Mod 3) - 1) * 0.1
+Var k10 As Double = k01
+Var k11 As Double = 3.0 + (i Mod 7) * 0.125
+Var det As Double = k00 * k11 - k01 * k10
+Var invDet As Double = 0.0
+If det <> 0.0 Then
+invDet = 1.0 / det
+End If
+Var sx As Double = invDet * (k11 * bx - k01 * by)
+Var sy As Double = invDet * (k00 * by - k10 * bx)
+If Me.IsVectorSample(i) Then
+Me.AddSample(dot)
+Me.AddSample(cross)
+Me.AddSample(px)
+Me.AddSample(py)
+Me.AddSample(sx)
+Me.AddSample(sy)
+End If
+Next i
+End Sub
+
+## Sequential and pseudo-random velocity access over every body.
+Sub RunAccess()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.Data[i * Stage2Config.FLAT_STRIDE + 2] = Me.Data[i * Stage2Config.FLAT_STRIDE + 2] + 0.0005
+Next i
+Me.AddSample(Me.Data[500 * Stage2Config.FLAT_STRIDE + 2])
+Me.AddSample(Me.Data[5500 * Stage2Config.FLAT_STRIDE + 2])
+Var r As Integer = 20260830
+For k As Integer = 1 To Stage2Config.BODY_COUNT
+r = Stage2Config.NextRandom(r)
+Var j As Integer = r.BitAnd(16383) Mod Stage2Config.BODY_COUNT
+Me.Data[j * Stage2Config.FLAT_STRIDE + 3] = Me.Data[j * Stage2Config.FLAT_STRIDE + 3] - 0.00025
+Next k
+Me.AddSample(Me.Data[501 * Stage2Config.FLAT_STRIDE + 3])
+Me.AddSample(Me.Data[5501 * Stage2Config.FLAT_STRIDE + 3])
+End Sub
+
+## Broad-phase-style pair generation and deduplication over body positions.
+Sub RunPairs()
+Me.Grid.ClearCells()
+For i As Integer = 0 To Stage2Config.PAIR_BODY_COUNT - 1
+Me.Grid.AddBody(i, Me.Data[i * Stage2Config.FLAT_STRIDE], Me.Data[i * Stage2Config.FLAT_STRIDE + 1])
+Next i
+Me.Grid.GeneratePairs()
+Me.AddSample(Me.Grid.PairCount.ToDouble())
+Me.AddSample(Me.Grid.KeySum.ToDouble())
+End Sub
+
+## Contact-constraint velocity iteration with warm-start impulses.
+Sub RunContacts()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For iteration As Integer = 1 To Stage2Config.SOLVER_ITERATIONS
+For c As Integer = 0 To Stage2Config.CONTACT_COUNT - 1
+Var baseA As Integer = Me.Contacts.BodyA[c] * Stage2Config.FLAT_STRIDE
+Var baseB As Integer = Me.Contacts.BodyB[c] * Stage2Config.FLAT_STRIDE
+Var rAx As Double = Me.Contacts.AnchorAX[c]
+Var rAy As Double = Me.Contacts.AnchorAY[c]
+Var rBx As Double = Me.Contacts.AnchorBX[c]
+Var rBy As Double = Me.Contacts.AnchorBY[c]
+Var nx As Double = Me.Contacts.NormalX[c]
+Var ny As Double = Me.Contacts.NormalY[c]
+Var vBpx As Double = Me.Data[baseB + 2] - Me.Data[baseB + 5] * rBy
+Var vBpy As Double = Me.Data[baseB + 3] + Me.Data[baseB + 5] * rBx
+Var vApx As Double = Me.Data[baseA + 2] - Me.Data[baseA + 5] * rAy
+Var vApy As Double = Me.Data[baseA + 3] + Me.Data[baseA + 5] * rAx
+Var vrx As Double = vBpx - vApx
+Var vry As Double = vBpy - vApy
+Var vn As Double = vrx * nx + vry * ny
+Var p0 As Double = Me.Contacts.Impulse[c]
+Var pn As Double = p0 - vn
+If pn < 0.0 Then
+pn = 0.0
+End If
+Var dPn As Double = pn - p0
+Me.Contacts.Impulse[c] = pn
+Var impX As Double = nx * dPn
+Var impY As Double = ny * dPn
+Me.Data[baseA + 2] = Me.Data[baseA + 2] - Me.Data[baseA + 6] * impX
+Me.Data[baseA + 3] = Me.Data[baseA + 3] - Me.Data[baseA + 6] * impY
+Me.Data[baseA + 5] = Me.Data[baseA + 5] - Me.Data[baseA + 7] * (rAx * impY - rAy * impX)
+Me.Data[baseB + 2] = Me.Data[baseB + 2] + Me.Data[baseB + 6] * impX
+Me.Data[baseB + 3] = Me.Data[baseB + 3] + Me.Data[baseB + 6] * impY
+Me.Data[baseB + 5] = Me.Data[baseB + 5] + Me.Data[baseB + 7] * (rBx * impY - rBy * impX)
+Next c
+Next iteration
+Next substep
+Me.AddSample(Me.Contacts.Impulse[7])
+Me.AddSample(Me.Contacts.Impulse[777])
+Me.AddSample(Me.Contacts.Impulse[1499])
+Me.AddSample(Me.Data[3 * Stage2Config.FLAT_STRIDE + 2])
+Me.AddSample(Me.Data[3 * Stage2Config.FLAT_STRIDE + 3])
+Me.AddSample(Me.Data[3 * Stage2Config.FLAT_STRIDE + 5])
+End Sub
+End Class
+
+# Candidate 5: compact dense node objects with scalar fields only.
+Class DenseNodeBodyStore Inherits Stage2BodyStore
+## Per-body nodes.
+Property Nodes() As DenseBodyNode
+## Pressure slot objects; freed slots drop their reference.
+Property PressureNodes() As DenseBodyNode
+## Pair grid shared with every candidate.
+Property Grid As Stage2PairGrid
+## Contact inputs shared with every candidate.
+Property Contacts As Stage2ContactData
+
+## Rebuilds deterministic state and reserves all scratch capacity.
+Override Sub Prepare()
+Me.PrepareSamples()
+Me.Nodes = New Array(Of DenseBodyNode)
+Me.Nodes.Reserve(Stage2Config.BODY_COUNT)
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var node As New DenseBodyNode
+Var col As Integer = i Mod 100
+Var row As Integer = (i - col) \ 100
+node.PositionX = col * 1.0
+node.PositionY = row * 1.0 + (i Mod 7) * 0.01
+node.Angle = (i Mod 7) * 0.1
+node.InvMass = 1.0 + (i Mod 5) * 0.25
+node.InvInertia = node.InvMass * 0.5
+node.ForceX = ((i Mod 13) - 6) * 0.05
+node.ForceY = ((i Mod 11) - 5) * 0.05
+node.Torque = ((i Mod 9) - 4) * 0.02
+Me.Nodes.Append(node)
+Next i
+Me.PressureNodes = New Array(Of DenseBodyNode)
+Me.PressureNodes.Reserve(Stage2Config.PRESSURE_COUNT)
+For i As Integer = 1 To Stage2Config.PRESSURE_COUNT
+Me.PressureNodes.Append(Nothing)
+Next i
+Me.SlotKeys = New Array(Of Integer)
+Me.FreeSlots = New Array(Of Integer)
+Me.SlotKeys.Reserve(Stage2Config.PRESSURE_COUNT)
+Me.FreeSlots.Reserve(Stage2Config.PRESSURE_COUNT)
+For i As Integer = 1 To Stage2Config.PRESSURE_COUNT
+Me.SlotKeys.Append(0)
+Me.FreeSlots.Append(0)
+Next i
+Me.FreeCount = 0
+Me.AllocHigh = 0
+Me.Grid = New Stage2PairGrid
+Me.Contacts = New Stage2ContactData
+Me.Contacts.Prepare()
+End Sub
+
+## Runs every bake-off kernel once.
+Override Sub RunKernels()
+Me.RunIntegrate()
+Me.RunTransform()
+Me.RunVectorOps()
+Me.RunAccess()
+Me.RunPairs()
+Me.RunContacts()
+Me.RunPressure()
+End Sub
+
+## Semi-implicit Euler integration of every body.
+Sub RunIntegrate()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var node As DenseBodyNode = Me.Nodes[i]
+Var linearScale As Double = node.InvMass * Stage2Config.H
+node.VelocityX = node.VelocityX + node.ForceX * linearScale
+node.VelocityY = node.VelocityY + node.ForceY * linearScale
+node.VelocityY = node.VelocityY + Stage2Config.GRAVITY_Y * Stage2Config.H
+node.PositionX = node.PositionX + node.VelocityX * Stage2Config.H
+node.PositionY = node.PositionY + node.VelocityY * Stage2Config.H
+Var angularScale As Double = node.InvInertia * Stage2Config.H
+node.AngularVelocity = node.AngularVelocity + node.Torque * angularScale
+node.Angle = node.Angle + node.AngularVelocity * Stage2Config.H
+If Me.IsSampleBody(i) Then
+Me.AddSample(node.PositionX)
+Me.AddSample(node.PositionY)
+End If
+Next i
+Next substep
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.Nodes[i].ForceX = 0.0
+Me.Nodes[i].ForceY = 0.0
+Me.Nodes[i].Torque = 0.0
+Next i
+End Sub
+
+## Rotates a local point to world and back for every body.
+Sub RunTransform()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var node As DenseBodyNode = Me.Nodes[i]
+Var lx As Double = (i Mod 50) * 0.02
+Var ly As Double = (i Mod 25) * 0.04
+Var c As Double = Maths.Cos(node.Angle)
+Var s As Double = Maths.Sin(node.Angle)
+Var wx As Double = c * lx - s * ly
+Var wy As Double = s * lx + c * ly
+Var lx2 As Double = c * wx + s * wy
+Var ly2 As Double = -s * wx + c * wy
+If Me.IsSampleBody(i) Then
+Me.AddSample(wx)
+Me.AddSample(wy)
+Me.AddSample(lx2)
+Me.AddSample(ly2)
+End If
+Next i
+End Sub
+
+## Dot, cross, perpendicular-normalise, and 2x2 solve workloads.
+Sub RunVectorOps()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var ang As Double = (i Mod 628) * 0.01
+Var ax As Double = Maths.Cos(ang)
+Var ay As Double = Maths.Sin(ang)
+Var bx As Double = ((i Mod 17) - 8) * 0.05
+Var by As Double = ((i Mod 19) - 9) * 0.05
+Var dot As Double = ax * bx + ay * by
+Var cross As Double = ax * by - ay * bx
+Var px As Double = -ay
+Var py As Double = ax
+Var len2 As Double = px * px + py * py
+If len2 <= Stage2Config.NORMALISE_EPSILON_SQUARED Then
+px = 0.0
+py = 0.0
+Else
+Var invLength As Double = 1.0 / Maths.Sqrt(len2)
+px = px * invLength
+py = py * invLength
+End If
+Var k00 As Double = 2.0 + (i Mod 5) * 0.25
+Var k01 As Double = ((i Mod 3) - 1) * 0.1
+Var k10 As Double = k01
+Var k11 As Double = 3.0 + (i Mod 7) * 0.125
+Var det As Double = k00 * k11 - k01 * k10
+Var invDet As Double = 0.0
+If det <> 0.0 Then
+invDet = 1.0 / det
+End If
+Var sx As Double = invDet * (k11 * bx - k01 * by)
+Var sy As Double = invDet * (k00 * by - k10 * bx)
+If Me.IsVectorSample(i) Then
+Me.AddSample(dot)
+Me.AddSample(cross)
+Me.AddSample(px)
+Me.AddSample(py)
+Me.AddSample(sx)
+Me.AddSample(sy)
+End If
+Next i
+End Sub
+
+## Sequential and pseudo-random velocity access over every body.
+Sub RunAccess()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Me.Nodes[i].VelocityX = Me.Nodes[i].VelocityX + 0.0005
+Next i
+Me.AddSample(Me.Nodes[500].VelocityX)
+Me.AddSample(Me.Nodes[5500].VelocityX)
+Var r As Integer = 20260830
+For k As Integer = 1 To Stage2Config.BODY_COUNT
+r = Stage2Config.NextRandom(r)
+Var j As Integer = r.BitAnd(16383) Mod Stage2Config.BODY_COUNT
+Me.Nodes[j].VelocityY = Me.Nodes[j].VelocityY - 0.00025
+Next k
+Me.AddSample(Me.Nodes[501].VelocityY)
+Me.AddSample(Me.Nodes[5501].VelocityY)
+End Sub
+
+## Broad-phase-style pair generation and deduplication over body positions.
+Sub RunPairs()
+Me.Grid.ClearCells()
+For i As Integer = 0 To Stage2Config.PAIR_BODY_COUNT - 1
+Me.Grid.AddBody(i, Me.Nodes[i].PositionX, Me.Nodes[i].PositionY)
+Next i
+Me.Grid.GeneratePairs()
+Me.AddSample(Me.Grid.PairCount.ToDouble())
+Me.AddSample(Me.Grid.KeySum.ToDouble())
+End Sub
+
+## Contact-constraint velocity iteration with warm-start impulses.
+Sub RunContacts()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For iteration As Integer = 1 To Stage2Config.SOLVER_ITERATIONS
+For c As Integer = 0 To Stage2Config.CONTACT_COUNT - 1
+Var nodeA As DenseBodyNode = Me.Nodes[Me.Contacts.BodyA[c]]
+Var nodeB As DenseBodyNode = Me.Nodes[Me.Contacts.BodyB[c]]
+Var rAx As Double = Me.Contacts.AnchorAX[c]
+Var rAy As Double = Me.Contacts.AnchorAY[c]
+Var rBx As Double = Me.Contacts.AnchorBX[c]
+Var rBy As Double = Me.Contacts.AnchorBY[c]
+Var nx As Double = Me.Contacts.NormalX[c]
+Var ny As Double = Me.Contacts.NormalY[c]
+Var vBpx As Double = nodeB.VelocityX - nodeB.AngularVelocity * rBy
+Var vBpy As Double = nodeB.VelocityY + nodeB.AngularVelocity * rBx
+Var vApx As Double = nodeA.VelocityX - nodeA.AngularVelocity * rAy
+Var vApy As Double = nodeA.VelocityY + nodeA.AngularVelocity * rAx
+Var vrx As Double = vBpx - vApx
+Var vry As Double = vBpy - vApy
+Var vn As Double = vrx * nx + vry * ny
+Var p0 As Double = Me.Contacts.Impulse[c]
+Var pn As Double = p0 - vn
+If pn < 0.0 Then
+pn = 0.0
+End If
+Var dPn As Double = pn - p0
+Me.Contacts.Impulse[c] = pn
+Var impX As Double = nx * dPn
+Var impY As Double = ny * dPn
+nodeA.VelocityX = nodeA.VelocityX - nodeA.InvMass * impX
+nodeA.VelocityY = nodeA.VelocityY - nodeA.InvMass * impY
+nodeA.AngularVelocity = nodeA.AngularVelocity - nodeA.InvInertia * (rAx * impY - rAy * impX)
+nodeB.VelocityX = nodeB.VelocityX + nodeB.InvMass * impX
+nodeB.VelocityY = nodeB.VelocityY + nodeB.InvMass * impY
+nodeB.AngularVelocity = nodeB.AngularVelocity + nodeB.InvInertia * (rBx * impY - rBy * impX)
+Next c
+Next iteration
+Next substep
+Var body3 As DenseBodyNode = Me.Nodes[3]
+Me.AddSample(Me.Contacts.Impulse[7])
+Me.AddSample(Me.Contacts.Impulse[777])
+Me.AddSample(Me.Contacts.Impulse[1499])
+Me.AddSample(body3.VelocityX)
+Me.AddSample(body3.VelocityY)
+Me.AddSample(body3.AngularVelocity)
+End Sub
+
+## Pressure slots allocate a fresh node object per allocation.
+Override Sub OnAlloc(idx As Integer)
+Me.PressureNodes[idx] = New DenseBodyNode
+End Sub
+
+## Pressure frees drop the slot object reference.
+Override Sub OnFree(idx As Integer)
+Me.PressureNodes[idx] = Nothing
+End Sub
+End Class
+
+# Candidate 7: one MemoryBlock addressed by byte offsets.
+#
+# Per-body stride of 88 bytes holding 11 doubles: 0 posX, 8 posY, 16 velX,
+# 24 velY, 32 angle, 40 angular velocity, 48 inverse mass, 56 inverse
+# inertia, 64 forceX, 72 forceY, 80 torque.
+Class MemoryBlockBodyStore Inherits Stage2BodyStore
+## Flattened body memory.
+Property Block As MemoryBlock
+## Pair grid shared with every candidate.
+Property Grid As Stage2PairGrid
+## Contact inputs shared with every candidate.
+Property Contacts As Stage2ContactData
+
+## Rebuilds deterministic state and reserves all scratch capacity.
+Override Sub Prepare()
+Me.PrepareSamples()
+Me.Block = New MemoryBlock(Stage2Config.BODY_COUNT * Stage2Config.MEMORY_STRIDE_BYTES)
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var col As Integer = i Mod 100
+Var row As Integer = (i - col) \ 100
+Var base As Integer = i * Stage2Config.MEMORY_STRIDE_BYTES
+Me.Block.WriteDouble(base, col * 1.0)
+Me.Block.WriteDouble(base + 8, row * 1.0 + (i Mod 7) * 0.01)
+Me.Block.WriteDouble(base + 32, (i Mod 7) * 0.1)
+Me.Block.WriteDouble(base + 48, 1.0 + (i Mod 5) * 0.25)
+Me.Block.WriteDouble(base + 56, Me.Block.ReadDouble(base + 48) * 0.5)
+Me.Block.WriteDouble(base + 64, ((i Mod 13) - 6) * 0.05)
+Me.Block.WriteDouble(base + 72, ((i Mod 11) - 5) * 0.05)
+Me.Block.WriteDouble(base + 80, ((i Mod 9) - 4) * 0.02)
+Next i
+Me.SlotKeys = New Array(Of Integer)
+Me.FreeSlots = New Array(Of Integer)
+Me.SlotKeys.Reserve(Stage2Config.PRESSURE_COUNT)
+Me.FreeSlots.Reserve(Stage2Config.PRESSURE_COUNT)
+For i As Integer = 1 To Stage2Config.PRESSURE_COUNT
+Me.SlotKeys.Append(0)
+Me.FreeSlots.Append(0)
+Next i
+Me.FreeCount = 0
+Me.AllocHigh = 0
+Me.Grid = New Stage2PairGrid
+Me.Contacts = New Stage2ContactData
+Me.Contacts.Prepare()
+End Sub
+
+## Runs every bake-off kernel once.
+Override Sub RunKernels()
+Me.RunIntegrate()
+Me.RunTransform()
+Me.RunVectorOps()
+Me.RunAccess()
+Me.RunPairs()
+Me.RunContacts()
+Me.RunPressure()
+End Sub
+
+## Semi-implicit Euler integration of every body.
+Sub RunIntegrate()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var base As Integer = i * Stage2Config.MEMORY_STRIDE_BYTES
+Var linearScale As Double = Me.Block.ReadDouble(base + 48) * Stage2Config.H
+Me.Block.WriteDouble(base + 16, Me.Block.ReadDouble(base + 16) + Me.Block.ReadDouble(base + 64) * linearScale)
+Me.Block.WriteDouble(base + 24, Me.Block.ReadDouble(base + 24) + Me.Block.ReadDouble(base + 72) * linearScale)
+Me.Block.WriteDouble(base + 24, Me.Block.ReadDouble(base + 24) + Stage2Config.GRAVITY_Y * Stage2Config.H)
+Me.Block.WriteDouble(base, Me.Block.ReadDouble(base) + Me.Block.ReadDouble(base + 16) * Stage2Config.H)
+Me.Block.WriteDouble(base + 8, Me.Block.ReadDouble(base + 8) + Me.Block.ReadDouble(base + 24) * Stage2Config.H)
+Var angularScale As Double = Me.Block.ReadDouble(base + 56) * Stage2Config.H
+Me.Block.WriteDouble(base + 40, Me.Block.ReadDouble(base + 40) + Me.Block.ReadDouble(base + 80) * angularScale)
+Me.Block.WriteDouble(base + 32, Me.Block.ReadDouble(base + 32) + Me.Block.ReadDouble(base + 40) * Stage2Config.H)
+If Me.IsSampleBody(i) Then
+Me.AddSample(Me.Block.ReadDouble(base))
+Me.AddSample(Me.Block.ReadDouble(base + 8))
+End If
+Next i
+Next substep
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var base As Integer = i * Stage2Config.MEMORY_STRIDE_BYTES
+Me.Block.WriteDouble(base + 64, 0.0)
+Me.Block.WriteDouble(base + 72, 0.0)
+Me.Block.WriteDouble(base + 80, 0.0)
+Next i
+End Sub
+
+## Rotates a local point to world and back for every body.
+Sub RunTransform()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var base As Integer = i * Stage2Config.MEMORY_STRIDE_BYTES
+Var lx As Double = (i Mod 50) * 0.02
+Var ly As Double = (i Mod 25) * 0.04
+Var c As Double = Maths.Cos(Me.Block.ReadDouble(base + 32))
+Var s As Double = Maths.Sin(Me.Block.ReadDouble(base + 32))
+Var wx As Double = c * lx - s * ly
+Var wy As Double = s * lx + c * ly
+Var lx2 As Double = c * wx + s * wy
+Var ly2 As Double = -s * wx + c * wy
+If Me.IsSampleBody(i) Then
+Me.AddSample(wx)
+Me.AddSample(wy)
+Me.AddSample(lx2)
+Me.AddSample(ly2)
+End If
+Next i
+End Sub
+
+## Dot, cross, perpendicular-normalise, and 2x2 solve workloads.
+Sub RunVectorOps()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var ang As Double = (i Mod 628) * 0.01
+Var ax As Double = Maths.Cos(ang)
+Var ay As Double = Maths.Sin(ang)
+Var bx As Double = ((i Mod 17) - 8) * 0.05
+Var by As Double = ((i Mod 19) - 9) * 0.05
+Var dot As Double = ax * bx + ay * by
+Var cross As Double = ax * by - ay * bx
+Var px As Double = -ay
+Var py As Double = ax
+Var len2 As Double = px * px + py * py
+If len2 <= Stage2Config.NORMALISE_EPSILON_SQUARED Then
+px = 0.0
+py = 0.0
+Else
+Var invLength As Double = 1.0 / Maths.Sqrt(len2)
+px = px * invLength
+py = py * invLength
+End If
+Var k00 As Double = 2.0 + (i Mod 5) * 0.25
+Var k01 As Double = ((i Mod 3) - 1) * 0.1
+Var k10 As Double = k01
+Var k11 As Double = 3.0 + (i Mod 7) * 0.125
+Var det As Double = k00 * k11 - k01 * k10
+Var invDet As Double = 0.0
+If det <> 0.0 Then
+invDet = 1.0 / det
+End If
+Var sx As Double = invDet * (k11 * bx - k01 * by)
+Var sy As Double = invDet * (k00 * by - k10 * bx)
+If Me.IsVectorSample(i) Then
+Me.AddSample(dot)
+Me.AddSample(cross)
+Me.AddSample(px)
+Me.AddSample(py)
+Me.AddSample(sx)
+Me.AddSample(sy)
+End If
+Next i
+End Sub
+
+## Sequential and pseudo-random velocity access over every body.
+Sub RunAccess()
+For i As Integer = 0 To Stage2Config.BODY_COUNT - 1
+Var base As Integer = i * Stage2Config.MEMORY_STRIDE_BYTES
+Me.Block.WriteDouble(base + 16, Me.Block.ReadDouble(base + 16) + 0.0005)
+Next i
+Me.AddSample(Me.Block.ReadDouble(500 * Stage2Config.MEMORY_STRIDE_BYTES + 16))
+Me.AddSample(Me.Block.ReadDouble(5500 * Stage2Config.MEMORY_STRIDE_BYTES + 16))
+Var r As Integer = 20260830
+For k As Integer = 1 To Stage2Config.BODY_COUNT
+r = Stage2Config.NextRandom(r)
+Var j As Integer = r.BitAnd(16383) Mod Stage2Config.BODY_COUNT
+Var base As Integer = j * Stage2Config.MEMORY_STRIDE_BYTES
+Me.Block.WriteDouble(base + 24, Me.Block.ReadDouble(base + 24) - 0.00025)
+Next k
+Me.AddSample(Me.Block.ReadDouble(501 * Stage2Config.MEMORY_STRIDE_BYTES + 24))
+Me.AddSample(Me.Block.ReadDouble(5501 * Stage2Config.MEMORY_STRIDE_BYTES + 24))
+End Sub
+
+## Broad-phase-style pair generation and deduplication over body positions.
+Sub RunPairs()
+Me.Grid.ClearCells()
+For i As Integer = 0 To Stage2Config.PAIR_BODY_COUNT - 1
+Me.Grid.AddBody(i, Me.Block.ReadDouble(i * Stage2Config.MEMORY_STRIDE_BYTES), Me.Block.ReadDouble(i * Stage2Config.MEMORY_STRIDE_BYTES + 8))
+Next i
+Me.Grid.GeneratePairs()
+Me.AddSample(Me.Grid.PairCount.ToDouble())
+Me.AddSample(Me.Grid.KeySum.ToDouble())
+End Sub
+
+## Contact-constraint velocity iteration with warm-start impulses.
+Sub RunContacts()
+For substep As Integer = 1 To Stage2Config.SUBSTEPS
+For iteration As Integer = 1 To Stage2Config.SOLVER_ITERATIONS
+For c As Integer = 0 To Stage2Config.CONTACT_COUNT - 1
+Var baseA As Integer = Me.Contacts.BodyA[c] * Stage2Config.MEMORY_STRIDE_BYTES
+Var baseB As Integer = Me.Contacts.BodyB[c] * Stage2Config.MEMORY_STRIDE_BYTES
+Var rAx As Double = Me.Contacts.AnchorAX[c]
+Var rAy As Double = Me.Contacts.AnchorAY[c]
+Var rBx As Double = Me.Contacts.AnchorBX[c]
+Var rBy As Double = Me.Contacts.AnchorBY[c]
+Var nx As Double = Me.Contacts.NormalX[c]
+Var ny As Double = Me.Contacts.NormalY[c]
+Var vBpx As Double = Me.Block.ReadDouble(baseB + 16) - Me.Block.ReadDouble(baseB + 40) * rBy
+Var vBpy As Double = Me.Block.ReadDouble(baseB + 24) + Me.Block.ReadDouble(baseB + 40) * rBx
+Var vApx As Double = Me.Block.ReadDouble(baseA + 16) - Me.Block.ReadDouble(baseA + 40) * rAy
+Var vApy As Double = Me.Block.ReadDouble(baseA + 24) + Me.Block.ReadDouble(baseA + 40) * rAx
+Var vrx As Double = vBpx - vApx
+Var vry As Double = vBpy - vApy
+Var vn As Double = vrx * nx + vry * ny
+Var p0 As Double = Me.Contacts.Impulse[c]
+Var pn As Double = p0 - vn
+If pn < 0.0 Then
+pn = 0.0
+End If
+Var dPn As Double = pn - p0
+Me.Contacts.Impulse[c] = pn
+Var impX As Double = nx * dPn
+Var impY As Double = ny * dPn
+Me.Block.WriteDouble(baseA + 16, Me.Block.ReadDouble(baseA + 16) - Me.Block.ReadDouble(baseA + 48) * impX)
+Me.Block.WriteDouble(baseA + 24, Me.Block.ReadDouble(baseA + 24) - Me.Block.ReadDouble(baseA + 48) * impY)
+Me.Block.WriteDouble(baseA + 40, Me.Block.ReadDouble(baseA + 40) - Me.Block.ReadDouble(baseA + 56) * (rAx * impY - rAy * impX))
+Me.Block.WriteDouble(baseB + 16, Me.Block.ReadDouble(baseB + 16) + Me.Block.ReadDouble(baseB + 48) * impX)
+Me.Block.WriteDouble(baseB + 24, Me.Block.ReadDouble(baseB + 24) + Me.Block.ReadDouble(baseB + 48) * impY)
+Me.Block.WriteDouble(baseB + 40, Me.Block.ReadDouble(baseB + 40) + Me.Block.ReadDouble(baseB + 56) * (rBx * impY - rBy * impX))
+Next c
+Next iteration
+Next substep
+Me.AddSample(Me.Contacts.Impulse[7])
+Me.AddSample(Me.Contacts.Impulse[777])
+Me.AddSample(Me.Contacts.Impulse[1499])
+Me.AddSample(Me.Block.ReadDouble(3 * Stage2Config.MEMORY_STRIDE_BYTES + 16))
+Me.AddSample(Me.Block.ReadDouble(3 * Stage2Config.MEMORY_STRIDE_BYTES + 24))
+Me.AddSample(Me.Block.ReadDouble(3 * Stage2Config.MEMORY_STRIDE_BYTES + 40))
+End Sub
+End Class
