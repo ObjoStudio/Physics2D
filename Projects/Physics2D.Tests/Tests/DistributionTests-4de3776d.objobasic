@@ -1,0 +1,101 @@
+# Tests for the generated single-file distribution.
+#
+# These tests prove that dist/Physics2D.objobasic is current relative to the
+# canonical Shared Code sources, without reproducing the assembler: the
+# distribution header records one hash per input source, and this test
+# recomputes those hashes from disk.
+Class DistributionTests Inherits TestCase
+## Returns the distribution file, failing clearly when it is missing.
+Function DistributionFile() As FileSystemItem
+Var path As String = PhysicsAssert.RepoPath("dist/Physics2D.objobasic")
+Var file As FileSystemItem = New FileSystemItem(path)
+If Not file.Exists Then
+  Var homeCopy As FileSystemItem = SpecialFolder.Home.Child("Repos").Child("Physics2D").Child("dist").Child("Physics2D.objobasic")
+  Assert.True(homeCopy.Exists, "cannot locate dist/Physics2D.objobasic")
+  Return homeCopy
+End If
+Return file
+End Function
+
+## Returns the Shared Code directory.
+Function SharedSourcesFolder() As FileSystemItem
+Var distFile As FileSystemItem = DistributionFile()
+Var root As FileSystemItem = distFile.Parent.Parent
+Var folder As FileSystemItem = root.Child("Shared").Child("Sources")
+Assert.True(folder.Exists, "missing Shared/Sources at " + folder.Path)
+Return folder
+End Function
+
+## Recomputes the assembler's normalised hash for one source file.
+Function SourceHash(file As FileSystemItem) As String
+Var text As String = file.ReadAllText()
+Var lines() As String = text.Replace(Chr(13) + Chr(10), Chr(10)).Replace(Chr(13), Chr(10)).Split(Chr(10))
+While lines.Count > 0 And lines[lines.LastIndex].Trim().Length = 0
+  lines.Resize(lines.Count - 1)
+Wend
+Var builder As String = ""
+For i As Integer = 0 To lines.Count - 1
+  If i > 0 Then
+    builder += Chr(10)
+  End If
+  builder += lines[i].Trim()
+Next i
+Return Crypto.SHA256(builder)
+End Function
+
+Public Sub TestDistributionExistsAndIsSingleModule()
+Var file As FileSystemItem = DistributionFile()
+Var text As String = file.ReadAllText()
+Assert.True(text.StartsWith("# Physics2D"), "distribution must start with its generated header")
+Assert.True(text.Contains("Module Physics2D"), "distribution must declare the Physics2D module")
+Assert.True(text.Trim().EndsWith("End Module"), "distribution must close the Physics2D module")
+Assert.Equal(1, CountModuleDeclarations(text))
+End Sub
+
+Public Sub TestDistributionRecordsUpstreamProvenance()
+Var text As String = DistributionFile().ReadAllText()
+Assert.Contains("8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3", text)
+Assert.Contains("MIT licence", text)
+End Sub
+
+Public Sub TestDistributionInputsMatchSharedSources()
+Var distText As String = DistributionFile().ReadAllText()
+Var recorded() As String
+Var recordedHashes() As String
+For Each line As String In distText.Split(Chr(10))
+  If line.StartsWith("# Input: ") Then
+    Var parts() As String = line.Substring(9).Split(" ")
+    recorded.Append(parts[0])
+    recordedHashes.Append(parts[1])
+  End If
+Next line
+Assert.NotEmpty(recorded, "distribution header must record its inputs")
+
+Var folder As FileSystemItem = SharedSourcesFolder()
+Var actualFiles() As String
+For Each item As FileSystemItem In folder.Children()
+  If item.IsFile And item.Extension = "objobasic" Then
+    actualFiles.Append(item.Name)
+  End If
+Next item
+Assert.Equal(recorded.Count, actualFiles.Count)
+
+For i As Integer = 0 To recorded.Count - 1
+  Var source As FileSystemItem = folder.Child(recorded[i])
+  Assert.True(source.Exists, "distribution references missing source " + recorded[i])
+  Var expectedHash As String = recordedHashes[i]
+  Var actualHash As String = SourceHash(source)
+  Assert.Equal(expectedHash, actualHash, "stale distribution input " + recorded[i])
+Next i
+End Sub
+
+Private Function CountModuleDeclarations(text As String) As Integer
+Var count As Integer = 0
+For Each line As String In text.Split(Chr(10))
+  If line.Trim().StartsWith("Module ") And Not line.Trim().StartsWith("End Module") Then
+    count += 1
+  End If
+Next line
+Return count
+End Function
+End Class

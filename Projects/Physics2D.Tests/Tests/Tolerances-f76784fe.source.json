@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Tolerances",
+  "Id": "f76784fe-8181-4e49-ba74-e2079051b4f9",
+  "Kind": "Module",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Tolerances-f76784fe.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

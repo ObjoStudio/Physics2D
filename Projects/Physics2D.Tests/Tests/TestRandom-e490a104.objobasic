@@ -1,0 +1,41 @@
+# Deterministic seeded pseudo-random generator for stress tests.
+#
+# Uses the splitmix64 algorithm so every platform and run produces the same
+# sequence for the same seed. Stress inputs must never depend on platform
+# randomness.
+Class TestRandom
+Private Property mState As Integer
+
+Constructor(seed As Integer)
+Me.mState = seed
+End Constructor
+
+# Returns the next raw 64-bit value.
+Function NextValue() As Integer
+Me.mState = Me.mState + -7046029254386353131
+Var z As Integer = Me.mState
+z = (z.BitXor(z.ShiftRight(30))) * -4658895280553007687
+z = (z.BitXor(z.ShiftRight(27))) * -7723592293110705685
+Return z.BitXor(z.ShiftRight(31))
+End Function
+
+# Returns a Double in [0, 1).
+Function NextDouble() As Double
+Return (NextValue().ShiftRight(11)).ToDouble() / 9007199254740992.0
+End Function
+
+# Returns an Integer in [minValue, maxValue] inclusive.
+Function NextInt(minValue As Integer, maxValue As Integer) As Integer
+Var range As Integer = maxValue - minValue + 1
+If range <= 0 Then
+  Return minValue
+End If
+# Unsigned-style modulo via shift to keep the distribution uniform.
+Var sample As Integer = NextValue().ShiftRight(1)
+Return minValue + (sample Mod range)
+End Function
+
+Function NextSigned(maxMagnitude As Double) As Double
+Return (NextDouble() * 2.0 - 1.0) * maxMagnitude
+End Function
+End Class

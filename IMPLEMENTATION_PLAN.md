@@ -1049,7 +1049,7 @@ to resume.
 | Stage | Status | Evidence |
 |---|---|---|
 | 0. Bootstrap, provenance, inventory | Complete | `Physics2D.objosln` compiles (all four projects, `objo check` 26.8.6); 422-symbol inventory in `docs/PORTING.md`; provenance in `THIRD_PARTY_NOTICES.md`; decisions 0001/0002 |
-| 1. Test oracle, harnesses, packaging | Not started | |
+| 1. Test oracle, harnesses, packaging | Complete | 10 golden fixtures + `MANIFEST.md` (regeneration byte-identical); wrong-golden gate demonstrated; `Tolerances`/`PhysicsAssert`/`TestRandom` helpers (16 tests); `tools/assemble_module.py` byte-identical with stale-dist test; `tools/check_distribution.sh` clean-room smoke; benchmark runner with checksums, metadata, JSON + human output; allocation gate via `System.AllocationCount` (Objo #1299, commit 485c4fab) proven by allocating-vs-mutating tests (9 tests); abstract `Checksum` rejects checksum-less scenarios at compile time |
 | 2. Maths audit and representation bake-off | Not started | |
 | 3. Foundation containers and identity | Not started | |
 | 4. Geometry, distance, casts, manifolds | Not started | |

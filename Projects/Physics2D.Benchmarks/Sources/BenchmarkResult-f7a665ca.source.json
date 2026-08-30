@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "BenchmarkResult",
+  "Id": "f7a665ca-b81b-4a6f-a869-e3809685dedb",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "BenchmarkResult-f7a665ca.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

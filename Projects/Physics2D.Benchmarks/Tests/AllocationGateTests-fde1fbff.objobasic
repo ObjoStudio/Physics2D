@@ -1,0 +1,35 @@
+# Allocation-gate self-tests.
+#
+# The benchmark harness records object allocations from
+# System.AllocationCount around each measured iteration. These tests prove
+# the route distinguishes an allocating operation from a mutating one, which
+# later stages use to enforce zero-allocation hot paths.
+Class AllocationGateTests Inherits TestCase
+Public Sub TestAllocatingScenarioReportsAllocations()
+Var runner As New BenchmarkRunner
+Var result As BenchmarkResult = runner.Run(New AllocatingScenario)
+Assert.Equal(10, result.MeasuredIterations)
+Assert.True(result.Allocations >= 10, "allocating scenario must report at least one allocation per iteration, got " + result.Allocations.ToString())
+End Sub
+
+Public Sub TestMutatingScenarioReportsZeroAllocations()
+Var runner As New BenchmarkRunner
+Var result As BenchmarkResult = runner.Run(New MutatingScenario)
+Assert.Equal(10, result.MeasuredIterations)
+Assert.Equal(0, result.Allocations)
+End Sub
+
+Public Sub TestCountingScenarioReportsZeroAllocations()
+Var runner As New BenchmarkRunner
+Var result As BenchmarkResult = runner.Run(New CountingScenario)
+Assert.Equal(0, result.Allocations)
+End Sub
+
+Public Sub TestAllocationCountIsMonotonicWithinRunner()
+Var before As Integer = System.AllocationCount
+Var runner As New BenchmarkRunner
+runner.Run(New MutatingScenario)
+Var after As Integer = System.AllocationCount
+Assert.True(after >= before, "allocation counter must never decrease")
+End Sub
+End Class

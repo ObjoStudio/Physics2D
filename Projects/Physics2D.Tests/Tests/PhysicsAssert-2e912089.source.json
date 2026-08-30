@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "PhysicsAssert",
+  "Id": "2e912089-fd08-4623-ada2-aa311ead1a0d",
+  "Kind": "Module",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "PhysicsAssert-2e912089.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

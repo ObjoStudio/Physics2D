@@ -1,0 +1,65 @@
+# Measured outcome of one benchmark scenario.
+Class BenchmarkResult
+## Scenario name.
+Property ScenarioName As String
+## Scenario parameter string.
+Property Parameters As String
+## Warm-up iteration count.
+Property WarmupIterations As Integer
+## Measured iteration count.
+Property MeasuredIterations As Integer
+## Median measured duration.
+Property MedianMilliseconds As Double
+## 95th percentile measured duration.
+Property P95Milliseconds As Double
+## Slowest measured duration.
+Property MaximumMilliseconds As Double
+## Arithmetic mean duration.
+Property MeanMilliseconds As Double
+## Total objects allocated during the measured region.
+Property Allocations As Integer
+## Deterministic work checksum.
+Property Checksum As Integer
+## Raw per-iteration durations in milliseconds.
+Property RawMilliseconds() As Double
+
+## Creates an empty result.
+Constructor()
+Me.RawMilliseconds = New Array(Of Double)
+End Constructor
+
+## Serialises the result as one JSON object.
+Function ToJson() As String
+Var json As String = "{"
+json = json + JsonString("name") + ":" + JsonString(ScenarioName) + ","
+json = json + JsonString("parameters") + ":" + JsonString(Parameters) + ","
+json = json + JsonString("warmup") + ":" + WarmupIterations.ToString() + ","
+json = json + JsonString("iterations") + ":" + MeasuredIterations.ToString() + ","
+json = json + JsonString("medianMs") + ":" + Format(MedianMilliseconds) + ","
+json = json + JsonString("p95Ms") + ":" + Format(P95Milliseconds) + ","
+json = json + JsonString("maxMs") + ":" + Format(MaximumMilliseconds) + ","
+json = json + JsonString("meanMs") + ":" + Format(MeanMilliseconds) + ","
+json = json + JsonString("allocations") + ":" + Allocations.ToString() + ","
+json = json + JsonString("checksum") + ":" + Checksum.ToString() + ","
+json = json + JsonString("rawMs") + ":["
+For i As Integer = 0 To RawMilliseconds.Count - 1
+  If i > 0 Then
+    json = json + ","
+  End If
+  json = json + Format(RawMilliseconds[i])
+Next i
+json = json + "]}"
+Return json
+End Function
+
+## Encodes a string as a JSON string literal.
+Function JsonString(text As String) As String
+Var quote As String = Chr(34)
+Return quote + text.Replace("\\", "\\\\").Replace(quote, "\\" + quote) + quote
+End Function
+
+## Rounds a duration for stable JSON output.
+Private Function Format(value As Double) As String
+Return Maths.Round(value, 6).ToString()
+End Function
+End Class

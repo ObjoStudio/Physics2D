@@ -1,0 +1,48 @@
+# Stage 1 benchmark scenario that validates the runner itself.
+#
+# Computes a deterministic checksum over a fixed arithmetic workload. This
+# scenario is the reference example for the runner contract, not a performance
+# claim.
+Class RunnerSelfTestScenario Inherits BenchmarkScenario
+## Running sum of the workload.
+Private Property mAccumulator As Double
+## Inner loop iterations.
+Private Property mIterations As Integer
+
+## Creates the self-test scenario with the requested inner iteration count.
+Constructor(iterations As Integer)
+Super.Constructor()
+Me.Name = "runner-self-test"
+Me.Description = "Fixed arithmetic workload validating the runner contract."
+Me.WarmupIterations = 10
+Me.MeasuredIterations = 20
+Me.mIterations = iterations
+End Constructor
+
+## Describes the scenario parameters for the result record.
+Override Function Parameters() As String
+Return "innerIterations=" + Me.mIterations.ToString()
+End Function
+
+## Performs one deterministic arithmetic workload.
+Override Sub Run()
+Var sum As Double = 0.0
+For i As Integer = 1 To Me.mIterations
+  sum = sum + (i Mod 7).ToDouble() * 0.5
+Next i
+Me.mAccumulator = sum
+End Sub
+
+## Folds the final accumulator into a deterministic checksum.
+Override Function Checksum() As Integer
+# Deterministic FNV-1a fold of the final accumulator.
+Var hash As Integer = -3750763034362895579
+Var scaled As Integer = Integer(Maths.Round(Me.mAccumulator * 1000000000.0))
+For i As Integer = 0 To 7
+  hash = hash.BitXor(scaled.BitAnd(255))
+  hash = hash * 1099511628211
+  scaled = scaled.ShiftRight(8)
+Next i
+Return hash
+End Function
+End Class

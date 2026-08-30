@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "DistributionTests",
+  "Id": "4de3776d-ec14-49dd-960b-084ccbc5dca0",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "DistributionTests-4de3776d.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

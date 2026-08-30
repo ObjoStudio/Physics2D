@@ -1,0 +1,16 @@
+# Allocation-gate self-tests.
+#
+# The benchmark harness records object allocations from
+# System.AllocationCount around each measured iteration. These tests prove
+# the route distinguishes an allocating operation from a mutating one, which
+# later stages use to enforce zero-allocation hot paths.
+Class AllocatingVector
+## X component.
+Property X As Double
+## Y component.
+Property Y As Double
+Constructor(x As Double, y As Double)
+Me.X = x
+Me.Y = y
+End Constructor
+End Class

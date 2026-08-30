@@ -1,0 +1,29 @@
+# Scenario that only mutates fields, allocating nothing per Run.
+Class MutatingScenario Inherits BenchmarkScenario
+## Mutable vector reused across iterations.
+Property Vector As AllocatingVector
+## Running counter.
+Property Counter As Integer
+
+## Creates the scenario with its pre-allocated vector.
+Constructor()
+Super.Constructor()
+Me.Name = "mutating-fields"
+Me.Description = "Mutates fields of a pre-allocated vector."
+Me.WarmupIterations = 2
+Me.MeasuredIterations = 10
+Me.Vector = New AllocatingVector(0.0, 0.0)
+End Constructor
+
+## Mutates fields and the counter.
+Override Sub Run()
+Me.Vector.X += 1.0
+Me.Vector.Y += 2.0
+Me.Counter += 1
+End Sub
+
+## Returns the counter.
+Override Function Checksum() As Integer
+Return Me.Counter
+End Function
+End Class

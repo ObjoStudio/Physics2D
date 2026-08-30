@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "BenchmarkRunner",
+  "Id": "f1787827-8cd1-450e-adde-acd66a5c3b82",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "BenchmarkRunner-f1787827.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

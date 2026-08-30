@@ -1,0 +1,24 @@
+# A minimal deterministic scenario used by the runner contract tests.
+Class CountingScenario Inherits BenchmarkScenario
+## Total Run invocations observed since construction.
+Private Property mCounter As Integer
+
+## Creates the counting scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "counting"
+Me.Description = "Counts iterations."
+Me.WarmupIterations = 3
+Me.MeasuredIterations = 7
+End Constructor
+
+## Increments the counter.
+Override Sub Run()
+Me.mCounter += 1
+End Sub
+
+## Returns the counter.
+Override Function Checksum() As Integer
+Return Me.mCounter
+End Function
+End Class

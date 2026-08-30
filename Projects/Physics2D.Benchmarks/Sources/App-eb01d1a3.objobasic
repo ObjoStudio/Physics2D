@@ -1,9 +1,71 @@
-# Benchmark application entry point. Scenarios are added by the benchmark
-# stages; see benchmarks/README.md.
+# Benchmark application entry point.
+#
+# Usage (built application or Studio run arguments):
+#   --output <dir>   Directory for the JSON result record (default: benchmarks/results)
+#   --name <name>    Run name used in output files (default: local)
+#   --only <filter>  Comma-separated scenario name substrings to run
 Class App Inherits CommandLineApplication
 Event Run(args() As String) As Integer
-Pragma Unused args
-Print("Physics2D benchmark runner is not implemented yet.")
-Return 1
+Var outputDirectory As String = "benchmarks/results"
+Var runName As String = "local"
+Var onlyFilter As String = ""
+Pragma Unused onlyFilter
+
+Var i As Integer = 0
+While i < args.Count
+  Select Case args[i]
+  Case "--output"
+    i += 1
+    If i < args.Count Then
+      outputDirectory = args[i]
+    End If
+  Case "--name"
+    i += 1
+    If i < args.Count Then
+      runName = args[i]
+    End If
+  Case "--only"
+    i += 1
+    If i < args.Count Then
+      onlyFilter = args[i]
+    End If
+  Else
+    System.ErrorPrint("Unknown argument: " + args[i])
+    Return 2
+  End Select
+  i += 1
+Wend
+
+Var runner As New BenchmarkRunner
+runner.Add(New RunnerSelfTestScenario(10000))
+
+Var results() As BenchmarkResult = runner.RunAll()
+
+Print("scenario                            median     p95        max        checksum")
+For Each result As BenchmarkResult In results
+  Print(FormatRow(result))
+Next result
+
+Var written As String = runner.WriteResults(results, outputDirectory, runName)
+Print("results written to " + written)
+Return 0
 End Event
+
+## Formats one results-table row.
+Private Function FormatRow(result As BenchmarkResult) As String
+Var name As String = result.ScenarioName
+While name.Length < 34
+  name = name + " "
+Wend
+Return name + FormatWidth(result.MedianMilliseconds) + FormatWidth(result.P95Milliseconds) + FormatWidth(result.MaximumMilliseconds) + " " + result.Checksum.ToString()
+End Function
+
+## Pads a duration into a fixed-width column.
+Private Function FormatWidth(value As Double) As String
+Var text As String = Maths.Round(value, 3).ToString()
+While text.Length < 11
+  text = " " + text
+Wend
+Return text
+End Function
 End Class

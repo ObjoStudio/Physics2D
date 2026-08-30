@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "AllocatingScenario",
+  "Id": "51009653-9c7e-4c44-b92d-75c0c6976f24",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "AllocatingScenario-51009653.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

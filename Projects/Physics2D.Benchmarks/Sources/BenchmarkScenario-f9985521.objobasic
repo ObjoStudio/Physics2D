@@ -1,0 +1,39 @@
+# One reproducible benchmark scenario.
+#
+# A scenario runs fixed, deterministic work. Prepare builds any state and
+# performs capacity warm-up, Run executes exactly one measured iteration, and
+# Checksum summarises the work performed so every result proves how much
+# simulated work happened. Scenarios must never read a wall clock themselves.
+Abstract Class BenchmarkScenario
+## Scenario name used in reports.
+Property Name As String
+## Human-readable scenario description.
+Property Description As String
+## Unmeasured iterations run before measurement.
+Property WarmupIterations As Integer
+## Number of timed iterations.
+Property MeasuredIterations As Integer
+
+## Creates a scenario with default warm-up and measured iteration counts.
+Constructor()
+Me.WarmupIterations = 100
+Me.MeasuredIterations = 30
+End Constructor
+
+## Builds scenario state and warms up capacities so measured iterations do not
+## include first-touch costs.
+Sub Prepare()
+End Sub
+
+## Executes exactly one measured iteration of the scenario's work.
+Abstract Sub Run()
+
+## Summarises all work performed by Run calls since Prepare. A stable checksum
+## proves the workload did not silently shrink between releases.
+Abstract Function Checksum() As Integer
+
+## Returns scenario parameters as name=value tokens for result records.
+Function Parameters() As String
+Return ""
+End Function
+End Class

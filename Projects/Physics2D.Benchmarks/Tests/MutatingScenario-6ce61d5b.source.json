@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "MutatingScenario",
+  "Id": "6ce61d5b-9b6d-41d6-85bd-aee2a42f1f55",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "MutatingScenario-6ce61d5b.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

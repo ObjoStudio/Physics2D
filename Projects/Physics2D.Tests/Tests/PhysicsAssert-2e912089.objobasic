@@ -1,0 +1,145 @@
+# Test oracle helpers for Physics2D.
+#
+# Built on the shared Assert module. Adds absolute-plus-relative Double
+# comparison, Vector2/Matrix comparison, unordered pair comparison, fixture
+# loading, and deterministic checksums.
+Module PhysicsAssert
+# Requires |expected - actual| <= max(absTol, relTol * max(|expected|, |actual|)).
+Function Near(expected As Double, actual As Double, absTol As Double, relTol As Double, Optional message As String = "")
+Var scale As Double = Maths.Abs(expected)
+Var actualScale As Double = Maths.Abs(actual)
+If actualScale > scale Then
+  scale = actualScale
+End If
+Var tolerance As Double = absTol + relTol * scale
+Assert.True((actual - expected).Abs() <= tolerance, message + " expected=" + expected.ToString() + " actual=" + actual.ToString() + " tolerance=" + tolerance.ToString())
+End Function
+
+Function NearVector(expected As Vector2, actual As Vector2, absTol As Double, relTol As Double, Optional message As String = "")
+Near(expected.X, actual.X, absTol, relTol, message + " x")
+Near(expected.Y, actual.Y, absTol, relTol, message + " y")
+End Function
+
+Function NearMatrix(expected As Matrix, actual As Matrix, absTol As Double, relTol As Double, Optional message As String = "")
+Near(expected.M00, actual.M00, absTol, relTol, message + " m00")
+Near(expected.M01, actual.M01, absTol, relTol, message + " m01")
+Near(expected.M10, actual.M10, absTol, relTol, message + " m10")
+Near(expected.M11, actual.M11, absTol, relTol, message + " m11")
+End Function
+
+# Compares two Vector2 pairs as unordered pairs. Useful when a manifold may
+# report its two points in either order.
+Function NearVectorPairUnordered(expectedA As Vector2, expectedB As Vector2, actualA As Vector2, actualB As Vector2, absTol As Double, relTol As Double, Optional message As String = "")
+Var forward As Boolean = expectedA.ApproxEquals(actualA, absTol) And expectedB.ApproxEquals(actualB, absTol)
+Var swapped As Boolean = expectedA.ApproxEquals(actualB, absTol) And expectedB.ApproxEquals(actualA, absTol)
+Assert.True(forward Or swapped, message + " pairs differ")
+End Function
+
+# Loads a golden fixture file and returns its non-empty lines. Fixtures live in
+# testdata/golden next to the repository root.
+Function FixtureLines(fileName As String) As Array(Of String)
+Var path As String = FixturePath(fileName)
+Var file As FileSystemItem = New FileSystemItem(path)
+Assert.True(file.Exists, "missing fixture file " + path)
+Var text As String = file.ReadAllText()
+Var allLines() As String = text.Split(Chr(10))
+Var lines() As String
+For Each line As String In allLines
+  Var trimmed As String = line.Trim()
+  If trimmed.Length > 0 Then
+    lines.Append(trimmed)
+  End If
+Next line
+Return lines
+End Function
+
+Function FixturePath(fileName As String) As String
+Return RepoPath("testdata/golden/" + fileName)
+End Function
+
+## Resolves one slash-separated path relative to the repository root. Resolution order:
+## 1. PHYSICS2D_REPO_ROOT environment variable (CI and scripted runs).
+## 2. Walk up from the current directory (command-line runs from the checkout).
+## 3. ~/Repos/Physics2D (the canonical checkout location).
+Function RepoPath(relativePath As String) As String
+Var candidate As FileSystemItem
+Var root As String = System.EnvironmentVariable("PHYSICS2D_REPO_ROOT")
+If root.Length > 0 Then
+  candidate = ResolveChild(New FileSystemItem(root), relativePath)
+  If candidate.Exists Then
+    Return candidate.Path
+  End If
+End If
+
+Var folder As FileSystemItem = New FileSystemItem(".")
+For i As Integer = 0 To 6
+  candidate = ResolveChild(folder, relativePath)
+  If candidate.Exists Then
+    Return candidate.Path
+  End If
+  folder = folder.Parent
+  If folder = Nothing Then
+    Exit For
+  End If
+Next i
+
+Var home As FileSystemItem = SpecialFolder.Home.Child("Repos").Child("Physics2D")
+candidate = ResolveChild(home, relativePath)
+If candidate.Exists Then
+  Return candidate.Path
+End If
+
+Return relativePath
+End Function
+
+## Walks one slash-separated relative path below startFolder.
+Function ResolveChild(startFolder As FileSystemItem, relativePath As String) As FileSystemItem
+Var current As FileSystemItem = startFolder
+Var segments() As String = relativePath.Split("/")
+For Each segment As String In segments
+  If segment.Length = 0 Or segment = "." Then
+    Continue
+  End If
+  current = current.Child(segment)
+Next segment
+Return current
+End Function
+
+# Splits one fixture record into its fields.
+Function Fields(line As String) As Array(Of String)
+Return line.Split("|")
+End Function
+
+# Deterministic 64-bit FNV-1a style fold of one Double into a checksum.
+# The value is rounded to nine decimal places so that bit-identical physics
+# results on the same runtime produce identical checksums.
+Function FoldDouble(checksum As Integer, value As Double) As Integer
+Var scaled As Integer = Integer(Maths.Round(value * 1000000000.0))
+Return FoldInteger(checksum, scaled)
+End Function
+
+Function FoldInteger(checksum As Integer, value As Integer) As Integer
+# FNV-1a over the little-end bytes of the 64-bit value.
+Var hash As Integer = checksum
+For i As Integer = 0 To 7
+  Var octet As Integer = value.BitAnd(255)
+  hash = hash.BitXor(octet)
+  hash = hash * 1099511628211
+  value = value.ShiftRight(8)
+Next i
+Return hash
+End Function
+
+Function FoldIntegers(checksum As Integer, values() As Integer) As Integer
+Var hash As Integer = checksum
+For Each value As Integer In values
+  hash = FoldInteger(hash, value)
+Next value
+Return hash
+End Function
+
+Function NewChecksum() As Integer
+# The FNV-1a 64-bit offset basis, expressed in signed 64-bit form.
+Return -3750763034362895579
+End Function
+End Module

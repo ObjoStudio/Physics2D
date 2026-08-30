@@ -1,0 +1,39 @@
+# Tolerance classes used by the Physics2D test suite.
+#
+# Comparisons against Box2D golden fixtures need looser tolerances than
+# Physics2D-internal checks because upstream C stores results in 32-bit floats
+# while Physics2D computes in Double. Fixture values are printed with nine
+# significant digits, which alone introduces up to roughly 5e-8 relative error.
+# Accumulated quantities diverge further because upstream arithmetic rounds at
+# every float32 step. Each tolerance records its rationale; do not weaken a
+# tolerance without recording why.
+Module Tolerances
+# Pure arithmetic compared against nine-digit C output.
+Const MATHS_ABS As Double = 0.000000000001
+Const MATHS_REL As Double = 0.000001
+
+# Hull, distance, and cast results computed from float32 intermediates.
+Const GEOMETRY_ABS As Double = 0.00000001
+Const GEOMETRY_REL As Double = 0.00001
+
+# Manifold points, normals, and separations. Upstream clips with float32
+# arithmetic and snaps small values, so absolute error dominates.
+Const MANIFOLD_ABS As Double = 0.00005
+Const MANIFOLD_REL As Double = 0.0001
+
+# Mass properties integrate over polygon areas.
+Const MASS_ABS As Double = 0.0001
+Const MASS_REL As Double = 0.0001
+
+# Body transforms after a full simulation scene. Upstream float32 rounding
+# compounds every substep, so scene comparisons are the loosest class.
+Const SCENE_ABS As Double = 0.002
+Const SCENE_REL As Double = 0.002
+
+# Physics2D-internal checks that never compare against C output.
+Const INTERNAL_ABS As Double = 0.000000000001
+Const INTERNAL_REL As Double = 0.000000000001
+
+# Deterministic checksums must match exactly.
+Const EXACT As Double = 0.0
+End Module

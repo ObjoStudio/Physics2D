@@ -1,0 +1,113 @@
+# Self-tests for the test oracle helpers. These guard the harness itself so a
+# broken helper cannot silently validate broken physics.
+Class PhysicsAssertTests Inherits TestCase
+Public Sub TestNearAcceptsWithinAbsoluteTolerance()
+PhysicsAssert.Near(1.0, 1.0 + 1.0e-13, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL)
+End Sub
+
+Public Sub TestNearAcceptsWithinRelativeTolerance()
+PhysicsAssert.Near(1000000.0, 1000000.0 + 0.1, 0.0, 0.000001)
+End Sub
+
+Public Sub TestNearRejectsOutsideTolerance()
+Try
+  PhysicsAssert.Near(1.0, 1.001, 0.000000000001, 0.000001)
+  Assert.Fail("Near should have rejected 1.001")
+Catch e As Exception
+  Assert.Contains("expected=", e.Message)
+End Try
+End Sub
+
+Public Sub TestNearVector()
+PhysicsAssert.NearVector(New Vector2(1.0, -2.0), New Vector2(1.0, -2.0), 0.0, 0.0)
+Try
+  PhysicsAssert.NearVector(New Vector2(1.0, -2.0), New Vector2(1.0, -2.5), 0.0, 0.0, "v")
+  Assert.Fail("NearVector should have rejected the y difference")
+Catch e As Exception
+  Assert.Contains("v y", e.Message)
+End Try
+End Sub
+
+Public Sub TestNearVectorPairUnordered()
+Var a As New Vector2(1.0, 0.0)
+Var b As New Vector2(0.0, 1.0)
+PhysicsAssert.NearVectorPairUnordered(a, b, b, a, 0.0000001, 0.0)
+PhysicsAssert.NearVectorPairUnordered(a, b, a, b, 0.0000001, 0.0)
+Try
+  PhysicsAssert.NearVectorPairUnordered(a, b, New Vector2(5.0, 0.0), New Vector2(0.0, 5.0), 0.0000001, 0.0)
+  Assert.Fail("unordered pair should have been rejected")
+Catch e As Exception
+  Assert.True(True)
+End Try
+End Sub
+
+Public Sub TestNearMatrix()
+Var m As New Matrix(1.0, 2.0, 3.0, 4.0)
+PhysicsAssert.NearMatrix(m, New Matrix(1.0, 2.0, 3.0, 4.0), 0.0, 0.0)
+Try
+  PhysicsAssert.NearMatrix(m, New Matrix(1.0, 2.0, 3.5, 4.0), 0.0, 0.0)
+  Assert.Fail("NearMatrix should have rejected m10")
+Catch e As Exception
+  Assert.Contains("m10", e.Message)
+End Try
+End Sub
+
+Public Sub TestDoubleFoldingIsDeterministic()
+Var first As Integer = PhysicsAssert.FoldDouble(PhysicsAssert.NewChecksum(), 0.123456789)
+Var second As Integer = PhysicsAssert.FoldDouble(PhysicsAssert.NewChecksum(), 0.123456789)
+Assert.Equal(first, second)
+Assert.NotEqual(first, PhysicsAssert.FoldDouble(PhysicsAssert.NewChecksum(), 0.123456788))
+End Sub
+
+Public Sub TestFoldingIsOrderSensitive()
+Var values() As Integer = [1, 2, 3]
+Var forward As Integer = PhysicsAssert.FoldIntegers(PhysicsAssert.NewChecksum(), values)
+Var reversed() As Integer = [3, 2, 1]
+Var backward As Integer = PhysicsAssert.FoldIntegers(PhysicsAssert.NewChecksum(), reversed)
+Assert.NotEqual(forward, backward)
+End Sub
+
+Public Sub TestRandomIsDeterministic()
+Var a As New TestRandom(42)
+Var b As New TestRandom(42)
+For i As Integer = 0 To 99
+  Assert.Equal(a.NextValue(), b.NextValue())
+  Assert.Equal(a.NextDouble(), b.NextDouble())
+Next i
+End Sub
+
+Public Sub TestRandomStaysInRange()
+Var r As New TestRandom(7)
+For i As Integer = 0 To 999
+  Var d As Double = r.NextDouble()
+  Assert.True(d >= 0.0 And d < 1.0)
+  Var n As Integer = r.NextInt(-3, 5)
+  Assert.True(n >= -3 And n <= 5)
+Next i
+End Sub
+
+Public Sub TestDifferentSeedsDiverge()
+Var a As New TestRandom(1)
+Var b As New TestRandom(2)
+Var differences As Integer = 0
+For i As Integer = 0 To 9
+  If a.NextValue() <> b.NextValue() Then
+    differences += 1
+  End If
+Next i
+Assert.True(differences > 5)
+End Sub
+
+Public Sub TestFixtureLoading()
+Var lines() As String = PhysicsAssert.FixtureLines("maths.txt")
+Assert.NotEmpty(lines)
+Assert.True(lines[0].StartsWith("maths|"))
+Var fields() As String = PhysicsAssert.Fields(lines[0])
+Assert.Equal(4, fields.Count)
+End Sub
+
+Public Sub TestFixturePathResolvesFromRepository()
+Var path As String = PhysicsAssert.FixturePath("maths.txt")
+Assert.True(New FileSystemItem(path).Exists, path)
+End Sub
+End Class

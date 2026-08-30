@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "AllocatingVector",
+  "Id": "7798e981-4e97-487b-8c46-b42b5a80d5ac",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "AllocatingVector-7798e981.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

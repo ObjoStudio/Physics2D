@@ -1,0 +1,24 @@
+# Scenario that allocates a vector instance every Run.
+Class AllocatingScenario Inherits BenchmarkScenario
+## Last allocated vector.
+Property LastVector As AllocatingVector
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "allocating-vector"
+Me.Description = "Allocates a vector instance per iteration."
+Me.WarmupIterations = 2
+Me.MeasuredIterations = 10
+End Constructor
+
+## Allocates one vector.
+Override Sub Run()
+Me.LastVector = New AllocatingVector(1.0, 2.0)
+End Sub
+
+## Returns the vector's component sum.
+Override Function Checksum() As Integer
+Return Integer(Me.LastVector.X + Me.LastVector.Y)
+End Function
+End Class

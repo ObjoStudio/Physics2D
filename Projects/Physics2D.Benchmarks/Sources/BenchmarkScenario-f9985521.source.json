@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "BenchmarkScenario",
+  "Id": "f9985521-0d7a-406e-942d-20244961978c",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "BenchmarkScenario-f9985521.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

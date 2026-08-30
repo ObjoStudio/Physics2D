@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "AllocationGateTests",
+  "Id": "fde1fbff-19e3-469f-96f6-ff0366a0a14e",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "AllocationGateTests-fde1fbff.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

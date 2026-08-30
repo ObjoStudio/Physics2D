@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "CountingScenario",
+  "Id": "19e4b0fb-d152-4ae3-b3c1-03647fdf4905",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "CountingScenario-19e4b0fb.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "BenchmarkRunnerTests",
+  "Id": "43c748aa-a248-49d0-b58d-fdc0a7b88729",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "BenchmarkRunnerTests-43c748aa.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

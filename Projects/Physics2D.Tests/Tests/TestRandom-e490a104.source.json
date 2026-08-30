@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "TestRandom",
+  "Id": "e490a104-096e-46f9-a7a3-bab744a3b443",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "TestRandom-e490a104.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

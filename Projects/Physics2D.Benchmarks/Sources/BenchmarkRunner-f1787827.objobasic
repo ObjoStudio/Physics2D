@@ -1,0 +1,175 @@
+# Deterministic benchmark runner.
+#
+# Runs each scenario's warm-up and measured iterations, records median, p95,
+# and maximum timings, requires a checksum from every scenario, and writes both
+# human-readable console output and a machine-readable JSON record.
+Class BenchmarkRunner
+## Registered scenarios.
+Private Property mScenarios() As BenchmarkScenario
+
+## Creates an empty runner.
+Constructor()
+Me.mScenarios = New Array(Of BenchmarkScenario)
+End Constructor
+
+## Registers a scenario.
+Sub Add(scenario As BenchmarkScenario)
+Me.mScenarios.Append(scenario)
+End Sub
+
+# Runs every registered scenario. Returns one result per scenario.
+## Runs every registered scenario. Returns one result per scenario.
+Function RunAll() As Array(Of BenchmarkResult)
+Var results() As BenchmarkResult
+For Each scenario As BenchmarkScenario In Me.mScenarios
+  results.Append(Run(scenario))
+Next scenario
+Return results
+End Function
+
+## Prepares, warms up, measures, and checksums one scenario.
+Function Run(scenario As BenchmarkScenario) As BenchmarkResult
+Validate(scenario)
+
+scenario.Prepare()
+
+# Warm-up. Not measured.
+For i As Integer = 1 To scenario.WarmupIterations
+  scenario.Run()
+Next i
+
+# Measured iterations.
+Var durations() As Double = New Array(Of Double)
+durations.Reserve(scenario.MeasuredIterations)
+Var allocations As Integer = 0
+For i As Integer = 1 To scenario.MeasuredIterations
+  Var allocBefore As Integer = System.AllocationCount
+  Var start As Double = System.Ticks
+  scenario.Run()
+  Var elapsed As Double = (System.Ticks - start) * 1000.0
+  Var allocAfter As Integer = System.AllocationCount
+  durations.Append(elapsed)
+  allocations += allocAfter - allocBefore
+Next i
+
+Var checksum As Integer = scenario.Checksum()
+
+Var result As New BenchmarkResult
+result.ScenarioName = scenario.Name
+result.Parameters = scenario.Parameters()
+result.WarmupIterations = scenario.WarmupIterations
+result.MeasuredIterations = scenario.MeasuredIterations
+result.RawMilliseconds = durations
+result.MeanMilliseconds = Mean(durations)
+result.MedianMilliseconds = Percentile(durations, 0.5)
+result.P95Milliseconds = Percentile(durations, 0.95)
+result.MaximumMilliseconds = Percentile(durations, 1.0)
+result.Allocations = allocations
+result.Checksum = checksum
+Return result
+End Function
+
+## Rejects misconfigured scenarios before any measurement.
+Sub Validate(scenario As BenchmarkScenario)
+If scenario.Name.Trim().Length = 0 Then
+  Throw New InvalidArgumentException("Benchmark scenario requires a non-empty name.")
+End If
+If scenario.MeasuredIterations <= 0 Then
+  Throw New InvalidArgumentException("Benchmark scenario '" + scenario.Name + "' requires a positive measured iteration count.")
+End If
+If scenario.WarmupIterations < 0 Then
+  Throw New InvalidArgumentException("Benchmark scenario '" + scenario.Name + "' cannot use negative warm-up iterations.")
+End If
+End Sub
+
+## Arithmetic mean of the samples.
+Function Mean(values() As Double) As Double
+If values.Count = 0 Then
+  Throw New InvalidArgumentException("Mean requires at least one sample.")
+End If
+Var total As Double = 0.0
+For Each value As Double In values
+  total += value
+Next value
+Return total / values.Count.ToDouble()
+End Function
+
+# Nearest-rank percentile. percentile 0.5 is the median, 1.0 is the maximum.
+## Nearest-rank percentile. 0.5 is the median and 1.0 the maximum.
+Function Percentile(values() As Double, percentile As Double) As Double
+If values.Count = 0 Then
+  Throw New InvalidArgumentException("Percentile requires at least one sample.")
+End If
+If percentile < 0.0 Or percentile > 1.0 Then
+  Throw New InvalidArgumentException("Percentile must be between 0 and 1.")
+End If
+Var sorted() As Double = New Array(Of Double)
+sorted.AppendAll(values)
+sorted.Sort()
+Var rank As Integer = Integer(Maths.Ceiling(percentile * sorted.Count.ToDouble()))
+If rank < 1 Then
+  rank = 1
+End If
+If rank > sorted.Count Then
+  rank = sorted.Count
+End If
+Return sorted[rank - 1]
+End Function
+
+# Writes one JSON document describing the run. Returns the written path.
+## Writes one JSON document describing the run. Returns the written path.
+Function WriteResults(results() As BenchmarkResult, outputDirectory As String, runName As String) As String
+Var folder As FileSystemItem = New FileSystemItem(outputDirectory)
+If Not folder.Exists Then
+  folder.CreateFolder()
+End If
+
+Var fileName As String = runName + "-" + Now().Replace(":", "-").Replace(" ", "T") + ".json"
+Var file As FileSystemItem = folder.Child(fileName)
+
+Var json As String = "{"
+json = json + JsonString("run") + ":" + JsonString(runName) + ","
+json = json + JsonString("timestamp") + ":" + JsonString(Now()) + ","
+json = json + JsonString("platform") + ":" + JsonString(PlatformName()) + ","
+json = json + JsonString("computer") + ":" + JsonString(System.ComputerName) + ","
+json = json + JsonString("objoVersion") + ":" + JsonString(System.ObjoVersion) + ","
+json = json + JsonString("scenarios") + ":["
+For i As Integer = 0 To results.Count - 1
+  If i > 0 Then
+    json = json + ","
+  End If
+  json = json + results[i].ToJson()
+Next i
+json = json + "]}"
+file.WriteAllText(json)
+Return file.Path
+End Function
+
+## Encodes a string as a JSON string literal.
+Function JsonString(text As String) As String
+Var quote As String = Chr(34)
+Return quote + text.Replace("\\", "\\\\").Replace(quote, "\\" + quote) + quote
+End Function
+
+## Current timestamp string.
+Private Function Now() As String
+Return DateTime.Now.ToString()
+End Function
+
+## JSON-escapes text.
+Private Function Escape(text As String) As String
+Return JsonString(text)
+End Function
+
+## Human-readable platform name for the result record.
+Function PlatformName() As String
+Select Case System.Platform
+Case 0
+  Return "Windows"
+Case 1
+  Return "macOS"
+Else
+  Return "Linux"
+End Select
+End Function
+End Class

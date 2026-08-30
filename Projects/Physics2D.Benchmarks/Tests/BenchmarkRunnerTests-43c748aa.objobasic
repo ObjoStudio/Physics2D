@@ -1,0 +1,57 @@
+# Runner contract tests for the benchmark harness.
+Class BenchmarkRunnerTests Inherits TestCase
+Public Sub TestRunProducesStableChecksumAndStatistics()
+Var scenario As New CountingScenario
+Var runner As New BenchmarkRunner
+Var result As BenchmarkResult = runner.Run(scenario)
+# 3 warm-up + 7 measured = 10 runs at checksum time.
+Assert.Equal(10, result.Checksum)
+Assert.Equal(7, result.RawMilliseconds.Count)
+Assert.True(result.MedianMilliseconds >= 0.0)
+Assert.True(result.P95Milliseconds >= result.MedianMilliseconds - 0.000001)
+Assert.True(result.MaximumMilliseconds >= result.P95Milliseconds - 0.000001)
+End Sub
+
+Public Sub TestRunIsRepeatable()
+Var first As BenchmarkResult = (New BenchmarkRunner).Run(New CountingScenario)
+Var second As BenchmarkResult = (New BenchmarkRunner).Run(New CountingScenario)
+Assert.Equal(first.Checksum, second.Checksum)
+End Sub
+
+Public Sub TestRunnerRejectsMissingName()
+Var scenario As New CountingScenario
+scenario.Name = "   "
+Var runner As New BenchmarkRunner
+Var caught As Boolean = False
+Try
+  runner.Run(scenario)
+Catch e As InvalidArgumentException
+  caught = True
+End Try
+Assert.True(caught, "runner must reject a scenario without a name")
+End Sub
+
+Public Sub TestRunnerRejectsNonPositiveIterations()
+Var scenario As New CountingScenario
+scenario.MeasuredIterations = 0
+Var runner As New BenchmarkRunner
+Var caught As Boolean = False
+Try
+  runner.Run(scenario)
+Catch e As InvalidArgumentException
+  caught = True
+End Try
+Assert.True(caught, "runner must reject zero measured iterations")
+End Sub
+
+Public Sub TestPercentileContract()
+Var runner As New BenchmarkRunner
+Var samples() As Double = [1.0, 2.0, 3.0, 4.0]
+# Nearest-rank: rank = Ceiling(percentile * count). The median of an even
+# sample count is the value at rank count/2 (here 2).
+Assert.Equal(2.0, runner.Percentile(samples, 0.5))
+Assert.Equal(3.0, runner.Percentile(samples, 0.75))
+Assert.Equal(4.0, runner.Percentile(samples, 1.0))
+Assert.Equal(1.0, runner.Percentile(samples, 0.0))
+End Sub
+End Class

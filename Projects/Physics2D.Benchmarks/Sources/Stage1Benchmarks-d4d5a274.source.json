@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage1Benchmarks",
+  "Id": "d4d5a274-e3c2-4532-b93c-fecb6a3c79b4",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage1Benchmarks-d4d5a274.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

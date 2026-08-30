@@ -1,0 +1,12 @@
+shapecast|circle|0|0.344375014 -0 1 0 1 1
+shapecast|capsule|0|0.406875014 -0 1 0 0.5 1
+shapecast|polygon|0|0.344375014 0 1 0 1 1
+shapecast|segment|0|0.469375014 -0 1 0 0 1
+shapecast|circle|1|0 0 0 0 0 0
+shapecast|capsule|1|0.430962265 0.671133459 0.741336524 1.33556676 0.370668262 1
+shapecast|polygon|1|0 0 0 0 0 0
+shapecast|segment|1|0.469375014 -0 1 1.5 0 1
+shapecast|circle|2|0 0 0 0 0.625 1
+shapecast|capsule|2|0 0 0 0 0.375 1
+shapecast|polygon|2|0 0 0 0 0.5 1
+shapecast|segment|2|0.0637499988 -0 1 0 0 1
