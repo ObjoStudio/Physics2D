@@ -91,14 +91,20 @@ There is no `run` command: build, then execute the binary under
 
 After changing engine code in the Objo checkout, also rebuild the test host or
 `objo test` keeps using a stale binary and reports missing standard-library
-members such as `System.AllocationCount`:
+members such as `System.AllocationCount`. Rebuild BOTH configurations: the
+test host locator tries `bin/Debug` before `bin/Release` (it walks the CLI's
+own configuration name first), so a fresh Release build does not rescue a
+stale Debug build — a stale Debug binary silently wins:
 
 ```bash
 dotnet build /Users/garry/Repos/Objo/src/studio/Objo.TestHost -c Release
+dotnet build /Users/garry/Repos/Objo/src/studio/Objo.TestHost -c Debug
 ```
 
-The test host locator prefers `bin/Release` over `bin/Debug`, so the Release
-build must be refreshed. `tools/check_distribution.sh` resolves the CLI itself
+If a member that definitely exists in the Objo checkout still reports
+"Undefined property" at runtime, suspect a stale test host or CLI binary;
+rebuild `Objo.TestHost` (both configurations) and `Objo.Cli`.
+`tools/check_distribution.sh` resolves the CLI itself
 (`$OBJO` override, then the Objo checkout, then `objo` on PATH).
 
 Regenerating the distribution requires only Python 3:
@@ -124,6 +130,12 @@ Practical rules learned while building the harness. The language specification
 in the Objo checkout remains authoritative.
 
 - Loops end with `Next` (optionally `Next i`), not `End For`.
+- Lexing is fully case-insensitive, including identifiers: a variable named
+  `iF` lexes as the `If` keyword and produces confusing parse cascades. Avoid
+  any name that collides with a keyword when case is ignored (`iF`, `var`,
+  `step`, `in`, `mod`, ...).
+- There is no `Is`/`IsNot` operator. Compare references — including against
+  `Nothing` — with `=` and `<>` (`If node <> Nothing Then`).
 - Classes cannot nest inside classes. Declare helper classes as separate
   source items.
 - In a script (test program or app source), a class must be declared before
