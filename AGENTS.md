@@ -86,6 +86,10 @@ $OBJO test  /Users/garry/Repos/Physics2D/Physics2D.objosln [--project <name> | -
 $OBJO build /Users/garry/Repos/Physics2D/Physics2D.objosln --project Physics2D.Benchmarks --output build/benchmarks
 ```
 
+`check` only checks the solution's active project (`Physics2D.Tests`). It does
+not cover Benchmarks app sources or other projects; rely on
+`test --all-projects` and `build` for full-source coverage.
+
 There is no `run` command: build, then execute the binary under
 `build/<output>/macOS-Apple-Silicon/`.
 
@@ -133,7 +137,8 @@ in the Objo checkout remains authoritative.
 - Lexing is fully case-insensitive, including identifiers: a variable named
   `iF` lexes as the `If` keyword and produces confusing parse cascades. Avoid
   any name that collides with a keyword when case is ignored (`iF`, `var`,
-  `step`, `in`, `mod`, ...).
+  `set`, `step`, `in`, `mod`, ...). `Set` is reserved for property setters, so
+  a method cannot be named `Set` (see `CosSin.SetPair`).
 - There is no `Is`/`IsNot` operator. Compare references — including against
   `Nothing` — with `=` and `<>` (`If node <> Nothing Then`).
 - Classes cannot nest inside classes. Declare helper classes as separate
@@ -148,6 +153,13 @@ in the Objo checkout remains authoritative.
   commonly published 64-bit constant; use `-3750763034362895579`.
 - `Mod` is an operator (`i Mod 7`), not a method. There is no `Array.Copy()`;
   use `New Array(Of T)` plus `AppendAll`.
+- There is no fixed-size array declaration (`Var a(n) As T` is a parse error).
+  Build arrays with `New Array(Of T)` and `Append`, or reserve capacity by
+  appending filler values in a warm-up loop.
+- Module children (Shared Code classes) require `Import Physics2D` in the
+  consuming source. Test-scope compilation tolerated the missing import during
+  development, but `objo build` of the Benchmarks app failed without it, so
+  declare the import in every test and app source that touches module classes.
 - The backslash is a string escape character (`"\\"` is one backslash). Use
   `Chr(34)` for JSON quotes.
 - `WriteAllText` emits a UTF-8 BOM; machine consumers of generated JSON should
