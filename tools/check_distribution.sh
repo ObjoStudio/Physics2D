@@ -10,15 +10,18 @@ set -euo pipefail
 REPO_ROOT="${0:A:h:h}"
 cd "$REPO_ROOT"
 
-# Resolve the objo CLI: $OBJO if set, objo on PATH if it works, otherwise the
-# development checkout of Objo.Cli.
+# Resolve the objo CLI: $OBJO if set, the in-development Objo checkout (the
+# engine source of truth), then an installed objo as a last resort.
 run_objo() {
   if [[ -n "${OBJO:-}" ]]; then
     "$OBJO" "$@"
+  elif [[ -d "$HOME/Repos/Objo/src/studio/Objo.Cli" ]]; then
+    dotnet run --project "$HOME/Repos/Objo/src/studio/Objo.Cli" -- "$@"
   elif command -v objo >/dev/null 2>&1 && objo --version >/dev/null 2>&1; then
     objo "$@"
   else
-    dotnet run --project "$HOME/Repos/Objo/src/studio/Objo.Cli" -- "$@"
+    echo "no usable objo CLI: set \$OBJO or provide ~/Repos/Objo" >&2
+    return 1
   fi
 }
 

@@ -51,15 +51,30 @@ necessary.
 
 ## Development Commands And Machine Notes
 
-Run the Objo CLI from this repository's root. Prefer an installed `objo`; on
-the development Mac the `/usr/local/bin/objo` symlink may be broken, in which
-case use the Objo checkout's CLI directly:
+Run the Objo tooling from the in-development Objo checkout, not from an
+installed release: the checkout is the source of truth for the engine, and a
+published `objo` on PATH may be missing or stale. Resolve the CLI in this
+order: the `OBJO` environment variable if set; otherwise
+`dotnet run --project /Users/garry/Repos/Objo/src/studio/Objo.Cli -- ...`
+(which always rebuilds current engine code); otherwise an installed `objo`.
+
+`dotnet run` rebuilds on every invocation. For repeated commands, build the CLI
+once and run the standalone binary it emits, remembering to rebuild it after
+any engine change:
 
 ```bash
-# From /Users/garry/Repos/Objo
-dotnet run --project src/studio/Objo.Cli -- check  /Users/garry/Repos/Physics2D/Physics2D.objosln
-dotnet run --project src/studio/Objo.Cli -- test   /Users/garry/Repos/Physics2D/Physics2D.objosln [--project <name> | --all-projects] [--filter <pattern>]
-dotnet run --project src/studio/Objo.Cli -- build  /Users/garry/Repos/Physics2D/Physics2D.objosln --project Physics2D.Benchmarks --output build/benchmarks
+dotnet build /Users/garry/Repos/Objo/src/studio/Objo.Cli
+/Users/garry/Repos/Objo/src/studio/Objo.Cli/bin/Debug/net10.0/objo --version
+```
+
+From this repository's root:
+
+```bash
+OBJO="dotnet run --project /Users/garry/Repos/Objo/src/studio/Objo.Cli --"  # or export a working objo
+
+$OBJO check /Users/garry/Repos/Physics2D/Physics2D.objosln
+$OBJO test  /Users/garry/Repos/Physics2D/Physics2D.objosln [--project <name> | --all-projects] [--filter <pattern>]
+$OBJO build /Users/garry/Repos/Physics2D/Physics2D.objosln --project Physics2D.Benchmarks --output build/benchmarks
 ```
 
 There is no `run` command: build, then execute the binary under
@@ -75,7 +90,7 @@ dotnet build /Users/garry/Repos/Objo/src/studio/Objo.TestHost -c Release
 
 The test host locator prefers `bin/Release` over `bin/Debug`, so the Release
 build must be refreshed. `tools/check_distribution.sh` resolves the CLI itself
-(`$OBJO` override, then `objo` on PATH, then the Objo checkout).
+(`$OBJO` override, then the Objo checkout, then `objo` on PATH).
 
 Regenerating the distribution requires only Python 3:
 
