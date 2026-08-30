@@ -49,6 +49,81 @@ Read and obey the `AGENTS.md` files in those repositories before changing them.
 Do not assume those paths exist on every machine; locate the checkouts when
 necessary.
 
+## Development Commands And Machine Notes
+
+Run the Objo CLI from this repository's root. Prefer an installed `objo`; on
+the development Mac the `/usr/local/bin/objo` symlink may be broken, in which
+case use the Objo checkout's CLI directly:
+
+```bash
+# From /Users/garry/Repos/Objo
+dotnet run --project src/studio/Objo.Cli -- check  /Users/garry/Repos/Physics2D/Physics2D.objosln
+dotnet run --project src/studio/Objo.Cli -- test   /Users/garry/Repos/Physics2D/Physics2D.objosln [--project <name> | --all-projects] [--filter <pattern>]
+dotnet run --project src/studio/Objo.Cli -- build  /Users/garry/Repos/Physics2D/Physics2D.objosln --project Physics2D.Benchmarks --output build/benchmarks
+```
+
+There is no `run` command: build, then execute the binary under
+`build/<output>/macOS-Apple-Silicon/`.
+
+After changing engine code in the Objo checkout, also rebuild the test host or
+`objo test` keeps using a stale binary and reports missing standard-library
+members such as `System.AllocationCount`:
+
+```bash
+dotnet build /Users/garry/Repos/Objo/src/studio/Objo.TestHost -c Release
+```
+
+The test host locator prefers `bin/Release` over `bin/Debug`, so the Release
+build must be refreshed. `tools/check_distribution.sh` resolves the CLI itself
+(`$OBJO` override, then `objo` on PATH, then the Objo checkout).
+
+Regenerating the distribution requires only Python 3:
+
+```bash
+python3 tools/assemble_module.py [--check]
+tools/check_distribution.sh
+```
+
+Golden fixtures regenerate with `tools/fixture_gen/build.sh` followed by the
+per-fixture commands in `testdata/golden/MANIFEST.md`.
+
+Every source item is a `.objobasic` file plus a `.source.json` sidecar carrying
+its GUID, kind, build scope, and (for module children) `ParentModuleId`. Give
+each new source item a fresh generated UUID; never reuse or hand-pick GUIDs.
+The test host's working directory is not the repository root; fixture paths are
+resolved by `PhysicsAssert.RepoPath` (`PHYSICS2D_REPO_ROOT` environment
+variable, then walking up from the CWD, then `~/Repos/Physics2D`).
+
+## Objo Language Notes
+
+Practical rules learned while building the harness. The language specification
+in the Objo checkout remains authoritative.
+
+- Loops end with `Next` (optionally `Next i`), not `End For`.
+- Classes cannot nest inside classes. Declare helper classes as separate
+  source items.
+- In a script (test program or app source), a class must be declared before
+  the top-level code that uses it.
+- Put a `##` description comment above each member; the compiler warns when a
+  public member lacks one.
+- Default parameter values need the `Optional` keyword; overrides need the
+  `Override` keyword; abstract members are supported in `Abstract Class`.
+- `Integer` is a signed 64-bit type. An FNV-1a offset basis overflows the
+  commonly published 64-bit constant; use `-3750763034362895579`.
+- `Mod` is an operator (`i Mod 7`), not a method. There is no `Array.Copy()`;
+  use `New Array(Of T)` plus `AppendAll`.
+- The backslash is a string escape character (`"\\"` is one backslash). Use
+  `Chr(34)` for JSON quotes.
+- `WriteAllText` emits a UTF-8 BOM; machine consumers of generated JSON should
+  read UTF-8 with BOM tolerance.
+- `FileSystemItem.Child()` rejects path separators; walk segments with
+  `ResolveChild`-style helpers.
+- `System.Platform` returns an `Integer` (0 Windows, 1 macOS, 2 Linux).
+- `System.AllocationCount` reports lifetime VM object allocations and reading
+  it allocates nothing. It comes from the Objo checkout at commit `485c4fab`
+  (issue #1299) and is not yet in a released Studio; see the Minimum Objo
+  Version section of `docs/PORTING.md`.
+
 Forge2D, JBox2D, and the older Xojo Physics project are secondary references
 only. Do not copy implementation code from them into Physics2D. A single pinned
 MIT upstream keeps the port easier to audit and update.

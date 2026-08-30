@@ -27,3 +27,29 @@ Generated on 2026-08-30.
 | `testdata/golden/scene_pyramid.txt` | aa59cfee70890b98fa588a65ee45ff5754d823c9c4abdf7f3b160cb095b531ff |
 | `testdata/golden/scene_stack.txt` | a77c7e44bf16904f2723d9bb9bf5c4f3277a08f7a03426e4562d1fd278d8ea8c |
 | `testdata/golden/shapecast.txt` | 91b59b20ff517e9f0f0141e609cabe4745da47618ac17fb0f323308c5ff305a4 |
+
+## Fixture line formats
+
+Fields are separated by `|`; numbers within a field are separated by single
+spaces. All numbers are printed with `%.9g` from C `float` computations, so
+consumers compare with the tolerance classes in the `Tolerances` module, not
+with exact equality. A trailing `1`/`0` integer encodes a Boolean.
+
+- `maths|case|ax ay bx by|dot cross svx svy vsx vsy addx addy subx suby lerpx lerpy length dist normx normy rotx roty atan2`
+- `hull|case|count|x y ...|valid` — CCW hull points; `valid` is `b2ValidateHull`.
+- `poly|case|count|x y ...|radius` and `box|case|count|x y ...|radius` — emitted
+  only when the preceding hull is valid.
+- `segdist|case|fraction1 fraction2 distanceSquared closest1x closest1y closest2x closest2y`
+- `gjk|circle_box|distance pointAx pointAy pointBx pointBy cacheCount`
+- `ray|shape|case|fraction normalx normaly pointx pointy iterations hit` — shape
+  is `circle`, `capsule`, `segment`, or `polygon`; `iterations` is the bucket
+  count from the `b2RayResult`.
+- `shapecast|shape|case|fraction normalx normaly pointx pointy hit`
+- `manifold|name|case|pointCount|normalx normaly` followed by exactly two
+  point records `pointx pointy anchorAx anchorAy anchorBx anchorBy separation
+  pointId persisted`; missing points are zero-filled.
+- `mass|shape|case|mass centerX centerY rotationalInertia` — shape is `circle`,
+  `capsule`, or `polygon`.
+- `scene|name|bodies|bodyCount|movedCount`, then one
+  `scene|name|body|index|positionx positiony angle awake` line per dumped body
+  (the first `dumpBodyLimit` bodies after the step).
