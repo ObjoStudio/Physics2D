@@ -38,12 +38,21 @@ Use these sources in descending order of authority:
    behavioural intent.
 3. The current Objo checkout and language specification for what Objo actually
    supports.
-4. The `objo-docs` checkout for the public language and standard-library API.
+4. The official Objo documentation for the public language, standard-library,
+   and Studio API. It lives in the `objo-docs` repository (normally at
+   `/Users/garry/Repos/objo-docs`) and is published at
+   `https://docs.objo.dev`. Treat both as authoritative; the checkout is the
+   editable source of the published site.
 
 The relevant local Objo sources normally live at:
 
 - `/Users/garry/Repos/Objo`
 - `/Users/garry/Repos/objo-docs`
+
+When a standard-library behaviour matters to this port, verify it against the
+official documentation (checkout or `docs.objo.dev`) and, where the two could
+diverge, against the Objo checkout itself. Update `objo-docs` for any
+user-visible behaviour change, following its `AGENTS.md`.
 
 Read and obey the `AGENTS.md` files in those repositories before changing them.
 Do not assume those paths exist on every machine; locate the checkouts when
