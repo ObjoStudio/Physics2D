@@ -1,0 +1,9 @@
+# Benchmark application entry point. Scenarios are added by the benchmark
+# stages; see benchmarks/README.md.
+Class App Inherits CommandLineApplication
+Event Run(args() As String) As Integer
+Pragma Unused args
+Print("Physics2D benchmark runner is not implemented yet.")
+Return 1
+End Event
+End Class

@@ -1,0 +1,7 @@
+# Objo Studio solution and build outputs
+.objo/
+Build/
+Publish/
+bin/
+obj/
+.DS_Store

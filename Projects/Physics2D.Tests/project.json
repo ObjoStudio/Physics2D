@@ -1,0 +1,17 @@
+{
+  "Version": 4,
+  "Id": "2367c6ca-0dfa-4809-9e6e-ee1b0ea76d4e",
+  "Name": "Physics2D.Tests",
+  "Type": "CommandLine",
+  "BuildSettings": {
+    "AppName": "Physics2D.Tests",
+    "MajorVersion": 1,
+    "MinorVersion": 0,
+    "PatchVersion": 0,
+    "CommandLineArgs": "",
+    "TargetRids": [],
+    "WorkerProjectIds": [],
+    "DefaultWindow": ""
+  },
+  "EmptyFolders": []
+}

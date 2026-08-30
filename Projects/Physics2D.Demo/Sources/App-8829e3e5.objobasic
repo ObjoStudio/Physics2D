@@ -1,0 +1,7 @@
+# Desktop demo entry point. The interactive demo scenes are implemented in
+# Stage 11; see docs/DEMO.md.
+Class App Inherits DesktopApplication
+Event Opening(args() As String)
+Pragma Unused args
+End Event
+End Class

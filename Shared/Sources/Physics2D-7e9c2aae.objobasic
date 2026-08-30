@@ -1,0 +1,4 @@
+# Physics2D is a native Objo port of the Box2D 3.1.1 rigid-body physics engine.
+# The public surface grows stage by stage; see IMPLEMENTATION_PLAN.md and docs/.
+Module Physics2D
+End Module

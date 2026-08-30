@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Physics2D",
+  "Id": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "Kind": "Module",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Physics2D-7e9c2aae.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

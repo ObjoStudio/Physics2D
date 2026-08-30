@@ -1,0 +1,624 @@
+# Porting Notes — Box2D 3.1.1 to Physics2D
+
+This document is the provenance and mapping record for the Physics2D port. It
+identifies the authoritative upstream source, records every deliberate
+behavioural difference, and maps every public Box2D 3.1.1 symbol to its
+Physics2D counterpart.
+
+## Upstream Source
+
+| Field | Value |
+|---|---|
+| Repository | https://github.com/erincatto/box2d |
+| Tag | `v3.1.1` |
+| Full commit | `8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3` |
+| Retrieved | 2026-08-30 (source tarball for that commit) |
+| Licence | MIT (see `THIRD_PARTY_NOTICES.md`) |
+| Upstream language | C, 32-bit `float` |
+
+This is the sole authoritative algorithm source. Box2D 3.1.1 computes with C
+`float`; Physics2D computes with Objo's `Double`. Physics2D therefore preserves
+algorithms, iteration orders, and behavioural intent rather than promising
+bit-for-bit equality with C output. Test tolerances are chosen from Objo's
+`Double` arithmetic and are documented per fixture.
+
+## Secondary References (Never Copied)
+
+Forge2D (Dart), JBox2D (Java), and the Xojo Physics project are consulted as
+comparative references only. Code is never copied from them. If a future task
+requires copying rather than consulting, the applicable BSD/Apache notice and a
+provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
+
+## Deliberate Differences From Upstream
+
+1. **Language and arithmetic.** Native Objo source, `Double` arithmetic, no C
+   compiler, no FFI, and no native SIMD kernels.
+2. **Public naming.** No `b2`/`Box2D` prefixes, no C-style abbreviations. The
+   façade classes are `World`, `Body`, `Shape`, `Chain`, and the joint
+   families. Definitions use full words: `BodyDefinition`, not `BodyDef`.
+3. **Ownership.** Box2D IDs become generation-checked façade objects owned by
+   their `World`. There are no C pointers, no manual world destruction, and
+   `World.Clear()` returns a world to a reusable empty state.
+4. **Fixtures are gone.** Box2D 3.1.1 attaches shapes directly to bodies, and
+   Physics2D mirrors that: there is no fixture type in the public API.
+5. **Units and axes.** Metres, kilograms, seconds, radians. No hidden axis
+   inversion; Objo canvas examples use positive-Y gravity.
+6. **Threading.** The deterministic scalar solver replaces Box2D's task-based
+   SIMD solver. The constraint graph and Soft Step algorithms are preserved;
+   the SIMD lane structure is not.
+7. **Callbacks.** The custom filter, pre-solve, friction mixer, and restitution
+   mixer hooks are explicit opt-ins on `World`; the default step path invokes no
+   user code. Contact/sensor/body-move observation happens after the step from
+   reusable batch views, plus optional idiomatic post-step Objo events.
+8. **Allocation.** The step path pre-allocates and reuses buffers so a warmed
+   `World.Step` allocates nothing in the normal path. Allocating conveniences
+   are documented where they exist.
+9. **Precision-sensitive constants.** Constants such as epsilon thresholds keep
+   upstream values; where `float`/`double` differences would change behaviour,
+   the change is recorded in a decision document under `docs/decisions/`.
+
+## Public Symbol Inventory
+
+Every public declaration in the Box2D 3.1.1 public headers
+(`include/box2d/base.h`, `collision.h`, `id.h`, `math_functions.h`, `types.h`,
+`box2d.h`) is inventoried below with its intended Physics2D mapping and the
+stage that delivers it. Count: 422 unique functions. Structs, enums, and
+callback typedefs map to the Physics2D types named by the functions that use
+them and are covered in `docs/API.md`.
+
+Mapping conventions:
+
+- `b2Xxx_Yyy` becomes `Xxx.Yyy` on the matching façade class.
+- `b2DefaultXxxDef` becomes a `XxxDefinition` class whose constructor sets the
+  same defaults.
+- Internal-only machinery (`id.h` internals, arena allocators, task system)
+  becomes protected implementation inside the module.
+- Stage numbers refer to `IMPLEMENTATION_PLAN.md`.
+
+### World and lifecycle (61 symbols)
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2CreateBody` | World.CreateBody(definition) | 6 |
+| `b2CreateCapsuleShape` | Body.CreateCapsule(definition) | 6 |
+| `b2CreateChain` | World.CreateChain(definition) | 6 |
+| `b2CreateCircleShape` | Body.CreateCircle(definition) | 6 |
+| `b2CreateDistanceJoint` | World.CreateDistanceJoint(definition) | 9 |
+| `b2CreateFilterJoint` | World.CreateFilterJoint(definition) | 9 |
+| `b2CreateMotorJoint` | World.CreateMotorJoint(definition) | 9 |
+| `b2CreateMouseJoint` | World.CreateMouseJoint(definition) | 9 |
+| `b2CreatePolygonShape` | Body.CreatePolygon(definition) | 6 |
+| `b2CreatePrismaticJoint` | World.CreatePrismaticJoint(definition) | 9 |
+| `b2CreateRevoluteJoint` | World.CreateRevoluteJoint(definition) | 9 |
+| `b2CreateSegmentShape` | Body.CreateSegment(definition) | 6 |
+| `b2CreateWeldJoint` | World.CreateWeldJoint(definition) | 9 |
+| `b2CreateWheelJoint` | World.CreateWheelJoint(definition) | 9 |
+| `b2CreateWorld` | New World(settings) / New World(gravity) / New World() | 6 |
+| `b2DestroyBody` | Body.Destroy() | 6 |
+| `b2DestroyChain` | Chain.Destroy() | 6 |
+| `b2DestroyJoint` | Joint.Destroy() | 9 |
+| `b2DestroyShape` | Shape.Destroy() | 6 |
+| `b2DestroyWorld` | Not required: worlds are garbage-collected Objo objects; World.Clear() empties a reusable world | 6 |
+| `b2World_CastMover` | World.CastMover | 10 |
+| `b2World_CastRay` | World.CastRay and World.CastRayInto | 6 |
+| `b2World_CastRayClosest` | World.CastRayClosest | 6 |
+| `b2World_CastShape` | World.CastShape and World.CastShapeInto | 6 |
+| `b2World_CollideMover` | World.CollideMover into a reusable plane buffer | 10 |
+| `b2World_Draw` | World.DrawDebug(renderer, options) | 10 |
+| `b2World_DumpMemoryStats` | World.Counters plus documented capacity planning; no text dump | 10 |
+| `b2World_EnableContinuous` | World.EnableContinuous | 6 |
+| `b2World_EnableSleeping` | World.EnableSleeping | 6 |
+| `b2World_EnableSpeculative` | World.EnableSpeculative | 6 |
+| `b2World_EnableWarmStarting` | World.EnableWarmStarting | 6 |
+| `b2World_Explode` | World.Explode | 10 |
+| `b2World_GetAwakeBodyCount` | World.AwakeBodyCount | 6 |
+| `b2World_GetBodyEvents` | World.GetBodyEvents batch view plus post-step BodyMoved events | 8 |
+| `b2World_GetContactEvents` | World.GetContactEvents batch view plus post-step contact events | 8 |
+| `b2World_GetCounters` | World.Counters statistics record | 10 |
+| `b2World_GetGravity` | World.Gravity | 6 |
+| `b2World_GetHitEventThreshold` | World.HitEventThreshold | 6 |
+| `b2World_GetMaximumLinearSpeed` | World.MaximumLinearSpeed | 6 |
+| `b2World_GetProfile` | World.Profile statistics record | 10 |
+| `b2World_GetRestitutionThreshold` | World.RestitutionThreshold | 6 |
+| `b2World_GetSensorEvents` | World.GetSensorEvents batch view plus post-step sensor events | 8 |
+| `b2World_GetUserData` | World.UserData | 6 |
+| `b2World_IsContinuousEnabled` | World.ContinuousEnabled | 6 |
+| `b2World_IsSleepingEnabled` | World.SleepingEnabled | 6 |
+| `b2World_IsValid` | Protected internal validation; façade objects validate their own state | 6 |
+| `b2World_IsWarmStartingEnabled` | World.WarmStartingEnabled | 6 |
+| `b2World_OverlapAABB` | World.OverlapBounds and World.OverlapBoundsInto | 6 |
+| `b2World_OverlapShape` | World.OverlapShape and World.OverlapShapeInto | 6 |
+| `b2World_RebuildStaticTree` | World.RebuildStaticTree | 6 |
+| `b2World_SetContactTuning` | World.ContactTuning | 6 |
+| `b2World_SetCustomFilterCallback` | World.CustomFilter hook (explicit opt-in) | 7 |
+| `b2World_SetFrictionCallback` | World.FrictionMixer hook (explicit opt-in) | 7 |
+| `b2World_SetGravity` | World.Gravity | 6 |
+| `b2World_SetHitEventThreshold` | World.HitEventThreshold | 6 |
+| `b2World_SetMaximumLinearSpeed` | World.MaximumLinearSpeed | 6 |
+| `b2World_SetPreSolveCallback` | World.PreSolve hook (explicit opt-in) | 7 |
+| `b2World_SetRestitutionCallback` | World.RestitutionMixer hook (explicit opt-in) | 7 |
+| `b2World_SetRestitutionThreshold` | World.RestitutionThreshold | 6 |
+| `b2World_SetUserData` | World.UserData | 6 |
+| `b2World_Step` | World.Step(timeStep) / World.Step(timeStep, substepCount) | 6 |
+
+### Bodies, shapes, and chains (120 symbols)
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2Body_ApplyAngularImpulse` | Body.ApplyAngularImpulse | 3 |
+| `b2Body_ApplyForce` | Body.ApplyForce | 3 |
+| `b2Body_ApplyForceToCenter` | Body.ApplyForceToCenter | 3 |
+| `b2Body_ApplyLinearImpulse` | Body.ApplyLinearImpulse | 3 |
+| `b2Body_ApplyLinearImpulseToCenter` | Body.ApplyLinearImpulseToCenter | 3 |
+| `b2Body_ApplyMassFromShapes` | Body.ApplyMassFromShapes | 3 |
+| `b2Body_ApplyTorque` | Body.ApplyTorque | 3 |
+| `b2Body_ComputeAABB` | Body.ComputeAABB | 3 |
+| `b2Body_Disable` | Body.Disable | 3 |
+| `b2Body_Enable` | Body.Enable | 3 |
+| `b2Body_EnableContactEvents` | Body.EnableContactEvents | 3 |
+| `b2Body_EnableHitEvents` | Body.EnableHitEvents | 3 |
+| `b2Body_EnableSleep` | Body.EnableSleep | 3 |
+| `b2Body_GetAngularDamping` | Body.GetAngularDamping | 3 |
+| `b2Body_GetAngularVelocity` | Body.GetAngularVelocity | 3 |
+| `b2Body_GetContactCapacity` | Body.GetContactCapacity | 3 |
+| `b2Body_GetContactData` | Body.GetContactData | 3 |
+| `b2Body_GetGravityScale` | Body.GetGravityScale | 3 |
+| `b2Body_GetJointCount` | Body.GetJointCount | 9 |
+| `b2Body_GetJoints` | Body.GetJoints | 9 |
+| `b2Body_GetLinearDamping` | Body.GetLinearDamping | 3 |
+| `b2Body_GetLinearVelocity` | Body.GetLinearVelocity | 3 |
+| `b2Body_GetLocalCenterOfMass` | Body.GetLocalCenterOfMass | 3 |
+| `b2Body_GetLocalPoint` | Body.GetLocalPoint | 3 |
+| `b2Body_GetLocalPointVelocity` | Body.GetLocalPointVelocity | 3 |
+| `b2Body_GetLocalVector` | Body.GetLocalVector | 3 |
+| `b2Body_GetMass` | Body.GetMass | 3 |
+| `b2Body_GetMassData` | Body.GetMassData | 3 |
+| `b2Body_GetName` | Body.GetName | 3 |
+| `b2Body_GetPosition` | Body.GetPosition | 3 |
+| `b2Body_GetRotation` | Body.GetRotation | 3 |
+| `b2Body_GetRotationalInertia` | Body.GetRotationalInertia | 3 |
+| `b2Body_GetShapeCount` | Body.GetShapeCount | 3 |
+| `b2Body_GetShapes` | Body.GetShapes | 3 |
+| `b2Body_GetSleepThreshold` | Body.GetSleepThreshold | 3 |
+| `b2Body_GetTransform` | Body.GetTransform | 3 |
+| `b2Body_GetType` | Body.GetType | 3 |
+| `b2Body_GetUserData` | Body.GetUserData | 3 |
+| `b2Body_GetWorld` | Body.GetWorld | 3 |
+| `b2Body_GetWorldCenterOfMass` | Body.GetWorldCenterOfMass | 3 |
+| `b2Body_GetWorldPoint` | Body.GetWorldPoint | 3 |
+| `b2Body_GetWorldPointVelocity` | Body.GetWorldPointVelocity | 3 |
+| `b2Body_GetWorldVector` | Body.GetWorldVector | 3 |
+| `b2Body_IsAwake` | Body.IsAwake | 3 |
+| `b2Body_IsBullet` | Body.IsBullet | 3 |
+| `b2Body_IsEnabled` | Body.IsEnabled | 3 |
+| `b2Body_IsFixedRotation` | Body.IsFixedRotation | 3 |
+| `b2Body_IsSleepEnabled` | Body.IsSleepEnabled | 3 |
+| `b2Body_IsValid` | Body.IsValid | 3 |
+| `b2Body_SetAngularDamping` | Body.SetAngularDamping | 3 |
+| `b2Body_SetAngularVelocity` | Body.SetAngularVelocity | 3 |
+| `b2Body_SetAwake` | Body.SetAwake | 3 |
+| `b2Body_SetBullet` | Body.SetBullet | 3 |
+| `b2Body_SetFixedRotation` | Body.SetFixedRotation | 3 |
+| `b2Body_SetGravityScale` | Body.SetGravityScale | 3 |
+| `b2Body_SetLinearDamping` | Body.SetLinearDamping | 3 |
+| `b2Body_SetLinearVelocity` | Body.SetLinearVelocity | 3 |
+| `b2Body_SetMassData` | Body.SetMassData | 3 |
+| `b2Body_SetName` | Body.SetName | 3 |
+| `b2Body_SetSleepThreshold` | Body.SetSleepThreshold | 3 |
+| `b2Body_SetTargetTransform` | Body.SetTargetTransform | 3 |
+| `b2Body_SetTransform` | Body.SetTransform | 3 |
+| `b2Body_SetType` | Body.SetType | 3 |
+| `b2Body_SetUserData` | Body.SetUserData | 3 |
+| `b2Chain_GetFriction` | Chain.GetFriction | 3 |
+| `b2Chain_GetMaterial` | Chain.GetMaterial | 3 |
+| `b2Chain_GetRestitution` | Chain.GetRestitution | 3 |
+| `b2Chain_GetSegmentCount` | Chain.GetSegmentCount | 3 |
+| `b2Chain_GetSegments` | Chain.GetSegments | 3 |
+| `b2Chain_GetWorld` | Chain.GetWorld | 3 |
+| `b2Chain_IsValid` | Chain.IsValid | 3 |
+| `b2Chain_SetFriction` | Chain.SetFriction | 3 |
+| `b2Chain_SetMaterial` | Chain.SetMaterial | 3 |
+| `b2Chain_SetRestitution` | Chain.SetRestitution | 3 |
+| `b2Shape_AreContactEventsEnabled` | Shape.AreContactEventsEnabled | 3 |
+| `b2Shape_AreHitEventsEnabled` | Shape.AreHitEventsEnabled | 3 |
+| `b2Shape_ArePreSolveEventsEnabled` | Shape.ArePreSolveEventsEnabled | 3 |
+| `b2Shape_AreSensorEventsEnabled` | Shape.AreSensorEventsEnabled | 3 |
+| `b2Shape_EnableContactEvents` | Shape.EnableContactEvents | 3 |
+| `b2Shape_EnableHitEvents` | Shape.EnableHitEvents | 3 |
+| `b2Shape_EnablePreSolveEvents` | Shape.EnablePreSolveEvents | 3 |
+| `b2Shape_EnableSensorEvents` | Shape.EnableSensorEvents | 3 |
+| `b2Shape_GetAABB` | Shape.GetAABB | 3 |
+| `b2Shape_GetBody` | Shape.GetBody | 3 |
+| `b2Shape_GetCapsule` | Shape.GetCapsule | 3 |
+| `b2Shape_GetChainSegment` | Shape.GetChainSegment | 3 |
+| `b2Shape_GetCircle` | Shape.GetCircle | 3 |
+| `b2Shape_GetClosestPoint` | Shape.GetClosestPoint | 3 |
+| `b2Shape_GetContactCapacity` | Shape.GetContactCapacity | 3 |
+| `b2Shape_GetContactData` | Shape.GetContactData | 3 |
+| `b2Shape_GetDensity` | Shape.GetDensity | 3 |
+| `b2Shape_GetFilter` | Shape.GetFilter | 3 |
+| `b2Shape_GetFriction` | Shape.GetFriction | 3 |
+| `b2Shape_GetMassData` | Shape.GetMassData | 3 |
+| `b2Shape_GetMaterial` | Shape.GetMaterial | 3 |
+| `b2Shape_GetParentChain` | Shape.GetParentChain | 3 |
+| `b2Shape_GetPolygon` | Shape.GetPolygon | 3 |
+| `b2Shape_GetRestitution` | Shape.GetRestitution | 3 |
+| `b2Shape_GetSegment` | Shape.GetSegment | 3 |
+| `b2Shape_GetSensorCapacity` | Shape.GetSensorCapacity | 3 |
+| `b2Shape_GetSensorOverlaps` | Shape.GetSensorOverlaps | 3 |
+| `b2Shape_GetSurfaceMaterial` | Shape.GetSurfaceMaterial | 3 |
+| `b2Shape_GetType` | Shape.GetType | 3 |
+| `b2Shape_GetUserData` | Shape.GetUserData | 3 |
+| `b2Shape_GetWorld` | Shape.GetWorld | 3 |
+| `b2Shape_IsSensor` | Shape.IsSensor | 3 |
+| `b2Shape_IsValid` | Shape.IsValid | 3 |
+| `b2Shape_RayCast` | Shape.RayCast | 3 |
+| `b2Shape_SetCapsule` | Shape.SetCapsule | 3 |
+| `b2Shape_SetCircle` | Shape.SetCircle | 3 |
+| `b2Shape_SetDensity` | Shape.SetDensity | 3 |
+| `b2Shape_SetFilter` | Shape.SetFilter | 3 |
+| `b2Shape_SetFriction` | Shape.SetFriction | 3 |
+| `b2Shape_SetMaterial` | Shape.SetMaterial | 3 |
+| `b2Shape_SetPolygon` | Shape.SetPolygon | 3 |
+| `b2Shape_SetRestitution` | Shape.SetRestitution | 3 |
+| `b2Shape_SetSegment` | Shape.SetSegment | 3 |
+| `b2Shape_SetSurfaceMaterial` | Shape.SetSurfaceMaterial | 3 |
+| `b2Shape_SetUserData` | Shape.SetUserData | 3 |
+| `b2Shape_TestPoint` | Shape.TestPoint | 3 |
+
+
+### Joints (132 symbols)
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2DistanceJoint_EnableLimit` | DistanceJoint.EnableLimit | 9 |
+| `b2DistanceJoint_EnableMotor` | DistanceJoint.EnableMotor | 9 |
+| `b2DistanceJoint_EnableSpring` | DistanceJoint.EnableSpring | 9 |
+| `b2DistanceJoint_GetCurrentLength` | DistanceJoint.GetCurrentLength | 9 |
+| `b2DistanceJoint_GetLength` | DistanceJoint.GetLength | 9 |
+| `b2DistanceJoint_GetMaxLength` | DistanceJoint.GetMaxLength | 9 |
+| `b2DistanceJoint_GetMaxMotorForce` | DistanceJoint.GetMaxMotorForce | 9 |
+| `b2DistanceJoint_GetMinLength` | DistanceJoint.GetMinLength | 9 |
+| `b2DistanceJoint_GetMotorForce` | DistanceJoint.GetMotorForce | 9 |
+| `b2DistanceJoint_GetMotorSpeed` | DistanceJoint.GetMotorSpeed | 9 |
+| `b2DistanceJoint_GetSpringDampingRatio` | DistanceJoint.GetSpringDampingRatio | 9 |
+| `b2DistanceJoint_GetSpringHertz` | DistanceJoint.GetSpringHertz | 9 |
+| `b2DistanceJoint_IsLimitEnabled` | DistanceJoint.IsLimitEnabled | 9 |
+| `b2DistanceJoint_IsMotorEnabled` | DistanceJoint.IsMotorEnabled | 9 |
+| `b2DistanceJoint_IsSpringEnabled` | DistanceJoint.IsSpringEnabled | 9 |
+| `b2DistanceJoint_SetLength` | DistanceJoint.SetLength | 9 |
+| `b2DistanceJoint_SetLengthRange` | DistanceJoint.SetLengthRange | 9 |
+| `b2DistanceJoint_SetMaxMotorForce` | DistanceJoint.SetMaxMotorForce | 9 |
+| `b2DistanceJoint_SetMotorSpeed` | DistanceJoint.SetMotorSpeed | 9 |
+| `b2DistanceJoint_SetSpringDampingRatio` | DistanceJoint.SetSpringDampingRatio | 9 |
+| `b2DistanceJoint_SetSpringHertz` | DistanceJoint.SetSpringHertz | 9 |
+| `b2Joint_GetAngularSeparation` | Joint.GetAngularSeparation | 9 |
+| `b2Joint_GetBodyA` | Joint.GetBodyA | 9 |
+| `b2Joint_GetBodyB` | Joint.GetBodyB | 9 |
+| `b2Joint_GetCollideConnected` | Joint.GetCollideConnected | 9 |
+| `b2Joint_GetConstraintForce` | Joint.GetConstraintForce | 9 |
+| `b2Joint_GetConstraintTorque` | Joint.GetConstraintTorque | 9 |
+| `b2Joint_GetConstraintTuning` | Joint.GetConstraintTuning | 9 |
+| `b2Joint_GetLinearSeparation` | Joint.GetLinearSeparation | 9 |
+| `b2Joint_GetLocalAnchorA` | Joint.GetLocalAnchorA | 9 |
+| `b2Joint_GetLocalAnchorB` | Joint.GetLocalAnchorB | 9 |
+| `b2Joint_GetLocalAxisA` | Joint.GetLocalAxisA | 9 |
+| `b2Joint_GetReferenceAngle` | Joint.GetReferenceAngle | 9 |
+| `b2Joint_GetType` | Joint.GetType | 9 |
+| `b2Joint_GetUserData` | Joint.GetUserData | 9 |
+| `b2Joint_GetWorld` | Joint.GetWorld | 9 |
+| `b2Joint_IsValid` | Joint.IsValid | 9 |
+| `b2Joint_SetCollideConnected` | Joint.SetCollideConnected | 9 |
+| `b2Joint_SetConstraintTuning` | Joint.SetConstraintTuning | 9 |
+| `b2Joint_SetLocalAnchorA` | Joint.SetLocalAnchorA | 9 |
+| `b2Joint_SetLocalAnchorB` | Joint.SetLocalAnchorB | 9 |
+| `b2Joint_SetLocalAxisA` | Joint.SetLocalAxisA | 9 |
+| `b2Joint_SetReferenceAngle` | Joint.SetReferenceAngle | 9 |
+| `b2Joint_SetUserData` | Joint.SetUserData | 9 |
+| `b2Joint_WakeBodies` | Joint.WakeBodies | 9 |
+| `b2MotorJoint_GetAngularOffset` | MotorJoint.GetAngularOffset | 9 |
+| `b2MotorJoint_GetCorrectionFactor` | MotorJoint.GetCorrectionFactor | 9 |
+| `b2MotorJoint_GetLinearOffset` | MotorJoint.GetLinearOffset | 9 |
+| `b2MotorJoint_GetMaxForce` | MotorJoint.GetMaxForce | 9 |
+| `b2MotorJoint_GetMaxTorque` | MotorJoint.GetMaxTorque | 9 |
+| `b2MotorJoint_SetAngularOffset` | MotorJoint.SetAngularOffset | 9 |
+| `b2MotorJoint_SetCorrectionFactor` | MotorJoint.SetCorrectionFactor | 9 |
+| `b2MotorJoint_SetLinearOffset` | MotorJoint.SetLinearOffset | 9 |
+| `b2MotorJoint_SetMaxForce` | MotorJoint.SetMaxForce | 9 |
+| `b2MotorJoint_SetMaxTorque` | MotorJoint.SetMaxTorque | 9 |
+| `b2MouseJoint_GetMaxForce` | MouseJoint.GetMaxForce | 9 |
+| `b2MouseJoint_GetSpringDampingRatio` | MouseJoint.GetSpringDampingRatio | 9 |
+| `b2MouseJoint_GetSpringHertz` | MouseJoint.GetSpringHertz | 9 |
+| `b2MouseJoint_GetTarget` | MouseJoint.GetTarget | 9 |
+| `b2MouseJoint_SetMaxForce` | MouseJoint.SetMaxForce | 9 |
+| `b2MouseJoint_SetSpringDampingRatio` | MouseJoint.SetSpringDampingRatio | 9 |
+| `b2MouseJoint_SetSpringHertz` | MouseJoint.SetSpringHertz | 9 |
+| `b2MouseJoint_SetTarget` | MouseJoint.SetTarget | 9 |
+| `b2PrismaticJoint_EnableLimit` | PrismaticJoint.EnableLimit | 9 |
+| `b2PrismaticJoint_EnableMotor` | PrismaticJoint.EnableMotor | 9 |
+| `b2PrismaticJoint_EnableSpring` | PrismaticJoint.EnableSpring | 9 |
+| `b2PrismaticJoint_GetLowerLimit` | PrismaticJoint.GetLowerLimit | 9 |
+| `b2PrismaticJoint_GetMaxMotorForce` | PrismaticJoint.GetMaxMotorForce | 9 |
+| `b2PrismaticJoint_GetMotorForce` | PrismaticJoint.GetMotorForce | 9 |
+| `b2PrismaticJoint_GetMotorSpeed` | PrismaticJoint.GetMotorSpeed | 9 |
+| `b2PrismaticJoint_GetSpeed` | PrismaticJoint.GetSpeed | 9 |
+| `b2PrismaticJoint_GetSpringDampingRatio` | PrismaticJoint.GetSpringDampingRatio | 9 |
+| `b2PrismaticJoint_GetSpringHertz` | PrismaticJoint.GetSpringHertz | 9 |
+| `b2PrismaticJoint_GetTargetTranslation` | PrismaticJoint.GetTargetTranslation | 9 |
+| `b2PrismaticJoint_GetTranslation` | PrismaticJoint.GetTranslation | 9 |
+| `b2PrismaticJoint_GetUpperLimit` | PrismaticJoint.GetUpperLimit | 9 |
+| `b2PrismaticJoint_IsLimitEnabled` | PrismaticJoint.IsLimitEnabled | 9 |
+| `b2PrismaticJoint_IsMotorEnabled` | PrismaticJoint.IsMotorEnabled | 9 |
+| `b2PrismaticJoint_IsSpringEnabled` | PrismaticJoint.IsSpringEnabled | 9 |
+| `b2PrismaticJoint_SetLimits` | PrismaticJoint.SetLimits | 9 |
+| `b2PrismaticJoint_SetMaxMotorForce` | PrismaticJoint.SetMaxMotorForce | 9 |
+| `b2PrismaticJoint_SetMotorSpeed` | PrismaticJoint.SetMotorSpeed | 9 |
+| `b2PrismaticJoint_SetSpringDampingRatio` | PrismaticJoint.SetSpringDampingRatio | 9 |
+| `b2PrismaticJoint_SetSpringHertz` | PrismaticJoint.SetSpringHertz | 9 |
+| `b2PrismaticJoint_SetTargetTranslation` | PrismaticJoint.SetTargetTranslation | 9 |
+| `b2RevoluteJoint_EnableLimit` | RevoluteJoint.EnableLimit | 9 |
+| `b2RevoluteJoint_EnableMotor` | RevoluteJoint.EnableMotor | 9 |
+| `b2RevoluteJoint_EnableSpring` | RevoluteJoint.EnableSpring | 9 |
+| `b2RevoluteJoint_GetAngle` | RevoluteJoint.GetAngle | 9 |
+| `b2RevoluteJoint_GetLowerLimit` | RevoluteJoint.GetLowerLimit | 9 |
+| `b2RevoluteJoint_GetMaxMotorTorque` | RevoluteJoint.GetMaxMotorTorque | 9 |
+| `b2RevoluteJoint_GetMotorSpeed` | RevoluteJoint.GetMotorSpeed | 9 |
+| `b2RevoluteJoint_GetMotorTorque` | RevoluteJoint.GetMotorTorque | 9 |
+| `b2RevoluteJoint_GetSpringDampingRatio` | RevoluteJoint.GetSpringDampingRatio | 9 |
+| `b2RevoluteJoint_GetSpringHertz` | RevoluteJoint.GetSpringHertz | 9 |
+| `b2RevoluteJoint_GetTargetAngle` | RevoluteJoint.GetTargetAngle | 9 |
+| `b2RevoluteJoint_GetUpperLimit` | RevoluteJoint.GetUpperLimit | 9 |
+| `b2RevoluteJoint_IsLimitEnabled` | RevoluteJoint.IsLimitEnabled | 9 |
+| `b2RevoluteJoint_IsMotorEnabled` | RevoluteJoint.IsMotorEnabled | 9 |
+| `b2RevoluteJoint_IsSpringEnabled` | RevoluteJoint.IsSpringEnabled | 9 |
+| `b2RevoluteJoint_SetLimits` | RevoluteJoint.SetLimits | 9 |
+| `b2RevoluteJoint_SetMaxMotorTorque` | RevoluteJoint.SetMaxMotorTorque | 9 |
+| `b2RevoluteJoint_SetMotorSpeed` | RevoluteJoint.SetMotorSpeed | 9 |
+| `b2RevoluteJoint_SetSpringDampingRatio` | RevoluteJoint.SetSpringDampingRatio | 9 |
+| `b2RevoluteJoint_SetSpringHertz` | RevoluteJoint.SetSpringHertz | 9 |
+| `b2RevoluteJoint_SetTargetAngle` | RevoluteJoint.SetTargetAngle | 9 |
+| `b2WeldJoint_GetAngularDampingRatio` | WeldJoint.GetAngularDampingRatio | 9 |
+| `b2WeldJoint_GetAngularHertz` | WeldJoint.GetAngularHertz | 9 |
+| `b2WeldJoint_GetLinearDampingRatio` | WeldJoint.GetLinearDampingRatio | 9 |
+| `b2WeldJoint_GetLinearHertz` | WeldJoint.GetLinearHertz | 9 |
+| `b2WeldJoint_SetAngularDampingRatio` | WeldJoint.SetAngularDampingRatio | 9 |
+| `b2WeldJoint_SetAngularHertz` | WeldJoint.SetAngularHertz | 9 |
+| `b2WeldJoint_SetLinearDampingRatio` | WeldJoint.SetLinearDampingRatio | 9 |
+| `b2WeldJoint_SetLinearHertz` | WeldJoint.SetLinearHertz | 9 |
+| `b2WheelJoint_EnableLimit` | WheelJoint.EnableLimit | 9 |
+| `b2WheelJoint_EnableMotor` | WheelJoint.EnableMotor | 9 |
+| `b2WheelJoint_EnableSpring` | WheelJoint.EnableSpring | 9 |
+| `b2WheelJoint_GetLowerLimit` | WheelJoint.GetLowerLimit | 9 |
+| `b2WheelJoint_GetMaxMotorTorque` | WheelJoint.GetMaxMotorTorque | 9 |
+| `b2WheelJoint_GetMotorSpeed` | WheelJoint.GetMotorSpeed | 9 |
+| `b2WheelJoint_GetMotorTorque` | WheelJoint.GetMotorTorque | 9 |
+| `b2WheelJoint_GetSpringDampingRatio` | WheelJoint.GetSpringDampingRatio | 9 |
+| `b2WheelJoint_GetSpringHertz` | WheelJoint.GetSpringHertz | 9 |
+| `b2WheelJoint_GetUpperLimit` | WheelJoint.GetUpperLimit | 9 |
+| `b2WheelJoint_IsLimitEnabled` | WheelJoint.IsLimitEnabled | 9 |
+| `b2WheelJoint_IsMotorEnabled` | WheelJoint.IsMotorEnabled | 9 |
+| `b2WheelJoint_IsSpringEnabled` | WheelJoint.IsSpringEnabled | 9 |
+| `b2WheelJoint_SetLimits` | WheelJoint.SetLimits | 9 |
+| `b2WheelJoint_SetMaxMotorTorque` | WheelJoint.SetMaxMotorTorque | 9 |
+| `b2WheelJoint_SetMotorSpeed` | WheelJoint.SetMotorSpeed | 9 |
+| `b2WheelJoint_SetSpringDampingRatio` | WheelJoint.SetSpringDampingRatio | 9 |
+| `b2WheelJoint_SetSpringHertz` | WheelJoint.SetSpringHertz | 9 |
+
+
+### Collision queries and geometry (50 symbols)
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2ClipVector` | Protected internal C | 4 |
+| `b2CollideCapsuleAndCircle` | Protected internal C | 4 |
+| `b2CollideCapsules` | Protected internal C | 4 |
+| `b2CollideChainSegmentAndCapsule` | Protected internal C | 4 |
+| `b2CollideChainSegmentAndCircle` | Protected internal C | 4 |
+| `b2CollideChainSegmentAndPolygon` | Protected internal C | 4 |
+| `b2CollideCircles` | Protected internal C | 4 |
+| `b2CollidePolygonAndCapsule` | Protected internal C | 4 |
+| `b2CollidePolygonAndCircle` | Protected internal C | 4 |
+| `b2CollidePolygons` | Protected internal C | 4 |
+| `b2CollideSegmentAndCapsule` | Protected internal C | 4 |
+| `b2CollideSegmentAndCircle` | Protected internal C | 4 |
+| `b2CollideSegmentAndPolygon` | Protected internal C | 4 |
+| `b2ComputeCapsuleAABB` | Protected internal C | 4 |
+| `b2ComputeCapsuleMass` | Protected internal C | 4 |
+| `b2ComputeCircleAABB` | Protected internal C | 4 |
+| `b2ComputeCircleMass` | Protected internal C | 4 |
+| `b2ComputeHull` | Protected internal C | 4 |
+| `b2ComputePolygonAABB` | Protected internal C | 4 |
+| `b2ComputePolygonMass` | Protected internal C | 4 |
+| `b2ComputeSegmentAABB` | Protected internal C | 4 |
+| `b2GetSweepTransform` | Protected internal G | 4 |
+| `b2IsValidRay` | Protected internal I | 4 |
+| `b2MakeBox` | Protected internal M | 4 |
+| `b2MakeOffsetBox` | Protected internal M | 4 |
+| `b2MakeOffsetPolygon` | Protected internal M | 4 |
+| `b2MakeOffsetProxy` | Protected internal M | 4 |
+| `b2MakeOffsetRoundedBox` | Protected internal M | 4 |
+| `b2MakeOffsetRoundedPolygon` | Protected internal M | 4 |
+| `b2MakePolygon` | Protected internal M | 4 |
+| `b2MakeProxy` | Protected internal M | 4 |
+| `b2MakeRoundedBox` | Protected internal M | 4 |
+| `b2MakeSquare` | Protected internal M | 4 |
+| `b2PointInCapsule` | Protected internal P | 4 |
+| `b2PointInCircle` | Protected internal P | 4 |
+| `b2PointInPolygon` | Protected internal P | 4 |
+| `b2RayCastCapsule` | Protected internal R | 4 |
+| `b2RayCastCircle` | Protected internal R | 4 |
+| `b2RayCastPolygon` | Protected internal R | 4 |
+| `b2RayCastSegment` | Protected internal R | 4 |
+| `b2SegmentDistance` | Protected internal S | 4 |
+| `b2ShapeCast` | Protected internal S | 4 |
+| `b2ShapeCastCapsule` | Protected internal S | 4 |
+| `b2ShapeCastCircle` | Protected internal S | 4 |
+| `b2ShapeCastPolygon` | Protected internal S | 4 |
+| `b2ShapeCastSegment` | Protected internal S | 4 |
+| `b2ShapeDistance` | Protected internal S | 4 |
+| `b2TimeOfImpact` | Protected internal T | 4 |
+| `b2TransformPolygon` | Protected internal T | 4 |
+| `b2ValidateHull` | Protected internal V | 4 |
+
+
+### Dynamic tree (21 symbols)
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2DynamicTree_Create` | Protected internal DynamicTree.Create | 5 |
+| `b2DynamicTree_CreateProxy` | Protected internal DynamicTree.CreateProxy | 5 |
+| `b2DynamicTree_Destroy` | Protected internal DynamicTree.Destroy | 5 |
+| `b2DynamicTree_DestroyProxy` | Protected internal DynamicTree.DestroyProxy | 5 |
+| `b2DynamicTree_EnlargeProxy` | Protected internal DynamicTree.EnlargeProxy | 5 |
+| `b2DynamicTree_GetAABB` | Protected internal DynamicTree.GetAABB | 5 |
+| `b2DynamicTree_GetAreaRatio` | Protected internal DynamicTree.GetAreaRatio | 5 |
+| `b2DynamicTree_GetByteCount` | Protected internal DynamicTree.GetByteCount | 5 |
+| `b2DynamicTree_GetCategoryBits` | Protected internal DynamicTree.GetCategoryBits | 5 |
+| `b2DynamicTree_GetHeight` | Protected internal DynamicTree.GetHeight | 5 |
+| `b2DynamicTree_GetProxyCount` | Protected internal DynamicTree.GetProxyCount | 5 |
+| `b2DynamicTree_GetRootBounds` | Protected internal DynamicTree.GetRootBounds | 5 |
+| `b2DynamicTree_GetUserData` | Protected internal DynamicTree.GetUserData | 5 |
+| `b2DynamicTree_MoveProxy` | Protected internal DynamicTree.MoveProxy | 5 |
+| `b2DynamicTree_Query` | Protected internal DynamicTree.Query | 5 |
+| `b2DynamicTree_RayCast` | Protected internal DynamicTree.RayCast | 5 |
+| `b2DynamicTree_Rebuild` | Protected internal DynamicTree.Rebuild | 5 |
+| `b2DynamicTree_SetCategoryBits` | Protected internal DynamicTree.SetCategoryBits | 5 |
+| `b2DynamicTree_ShapeCast` | Protected internal DynamicTree.ShapeCast | 5 |
+| `b2DynamicTree_Validate` | Protected internal DynamicTree.Validate | 5 |
+| `b2DynamicTree_ValidateNoEnlarged` | Protected internal DynamicTree.ValidateNoEnlarged | 5 |
+
+
+### Maths helpers (8 symbols)
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2Atan2` | Maths.Atan2 (Objo standard library) | 3 |
+| `b2ComputeCosSin` | Protected internal C | 3 |
+| `b2ComputeRotationBetweenUnitVectors` | Protected internal C | 3 |
+| `b2IsValidAABB` | Protected internal I | 3 |
+| `b2IsValidFloat` | Protected internal I | 3 |
+| `b2IsValidPlane` | Protected internal I | 3 |
+| `b2IsValidRotation` | Protected internal I | 3 |
+| `b2IsValidVec2` | Protected internal I | 3 |
+
+
+### Definition defaults (17 symbols)
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2DefaultBodyDef` | BodyDefinition with documented defaults | 6 |
+| `b2DefaultChainDef` | ChainDefinition with documented defaults | 6 |
+| `b2DefaultDebugDraw` | DebugDrawOptions with documented defaults | 10 |
+| `b2DefaultDistanceJointDef` | DistanceJointDefinition with documented defaults | 9 |
+| `b2DefaultExplosionDef` | ExplosionDefinition with documented defaults | 10 |
+| `b2DefaultFilter` | Filter with documented defaults | 6 |
+| `b2DefaultFilterJointDef` | FilterJointDefinition with documented defaults | 9 |
+| `b2DefaultMotorJointDef` | MotorJointDefinition with documented defaults | 9 |
+| `b2DefaultMouseJointDef` | MouseJointDefinition with documented defaults | 9 |
+| `b2DefaultPrismaticJointDef` | PrismaticJointDefinition with documented defaults | 9 |
+| `b2DefaultQueryFilter` | QueryFilter with documented defaults | 6 |
+| `b2DefaultRevoluteJointDef` | RevoluteJointDefinition with documented defaults | 9 |
+| `b2DefaultShapeDef` | ShapeDefinition with documented defaults | 6 |
+| `b2DefaultSurfaceMaterial` | SurfaceMaterial with documented defaults | 6 |
+| `b2DefaultWeldJointDef` | WeldJointDefinition with documented defaults | 9 |
+| `b2DefaultWheelJointDef` | WheelJointDefinition with documented defaults | 9 |
+| `b2DefaultWorldDef` | WorldSettings with documented defaults | 6 |
+
+
+### Length scale and plane solving (3 symbols)
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2GetLengthUnitsPerMeter` | Length-scale configuration only if pinned upstream requires it | 10 |
+| `b2SetLengthUnitsPerMeter` | Length-scale configuration only if pinned upstream requires it | 10 |
+| `b2SolvePlanes` | Protected internal plane solver used by World.CollideMover | 10 |
+
+
+### Platform and allocator hooks (1 symbol)
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2Hash` | Protected internal hash used by the pair table | 3 |
+
+### Approved version 1 exclusions (9 symbols)
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2GetByteCount` | Excluded (v1): C allocator statistics replaced by World.Counters | 0 |
+| `b2GetMilliseconds` | Excluded (v1): native timers; benchmarks use the Objo clock | 0 |
+| `b2GetMillisecondsAndReset` | Excluded (v1): native timers; benchmarks use the Objo clock | 0 |
+| `b2GetTicks` | Excluded (v1): native timers; benchmarks use the Objo clock | 0 |
+| `b2GetVersion` | Excluded (v1): the module version is documented in README.md | 0 |
+| `b2InternalAssertFcn` | Excluded (v1): internal validation uses exceptions and test assertions | 0 |
+| `b2SetAllocator` | Excluded (v1): Objo manages memory; no custom C allocators | 0 |
+| `b2SetAssertFcn` | Excluded (v1): internal validation uses exceptions and test assertions | 0 |
+| `b2Yield` | Excluded (v1): task scheduler callbacks are out of scope | 0 |
+
+
+## Upstream Source Mapping
+
+Physics2D module source items live in `Shared/Sources/` as nested members of
+the `Physics2D` module. The mapping below is updated as stages complete.
+Upstream line counts are for orientation only.
+
+| Upstream source | Physics2D source item | Stage |
+|---|---|---|
+| `src/constants.h`, `src/core.[ch]`, `src/math_functions.[ch]` | `PhysicsConstants`, `PhysicsMath` | 3 |
+| `src/table.[ch]`, `src/ctz.h` | `HashTable` | 3 |
+| `src/id_pool.[ch]`, `src/array.[ch]` | `IdPool`, dense stores in `PhysicsStores` | 3 |
+| `src/hull.c` | `PolygonHull` | 4 |
+| `src/geometry.c` | `Geometry` | 4 |
+| `src/distance.c` | `Distance` (GJK) | 4 |
+| `src/manifold.c` | `Manifolds` | 4 |
+| `src/aabb.c` | `BoundsMath` | 5 |
+| `src/dynamic_tree.c` | `DynamicTree` | 5 |
+| `src/broad_phase.[ch]` | `BroadPhase` | 5 |
+| `src/body.[ch]`, `src/shape.[ch]` | body/shape stores and façades | 6 |
+| `src/world.[ch]`, `src/types.c` | `World` façade and world core | 6 |
+| `src/contact.[ch]`, `src/contact_solver.c` | contact store and contact solver | 7 |
+| `src/island.[ch]`, `src/solver_set.[ch]`, `src/solver.[ch]` | islands, solver sets, Soft Step solver | 7 |
+| `src/constraint_graph.[ch]` | constraint graph colours | 7 |
+| `src/sensor.[ch]` | sensor tracking and events | 8 |
+| `src/joint.[ch]` | joint store and common joint solver | 9 |
+| `src/distance_joint.c` … `src/wheel_joint.c` | one source item per joint family | 9 |
+| `src/mover.c` | `Planes` (mover/plane solving) | 10 |
+| `src/timer.c`, `src/arena_allocator.c`, `src/atomic.h` | excluded (v1) — replaced by Objo clocks and GC | 0 |
+
+## Upstream Test Mapping
+
+Upstream tests are ported as Objo `TestCase` classes in the
+`Physics2D.Tests` project, with Physics2D names and `Double` tolerances.
+Golden numeric fixtures are generated from the pinned upstream source.
+
+| Upstream test | Physics2D test source item | Stage |
+|---|---|---|
+| `test/test_math.c` | `PhysicsMathTests` | 3 |
+| `test/test_table.c`, `test/test_bitset.c`, `test/test_id.c` | `ContainerTests` | 3 |
+| `test/test_collision.c` | `GeometryTests`, `DistanceTests`, `ManifoldTests`, `CastTests` | 4 |
+| `test/test_shape.c` | `ShapeGeometryTests` | 4 |
+| `test/test_world.c` | `WorldTests`, `BodyTests`, `QueryTests` | 6 |
+| `test/test_determinism.c` | `DeterminismTests` | 7 |
+| solver/scenario coverage from `samples/` | solver scene tests | 7 |
+
+Additional per-joint, sensor, and CCD scenarios follow the algorithms in their
+upstream source files where the upstream test suite does not isolate them.
+
+## Minimum Objo Version
+
+| Field | Value |
+|---|---|
+| Development Studio/CLI version | 26.8.6 (`objo version`) |
+| Runtime | .NET 10 SDK per `global.json` in the Objo checkout |
+| Required standard-library features | `Vector2`, `Matrix`, `Maths`, `Array.Reserve`, generic arrays, `TestCase`/`Assert`, modules with nested source items |
+| Required Studio features | `.objosln` VCS solutions (format version 4), Test build scope, desktop projects |
+| Documented minimum | Objo Studio 26.8.6 (the version used to build and validate this repository) |
+
+When Physics2D adopts a newly added standard-library member, the minimum
+version is updated here and in `docs/GETTING_STARTED.md`.
+
+## Version Update Procedure
+
+To re-pin against a newer Box2D release: update the tag and commit in this
+file and `AGENTS.md`, regenerate golden fixtures from the new source, diff the
+public symbol inventory, and record any behavioural changes in a new decision
+document. Do not mix algorithms from two Box2D versions.

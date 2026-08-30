@@ -1048,7 +1048,7 @@ to resume.
 
 | Stage | Status | Evidence |
 |---|---|---|
-| 0. Bootstrap, provenance, inventory | Not started | |
+| 0. Bootstrap, provenance, inventory | Complete | `Physics2D.objosln` compiles (all four projects, `objo check` 26.8.6); 422-symbol inventory in `docs/PORTING.md`; provenance in `THIRD_PARTY_NOTICES.md`; decisions 0001/0002 |
 | 1. Test oracle, harnesses, packaging | Not started | |
 | 2. Maths audit and representation bake-off | Not started | |
 | 3. Foundation containers and identity | Not started | |

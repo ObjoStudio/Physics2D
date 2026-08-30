@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "App",
+  "Id": "ffde86c2-d329-4772-b53d-2db7ce605e48",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "App-ffde86c2.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

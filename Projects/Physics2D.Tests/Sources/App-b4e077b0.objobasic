@@ -1,0 +1,8 @@
+# Test-host entry point. Tests run through the Objo test runner, so the
+# application entry point intentionally does nothing.
+Class App Inherits CommandLineApplication
+Event Run(args() As String) As Integer
+Pragma Unused args
+Return 0
+End Event
+End Class
