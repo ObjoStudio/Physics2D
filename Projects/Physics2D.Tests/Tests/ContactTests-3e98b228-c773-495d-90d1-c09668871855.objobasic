@@ -471,6 +471,75 @@ Next g
 Assert.Equal(1, world.ConstraintGraph.Colors[PhysicsConstants.GRAPH_OVERFLOW_INDEX].ContactSims.Count(), "the twelfth pair overflows")
 world.Validate()
 End Sub
+
+Public Sub TestContactSolverStopsFallingBody()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Var contact As Contact = world.Contacts[0]
+Var dynamicBody As Body = world.Bodies[1]
+dynamicBody.SetLinearVelocity(New Vector2(0.0, -5.0))
+# Compute the manifold the step would normally fill in.
+Var shapeA As Shape = world.Shapes[contact.ShapeIdA]
+Var shapeB As Shape = world.Shapes[contact.ShapeIdB]
+ContactMethods.UpdateContact(world, contact, shapeA, world.GetBodyTransformById(shapeA.BodyId), 0.0, 0.0, shapeB, world.GetBodyTransformById(shapeB.BodyId), 0.0, 0.0)
+contact.Flags = contact.Flags.BitOr(Integer(ContactFlags.TouchingFlag))
+IslandMethods.LinkContact(world, contact)
+GraphMethods.AddContactToGraph(world, contact)
+world.Validate()
+
+Var colorSims As ContactSims = world.ConstraintGraph.Colors[contact.ColorIndex].ContactSims
+Var states As BodyStates = world.GetBodyState(dynamicBody)
+Var cc As New ContactConstraint
+ContactSolver.PrepareContact(cc, states, colorSims, contact.LocalIndex, New Softness(0.2, 1.0, 0.0), New Softness(0.9, 0.8, 0.0), 0.0)
+Assert.Equal(PhysicsConstants.NULL_INDEX, cc.IndexA, "ground body has no solver state")
+Assert.Equal(dynamicBody.LocalIndex, cc.IndexB)
+Assert.Equal(-5.0, cc.RelativeVelocity1, "approaching velocity feeds restitution")
+Assert.True(cc.NormalMass1 > 0.0)
+
+Var invH As Double = 60.0
+For iteration As Integer = 0 To 7
+ContactSolver.SolveContact(states, cc, invH, -3.0, True)
+Next iteration
+Assert.True(cc.NormalImpulse1 > 0.0, "the solver accumulates a normal impulse")
+Var solvedY As Double = states.LVY.Items[cc.IndexB]
+Assert.True(solvedY > -0.5, "the falling body is stopped near the surface, got " + solvedY.ToString())
+
+ContactSolver.StoreImpulses(cc, world.ConstraintGraph.Colors[contact.ColorIndex].ContactSims.GetManifold(contact.LocalIndex))
+Var storedImpulse As Double = colorSims.GetManifold(contact.LocalIndex).Point1.NormalImpulse
+Assert.True(storedImpulse > 0.0)
+
+# Re-preparing with warm starting picks up the stored impulse.
+Var warmCc As New ContactConstraint
+ContactSolver.PrepareContact(warmCc, states, colorSims, contact.LocalIndex, New Softness(0.2, 1.0, 0.0), New Softness(0.9, 0.8, 0.0), 1.0)
+PhysicsAssert.Near(storedImpulse, warmCc.NormalImpulse1, 1e-12, 1e-12, "warm start reads the stored impulse")
+world.Validate()
+End Sub
+
+Public Sub TestContactRestitutionBounces()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Var contact As Contact = world.Contacts[0]
+Var dynamicBody As Body = world.Bodies[1]
+dynamicBody.SetLinearVelocity(New Vector2(0.0, -4.0))
+Var shapeA As Shape = world.Shapes[contact.ShapeIdA]
+Var shapeB As Shape = world.Shapes[contact.ShapeIdB]
+ContactMethods.UpdateContact(world, contact, shapeA, world.GetBodyTransformById(shapeA.BodyId), 0.0, 0.0, shapeB, world.GetBodyTransformById(shapeB.BodyId), 0.0, 0.0)
+contact.Flags = contact.Flags.BitOr(Integer(ContactFlags.TouchingFlag))
+IslandMethods.LinkContact(world, contact)
+GraphMethods.AddContactToGraph(world, contact)
+Var colorSims As ContactSims = world.ConstraintGraph.Colors[contact.ColorIndex].ContactSims
+colorSims.Restitution.Items[contact.LocalIndex] = 0.9
+Var states As BodyStates = world.GetBodyState(dynamicBody)
+Var cc As New ContactConstraint
+ContactSolver.PrepareContact(cc, states, colorSims, contact.LocalIndex, New Softness(0.2, 1.0, 0.0), New Softness(0.9, 0.8, 0.0), 0.0)
+For iteration As Integer = 0 To 7
+ContactSolver.SolveContact(states, cc, 60.0, -3.0, True)
+Next iteration
+ContactSolver.ApplyContactRestitution(states, cc, 1.0)
+Var bouncedY As Double = states.LVY.Items[cc.IndexB]
+Assert.True(bouncedY > 1.5, "restitution reflects most of the impact speed, got " + bouncedY.ToString())
+world.Validate()
+End Sub
 End Class
 
 ## Custom filter hook that vetoes every pair and counts its calls.

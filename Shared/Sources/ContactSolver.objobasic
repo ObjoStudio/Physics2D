@@ -1,0 +1,516 @@
+# Contact solver kernels, ported from contact_solver.c. The SIMD lanes
+# collapse to a single scalar lane: each kernel processes one constraint
+# against the awake set's dense body states, preserving Box2D 3.1.1's Soft
+# Step algorithmic order exactly.
+Class ContactSolver
+## Prepares one contact constraint from its sim row, ported from the body
+## of b2PrepareContactsTask. Warm-start impulses scale with
+## warmStartScale, which is 1.0 or 0.0 depending on the warm-start flag.
+Shared Sub PrepareContact(cc As ContactConstraint, states As BodyStates, sims As ContactSims, simIndex As Integer, contactSoftness As Softness, staticSoftness As Softness, warmStartScale As Double)
+Var manifold As Manifold = sims.GetManifold(simIndex)
+
+cc.IndexA = sims.BodySimIndexA.Items[simIndex]
+cc.IndexB = sims.BodySimIndexB.Items[simIndex]
+cc.InvMassA = sims.InvMassA.Items[simIndex]
+cc.InvIA = sims.InvIA.Items[simIndex]
+cc.InvMassB = sims.InvMassB.Items[simIndex]
+cc.InvIB = sims.InvIB.Items[simIndex]
+Var rollingK As Double = cc.InvIA + cc.InvIB
+If rollingK > 0.0 Then
+cc.RollingMass = 1.0 / rollingK
+Else
+cc.RollingMass = 0.0
+End If
+
+# Stiffer for static contacts to avoid bodies getting pushed through the
+# ground.
+If cc.IndexA = PhysicsConstants.NULL_INDEX Or cc.IndexB = PhysicsConstants.NULL_INDEX Then
+cc.BiasRate = staticSoftness.BiasRate
+cc.MassScale = staticSoftness.MassScale
+cc.ImpulseScale = staticSoftness.ImpulseScale
+Else
+cc.BiasRate = contactSoftness.BiasRate
+cc.MassScale = contactSoftness.MassScale
+cc.ImpulseScale = contactSoftness.ImpulseScale
+End If
+
+cc.NormalX = manifold.Normal.X
+cc.NormalY = manifold.Normal.Y
+cc.Friction = sims.Friction.Items[simIndex]
+cc.TangentSpeed = sims.TangentSpeed.Items[simIndex]
+cc.Restitution = sims.Restitution.Items[simIndex]
+cc.RollingResistance = sims.RollingResistance.Items[simIndex]
+cc.RollingImpulse = warmStartScale * manifold.RollingImpulse
+
+# Relative velocities come from the awake set's states; static lanes read
+# zero.
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+If cc.IndexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[cc.IndexA]
+vAY = states.LVY.Items[cc.IndexA]
+wA = states.AngularVelocity.Items[cc.IndexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+If cc.IndexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[cc.IndexB]
+vBY = states.LVY.Items[cc.IndexB]
+wB = states.AngularVelocity.Items[cc.IndexB]
+End If
+
+Var tangentX As Double = cc.NormalY
+Var tangentY As Double = -cc.NormalX
+
+Var mp1 As ManifoldPoint = manifold.Point1
+cc.AnchorA1X = mp1.AnchorA.X
+cc.AnchorA1Y = mp1.AnchorA.Y
+cc.AnchorB1X = mp1.AnchorB.X
+cc.AnchorB1Y = mp1.AnchorB.Y
+cc.BaseSeparation1 = mp1.Separation - (cc.AnchorB1X - cc.AnchorA1X) * cc.NormalX - (cc.AnchorB1Y - cc.AnchorA1Y) * cc.NormalY
+cc.NormalImpulse1 = warmStartScale * mp1.NormalImpulse
+cc.TangentImpulse1 = warmStartScale * mp1.TangentImpulse
+cc.TotalNormalImpulse1 = 0.0
+Var rnA As Double = cc.AnchorA1X * cc.NormalY - cc.AnchorA1Y * cc.NormalX
+Var rnB As Double = cc.AnchorB1X * cc.NormalY - cc.AnchorB1Y * cc.NormalX
+Var kNormal As Double = cc.InvMassA + cc.InvMassB + cc.InvIA * rnA * rnA + cc.InvIB * rnB * rnB
+If kNormal > 0.0 Then
+cc.NormalMass1 = 1.0 / kNormal
+Else
+cc.NormalMass1 = 0.0
+End If
+Var rtA As Double = cc.AnchorA1X * tangentY - cc.AnchorA1Y * tangentX
+Var rtB As Double = cc.AnchorB1X * tangentY - cc.AnchorB1Y * tangentX
+Var kTangent As Double = cc.InvMassA + cc.InvMassB + cc.InvIA * rtA * rtA + cc.InvIB * rtB * rtB
+If kTangent > 0.0 Then
+cc.TangentMass1 = 1.0 / kTangent
+Else
+cc.TangentMass1 = 0.0
+End If
+# relative velocity for restitution
+Var vrAX As Double = vAX - wA * cc.AnchorA1Y
+Var vrAY As Double = vAY + wA * cc.AnchorA1X
+Var vrBX As Double = vBX - wB * cc.AnchorB1Y
+Var vrBY As Double = vBY + wB * cc.AnchorB1X
+cc.RelativeVelocity1 = (vrBX - vrAX) * cc.NormalX + (vrBY - vrAY) * cc.NormalY
+
+Var pointCount As Integer = manifold.PointCount
+If pointCount = 2 Then
+Var mp2 As ManifoldPoint = manifold.Point2
+cc.AnchorA2X = mp2.AnchorA.X
+cc.AnchorA2Y = mp2.AnchorA.Y
+cc.AnchorB2X = mp2.AnchorB.X
+cc.AnchorB2Y = mp2.AnchorB.Y
+cc.BaseSeparation2 = mp2.Separation - (cc.AnchorB2X - cc.AnchorA2X) * cc.NormalX - (cc.AnchorB2Y - cc.AnchorA2Y) * cc.NormalY
+cc.NormalImpulse2 = warmStartScale * mp2.NormalImpulse
+cc.TangentImpulse2 = warmStartScale * mp2.TangentImpulse
+cc.TotalNormalImpulse2 = 0.0
+Var rnA2 As Double = cc.AnchorA2X * cc.NormalY - cc.AnchorA2Y * cc.NormalX
+Var rnB2 As Double = cc.AnchorB2X * cc.NormalY - cc.AnchorB2Y * cc.NormalX
+Var kNormal2 As Double = cc.InvMassA + cc.InvMassB + cc.InvIA * rnA2 * rnA2 + cc.InvIB * rnB2 * rnB2
+If kNormal2 > 0.0 Then
+cc.NormalMass2 = 1.0 / kNormal2
+Else
+cc.NormalMass2 = 0.0
+End If
+Var rtA2 As Double = cc.AnchorA2X * tangentY - cc.AnchorA2Y * tangentX
+Var rtB2 As Double = cc.AnchorB2X * tangentY - cc.AnchorB2Y * tangentX
+Var kTangent2 As Double = cc.InvMassA + cc.InvMassB + cc.InvIA * rtA2 * rtA2 + cc.InvIB * rtB2 * rtB2
+If kTangent2 > 0.0 Then
+cc.TangentMass2 = 1.0 / kTangent2
+Else
+cc.TangentMass2 = 0.0
+End If
+Var vrA2X As Double = vAX - wA * cc.AnchorA2Y
+Var vrA2Y As Double = vAY + wA * cc.AnchorA2X
+Var vrB2X As Double = vBX - wB * cc.AnchorB2Y
+Var vrB2Y As Double = vBY + wB * cc.AnchorB2X
+cc.RelativeVelocity2 = (vrB2X - vrA2X) * cc.NormalX + (vrB2Y - vrA2Y) * cc.NormalY
+Else
+# dummy data that has no effect
+cc.BaseSeparation2 = 0.0
+cc.NormalImpulse2 = 0.0
+cc.TangentImpulse2 = 0.0
+cc.TotalNormalImpulse2 = 0.0
+cc.AnchorA2X = 0.0
+cc.AnchorA2Y = 0.0
+cc.AnchorB2X = 0.0
+cc.AnchorB2Y = 0.0
+cc.NormalMass2 = 0.0
+cc.TangentMass2 = 0.0
+cc.RelativeVelocity2 = 0.0
+End If
+End Sub
+
+## Applies the stored impulses to the body states before iterating,
+## ported from b2WarmStartContactsTask.
+Shared Sub WarmStartContact(states As BodyStates, cc As ContactConstraint)
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+If cc.IndexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[cc.IndexA]
+vAY = states.LVY.Items[cc.IndexA]
+wA = states.AngularVelocity.Items[cc.IndexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+If cc.IndexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[cc.IndexB]
+vBY = states.LVY.Items[cc.IndexB]
+wB = states.AngularVelocity.Items[cc.IndexB]
+End If
+
+Var tangentX As Double = cc.NormalY
+Var tangentY As Double = -cc.NormalX
+
+Var p1X As Double = cc.NormalImpulse1 * cc.NormalX + cc.TangentImpulse1 * tangentX
+Var p1Y As Double = cc.NormalImpulse1 * cc.NormalY + cc.TangentImpulse1 * tangentY
+vAX = vAX - cc.InvMassA * p1X
+vAY = vAY - cc.InvMassA * p1Y
+wA = wA - cc.InvIA * (cc.AnchorA1X * p1Y - cc.AnchorA1Y * p1X)
+vBX = vBX + cc.InvMassB * p1X
+vBY = vBY + cc.InvMassB * p1Y
+wB = wB + cc.InvIB * (cc.AnchorB1X * p1Y - cc.AnchorB1Y * p1X)
+
+Var p2X As Double = cc.NormalImpulse2 * cc.NormalX + cc.TangentImpulse2 * tangentX
+Var p2Y As Double = cc.NormalImpulse2 * cc.NormalY + cc.TangentImpulse2 * tangentY
+vAX = vAX - cc.InvMassA * p2X
+vAY = vAY - cc.InvMassA * p2Y
+wA = wA - cc.InvIA * (cc.AnchorA2X * p2Y - cc.AnchorA2Y * p2X)
+vBX = vBX + cc.InvMassB * p2X
+vBY = vBY + cc.InvMassB * p2Y
+wB = wB + cc.InvIB * (cc.AnchorB2X * p2Y - cc.AnchorB2Y * p2X)
+
+wA = wA - cc.InvIA * cc.RollingImpulse
+wB = wB + cc.InvIB * cc.RollingImpulse
+
+If cc.IndexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[cc.IndexA] = vAX
+states.LVY.Items[cc.IndexA] = vAY
+states.AngularVelocity.Items[cc.IndexA] = wA
+End If
+If cc.IndexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[cc.IndexB] = vBX
+states.LVY.Items[cc.IndexB] = vBY
+states.AngularVelocity.Items[cc.IndexB] = wB
+End If
+End Sub
+
+## Runs one velocity iteration with optional soft-step bias over both
+## manifold points, friction, and rolling resistance, ported from
+## b2SolveContactsTask. minBiasVelocity limits bias stiffness and is
+## normally negative.
+Shared Sub SolveContact(states As BodyStates, cc As ContactConstraint, invH As Double, minBiasVelocity As Double, useBias As Boolean)
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If cc.IndexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[cc.IndexA]
+vAY = states.LVY.Items[cc.IndexA]
+wA = states.AngularVelocity.Items[cc.IndexA]
+dpAX = states.DPX.Items[cc.IndexA]
+dpAY = states.DPY.Items[cc.IndexA]
+dqAC = states.DRC.Items[cc.IndexA]
+dqAS = states.DRS.Items[cc.IndexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If cc.IndexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[cc.IndexB]
+vBY = states.LVY.Items[cc.IndexB]
+wB = states.AngularVelocity.Items[cc.IndexB]
+dpBX = states.DPX.Items[cc.IndexB]
+dpBY = states.DPY.Items[cc.IndexB]
+dqBC = states.DRC.Items[cc.IndexB]
+dqBS = states.DRS.Items[cc.IndexB]
+End If
+
+Var biasRate As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If useBias Then
+biasRate = cc.BiasRate
+massScale = cc.MassScale
+impulseScale = cc.ImpulseScale
+End If
+
+Var dpX As Double = dpBX - dpAX
+Var dpY As Double = dpBY - dpAY
+
+# Point one non-penetration constraint.
+Var rsA1X As Double = dqAC * cc.AnchorA1X - dqAS * cc.AnchorA1Y
+Var rsA1Y As Double = dqAS * cc.AnchorA1X + dqAC * cc.AnchorA1Y
+Var rsB1X As Double = dqBC * cc.AnchorB1X - dqBS * cc.AnchorB1Y
+Var rsB1Y As Double = dqBS * cc.AnchorB1X + dqBC * cc.AnchorB1Y
+Var ds1X As Double = dpX + rsB1X - rsA1X
+Var ds1Y As Double = dpY + rsB1Y - rsA1Y
+Var s1 As Double = (cc.NormalX * ds1X + cc.NormalY * ds1Y) + cc.BaseSeparation1
+
+Var bias1 As Double = Maths.Max(biasRate * s1, minBiasVelocity)
+Var pointMassScale1 As Double = massScale
+Var pointImpulseScale1 As Double = impulseScale
+If s1 > 0.0 Then
+# Speculative bias for separated points; the min bias velocity limits
+# stiffness rather than increasing it.
+bias1 = s1 * invH
+pointMassScale1 = 1.0
+pointImpulseScale1 = 0.0
+End If
+
+Var dv1X As Double = vBX - wB * cc.AnchorB1Y - (vAX - wA * cc.AnchorA1Y)
+Var dv1Y As Double = vBY + wB * cc.AnchorB1X - (vAY + wA * cc.AnchorA1X)
+Var vn1 As Double = dv1X * cc.NormalX + dv1Y * cc.NormalY
+
+Var negImpulse1 As Double = cc.NormalMass1 * (pointMassScale1 * (vn1 + bias1)) + pointImpulseScale1 * cc.NormalImpulse1
+Var newImpulse1 As Double = cc.NormalImpulse1 - negImpulse1
+If newImpulse1 < 0.0 Then
+newImpulse1 = 0.0
+End If
+Var impulse1 As Double = newImpulse1 - cc.NormalImpulse1
+cc.NormalImpulse1 = newImpulse1
+cc.TotalNormalImpulse1 = cc.TotalNormalImpulse1 + newImpulse1
+
+Var p1X As Double = impulse1 * cc.NormalX
+Var p1Y As Double = impulse1 * cc.NormalY
+vAX = vAX - cc.InvMassA * p1X
+vAY = vAY - cc.InvMassA * p1Y
+wA = wA - cc.InvIA * (cc.AnchorA1X * p1Y - cc.AnchorA1Y * p1X)
+vBX = vBX + cc.InvMassB * p1X
+vBY = vBY + cc.InvMassB * p1Y
+wB = wB + cc.InvIB * (cc.AnchorB1X * p1Y - cc.AnchorB1Y * p1X)
+
+# Point two non-penetration constraint.
+Var rsA2X As Double = dqAC * cc.AnchorA2X - dqAS * cc.AnchorA2Y
+Var rsA2Y As Double = dqAS * cc.AnchorA2X + dqAC * cc.AnchorA2Y
+Var rsB2X As Double = dqBC * cc.AnchorB2X - dqBS * cc.AnchorB2Y
+Var rsB2Y As Double = dqBS * cc.AnchorB2X + dqBC * cc.AnchorB2Y
+Var ds2X As Double = dpX + rsB2X - rsA2X
+Var ds2Y As Double = dpY + rsB2Y - rsA2Y
+Var s2 As Double = (cc.NormalX * ds2X + cc.NormalY * ds2Y) + cc.BaseSeparation2
+
+Var bias2 As Double = Maths.Max(biasRate * s2, minBiasVelocity)
+Var pointMassScale2 As Double = massScale
+Var pointImpulseScale2 As Double = impulseScale
+If s2 > 0.0 Then
+bias2 = s2 * invH
+pointMassScale2 = 1.0
+pointImpulseScale2 = 0.0
+End If
+
+Var rA2X As Double = cc.AnchorA2X
+Var rA2Y As Double = cc.AnchorA2Y
+Var rB2X As Double = cc.AnchorB2X
+Var rB2Y As Double = cc.AnchorB2Y
+
+Var dv2X As Double = vBX - wB * rB2Y - (vAX - wA * rA2Y)
+Var dv2Y As Double = vBY + wB * rB2X - (vAY + wA * rA2X)
+Var vn2 As Double = dv2X * cc.NormalX + dv2Y * cc.NormalY
+
+Var negImpulse2 As Double = cc.NormalMass2 * (pointMassScale2 * (vn2 + bias2)) + pointImpulseScale2 * cc.NormalImpulse2
+Var newImpulse2 As Double = cc.NormalImpulse2 - negImpulse2
+If newImpulse2 < 0.0 Then
+newImpulse2 = 0.0
+End If
+Var impulse2 As Double = newImpulse2 - cc.NormalImpulse2
+cc.NormalImpulse2 = newImpulse2
+cc.TotalNormalImpulse2 = cc.TotalNormalImpulse2 + newImpulse2
+
+Var p2X As Double = impulse2 * cc.NormalX
+Var p2Y As Double = impulse2 * cc.NormalY
+vAX = vAX - cc.InvMassA * p2X
+vAY = vAY - cc.InvMassA * p2Y
+wA = wA - cc.InvIA * (rA2X * p2Y - rA2Y * p2X)
+vBX = vBX + cc.InvMassB * p2X
+vBY = vBY + cc.InvMassB * p2Y
+wB = wB + cc.InvIB * (rB2X * p2Y - rB2Y * p2X)
+
+# Friction constraints with conveyor-belt tangent speed.
+Var tangentX As Double = cc.NormalY
+Var tangentY As Double = -cc.NormalX
+
+Var dvF1X As Double = vBX - wB * cc.AnchorB1Y - (vAX - wA * cc.AnchorA1Y)
+Var dvF1Y As Double = vBY + wB * cc.AnchorB1X - (vAY + wA * cc.AnchorA1X)
+Var vt1 As Double = dvF1X * tangentX + dvF1Y * tangentY - cc.TangentSpeed
+Var negTangent1 As Double = cc.TangentMass1 * vt1
+Var maxFriction1 As Double = cc.Friction * cc.NormalImpulse1
+Var newTangent1 As Double = cc.TangentImpulse1 - negTangent1
+If newTangent1 < -maxFriction1 Then
+newTangent1 = -maxFriction1
+End If
+If newTangent1 > maxFriction1 Then
+newTangent1 = maxFriction1
+End If
+Var tangentDelta1 As Double = newTangent1 - cc.TangentImpulse1
+cc.TangentImpulse1 = newTangent1
+
+Var f1X As Double = tangentDelta1 * tangentX
+Var f1Y As Double = tangentDelta1 * tangentY
+vAX = vAX - cc.InvMassA * f1X
+vAY = vAY - cc.InvMassA * f1Y
+wA = wA - cc.InvIA * (cc.AnchorA1X * f1Y - cc.AnchorA1Y * f1X)
+vBX = vBX + cc.InvMassB * f1X
+vBY = vBY + cc.InvMassB * f1Y
+wB = wB + cc.InvIB * (cc.AnchorB1X * f1Y - cc.AnchorB1Y * f1X)
+
+Var dvF2X As Double = vBX - wB * cc.AnchorB2Y - (vAX - wA * cc.AnchorA2Y)
+Var dvF2Y As Double = vBY + wB * cc.AnchorB2X - (vAY + wA * cc.AnchorA2X)
+Var vt2 As Double = dvF2X * tangentX + dvF2Y * tangentY - cc.TangentSpeed
+Var negTangent2 As Double = cc.TangentMass2 * vt2
+Var maxFriction2 As Double = cc.Friction * cc.NormalImpulse2
+Var newTangent2 As Double = cc.TangentImpulse2 - negTangent2
+If newTangent2 < -maxFriction2 Then
+newTangent2 = -maxFriction2
+End If
+If newTangent2 > maxFriction2 Then
+newTangent2 = maxFriction2
+End If
+Var tangentDelta2 As Double = newTangent2 - cc.TangentImpulse2
+cc.TangentImpulse2 = newTangent2
+
+Var f2X As Double = tangentDelta2 * tangentX
+Var f2Y As Double = tangentDelta2 * tangentY
+vAX = vAX - cc.InvMassA * f2X
+vAY = vAY - cc.InvMassA * f2Y
+wA = wA - cc.InvIA * (cc.AnchorA2X * f2Y - cc.AnchorA2Y * f2X)
+vBX = vBX + cc.InvMassB * f2X
+vBY = vBY + cc.InvMassB * f2Y
+wB = wB + cc.InvIB * (cc.AnchorB2X * f2Y - cc.AnchorB2Y * f2X)
+
+# Rolling resistance.
+Var totalNormalImpulse As Double = cc.TotalNormalImpulse1 + cc.TotalNormalImpulse2
+Var deltaLambda As Double = cc.RollingMass * (wA - wB)
+Var maxLambda As Double = cc.RollingResistance * totalNormalImpulse
+Var lambda As Double = cc.RollingImpulse + deltaLambda
+If lambda < -maxLambda Then
+lambda = -maxLambda
+End If
+If lambda > maxLambda Then
+lambda = maxLambda
+End If
+Var rollingDelta As Double = lambda - cc.RollingImpulse
+cc.RollingImpulse = lambda
+wA = wA - cc.InvIA * rollingDelta
+wB = wB + cc.InvIB * rollingDelta
+
+If cc.IndexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[cc.IndexA] = vAX
+states.LVY.Items[cc.IndexA] = vAY
+states.AngularVelocity.Items[cc.IndexA] = wA
+End If
+If cc.IndexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[cc.IndexB] = vBX
+states.LVY.Items[cc.IndexB] = vBY
+states.AngularVelocity.Items[cc.IndexB] = wB
+End If
+End Sub
+
+## Applies restitution once after the velocity iterations, ported from
+## b2ApplyRestitutionTask.
+Shared Sub ApplyContactRestitution(states As BodyStates, cc As ContactConstraint, restitutionThreshold As Double)
+If cc.Restitution = 0.0 Then
+Return
+End If
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+If cc.IndexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[cc.IndexA]
+vAY = states.LVY.Items[cc.IndexA]
+wA = states.AngularVelocity.Items[cc.IndexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+If cc.IndexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[cc.IndexB]
+vBY = states.LVY.Items[cc.IndexB]
+wB = states.AngularVelocity.Items[cc.IndexB]
+End If
+
+# Point one.
+Var mass1 As Double = cc.NormalMass1
+If cc.RelativeVelocity1 + restitutionThreshold > 0.0 Or cc.TotalNormalImpulse1 = 0.0 Then
+mass1 = 0.0
+End If
+Var dv1X As Double = vBX - wB * cc.AnchorB1Y - (vAX - wA * cc.AnchorA1Y)
+Var dv1Y As Double = vBY + wB * cc.AnchorB1X - (vAY + wA * cc.AnchorA1X)
+Var vn1 As Double = dv1X * cc.NormalX + dv1Y * cc.NormalY
+Var negImpulse1 As Double = mass1 * (vn1 + cc.Restitution * cc.RelativeVelocity1)
+Var newImpulse1 As Double = cc.NormalImpulse1 - negImpulse1
+If newImpulse1 < 0.0 Then
+newImpulse1 = 0.0
+End If
+Var impulse1 As Double = newImpulse1 - cc.NormalImpulse1
+cc.NormalImpulse1 = newImpulse1
+Var p1X As Double = impulse1 * cc.NormalX
+Var p1Y As Double = impulse1 * cc.NormalY
+vAX = vAX - cc.InvMassA * p1X
+vAY = vAY - cc.InvMassA * p1Y
+wA = wA - cc.InvIA * (cc.AnchorA1X * p1Y - cc.AnchorA1Y * p1X)
+vBX = vBX + cc.InvMassB * p1X
+vBY = vBY + cc.InvMassB * p1Y
+wB = wB + cc.InvIB * (cc.AnchorB1X * p1Y - cc.AnchorB1Y * p1X)
+
+# Point two.
+Var mass2 As Double = cc.NormalMass2
+If cc.RelativeVelocity2 + restitutionThreshold > 0.0 Or cc.TotalNormalImpulse2 = 0.0 Then
+mass2 = 0.0
+End If
+Var dv2X As Double = vBX - wB * cc.AnchorB2Y - (vAX - wA * cc.AnchorA2Y)
+Var dv2Y As Double = vBY + wB * cc.AnchorB2X - (vAY + wA * cc.AnchorA2X)
+Var vn2 As Double = dv2X * cc.NormalX + dv2Y * cc.NormalY
+Var negImpulse2 As Double = mass2 * (vn2 + cc.Restitution * cc.RelativeVelocity2)
+Var newImpulse2 As Double = cc.NormalImpulse2 - negImpulse2
+If newImpulse2 < 0.0 Then
+newImpulse2 = 0.0
+End If
+Var impulse2 As Double = newImpulse2 - cc.NormalImpulse2
+cc.NormalImpulse2 = newImpulse2
+Var p2X As Double = impulse2 * cc.NormalX
+Var p2Y As Double = impulse2 * cc.NormalY
+vAX = vAX - cc.InvMassA * p2X
+vAY = vAY - cc.InvMassA * p2Y
+wA = wA - cc.InvIA * (cc.AnchorA2X * p2Y - cc.AnchorA2Y * p2X)
+vBX = vBX + cc.InvMassB * p2X
+vBY = vBY + cc.InvMassB * p2Y
+wB = wB + cc.InvIB * (cc.AnchorB2X * p2Y - cc.AnchorB2Y * p2X)
+
+If cc.IndexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[cc.IndexA] = vAX
+states.LVY.Items[cc.IndexA] = vAY
+states.AngularVelocity.Items[cc.IndexA] = wA
+End If
+If cc.IndexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[cc.IndexB] = vBX
+states.LVY.Items[cc.IndexB] = vBY
+states.AngularVelocity.Items[cc.IndexB] = wB
+End If
+End Sub
+
+## Copies the accumulated impulses back into the manifold for warm
+## starting the next step, ported from b2StoreImpulsesTask.
+Shared Sub StoreImpulses(cc As ContactConstraint, manifold As Manifold)
+manifold.RollingImpulse = cc.RollingImpulse
+manifold.Point1.NormalImpulse = cc.NormalImpulse1
+manifold.Point1.TangentImpulse = cc.TangentImpulse1
+manifold.Point1.TotalNormalImpulse = cc.TotalNormalImpulse1
+manifold.Point1.NormalVelocity = cc.RelativeVelocity1
+manifold.Point2.NormalImpulse = cc.NormalImpulse2
+manifold.Point2.TangentImpulse = cc.TangentImpulse2
+manifold.Point2.TotalNormalImpulse = cc.TotalNormalImpulse2
+manifold.Point2.NormalVelocity = cc.RelativeVelocity2
+End Sub
+End Class

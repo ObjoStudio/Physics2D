@@ -1,0 +1,25 @@
+# Solver softness parameters, ported from upstream b2Softness in solver.h.
+# The step computes these once per solver phase; the constraint kernels read
+# them per constraint.
+Class Softness
+## Fraction of the separation error removed per substep.
+Property BiasRate As Double
+## Scales the effective mass used for the bias impulse.
+Property MassScale As Double
+## Fraction of the warm-start impulse re-applied each substep.
+Property ImpulseScale As Double
+
+## Creates a zeroed softness record.
+Constructor()
+Me.BiasRate = 0.0
+Me.MassScale = 0.0
+Me.ImpulseScale = 0.0
+End Constructor
+
+## Creates softness from explicit values.
+Constructor(biasRate As Double, massScale As Double, impulseScale As Double)
+Me.BiasRate = biasRate
+Me.MassScale = massScale
+Me.ImpulseScale = impulseScale
+End Constructor
+End Class

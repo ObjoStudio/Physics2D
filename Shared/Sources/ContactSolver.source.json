@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ContactSolver",
+  "Id": "e31e0d5d-fef4-4e1e-8a82-292a2eb9c8d0",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "ContactSolver.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

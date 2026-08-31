@@ -1,0 +1,127 @@
+# Scalar solver scratch state for one contact, ported from the per-lane
+# fields of upstream b2ContactConstraintSIMD in contact_solver.c. The SIMD
+# struct collapses to a single lane in this port; anchors are fixed at
+# prepare time while separation uses the moving rotated anchors.
+Class ContactConstraint
+## Awake-set body state index for body A. NULL_INDEX for static bodies.
+Property IndexA As Integer
+## Awake-set body state index for body B. NULL_INDEX for static bodies.
+Property IndexB As Integer
+## Inverse mass copied from the sim row for body A.
+Property InvMassA As Double
+## Inverse rotational inertia copied from the sim row for body A.
+Property InvIA As Double
+## Inverse mass copied from the sim row for body B.
+Property InvMassB As Double
+## Inverse rotational inertia copied from the sim row for body B.
+Property InvIB As Double
+## Inverse of the summed angular inertia, for rolling resistance.
+Property RollingMass As Double
+## Contact normal X component, fixed at prepare time.
+Property NormalX As Double
+## Contact normal Y component, fixed at prepare time.
+Property NormalY As Double
+## Mixed friction coefficient copied from the sim row.
+Property Friction As Double
+## Conveyor-belt tangent speed copied from the sim row.
+Property TangentSpeed As Double
+## Mixed restitution copied from the sim row.
+Property Restitution As Double
+## Rolling resistance copied from the sim row.
+Property RollingResistance As Double
+## Accumulated rolling impulse, warm started from the manifold.
+Property RollingImpulse As Double
+## Softness bias rate chosen at prepare time.
+Property BiasRate As Double
+## Softness mass scale chosen at prepare time.
+Property MassScale As Double
+## Softness impulse scale chosen at prepare time.
+Property ImpulseScale As Double
+## Point one anchor on body A, X.
+Property AnchorA1X As Double
+## Point one anchor on body A, Y.
+Property AnchorA1Y As Double
+## Point one anchor on body B, X.
+Property AnchorB1X As Double
+## Point one anchor on body B, Y.
+Property AnchorB1Y As Double
+## Point one separation relative to the fixed anchors.
+Property BaseSeparation1 As Double
+## Point one accumulated normal impulse.
+Property NormalImpulse1 As Double
+## Point one accumulated tangent impulse.
+Property TangentImpulse1 As Double
+## Point one total normal impulse over the step.
+Property TotalNormalImpulse1 As Double
+## Point one inverse effective normal mass.
+Property NormalMass1 As Double
+## Point one inverse effective tangent mass.
+Property TangentMass1 As Double
+## Point one pre-solve normal velocity for restitution.
+Property RelativeVelocity1 As Double
+## Point two anchor on body A, X.
+Property AnchorA2X As Double
+## Point two anchor on body A, Y.
+Property AnchorA2Y As Double
+## Point two anchor on body B, X.
+Property AnchorB2X As Double
+## Point two anchor on body B, Y.
+Property AnchorB2Y As Double
+## Point two separation relative to the fixed anchors.
+Property BaseSeparation2 As Double
+## Point two accumulated normal impulse.
+Property NormalImpulse2 As Double
+## Point two accumulated tangent impulse.
+Property TangentImpulse2 As Double
+## Point two total normal impulse over the step.
+Property TotalNormalImpulse2 As Double
+## Point two inverse effective normal mass.
+Property NormalMass2 As Double
+## Point two inverse effective tangent mass.
+Property TangentMass2 As Double
+## Point two pre-solve normal velocity for restitution.
+Property RelativeVelocity2 As Double
+
+## Creates a zeroed constraint with no bodies attached.
+Constructor()
+Me.IndexA = PhysicsConstants.NULL_INDEX
+Me.IndexB = PhysicsConstants.NULL_INDEX
+Me.InvMassA = 0.0
+Me.InvIA = 0.0
+Me.InvMassB = 0.0
+Me.InvIB = 0.0
+Me.RollingMass = 0.0
+Me.NormalX = 0.0
+Me.NormalY = 0.0
+Me.Friction = 0.0
+Me.TangentSpeed = 0.0
+Me.Restitution = 0.0
+Me.RollingResistance = 0.0
+Me.RollingImpulse = 0.0
+Me.BiasRate = 0.0
+Me.MassScale = 0.0
+Me.ImpulseScale = 0.0
+Me.AnchorA1X = 0.0
+Me.AnchorA1Y = 0.0
+Me.AnchorB1X = 0.0
+Me.AnchorB1Y = 0.0
+Me.BaseSeparation1 = 0.0
+Me.NormalImpulse1 = 0.0
+Me.TangentImpulse1 = 0.0
+Me.TotalNormalImpulse1 = 0.0
+Me.NormalMass1 = 0.0
+Me.TangentMass1 = 0.0
+Me.RelativeVelocity1 = 0.0
+Me.AnchorA2X = 0.0
+Me.AnchorA2Y = 0.0
+Me.AnchorB2X = 0.0
+Me.AnchorB2Y = 0.0
+Me.BaseSeparation2 = 0.0
+Me.NormalImpulse2 = 0.0
+Me.TangentImpulse2 = 0.0
+Me.TotalNormalImpulse2 = 0.0
+Me.NormalMass2 = 0.0
+Me.TangentMass2 = 0.0
+Me.RelativeVelocity2 = 0.0
+End Constructor
+End Class
