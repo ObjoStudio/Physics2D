@@ -1,0 +1,893 @@
+# Unit and adversarial tests for the dynamic bounding volume tree, ported
+# from the behaviour of upstream dynamic_tree.c. Upstream has no dedicated C
+# unit tests for the tree, so coverage follows the Stage 5 plan: validation
+# after every mutation in seeded stress tests, and query, ray cast, and
+# shape cast results cross-checked against brute-force bounds oracles.
+Import Physics2D
+
+Class DynamicTreeTests Inherits TestCase
+## Returns the entry fraction of the segment from the origin to (toX, toY)
+## into the axis-aligned box, or -1 when the segment misses. Uses only
+## local numbers so callers allocate nothing.
+Shared Function SegmentBoxFraction(lowerX As Double, lowerY As Double, upperX As Double, upperY As Double, toX As Double, toY As Double) As Double
+Var tmin As Double = 0.0
+Var tmax As Double = 1.0
+
+If toX > 0.0 Then
+Var invX As Double = 1.0 / toX
+Var t1x As Double = lowerX * invX
+Var t2x As Double = upperX * invX
+If t1x > tmin Then
+tmin = t1x
+End If
+If t2x < tmax Then
+tmax = t2x
+End If
+Else
+If toX < 0.0 Then
+Var invX As Double = 1.0 / toX
+Var t1x As Double = upperX * invX
+Var t2x As Double = lowerX * invX
+If t1x > tmin Then
+tmin = t1x
+End If
+If t2x < tmax Then
+tmax = t2x
+End If
+Else
+If lowerX > 0.0 Or upperX < 0.0 Then
+Return -1.0
+End If
+End If
+End If
+
+If tmin > tmax Then
+Return -1.0
+End If
+
+If toY > 0.0 Then
+Var invY As Double = 1.0 / toY
+Var t1y As Double = lowerY * invY
+Var t2y As Double = upperY * invY
+If t1y > tmin Then
+tmin = t1y
+End If
+If t2y < tmax Then
+tmax = t2y
+End If
+Else
+If toY < 0.0 Then
+Var invY As Double = 1.0 / toY
+Var t1y As Double = upperY * invY
+Var t2y As Double = lowerY * invY
+If t1y > tmin Then
+tmin = t1y
+End If
+If t2y < tmax Then
+tmax = t2y
+End If
+Else
+If lowerY > 0.0 Or upperY < 0.0 Then
+Return -1.0
+End If
+End If
+End If
+
+If tmin > tmax Then
+Return -1.0
+End If
+Return tmin
+End Function
+
+## Returns a copy of the values sorted ascending. Traversal order is not
+## index order, so hit sets are compared as sorted sequences.
+Private Shared Function SortedCopy(values As Array(Of Integer)) As Array(Of Integer)
+Var copy As New Array(Of Integer)
+For i As Integer = 0 To values.Count - 1
+copy.Append(values[i])
+Next i
+For i As Integer = 1 To copy.Count - 1
+Var value As Integer = copy[i]
+Var j As Integer = i - 1
+While j >= 0 And copy[j] > value
+copy[j + 1] = copy[j]
+j = j - 1
+Wend
+copy[j + 1] = value
+Next i
+Return copy
+End Function
+
+## Builds an axis-aligned box from a centre and half extents.
+Private Shared Function BoxAt(centerX As Double, centerY As Double, halfX As Double, halfY As Double) As AABB
+Return New AABB(New Vector2(centerX - halfX, centerY - halfY), New Vector2(centerX + halfX, centerY + halfY))
+End Function
+
+## Builds the deterministic proxy layout used by the oracle tests: a grid of
+## boxes with jittered sizes so sibling selection exercises ties.
+Private Shared Sub BuildGrid(tree As DynamicTree, ids As Array(Of Integer), boxes As Array(Of AABB), random As TestRandom, count As Integer)
+For i As Integer = 0 To count - 1
+Var column As Integer = i Mod 8
+Var row As Integer = i \ 8
+Var halfX As Double = 0.5 + random.NextDouble() * 0.75
+Var halfY As Double = 0.5 + random.NextDouble() * 0.75
+Var box As AABB = DynamicTreeTests.BoxAt(column * 3.0 + 0.25 * (random.NextDouble() - 0.5), row * 3.0 + 0.25 * (random.NextDouble() - 0.5), halfX, halfY)
+Var id As Integer = tree.CreateProxy(box, 1, i)
+ids.Append(id)
+boxes.Append(box)
+Next i
+End Sub
+
+## Checks every proxy against a brute-force overlap oracle and compares the
+## visited leaf set with the oracle result.
+Private Sub CheckQueryAgainstBruteForce(tree As DynamicTree, ids As Array(Of Integer), boxes As Array(Of AABB), cats As Array(Of Integer), query As AABB, mask As Integer)
+# Brute force.
+Var oracle As New Array(Of Integer)
+For i As Integer = 0 To boxes.Count - 1
+If AABB.Overlaps(boxes[i], query) And (cats[i].BitAnd(mask)) <> 0 Then
+oracle.Append(i)
+End If
+Next i
+
+Var collector As New CollectingQueryCallback
+collector.Proceed = True
+Var stats As TreeStats = tree.Query(query, mask, collector)
+
+Assert.Equal(oracle.Count, collector.Hits.Count, "query hit count")
+Var sortedOracle As Array(Of Integer) = DynamicTreeTests.SortedCopy(oracle)
+Var sortedHits As Array(Of Integer) = DynamicTreeTests.SortedCopy(collector.Hits)
+For i As Integer = 0 To sortedOracle.Count - 1
+Assert.Equal(sortedOracle[i], sortedHits[i], "query hit " + i.ToString())
+Next i
+Assert.Equal(collector.Hits.Count, stats.LeafVisits, "query leaf visits")
+End Sub
+
+Public Sub TestEmptyTreeBasics()
+Var tree As New DynamicTree
+Assert.Equal(0, tree.GetHeight(), "empty height")
+Assert.Equal(0, tree.ProxyCount, "empty proxy count")
+Assert.Equal(0, tree.NodeCount, "empty node count")
+tree.Validate()
+tree.ValidateNoEnlarged()
+
+Var collector As New CollectingQueryCallback
+Var stats As TreeStats = tree.Query(DynamicTreeTests.BoxAt(0.0, 0.0, 10.0, 10.0), PhysicsConstants.DEFAULT_MASK_BITS, collector)
+Assert.Equal(0, collector.Hits.Count, "empty query hits")
+Assert.Equal(0, stats.NodeVisits, "empty query node visits")
+
+Var rootBounds As AABB = tree.GetRootBounds()
+PhysicsAssert.Near(0.0, rootBounds.LowerBound.X, Tolerances.INTERNAL_ABS, 0.0, "empty root lower x")
+PhysicsAssert.Near(0.0, rootBounds.UpperBound.Y, Tolerances.INTERNAL_ABS, 0.0, "empty root upper y")
+
+Var rayInput As New RayCastInput
+rayInput.Origin.Set(-20.0, 0.5)
+rayInput.Translation.Set(40.0, 0.0)
+rayInput.MaxFraction = 1.0
+Var rayCallback As New BoxRayCallback
+rayCallback.HalfX = 0.0
+rayCallback.HalfY = 0.0
+Var rayStats As TreeStats = tree.RayCast(rayInput, PhysicsConstants.DEFAULT_MASK_BITS, rayCallback)
+Assert.Equal(0, rayStats.NodeVisits, "empty ray node visits")
+
+tree.Destroy()
+Assert.Equal(0, tree.ProxyCount, "destroy proxy count")
+Assert.Equal(16, tree.NodeCapacity, "destroy keeps pool capacity")
+tree.Validate()
+End Sub
+
+Public Sub TestCreateMoveDestroyWithValidation()
+# Seeded churn: every mutation is followed by full validation.
+Var tree As New DynamicTree
+Var random As New TestRandom(20260831)
+Var ids As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+
+# Create 64 proxies.
+For i As Integer = 0 To 63
+Var box As AABB = DynamicTreeTests.BoxAt(random.NextSigned(20.0), random.NextSigned(20.0), 0.25 + random.NextDouble(), 0.25 + random.NextDouble())
+Var id As Integer = tree.CreateProxy(box, 1, i)
+ids.Append(id)
+boxes.Append(box)
+tree.Validate()
+Next i
+Assert.Equal(64, tree.ProxyCount, "proxy count after creation")
+Assert.Equal(True, tree.GetHeight() >= 3, "height at least 3 after 64 inserts")
+
+# Move half of them.
+For k As Integer = 0 To 31
+Var slot As Integer = random.NextInt(0, 63)
+Var moved As AABB = DynamicTreeTests.BoxAt(random.NextSigned(25.0), random.NextSigned(25.0), 0.25 + random.NextDouble(), 0.25 + random.NextDouble())
+tree.MoveProxy(ids[slot], moved)
+boxes[slot] = moved
+tree.Validate()
+Next k
+
+# Destroy a quarter of them in random order.
+For k As Integer = 0 To 15
+Var slot As Integer = random.NextInt(0, boxes.Count - 1)
+tree.DestroyProxy(ids[slot])
+ids.RemoveAt(slot)
+boxes.RemoveAt(slot)
+tree.Validate()
+Next k
+Assert.Equal(48, tree.ProxyCount, "proxy count after destroys")
+
+# Destroy the rest.
+While ids.Count > 0
+tree.DestroyProxy(ids[ids.Count - 1])
+ids.RemoveAt(ids.Count - 1)
+boxes.RemoveAt(boxes.Count - 1)
+tree.Validate()
+Wend
+Assert.Equal(0, tree.ProxyCount, "proxy count drained")
+Assert.Equal(0, tree.NodeCount, "node count drained")
+Assert.Equal(0, tree.GetHeight(), "height drained")
+End Sub
+
+Public Sub TestQueryMatchesBruteForce()
+Var tree As New DynamicTree
+Var random As New TestRandom(424242)
+Var ids As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+DynamicTreeTests.BuildGrid(tree, ids, boxes, random, 48)
+
+# Same-category map for the oracle: every proxy has bits 1.
+Var cats As New Array(Of Integer)
+For i As Integer = 0 To boxes.Count - 1
+cats.Append(1)
+Next i
+
+For k As Integer = 0 To 39
+Var query As AABB = DynamicTreeTests.BoxAt(random.NextSigned(14.0), random.NextSigned(14.0), 0.5 + random.NextDouble() * 3.0, 0.5 + random.NextDouble() * 3.0)
+Me.CheckQueryAgainstBruteForce(tree, ids, boxes, cats, query, PhysicsConstants.DEFAULT_MASK_BITS)
+Next k
+End Sub
+
+Public Sub TestQueryEarlyTerminationAndMasks()
+Var tree As New DynamicTree
+Var random As New TestRandom(777)
+Var ids As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+DynamicTreeTests.BuildGrid(tree, ids, boxes, random, 32)
+
+# Give each proxy distinct category bits.
+For i As Integer = 0 To ids.Count - 1
+tree.SetCategoryBits(ids[i], 1.ShiftLeft(i Mod 12))
+Next i
+
+# Early termination stops after the first leaf.
+Var collector As New CollectingQueryCallback
+collector.Proceed = False
+Var query As AABB = DynamicTreeTests.BoxAt(10.0, 10.0, 6.0, 6.0)
+Var stats As TreeStats = tree.Query(query, PhysicsConstants.DEFAULT_MASK_BITS, collector)
+Assert.Equal(1, collector.Hits.Count, "early termination visits one leaf")
+Assert.Equal(1, stats.LeafVisits, "early termination stats")
+
+# Mask filtering matches a brute-force oracle with the same masks.
+Var cats As New Array(Of Integer)
+For i As Integer = 0 To ids.Count - 1
+cats.Append(1.ShiftLeft(i Mod 12))
+Next i
+For k As Integer = 0 To 19
+Var mask As Integer = 1.ShiftLeft(random.NextInt(0, 11)).BitOr(1.ShiftLeft(random.NextInt(0, 11)))
+Var probe As AABB = DynamicTreeTests.BoxAt(random.NextSigned(14.0), random.NextSigned(14.0), 1.0 + random.NextDouble() * 2.0, 1.0 + random.NextDouble() * 2.0)
+Me.CheckQueryAgainstBruteForce(tree, ids, boxes, cats, probe, mask)
+Next k
+End Sub
+
+Public Sub TestRayCastMatchesBruteForce()
+Var tree As New DynamicTree
+Var random As New TestRandom(5150)
+Var ids As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+DynamicTreeTests.BuildGrid(tree, ids, boxes, random, 48)
+
+Var rayInput As New RayCastInput
+For k As Integer = 0 To 29
+rayInput.Origin.Set(random.NextSigned(16.0), random.NextSigned(16.0))
+rayInput.Translation.Set(random.NextSigned(24.0), random.NextSigned(24.0))
+rayInput.MaxFraction = 1.0
+
+# Brute force: closest segment hit across all proxy boxes.
+Var bestFraction As Double = 2.0
+For i As Integer = 0 To boxes.Count - 1
+Var hit As CastOutput = AABB.RayCast(boxes[i], rayInput.Origin, New Vector2(rayInput.Origin.X + rayInput.Translation.X, rayInput.Origin.Y + rayInput.Translation.Y))
+If hit.Hit And hit.Fraction < bestFraction Then
+bestFraction = hit.Fraction
+End If
+Next i
+If bestFraction > 1.0 Then
+bestFraction = 0.0
+End If
+
+Var rayCallback As New BoxRayCallback
+rayCallback.Tree = tree
+rayCallback.TerminateAfter = -1
+Var rayStats As TreeStats = tree.RayCast(rayInput, PhysicsConstants.DEFAULT_MASK_BITS, rayCallback)
+Var reported As Double = 0.0
+If rayCallback.HitCount > 0 Then
+reported = rayCallback.ClosestFraction
+End If
+PhysicsAssert.Near(bestFraction, reported, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "ray fraction " + k.ToString())
+Assert.Equal(bestFraction > 0.0, rayCallback.HitCount > 0, "ray hit agreement " + k.ToString())
+Assert.Equal(rayStats.LeafVisits, rayCallback.Visits, "ray leaf visits")
+Next k
+End Sub
+
+Public Sub TestRayCastTerminationAndSkip()
+Var tree As New DynamicTree
+Var random As New TestRandom(31337)
+Var ids As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+DynamicTreeTests.BuildGrid(tree, ids, boxes, random, 24)
+
+# Rays through real box centres so at least one leaf is always crossed.
+Var totalVisits As Integer = 0
+For k As Integer = 0 To 7
+Var centerY As Double = 0.5 * (boxes[k].LowerBound.Y + boxes[k].UpperBound.Y)
+Var rayInput As New RayCastInput
+rayInput.Origin.Set(-20.0, centerY)
+rayInput.Translation.Set(60.0, 0.0)
+rayInput.MaxFraction = 1.0
+
+Var fullCallback As New BoxRayCallback
+fullCallback.Tree = tree
+fullCallback.TerminateAfter = -1
+tree.RayCast(rayInput, PhysicsConstants.DEFAULT_MASK_BITS, fullCallback)
+totalVisits = totalVisits + fullCallback.Visits
+
+# Terminate after two leaves; traversal may stop earlier when the whole
+# cast only touches fewer than two leaves.
+Var rayCallback As New BoxRayCallback
+rayCallback.Tree = tree
+rayCallback.TerminateAfter = 2
+tree.RayCast(rayInput, PhysicsConstants.DEFAULT_MASK_BITS, rayCallback)
+If fullCallback.Visits < 2 Then
+Assert.Equal(fullCallback.Visits, rayCallback.Visits, "termination keeps all visits " + k.ToString())
+Else
+Assert.Equal(2, rayCallback.Visits, "terminated after two leaves " + k.ToString())
+End If
+
+# A callback that skips one proxy excludes it from the result.
+Var skipCallback As New BoxRayCallback
+skipCallback.Tree = tree
+skipCallback.TerminateAfter = -1
+skipCallback.SkipUserData = 3
+tree.RayCast(rayInput, PhysicsConstants.DEFAULT_MASK_BITS, skipCallback)
+If fullCallback.Visits > skipCallback.Visits Then
+Assert.Equal(fullCallback.Visits - 1, skipCallback.Visits, "skip drops exactly the chosen leaf " + k.ToString())
+End If
+Next k
+Assert.Equal(True, totalVisits > 4, "rays cross enough leaves to be meaningful")
+End Sub
+
+Public Sub TestShapeCastMatchesBruteForce()
+Var tree As New DynamicTree
+Var random As New TestRandom(90210)
+Var ids As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+DynamicTreeTests.BuildGrid(tree, ids, boxes, random, 40)
+
+# Cast a small square through the grid. The oracle inflates each leaf box
+# by the caster half extent and ray casts the swept segment, which matches
+# the tree's separating-axis prefilter exactly.
+Var corners As New Array(Of Vector2)
+corners.Append(New Vector2(-0.25, -0.25))
+corners.Append(New Vector2(0.25, -0.25))
+corners.Append(New Vector2(0.25, 0.25))
+corners.Append(New Vector2(-0.25, 0.25))
+Var proxy As ShapeProxy = ShapeProxy.Make(corners, 4, 0.0)
+
+For k As Integer = 0 To 19
+Var castInput As New ShapeCastInput
+castInput.Proxy = proxy
+castInput.Translation.Set(random.NextSigned(20.0), random.NextSigned(20.0))
+castInput.MaxFraction = 1.0
+castInput.CanEncroach = False
+
+# Brute force.
+Var bestFraction As Double = 2.0
+For i As Integer = 0 To boxes.Count - 1
+Var inflated As New AABB(New Vector2(boxes[i].LowerBound.X - 0.25, boxes[i].LowerBound.Y - 0.25), New Vector2(boxes[i].UpperBound.X + 0.25, boxes[i].UpperBound.Y + 0.25))
+Var p2 As New Vector2(castInput.Translation.X, castInput.Translation.Y)
+Var hit As CastOutput = AABB.RayCast(inflated, New Vector2(0.0, 0.0), p2)
+If hit.Hit And hit.Fraction < bestFraction Then
+bestFraction = hit.Fraction
+End If
+Next i
+If bestFraction > 1.0 Then
+bestFraction = 0.0
+End If
+
+Var castCallback As New BoxShapeCastCallback
+castCallback.Tree = tree
+castCallback.HalfExtent = 0.25
+castCallback.TerminateAfter = -1
+Var castStats As TreeStats = tree.ShapeCast(castInput, PhysicsConstants.DEFAULT_MASK_BITS, castCallback)
+Var reported As Double = 0.0
+If castCallback.HitCount > 0 Then
+reported = castCallback.ClosestFraction
+End If
+PhysicsAssert.Near(bestFraction, reported, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "cast fraction " + k.ToString())
+Next k
+End Sub
+
+Public Sub TestCategoryBitsUpdate()
+Var tree As New DynamicTree
+Var random As New TestRandom(60606)
+Var ids As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+DynamicTreeTests.BuildGrid(tree, ids, boxes, random, 20)
+
+# All proxies start with bit 1; flip half to bit 2 and query with each mask.
+For i As Integer = 0 To ids.Count - 1
+Var bits As Integer = 1
+If i Mod 2 = 0 Then
+bits = 2
+End If
+tree.SetCategoryBits(ids[i], bits)
+Assert.Equal(bits, tree.GetCategoryBits(ids[i]), "category bits round trip " + i.ToString())
+Next i
+
+Var cats As New Array(Of Integer)
+For i As Integer = 0 To ids.Count - 1
+If i Mod 2 = 0 Then
+cats.Append(2)
+Else
+cats.Append(1)
+End If
+Next i
+
+Me.CheckQueryAgainstBruteForce(tree, ids, boxes, cats, DynamicTreeTests.BoxAt(10.0, 10.0, 12.0, 12.0), 1)
+Me.CheckQueryAgainstBruteForce(tree, ids, boxes, cats, DynamicTreeTests.BoxAt(10.0, 10.0, 12.0, 12.0), 2)
+Me.CheckQueryAgainstBruteForce(tree, ids, boxes, cats, DynamicTreeTests.BoxAt(10.0, 10.0, 12.0, 12.0), 3)
+tree.Validate()
+End Sub
+
+Public Sub TestEnlargeProxyAndRebuild()
+Var tree As New DynamicTree
+Var random As New TestRandom(13579)
+Var ids As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+DynamicTreeTests.BuildGrid(tree, ids, boxes, random, 30)
+
+# Enlarge a dynamic leaf far beyond its old bounds; ancestors must become
+# enlarged and validation of no-enlarged must now fail.
+Var grown As New AABB(New Vector2(-30.0, -30.0), New Vector2(30.0, 30.0))
+tree.EnlargeProxy(ids[5], grown)
+boxes[5] = grown
+tree.Validate()
+
+Var enlargedFailed As Boolean = False
+Try
+tree.ValidateNoEnlarged()
+Catch ex As RuntimeException
+enlargedFailed = True
+End Try
+Assert.Equal(True, enlargedFailed, "enlarged ancestors detected")
+
+# Partial rebuild dissolves the enlarged path and treats clean sibling
+# subtrees as atomic leaves, so the count is between 1 and the proxy count.
+Var rebuilt As Integer = tree.Rebuild(False)
+Assert.Equal(True, rebuilt >= 1, "partial rebuild gathers at least the grown leaf")
+Assert.Equal(True, rebuilt <= 30, "partial rebuild never exceeds the proxy count")
+tree.ValidateNoEnlarged()
+tree.Validate()
+
+# Queries still match the oracle after the rebuild.
+Var cats As New Array(Of Integer)
+For i As Integer = 0 To boxes.Count - 1
+cats.Append(1)
+Next i
+Me.CheckQueryAgainstBruteForce(tree, ids, boxes, cats, DynamicTreeTests.BoxAt(0.0, 0.0, 31.0, 31.0), PhysicsConstants.DEFAULT_MASK_BITS)
+
+# Full rebuild rebalances; queries keep matching.
+tree.Rebuild(True)
+tree.ValidateNoEnlarged()
+tree.Validate()
+Assert.Equal(tree.GetHeight() <= 8, True, "full rebuild height bounded")
+Me.CheckQueryAgainstBruteForce(tree, ids, boxes, cats, DynamicTreeTests.BoxAt(0.0, 0.0, 31.0, 31.0), PhysicsConstants.DEFAULT_MASK_BITS)
+End Sub
+
+Public Sub TestRebuildDeterminism()
+# Two trees built with the same operation order must agree on metrics.
+Var treeA As New DynamicTree
+Var treeB As New DynamicTree
+Var randomA As New TestRandom(2468)
+Var randomB As New TestRandom(2468)
+
+Var idsA As New Array(Of Integer)
+Var idsB As New Array(Of Integer)
+Var boxesA As New Array(Of AABB)
+Var boxesB As New Array(Of AABB)
+DynamicTreeTests.BuildGrid(treeA, idsA, boxesA, randomA, 36)
+DynamicTreeTests.BuildGrid(treeB, idsB, boxesB, randomB, 36)
+
+Assert.Equal(treeA.GetHeight(), treeB.GetHeight(), "same build height")
+PhysicsAssert.Near(treeA.GetAreaRatio(), treeB.GetAreaRatio(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "same build area ratio")
+
+treeA.Rebuild(True)
+treeB.Rebuild(True)
+Assert.Equal(treeA.GetHeight(), treeB.GetHeight(), "same rebuild height")
+PhysicsAssert.Near(treeA.GetAreaRatio(), treeB.GetAreaRatio(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "same rebuild area ratio")
+treeA.Validate()
+treeB.Validate()
+End Sub
+
+Public Sub TestHugeAndInvalidBoundsThrow()
+Var tree As New DynamicTree
+
+# Bounds beyond the position limit are rejected.
+Var huge As New AABB(New Vector2(-200000.0, -1.0), New Vector2(200000.0, 1.0))
+Var threw As Boolean = False
+Try
+tree.CreateProxy(huge, 1, 0)
+Catch ex As InvalidArgumentException
+threw = True
+End Try
+Assert.Equal(True, threw, "huge bounds rejected")
+
+# Inverted bounds are rejected.
+Var inverted As New AABB(New Vector2(2.0, 2.0), New Vector2(1.0, 1.0))
+threw = False
+Try
+tree.CreateProxy(inverted, 1, 0)
+Catch ex As InvalidArgumentException
+threw = True
+End Try
+Assert.Equal(True, threw, "inverted bounds rejected")
+
+# Moving a leaf to invalid bounds is rejected.
+Var ok As AABB = DynamicTreeTests.BoxAt(0.0, 0.0, 1.0, 1.0)
+Var id As Integer = tree.CreateProxy(ok, 1, 0)
+threw = False
+Try
+tree.MoveProxy(id, huge)
+Catch ex As InvalidArgumentException
+threw = True
+End Try
+Assert.Equal(True, threw, "huge move rejected")
+
+# Enlarging with contained bounds is a degenerate request.
+Var contained As New AABB(New Vector2(-0.5, -0.5), New Vector2(0.5, 0.5))
+threw = False
+Try
+tree.EnlargeProxy(id, contained)
+Catch ex As RuntimeException
+threw = True
+End Try
+Assert.Equal(True, threw, "contained enlarge rejected")
+tree.Validate()
+End Sub
+
+Public Sub TestDestroyErrorsAndAccounting()
+Var tree As New DynamicTree
+Var box As AABB = DynamicTreeTests.BoxAt(0.0, 0.0, 1.0, 1.0)
+Var id As Integer = tree.CreateProxy(box, 1, 7)
+
+# A second destroy of the same id is a runtime error.
+tree.DestroyProxy(id)
+Var threw As Boolean = False
+Try
+tree.DestroyProxy(id)
+Catch ex As RuntimeException
+threw = True
+End Try
+Assert.Equal(True, threw, "double destroy rejected")
+
+# Accounting stays exact after the failed call.
+tree.Validate()
+Assert.Equal(0, tree.ProxyCount, "no proxies after destroy")
+End Sub
+
+Public Sub TestSortedInsertionAndClusters()
+# Sorted insertion along a line is the classic degenerate order for
+# greedy insertion; the tree must stay valid and answer queries exactly.
+Var tree As New DynamicTree
+Var ids As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+For i As Integer = 0 To 39
+Var box As AABB = DynamicTreeTests.BoxAt(i * 1.0, 0.0, 0.5, 0.5)
+Var id As Integer = tree.CreateProxy(box, 1, i)
+ids.Append(id)
+boxes.Append(box)
+tree.Validate()
+Next i
+
+Var cats As New Array(Of Integer)
+For i As Integer = 0 To boxes.Count - 1
+cats.Append(1)
+Next i
+Me.CheckQueryAgainstBruteForce(tree, ids, boxes, cats, DynamicTreeTests.BoxAt(19.5, 0.0, 1.0, 1.0), PhysicsConstants.DEFAULT_MASK_BITS)
+
+# Clustered movement: move a cluster of neighbours repeatedly.
+Var random As New TestRandom(97531)
+For k As Integer = 0 To 19
+Var slot As Integer = 10 + random.NextInt(0, 9)
+Var moved As AABB = DynamicTreeTests.BoxAt(10.0 + random.NextSigned(2.0), random.NextSigned(2.0), 0.5, 0.5)
+tree.MoveProxy(ids[slot], moved)
+boxes[slot] = moved
+tree.Validate()
+Next k
+Me.CheckQueryAgainstBruteForce(tree, ids, boxes, cats, DynamicTreeTests.BoxAt(10.0, 0.0, 6.0, 6.0), PhysicsConstants.DEFAULT_MASK_BITS)
+End Sub
+
+Public Sub TestWarmQueriesAllocateNothing()
+# After one warm-up query per traversal kind, repeated traversals must
+# allocate nothing: the stack and callback inputs are reused.
+Var tree As New DynamicTree
+Var random As New TestRandom(112233)
+Var ids As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+DynamicTreeTests.BuildGrid(tree, ids, boxes, random, 48)
+
+Var query As AABB = DynamicTreeTests.BoxAt(10.0, 10.0, 8.0, 8.0)
+Var collector As New CountingQueryCallback
+tree.Query(query, PhysicsConstants.DEFAULT_MASK_BITS, collector)
+
+Var rayInput As New RayCastInput
+rayInput.Origin.Set(-20.0, 0.0)
+rayInput.Translation.Set(60.0, 0.5)
+rayInput.MaxFraction = 1.0
+Var rayCallback As New BoxRayCallback
+rayCallback.Tree = tree
+rayCallback.TerminateAfter = -1
+tree.RayCast(rayInput, PhysicsConstants.DEFAULT_MASK_BITS, rayCallback)
+
+Var corners As New Array(Of Vector2)
+corners.Append(New Vector2(-0.25, -0.25))
+corners.Append(New Vector2(0.25, -0.25))
+corners.Append(New Vector2(0.25, 0.25))
+corners.Append(New Vector2(-0.25, 0.25))
+Var proxy As ShapeProxy = ShapeProxy.Make(corners, 4, 0.0)
+Var castInput As New ShapeCastInput
+castInput.Proxy = proxy
+castInput.Translation.Set(10.0, 5.0)
+castInput.MaxFraction = 1.0
+castInput.CanEncroach = False
+Var castCallback As New BoxShapeCastCallback
+castCallback.Tree = tree
+castCallback.HalfExtent = 0.25
+castCallback.TerminateAfter = -1
+tree.ShapeCast(castInput, PhysicsConstants.DEFAULT_MASK_BITS, castCallback)
+tree.Rebuild(False)
+
+Var queryStats As New TreeStats
+Var rayStats As New TreeStats
+Var castStats As New TreeStats
+Var before As Integer = System.AllocationCount
+For i As Integer = 0 To 49
+tree.QueryTo(query, PhysicsConstants.DEFAULT_MASK_BITS, collector, queryStats)
+tree.RayCastTo(rayInput, PhysicsConstants.DEFAULT_MASK_BITS, rayCallback, rayStats)
+tree.ShapeCastTo(castInput, PhysicsConstants.DEFAULT_MASK_BITS, castCallback, castStats)
+tree.Rebuild(False)
+Next i
+Var after As Integer = System.AllocationCount
+Assert.Equal(before, after, "warm traversals allocate nothing")
+End Sub
+End Class
+
+# Query callback that records visited leaf user data.
+# Query callback that only counts leaves so warm traversal probes stay
+# allocation-free.
+Class CountingQueryCallback Inherits TreeQueryCallback
+## Number of leaves reported.
+Property HitCount As Integer
+
+## Creates a counter that continues traversal.
+Constructor()
+Me.HitCount = 0
+End Constructor
+
+## Counts the leaf and continues.
+Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Me.HitCount = Me.HitCount + 1
+Return True
+End Function
+End Class
+
+Class CollectingQueryCallback Inherits TreeQueryCallback
+## Hits collected as user data in traversal order.
+Property Hits As Array(Of Integer)
+## Whether to continue traversal after each leaf.
+Property Proceed As Boolean
+
+## Creates a collector that continues traversal.
+Constructor()
+Me.Hits = New Array(Of Integer)
+Me.Proceed = True
+End Constructor
+
+## Records the leaf and honours the proceed flag.
+Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Me.Hits.Append(userData)
+Return Me.Proceed
+End Function
+End Class
+
+# Ray cast callback that segment-casts each leaf's own box, mirroring the
+# per-leaf work of world ray casts.
+Class BoxRayCallback Inherits TreeRayCastCallback
+## The tree being traversed, used to read leaf bounds.
+Property Tree As DynamicTree
+## Caster half extents used to inflate leaf boxes.
+Property HalfX As Double
+Property HalfY As Double
+## Number of leaves to visit before returning 0; negative means never.
+Property TerminateAfter As Integer
+## User data value to skip with -1; negative means skip nothing.
+Property SkipUserData As Integer
+## Closest fraction seen so far.
+Property ClosestFraction As Double
+## Number of leaves visited.
+Property Visits As Integer
+## Number of leaves that reported a hit.
+Property HitCount As Integer
+## Reused receiver for leaf bounds so warm traversal allocates nothing.
+Property LeafBounds As AABB
+
+## Creates a callback with no termination, no skip, and zero extents.
+Constructor()
+Me.Tree = Nothing
+Me.HalfX = 0.0
+Me.HalfY = 0.0
+Me.TerminateAfter = -1
+Me.SkipUserData = -1
+Me.ClosestFraction = 2.0
+Me.Visits = 0
+Me.HitCount = 0
+Me.LeafBounds = New AABB
+End Constructor
+
+## Casts the segment against the inflated leaf box and applies the
+## upstream return-value protocol.
+Function VisitLeaf(input As RayCastInput, proxyId As Integer, userData As Integer) As Double
+Me.Visits = Me.Visits + 1
+
+If Me.TerminateAfter >= 0 And Me.Visits >= Me.TerminateAfter Then
+Return 0.0
+End If
+If userData = Me.SkipUserData Then
+Return -1.0
+End If
+
+Var leaf As AABB = Me.Tree.GetAABBTo(proxyId, Me.LeafBounds)
+Var fraction As Double = Me.SlabFraction(leaf.LowerBound.X - Me.HalfX, leaf.LowerBound.Y - Me.HalfY, leaf.UpperBound.X + Me.HalfX, leaf.UpperBound.Y + Me.HalfY, input.Origin.X, input.Origin.Y, input.Translation.X, input.Translation.Y, input.MaxFraction)
+If fraction >= 0.0 Then
+Me.HitCount = Me.HitCount + 1
+If fraction < Me.ClosestFraction Then
+Me.ClosestFraction = fraction
+Return fraction
+End If
+End If
+Return -1.0
+End Function
+
+## Returns the entry fraction of the segment from the origin along the
+## translation into the box, or -1 when the segment misses. Uses only
+## local numbers so the callback allocates nothing.
+Private Function SlabFraction(lowerX As Double, lowerY As Double, upperX As Double, upperY As Double, originX As Double, originY As Double, dx As Double, dy As Double, maxFraction As Double) As Double
+Var tmin As Double = 0.0
+Var tmax As Double = maxFraction
+
+If dx > 0.0 Then
+Var invX As Double = 1.0 / dx
+Var t1x As Double = (lowerX - originX) * invX
+Var t2x As Double = (upperX - originX) * invX
+If t1x > tmin Then
+tmin = t1x
+End If
+If t2x < tmax Then
+tmax = t2x
+End If
+Else
+If dx < 0.0 Then
+Var invX As Double = 1.0 / dx
+Var t1x As Double = (upperX - originX) * invX
+Var t2x As Double = (lowerX - originX) * invX
+If t1x > tmin Then
+tmin = t1x
+End If
+If t2x < tmax Then
+tmax = t2x
+End If
+Else
+If originX < lowerX Or originX > upperX Then
+Return -1.0
+End If
+End If
+End If
+
+If tmin > tmax Then
+Return -1.0
+End If
+
+If dy > 0.0 Then
+Var invY As Double = 1.0 / dy
+Var t1y As Double = (lowerY - originY) * invY
+Var t2y As Double = (upperY - originY) * invY
+If t1y > tmin Then
+tmin = t1y
+End If
+If t2y < tmax Then
+tmax = t2y
+End If
+Else
+If dy < 0.0 Then
+Var invY As Double = 1.0 / dy
+Var t1y As Double = (upperY - originY) * invY
+Var t2y As Double = (lowerY - originY) * invY
+If t1y > tmin Then
+tmin = t1y
+End If
+If t2y < tmax Then
+tmax = t2y
+End If
+Else
+If originY < lowerY Or originY > upperY Then
+Return -1.0
+End If
+End If
+End If
+
+If tmin > tmax Then
+Return -1.0
+End If
+Return tmin
+End Function
+End Class
+
+# Shape cast callback that casts the swept segment against each leaf's box
+# inflated by the caster extent, mirroring per-leaf world casts. The test
+# caster proxy is a square centred at the origin, so the segment starts at
+# the origin.
+Class BoxShapeCastCallback Inherits TreeShapeCastCallback
+## The tree being traversed, used to read leaf bounds.
+Property Tree As DynamicTree
+## Caster half extent used to inflate leaf boxes.
+Property HalfExtent As Double
+## Number of leaves to visit before returning 0; negative means never.
+Property TerminateAfter As Integer
+## Closest fraction seen so far.
+Property ClosestFraction As Double
+## Number of leaves visited.
+Property Visits As Integer
+## Number of leaves that reported a hit.
+Property HitCount As Integer
+## Reused receiver for leaf bounds so warm traversal allocates nothing.
+Property LeafBounds As AABB
+
+## Creates a callback with no termination.
+Constructor()
+Me.Tree = Nothing
+Me.HalfExtent = 0.0
+Me.TerminateAfter = -1
+Me.ClosestFraction = 2.0
+Me.Visits = 0
+Me.HitCount = 0
+Me.LeafBounds = New AABB
+End Constructor
+
+## Casts the swept segment against the inflated leaf box and applies the
+## upstream return-value protocol.
+Function VisitLeaf(input As ShapeCastInput, proxyId As Integer, userData As Integer) As Double
+Me.Visits = Me.Visits + 1
+
+If Me.TerminateAfter >= 0 And Me.Visits >= Me.TerminateAfter Then
+Return 0.0
+End If
+
+Var leaf As AABB = Me.Tree.GetAABBTo(proxyId, Me.LeafBounds)
+# The caster proxy is centred at the origin, so the swept segment starts
+# at (0, 0) and the leaf box is inflated by the caster half extent.
+Var fraction As Double = DynamicTreeTests.SegmentBoxFraction(leaf.LowerBound.X - Me.HalfExtent, leaf.LowerBound.Y - Me.HalfExtent, leaf.UpperBound.X + Me.HalfExtent, leaf.UpperBound.Y + Me.HalfExtent, input.MaxFraction * input.Translation.X, input.MaxFraction * input.Translation.Y)
+If fraction >= 0.0 Then
+Me.HitCount = Me.HitCount + 1
+If fraction < Me.ClosestFraction Then
+Me.ClosestFraction = fraction
+Return fraction
+End If
+End If
+Return -1.0
+End Function
+End Class

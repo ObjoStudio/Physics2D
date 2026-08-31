@@ -90,6 +90,64 @@ End If
 Return result
 End Function
 
+## Returns the perimeter length of the box (twice width plus height), ported
+## from upstream b2Perimeter. Used as the dynamic tree cost metric.
+Shared Function Perimeter(a As AABB) As Double
+Var wx As Double = a.UpperBound.X - a.LowerBound.X
+Var wy As Double = a.UpperBound.Y - a.LowerBound.Y
+Return 2.0 * (wx + wy)
+End Function
+
+## Returns the perimeter of the union of two boxes without constructing the
+## union box, so hot tree code allocates nothing.
+Shared Function UnionPerimeter(a As AABB, b As AABB) As Double
+Var lowerX As Double = Maths.Min(a.LowerBound.X, b.LowerBound.X)
+Var lowerY As Double = Maths.Min(a.LowerBound.Y, b.LowerBound.Y)
+Var upperX As Double = Maths.Max(a.UpperBound.X, b.UpperBound.X)
+Var upperY As Double = Maths.Max(a.UpperBound.Y, b.UpperBound.Y)
+Return 2.0 * ((upperX - lowerX) + (upperY - lowerY))
+End Function
+
+## Expands box a in place to also contain box b and returns True when a grew,
+## ported from upstream b2EnlargeAABB.
+Shared Function Enlarge(a As AABB, b As AABB) As Boolean
+Var changed As Boolean = False
+If b.LowerBound.X < a.LowerBound.X Then
+a.LowerBound.Set(b.LowerBound.X, a.LowerBound.Y)
+changed = True
+End If
+If b.LowerBound.Y < a.LowerBound.Y Then
+a.LowerBound.Set(a.LowerBound.X, b.LowerBound.Y)
+changed = True
+End If
+If a.UpperBound.X < b.UpperBound.X Then
+a.UpperBound.Set(b.UpperBound.X, a.UpperBound.Y)
+changed = True
+End If
+If a.UpperBound.Y < b.UpperBound.Y Then
+a.UpperBound.Set(a.UpperBound.X, b.UpperBound.Y)
+changed = True
+End If
+Return changed
+End Function
+
+## Writes the union of boxes a and b into the caller-owned out box without
+## allocating, and returns out. The reuse form of Union for warm tree and
+## broad-phase code. Previous out contents are fully overwritten.
+Shared Function UnionTo(a As AABB, b As AABB, out As AABB) As AABB
+If a.LowerBound.X < b.LowerBound.X Then
+out.LowerBound.Set(a.LowerBound.X, Maths.Min(a.LowerBound.Y, b.LowerBound.Y))
+Else
+out.LowerBound.Set(b.LowerBound.X, Maths.Min(a.LowerBound.Y, b.LowerBound.Y))
+End If
+If a.UpperBound.X > b.UpperBound.X Then
+out.UpperBound.Set(a.UpperBound.X, Maths.Max(a.UpperBound.Y, b.UpperBound.Y))
+Else
+out.UpperBound.Set(b.UpperBound.X, Maths.Max(a.UpperBound.Y, b.UpperBound.Y))
+End If
+Return out
+End Function
+
 ## Casts a ray from p1 to p2 against the box into a new output, ported from
 ## upstream b2AABB_RayCast following Real-time Collision Detection p179.
 ## Radii are not handled.

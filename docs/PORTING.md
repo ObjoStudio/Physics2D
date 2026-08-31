@@ -77,6 +77,14 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     `b2MakeSquare` when hull construction fails; `Polygon.FromHull` and the
     other polygon factories throw on degenerate input instead and expose
     explicit `MakeSquare`/`MakeBox` factories.
+15. **Tree rebuild partitioning.** Physics2D compiles the upstream
+    `B2_TREE_HEURISTIC 0` configuration, so `DynamicTree.Rebuild` always
+    partitions by the splitting axis median (`PartitionMid`) and the binned
+    SAH path of `b2PartitionSAH` is not ported.
+16. **Broad-phase pair pool.** Upstream threads candidate pairs through a
+    pair array with per-move linked lists consumed by the world's contact
+    factory; Physics2D keeps the same per-move LIFO consumption over parallel
+    `IntegerList` pools and reports pairs through a `BroadPhasePairSink`.
 
 ## Public Symbol Inventory
 
@@ -482,7 +490,7 @@ Mapping conventions:
 | `b2ValidateHull` | Protected internal V | 4 |
 
 
-### Dynamic tree (21 symbols)
+### Dynamic tree (20 symbols)
 
 | Upstream symbol | Physics2D mapping | Stage |
 |---|---|---|
@@ -493,7 +501,7 @@ Mapping conventions:
 | `b2DynamicTree_EnlargeProxy` | Protected internal DynamicTree.EnlargeProxy | 5 |
 | `b2DynamicTree_GetAABB` | Protected internal DynamicTree.GetAABB | 5 |
 | `b2DynamicTree_GetAreaRatio` | Protected internal DynamicTree.GetAreaRatio | 5 |
-| `b2DynamicTree_GetByteCount` | Protected internal DynamicTree.GetByteCount | 5 |
+| `b2DynamicTree_GetByteCount` | Excluded (v1): GC-managed node storage has no faithful byte count | 5 |
 | `b2DynamicTree_GetCategoryBits` | Protected internal DynamicTree.GetCategoryBits | 5 |
 | `b2DynamicTree_GetHeight` | Protected internal DynamicTree.GetHeight | 5 |
 | `b2DynamicTree_GetProxyCount` | Protected internal DynamicTree.GetProxyCount | 5 |
@@ -507,6 +515,29 @@ Mapping conventions:
 | `b2DynamicTree_ShapeCast` | Protected internal DynamicTree.ShapeCast | 5 |
 | `b2DynamicTree_Validate` | Protected internal DynamicTree.Validate | 5 |
 | `b2DynamicTree_ValidateNoEnlarged` | Protected internal DynamicTree.ValidateNoEnlarged | 5 |
+
+
+### Broad phase (12 symbols)
+
+The broad phase lives behind the world façade: `BroadPhase` is an
+engine-internal class, and `BroadPhaseQueryContext` replaces the upstream
+callback-plus-context traversal helper. The world drives pair consumption
+through `BroadPhasePairSink`.
+
+| Upstream symbol | Physics2D mapping | Stage |
+|---|---|---|
+| `b2CreateBroadPhase` | Protected internal BroadPhase constructor | 5 |
+| `b2DestroyBroadPhase` | Released by garbage collection: the sets and trees are Objo objects with no unmanaged resources | 5 |
+| `b2BroadPhase_CreateProxy` | Protected internal BroadPhase.CreateProxy | 5 |
+| `b2BroadPhase_DestroyProxy` | Protected internal BroadPhase.DestroyProxy | 5 |
+| `b2BroadPhase_MoveProxy` | Protected internal BroadPhase.MoveProxy | 5 |
+| `b2BroadPhase_EnlargeProxy` | Protected internal BroadPhase.EnlargeProxy | 5 |
+| `b2BroadPhase_RebuildTrees` | Protected internal BroadPhase.RebuildTrees | 5 |
+| `b2BroadPhase_GetShapeIndex` | Protected internal BroadPhase.GetShapeIndex | 5 |
+| `b2BroadPhase_TestOverlap` | Protected internal BroadPhase.TestOverlap | 5 |
+| `b2UpdateBroadPhasePairs` | Protected internal BroadPhase.UpdatePairs with a BroadPhasePairSink | 5 |
+| `b2BufferMove` | Protected internal BroadPhase.BufferMove | 5 |
+| `b2ValidateBroadphase` / `b2ValidateNoEnlarged` | Protected internal BroadPhase.Validate / ValidateNoEnlarged | 5 |
 
 
 ### Maths helpers (8 symbols)
@@ -561,7 +592,7 @@ Mapping conventions:
 |---|---|---|
 | `b2Hash` | PhysicsMaths.HashKey (Murmur3 finaliser behind PairKeySet) | 3 |
 
-### Approved version 1 exclusions (9 symbols)
+### Approved version 1 exclusions (10 symbols)
 
 | Upstream symbol | Physics2D mapping | Stage |
 |---|---|---|
@@ -570,6 +601,7 @@ Mapping conventions:
 | `b2GetMillisecondsAndReset` | Excluded (v1): native timers; benchmarks use the Objo clock | 0 |
 | `b2GetTicks` | Excluded (v1): native timers; benchmarks use the Objo clock | 0 |
 | `b2GetVersion` | Excluded (v1): the module version is documented in README.md | 0 |
+| `b2DynamicTree_GetByteCount` | Excluded (v1): GC-managed node storage has no faithful byte count | 5 |
 | `b2InternalAssertFcn` | Excluded (v1): internal validation uses exceptions and test assertions | 0 |
 | `b2SetAllocator` | Excluded (v1): Objo manages memory; no custom C allocators | 0 |
 | `b2SetAssertFcn` | Excluded (v1): internal validation uses exceptions and test assertions | 0 |
@@ -620,6 +652,8 @@ Golden numeric fixtures are generated from the pinned upstream source.
 | `test/test_collision.c` | `GeometryHullTests`, `GeometryDistanceTests`, `GeometryCastTests`, `GeometryManifoldTests`, `GeometryTOITests`, plus golden fixtures `hull.txt`, `distance.txt`, `raycast.txt`, `shapecast.txt`, `toi.txt`, `manifold.txt` | 4 |
 | `test/test_shape.c` | `GeometryShapeTests`, `GeometryMassTests`, plus golden fixtures `shape.txt`, `mass.txt` | 4 |
 | `src/mover.c` behaviour | `GeometryMoverTests` | 4 |
+| `test/test_sweep.c` overflow paths, `src/dynamic_tree.c` behaviour | `DynamicTreeTests` | 5 |
+| `src/broad_phase.c` behaviour | `BroadPhaseTests` | 5 |
 | `test/test_world.c` | `WorldTests`, `BodyTests`, `QueryTests` | 6 |
 | `test/test_determinism.c` | `DeterminismTests` | 7 |
 | solver/scenario coverage from `samples/` | solver scene tests | 7 |

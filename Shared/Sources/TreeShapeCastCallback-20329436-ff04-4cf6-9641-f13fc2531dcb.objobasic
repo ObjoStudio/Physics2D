@@ -1,0 +1,14 @@
+# Client callback receiving the leaves of a dynamic tree shape cast, ported
+# from upstream b2TreeShapeCastCallbackFcn.
+#
+# The input passed to VisitLeaf is a tree-owned scratch object whose
+# MaxFraction changes between leaves; callbacks must read it during the call
+# and must not retain it.
+#
+# Return values follow upstream: 0 terminates the cast, -1 skips the leaf,
+# and any value in (0, current max fraction) becomes the new max fraction.
+Abstract Class TreeShapeCastCallback
+## Called for every candidate leaf. Returns 0 to terminate the cast, -1 to
+## skip the leaf, or a fraction in (0, maxFraction) to narrow the cast.
+Abstract Function VisitLeaf(input As ShapeCastInput, proxyId As Integer, userData As Integer) As Double
+End Class

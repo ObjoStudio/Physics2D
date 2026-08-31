@@ -1,0 +1,18 @@
+# Client sink receiving candidate shape pairs from the broad phase, the
+# Physics2D counterpart of the pair callback and contact-creation halves of
+# upstream b2PairQueryCallback and b2UpdateBroadPhasePairs.
+#
+# The world (Stage 6) implements this to run its collision filters and
+# create contacts. ShouldCollide is called while pairs are discovered, so
+# rejected candidates never enter the pair buffer; AcceptPair is called
+# afterwards in deterministic move order.
+Abstract Class BroadPhasePairSink
+## Returns True when the two shapes may collide, mirroring the shape and
+## body filter checks upstream b2PairQueryCallback runs at record time.
+Abstract Function ShouldCollide(shapeIndexA As Integer, shapeIndexB As Integer) As Boolean
+
+## Receives one candidate pair after discovery completes, in deterministic
+## move-buffer order, mirroring the contact creation loop of upstream
+## b2UpdateBroadPhasePairs.
+Abstract Sub AcceptPair(shapeIndexA As Integer, shapeIndexB As Integer)
+End Class

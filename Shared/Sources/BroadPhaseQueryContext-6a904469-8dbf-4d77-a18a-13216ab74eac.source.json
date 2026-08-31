@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": [],
+  "Name": "BroadPhaseQueryContext",
+  "Id": "6a904469-8dbf-4d77-a18a-13216ab74eac",
+  "CodeFile": "BroadPhaseQueryContext-6a904469-8dbf-4d77-a18a-13216ab74eac.objobasic"
+}

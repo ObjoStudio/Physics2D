@@ -1,0 +1,28 @@
+# Traversal counters for a dynamic tree query, ray cast, or shape cast,
+# ported from upstream b2TreeStats in collision.h. Node visits count every
+# node popped from the traversal stack; leaf visits count leaf callbacks.
+# Query results also fold these counters into the tree quality baselines
+# recorded by the benchmarks.
+Class TreeStats
+## Number of tree nodes examined by the traversal.
+Property NodeVisits As Integer
+## Number of leaves passed to the client callback.
+Property LeafVisits As Integer
+
+## Creates zeroed counters.
+Constructor()
+Me.Reset()
+End Constructor
+
+## Resets both counters to zero without allocating.
+Sub Reset()
+Me.NodeVisits = 0
+Me.LeafVisits = 0
+End Sub
+
+## Copies the counters from another stats object without allocating.
+Sub SetFrom(other As TreeStats)
+Me.NodeVisits = other.NodeVisits
+Me.LeafVisits = other.LeafVisits
+End Sub
+End Class

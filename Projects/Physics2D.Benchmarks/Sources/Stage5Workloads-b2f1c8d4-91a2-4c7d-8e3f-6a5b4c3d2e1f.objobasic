@@ -1,0 +1,569 @@
+# Stage 5 benchmark workloads: dynamic tree churn, queries, rebuild, and
+# broad-phase pair generation. Every workload reaches an allocation-free
+# steady state before measurement and folds deterministic samples into a
+# checksum.
+Import Physics2D
+
+Abstract Class Stage5Workload Inherits Stage3Workload
+## Allocates the shared checksum sample buffer. Call from Prepare.
+Override Sub PrepareSamples()
+Me.Samples = New Array(Of Double)
+Me.Samples.Reserve(128)
+For i As Integer = 1 To 128
+Me.Samples.Append(0.0)
+Next i
+Me.SampleCount = 0
+End Sub
+End Class
+
+# Churns a dynamic tree: a grid of proxies is moved, destroyed, and
+# recreated in a deterministic pattern while height and query hit counts
+# are folded into the checksum.
+Class TreeChurnWorkload Inherits Stage5Workload
+## Proxy count held throughout.
+Const PROXY_COUNT As Integer = 2048
+## Proxies moved per iteration.
+Const MOVE_COUNT As Integer = 64
+## Proxies destroyed and recreated per iteration.
+Const CHURN_COUNT As Integer = 16
+
+## The tree under churn.
+Property Tree As DynamicTree
+## Tree proxy ids in creation order.
+Property Ids() As Integer
+## Query callback for checksum queries.
+Property Query As CountingTreeQueryCallback
+## Query box reused every iteration.
+Property QueryBox As AABB
+## Iteration counter driving the deterministic pattern.
+Property Round As Integer
+## Boxes reused across moves.
+Property ScratchBoxes() As AABB
+## Stats reused across queries.
+Property ScratchStats As TreeStats
+
+## Builds the grid and warms every path once.
+Sub Prepare()
+Me.PrepareSamples()
+Me.Tree = New DynamicTree
+Me.Ids = New Array(Of Integer)
+Me.Ids.Reserve(PROXY_COUNT)
+Me.Query = New CountingTreeQueryCallback
+Me.QueryBox = New AABB(New Vector2(0.0, 0.0), New Vector2(30.0, 30.0))
+Me.Round = 0
+Me.ScratchBoxes = New Array(Of AABB)
+For i As Integer = 1 To 8
+Me.ScratchBoxes.Append(New AABB)
+Next i
+Me.ScratchStats = New TreeStats
+
+Var gridSide As Integer = 45
+For i As Integer = 0 To PROXY_COUNT - 1
+Var cx As Double = (i Mod gridSide) * 1.5
+Var cy As Double = (i \ gridSide) * 1.5
+Var box As AABB = Stage5Workloads.BoxAt(cx, cy, 0.7, 0.7)
+Var id As Integer = Me.Tree.CreateProxy(box, 1, i)
+Me.Ids.Append(id)
+
+Next i
+
+# Warm the churn and query paths so measurement sees the steady state.
+Me.RunKernels()
+End Sub
+
+## Moves, destroys, recreates, and queries the tree once.
+Sub RunKernels()
+Me.Round = Me.Round + 1
+Var tree As DynamicTree = Me.Tree
+
+# Move a rotating window of proxies.
+For k As Integer = 0 To MOVE_COUNT - 1
+Var slot As Integer = (Me.Round * MOVE_COUNT + k) Mod PROXY_COUNT
+Var cx As Double = (slot Mod 45) * 1.5 + 0.4 * Maths.Sin(0.1 * (Me.Round + slot))
+Var cy As Double = (slot \ 45) * 1.5 + 0.4 * Maths.Cos(0.1 * (Me.Round + slot))
+Var box As AABB = Me.ScratchBoxes[k Mod 8]
+box.LowerBound.Set(cx - 0.7, cy - 0.7)
+box.UpperBound.Set(cx + 0.7, cy + 0.7)
+tree.MoveProxy(Me.Ids[slot], box)
+Next k
+
+# Destroy a rotating slice and recreate it immediately.
+For k As Integer = 0 To CHURN_COUNT - 1
+Var slot As Integer = (Me.Round * CHURN_COUNT + k * 7) Mod PROXY_COUNT
+tree.DestroyProxy(Me.Ids[slot])
+Next k
+For k As Integer = 0 To CHURN_COUNT - 1
+Var slot As Integer = (Me.Round * CHURN_COUNT + k * 7) Mod PROXY_COUNT
+Var cx As Double = (slot Mod 45) * 1.5
+Var cy As Double = (slot \ 45) * 1.5
+Var box As AABB = Me.ScratchBoxes[k Mod 8]
+box.LowerBound.Set(cx - 0.7, cy - 0.7)
+box.UpperBound.Set(cx + 0.7, cy + 0.7)
+Me.Ids[slot] = tree.CreateProxy(box, 1, slot)
+Next k
+
+# Query for checksum material and fold tree shape statistics.
+Me.Query.HitCount = 0
+tree.QueryTo(Me.QueryBox, PhysicsConstants.DEFAULT_MASK_BITS, Me.Query, Me.ScratchStats)
+Me.AddSample(Me.Query.HitCount * 1.0)
+Me.AddSample(tree.GetHeight() * 1.0)
+Me.AddSample(tree.GetAreaRatio())
+End Sub
+
+End Class
+
+# Runs queries, rays, and shape casts against a settled tree.
+Class TreeQueryWorkload Inherits Stage5Workload
+## Queries of each kind per iteration.
+Const QUERY_COUNT As Integer = 4
+
+## The tree under query.
+Property Tree As DynamicTree
+## Boxes centred on roaming targets, reused each iteration.
+Property QueryBoxes() As AABB
+## Ray inputs, reused each iteration.
+Property Rays() As RayCastInput
+## Shape cast input, reused each iteration.
+Property CastInput As ShapeCastInput
+## Allocation-free callbacks.
+Property Query As CountingTreeQueryCallback
+Property Ray As TreeRayHitCallback
+Property Cast As TreeCastHitCallback
+## Stats reused across calls.
+Property Stats As TreeStats
+## Caster proxy points.
+Property CastPoints() As Vector2
+
+## Builds a clustered tree and warms every query path once.
+Sub Prepare()
+Me.PrepareSamples()
+Me.Tree = New DynamicTree
+Me.QueryBoxes = New Array(Of AABB)
+Me.Rays = New Array(Of RayCastInput)
+Me.Query = New CountingTreeQueryCallback
+Me.Ray = New TreeRayHitCallback
+Me.Cast = New TreeCastHitCallback
+Me.Ray.Tree = Me.Tree
+Me.Cast.Tree = Me.Tree
+Me.Cast.HalfExtent = 0.5
+Me.Stats = New TreeStats
+
+Var gridSide As Integer = 64
+For i As Integer = 0 To 4095
+Var cx As Double = (i Mod gridSide) * 2.0
+Var cy As Double = (i \ gridSide) * 2.0
+Me.Tree.CreateProxy(Stage5Workloads.BoxAt(cx, cy, 0.9, 0.9), 1, i)
+Next i
+
+For k As Integer = 0 To QUERY_COUNT - 1
+Var qx As Double = (10.0 * k) Mod 110.0 + 8.0
+Var qy As Double = (14.0 * k) Mod 110.0 + 8.0
+Me.QueryBoxes.Append(New AABB(New Vector2(qx - 8.0, qy - 8.0), New Vector2(qx + 8.0, qy + 8.0)))
+Var ray As New RayCastInput
+ray.Origin.Set(-40.0 + 5.0 * k, 3.0 * k)
+ray.Translation.Set(180.0, 1.0 - 0.25 * k)
+ray.MaxFraction = 1.0
+Me.Rays.Append(ray)
+Next k
+
+Me.CastPoints = New Array(Of Vector2)
+Me.CastPoints.Append(New Vector2(-0.5, -0.5))
+Me.CastPoints.Append(New Vector2(0.5, -0.5))
+Me.CastPoints.Append(New Vector2(0.5, 0.5))
+Me.CastPoints.Append(New Vector2(-0.5, 0.5))
+Me.CastInput = New ShapeCastInput
+Me.CastInput.Proxy = ShapeProxy.Make(Me.CastPoints, 4, 0.0)
+Me.CastInput.Translation.Set(140.0, 70.0)
+Me.CastInput.MaxFraction = 1.0
+Me.CastInput.CanEncroach = False
+
+Me.RunKernels()
+End Sub
+
+## Runs all three query kinds and folds their results once.
+Sub RunKernels()
+For k As Integer = 0 To QUERY_COUNT - 1
+Me.Query.HitCount = 0
+Me.Tree.QueryTo(Me.QueryBoxes[k], PhysicsConstants.DEFAULT_MASK_BITS, Me.Query, Me.Stats)
+Me.AddSample(Me.Query.HitCount * 1.0)
+
+Me.Ray.ClosestFraction = 2.0
+Me.Ray.HitCount = 0
+Me.Tree.RayCastTo(Me.Rays[k], PhysicsConstants.DEFAULT_MASK_BITS, Me.Ray, Me.Stats)
+If Me.Ray.HitCount > 0 Then
+Me.AddSample(Me.Ray.ClosestFraction)
+Else
+Me.AddSample(-1.0)
+End If
+
+Me.Cast.ClosestFraction = 2.0
+Me.Cast.HitCount = 0
+Me.Tree.ShapeCastTo(Me.CastInput, PhysicsConstants.DEFAULT_MASK_BITS, Me.Cast, Me.Stats)
+If Me.Cast.HitCount > 0 Then
+Me.AddSample(Me.Cast.ClosestFraction)
+Else
+Me.AddSample(-1.0)
+End If
+Next k
+End Sub
+End Class
+
+# Enlarges proxies and performs a partial rebuild each iteration.
+Class TreeRebuildWorkload Inherits Stage5Workload
+## Proxies enlarged per iteration.
+Const ENLARGE_COUNT As Integer = 32
+
+## The tree under rebuild.
+Property Tree As DynamicTree
+## Tree proxy ids.
+Property Ids() As Integer
+## Enlarged boxes reused across iterations.
+Property GrownBoxes() As AABB
+## Stats reused across calls.
+Property Stats As TreeStats
+## Iteration counter.
+Property Round As Integer
+
+## Builds the grid and warms the rebuild path once.
+Sub Prepare()
+Me.PrepareSamples()
+Me.Tree = New DynamicTree
+Me.Ids = New Array(Of Integer)
+Me.Ids.Reserve(4096)
+Me.GrownBoxes = New Array(Of AABB)
+Me.GrownBoxes.Reserve(ENLARGE_COUNT)
+Me.Stats = New TreeStats
+Me.Round = 0
+
+Var gridSide As Integer = 45
+For i As Integer = 0 To 2047
+Var cx As Double = (i Mod gridSide) * 2.0
+Var cy As Double = (i \ gridSide) * 2.0
+Me.Ids.Append(Me.Tree.CreateProxy(Stage5Workloads.BoxAt(cx, cy, 0.9, 0.9), 1, i))
+Next i
+
+For k As Integer = 0 To ENLARGE_COUNT - 1
+Me.GrownBoxes.Append(New AABB)
+Next k
+
+Me.RunKernels()
+End Sub
+
+## Enlarges a rotating window and rebuilds once.
+Sub RunKernels()
+Me.Round = Me.Round + 1
+# Windows are disjoint across rounds until the grid wraps, so a leaf is
+# never enlarged twice with the same box.
+For k As Integer = 0 To ENLARGE_COUNT - 1
+Var slot As Integer = (Me.Round * ENLARGE_COUNT + k) Mod 2048
+Var cx As Double = (slot Mod 64) * 2.0
+Var cy As Double = (slot \ 64) * 2.0
+Var grown As AABB = Me.GrownBoxes[k]
+grown.LowerBound.Set(cx - 1.2, cy - 1.2)
+grown.UpperBound.Set(cx + 1.2, cy + 1.2)
+Me.Tree.EnlargeProxy(Me.Ids[slot], grown)
+Next k
+
+Var rebuilt As Integer = Me.Tree.Rebuild(False)
+Me.AddSample(rebuilt * 1.0)
+Me.AddSample(Me.Tree.GetHeight() * 1.0)
+Me.AddSample(Me.Tree.GetAreaRatio())
+End Sub
+End Class
+
+# Moves dynamic proxies through a populated broad phase and reports pairs.
+Class BroadPhasePairsWorkload Inherits Stage5Workload
+## Dynamic proxies.
+Const DYNAMIC_COUNT As Integer = 512
+## Kinematic proxies.
+Const KINEMATIC_COUNT As Integer = 128
+## Static proxies.
+Const STATIC_COUNT As Integer = 128
+## Dynamic proxies moved per iteration.
+Const MOVERS As Integer = 32
+
+## The broad phase under test.
+Property BP As BroadPhase
+## Dynamic proxy keys.
+Property Keys() As Integer
+## Current boxes for dynamic proxies.
+Property Boxes() As AABB
+## Counting pair sink.
+Property Sink As CountingPairSink
+## Iteration counter.
+Property Round As Integer
+
+## Builds the proxy population and warms the pair path once.
+Sub Prepare()
+Me.PrepareSamples()
+Me.BP = New BroadPhase
+Me.Keys = New Array(Of Integer)
+Me.Keys.Reserve(DYNAMIC_COUNT)
+Me.Boxes = New Array(Of AABB)
+Me.Boxes.Reserve(DYNAMIC_COUNT)
+Me.Sink = New CountingPairSink
+Me.Round = 0
+
+Var side As Integer = 32
+For i As Integer = 0 To DYNAMIC_COUNT - 1
+Var cx As Double = (i Mod side) * 2.5
+Var cy As Double = (i \ side) * 2.5
+Var box As AABB = Stage5Workloads.BoxAt(cx, cy, 1.0, 1.0)
+Me.Keys.Append(Me.BP.CreateProxy(BodyType.DynamicBody, box, 1, i, False))
+Me.Boxes.Append(box)
+Next i
+For i As Integer = 0 To KINEMATIC_COUNT - 1
+Me.BP.CreateProxy(BodyType.KinematicBody, Stage5Workloads.BoxAt(1.25 + (i Mod 32) * 2.5, 1.25 + (i Mod 16) * 2.5, 1.2, 1.2), 1, 10000 + i, False)
+Next i
+For i As Integer = 0 To STATIC_COUNT - 1
+Me.BP.CreateProxy(BodyType.StaticBody, Stage5Workloads.BoxAt(1.25 + (i Mod 32) * 2.5, 21.25 + (i Mod 16) * 2.5, 1.2, 1.2), 1, 20000 + i, False)
+Next i
+
+Me.RunKernels()
+End Sub
+
+## Moves a rotating window of dynamic proxies and reports pairs once.
+Sub RunKernels()
+Me.Round = Me.Round + 1
+For k As Integer = 0 To MOVERS - 1
+Var slot As Integer = (Me.Round * MOVERS + k * 5) Mod DYNAMIC_COUNT
+Var cx As Double = (slot Mod 32) * 2.5 + 0.5 * Maths.Sin(0.2 * (Me.Round + slot))
+Var cy As Double = (slot \ 32) * 2.5 + 0.5 * Maths.Cos(0.2 * (Me.Round + slot))
+Var box As AABB = Me.Boxes[slot]
+box.LowerBound.Set(cx - 1.0, cy - 1.0)
+box.UpperBound.Set(cx + 1.0, cy + 1.0)
+Me.BP.MoveProxy(Me.Keys[slot], box)
+Next k
+
+Me.BP.UpdatePairs(Me.Sink)
+Me.AddSample(Me.Sink.PairCount * 1.0)
+Me.Sink.PairCount = 0
+End Sub
+End Class
+
+# Shared helpers for stage 5 workloads.
+Class Stage5Workloads
+## Builds a box from a centre and half extents.
+Shared Function BoxAt(centerX As Double, centerY As Double, halfX As Double, halfY As Double) As AABB
+Var box As AABB = New AABB
+box.LowerBound.Set(centerX - halfX, centerY - halfY)
+box.UpperBound.Set(centerX + halfX, centerY + halfY)
+Return box
+End Function
+End Class
+
+# Query callback that only counts leaves.
+Class CountingTreeQueryCallback Inherits TreeQueryCallback
+Property HitCount As Integer
+
+Constructor()
+Me.HitCount = 0
+End Constructor
+
+Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Me.HitCount = Me.HitCount + 1
+Return True
+End Function
+End Class
+
+# Ray callback that slab-casts each leaf box without allocating.
+Class TreeRayHitCallback Inherits TreeRayCastCallback
+Property Tree As DynamicTree
+Property ClosestFraction As Double
+Property HitCount As Integer
+Property LeafBounds As AABB
+
+Constructor()
+Me.Tree = Nothing
+Me.ClosestFraction = 2.0
+Me.HitCount = 0
+Me.LeafBounds = New AABB
+End Constructor
+
+Function VisitLeaf(input As RayCastInput, proxyId As Integer, userData As Integer) As Double
+Var leaf As AABB = Me.Tree.GetAABBTo(proxyId, Me.LeafBounds)
+Var dx As Double = input.Translation.X
+Var dy As Double = input.Translation.Y
+Var tmin As Double = 0.0
+Var tmax As Double = input.MaxFraction
+If dx > 0.0 Then
+Var invX As Double = 1.0 / dx
+Var t1x As Double = (leaf.LowerBound.X - input.Origin.X) * invX
+Var t2x As Double = (leaf.UpperBound.X - input.Origin.X) * invX
+If t1x > tmin Then
+tmin = t1x
+End If
+If t2x < tmax Then
+tmax = t2x
+End If
+Else
+If dx < 0.0 Then
+Var invX As Double = 1.0 / dx
+Var t1x As Double = (leaf.UpperBound.X - input.Origin.X) * invX
+Var t2x As Double = (leaf.LowerBound.X - input.Origin.X) * invX
+If t1x > tmin Then
+tmin = t1x
+End If
+If t2x < tmax Then
+tmax = t2x
+End If
+Else
+If input.Origin.X < leaf.LowerBound.X Or input.Origin.X > leaf.UpperBound.X Then
+Return -1.0
+End If
+End If
+End If
+If tmin > tmax Then
+Return -1.0
+End If
+If dy > 0.0 Then
+Var invY As Double = 1.0 / dy
+Var t1y As Double = (leaf.LowerBound.Y - input.Origin.Y) * invY
+Var t2y As Double = (leaf.UpperBound.Y - input.Origin.Y) * invY
+If t1y > tmin Then
+tmin = t1y
+End If
+If t2y < tmax Then
+tmax = t2y
+End If
+Else
+If dy < 0.0 Then
+Var invY As Double = 1.0 / dy
+Var t1y As Double = (leaf.UpperBound.Y - input.Origin.Y) * invY
+Var t2y As Double = (leaf.LowerBound.Y - input.Origin.Y) * invY
+If t1y > tmin Then
+tmin = t1y
+End If
+If t2y < tmax Then
+tmax = t2y
+End If
+Else
+If input.Origin.Y < leaf.LowerBound.Y Or input.Origin.Y > leaf.UpperBound.Y Then
+Return -1.0
+End If
+End If
+End If
+If tmin > tmax Then
+Return -1.0
+End If
+Me.HitCount = Me.HitCount + 1
+If tmin < Me.ClosestFraction Then
+Me.ClosestFraction = tmin
+Return tmin
+End If
+Return -1.0
+End Function
+End Class
+
+# Shape cast callback that slab-casts each inflated leaf box without
+# allocating. The caster proxy is centred at the origin.
+Class TreeCastHitCallback Inherits TreeShapeCastCallback
+Property Tree As DynamicTree
+Property HalfExtent As Double
+Property ClosestFraction As Double
+Property HitCount As Integer
+Property LeafBounds As AABB
+
+Constructor()
+Me.Tree = Nothing
+Me.HalfExtent = 0.0
+Me.ClosestFraction = 2.0
+Me.HitCount = 0
+Me.LeafBounds = New AABB
+End Constructor
+
+Function VisitLeaf(input As ShapeCastInput, proxyId As Integer, userData As Integer) As Double
+Var leaf As AABB = Me.Tree.GetAABBTo(proxyId, Me.LeafBounds)
+Var lowerX As Double = leaf.LowerBound.X - Me.HalfExtent
+Var lowerY As Double = leaf.LowerBound.Y - Me.HalfExtent
+Var upperX As Double = leaf.UpperBound.X + Me.HalfExtent
+Var upperY As Double = leaf.UpperBound.Y + Me.HalfExtent
+Var toX As Double = input.MaxFraction * input.Translation.X
+Var toY As Double = input.MaxFraction * input.Translation.Y
+Var tmin As Double = 0.0
+Var tmax As Double = 1.0
+If toX > 0.0 Then
+Var invX As Double = 1.0 / toX
+Var t1x As Double = lowerX * invX
+Var t2x As Double = upperX * invX
+If t1x > tmin Then
+tmin = t1x
+End If
+If t2x < tmax Then
+tmax = t2x
+End If
+Else
+If toX < 0.0 Then
+Var invX As Double = 1.0 / toX
+Var t1x As Double = upperX * invX
+Var t2x As Double = lowerX * invX
+If t1x > tmin Then
+tmin = t1x
+End If
+If t2x < tmax Then
+tmax = t2x
+End If
+Else
+If lowerX > 0.0 Or upperX < 0.0 Then
+Return -1.0
+End If
+End If
+End If
+If tmin > tmax Then
+Return -1.0
+End If
+If toY > 0.0 Then
+Var invY As Double = 1.0 / toY
+Var t1y As Double = lowerY * invY
+Var t2y As Double = upperY * invY
+If t1y > tmin Then
+tmin = t1y
+End If
+If t2y < tmax Then
+tmax = t2y
+End If
+Else
+If toY < 0.0 Then
+Var invY As Double = 1.0 / toY
+Var t1y As Double = upperY * invY
+Var t2y As Double = lowerY * invY
+If t1y > tmin Then
+tmin = t1y
+End If
+If t2y < tmax Then
+tmax = t2y
+End If
+Else
+If lowerY > 0.0 Or upperY < 0.0 Then
+Return -1.0
+End If
+End If
+End If
+If tmin > tmax Then
+Return -1.0
+End If
+Me.HitCount = Me.HitCount + 1
+If tmin < Me.ClosestFraction Then
+Me.ClosestFraction = tmin
+Return tmin
+End If
+Return -1.0
+End Function
+End Class
+
+# Pair sink that only counts accepted pairs.
+Class CountingPairSink Inherits BroadPhasePairSink
+Property PairCount As Integer
+
+Constructor()
+Me.PairCount = 0
+End Constructor
+
+Function ShouldCollide(shapeIndexA As Integer, shapeIndexB As Integer) As Boolean
+Return True
+End Function
+
+Sub AcceptPair(shapeIndexA As Integer, shapeIndexB As Integer)
+Me.PairCount = Me.PairCount + 1
+End Sub
+End Class

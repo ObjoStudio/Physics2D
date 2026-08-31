@@ -4,8 +4,12 @@
 # Do not edit by hand: changes will be overwritten and will desynchronise
 # the generated module from its canonical source.
 #
-# Input: AABB-375d053c-9aba-487b-b381-874abcd7b5a7.objobasic 55bc52a33613abd3454d86873e77fc7cbe3dabde43a75e155ae150e63204b42b
+# Input: AABB-375d053c-9aba-487b-b381-874abcd7b5a7.objobasic 995130c81ff8bd6fe0acda99e69614d9e7297e08b19ad3d1a673c89e81bae8a9
 # Input: BitSet-32ba5db1-d4a3-41d8-978f-6020100c45db.objobasic 1625c50d37848f57f6d82ee58302562750774ebbebf4243d84ea610e95d630d7
+# Input: BodyType-ee3f0727-fa8d-4967-b4d7-d603cf4d360f.objobasic bfcfff5fa273c0dd6e1cf4df8a120cbf91a278dbedccda64660f9667bf92404c
+# Input: BroadPhase-0a5f096e-e982-43bf-8d21-9bd30be75593.objobasic 655b26e48d5ddc00e34cb356ad6f976c1c4fc86e77697272f22a3aaeefc62dba
+# Input: BroadPhasePairSink-51b85b57-7ae5-4b25-b19d-f2416a1ec73c.objobasic 9d84130a2512bfd860c5f24780a9dc86e206e5647df7afddb5d988bc237efb77
+# Input: BroadPhaseQueryContext-6a904469-8dbf-4d77-a18a-13216ab74eac.objobasic 899e7564d5ad95a36cf7b34fca8d6a16d036fe8210f84a675d71335d6df00cd0
 # Input: Capsule-f9484042-9a35-4f26-b657-5c45a198eca0.objobasic 36c351d35cce14e9307e0181a1c82e1b9b31b3056acb9bc28367a7a0414e6571
 # Input: CastOutput-fdfbe610-bc2e-449f-9875-fc3726b23d23.objobasic 7f1bb647f4de797c7c3b6690801e3d08d896f6a6365bf4caa3a588f98ff052f8
 # Input: CastScratch-b3d908f1-9672-456c-a12f-13ec42e66bae.objobasic 0960e5c6ec0a72e2bbb5f84d9a8eb0fc85e014634220e3f553232ac716e60480
@@ -23,6 +27,7 @@
 # Input: DistanceOutput-d619ee17-034e-4a05-a8d7-d61257435965.objobasic 15dd3383c16f63efed47c74647dfe3949d0481fcb721b5300cd2b84b54fec98a
 # Input: DistanceScratch-b2490261-2e05-45e6-97e1-2d0a41723f65.objobasic f9e1514b2da2d9421f452082d7ddeb84aa9a1af10c333bc05ee6a01d7f050c04
 # Input: DoubleList-bf54ef29-8eae-4760-bd6b-fae9a46f6114.objobasic 88f6cd11834dcbdad3bd27ec627e3538f2f2427177020c6047c557ecb4019516
+# Input: DynamicTree-55542eb0-42a0-4347-b11f-3b7e2e8c53c6.objobasic 7951306a5b478cd7110a9f0cca40ecf103261109f36bee9896a4fe7fbf5d805e
 # Input: GenerationalPool-a7eb56c1-ce86-4368-ae3c-458ea741dd55.objobasic 124a545390769606488fb8c6855cbaba9cc135170e8f24120127ef1a60b22d9e
 # Input: Hull-46e523c2-f9cc-462f-91b6-53ab922cc560.objobasic 74d15ddd59dc1af0c1ea3a82efe06f46b9a4cb16e001340460c2e1bb12b14f26
 # Input: IdPool-fbf7c609-ee86-443b-8d23-078728df5ac9.objobasic 626645c06f0424bccaa91f2354eb2c1e8c952ca239b17686b7bfbe1631e11c27
@@ -33,7 +38,7 @@
 # Input: Mover-89f8b58a-a5cb-43a1-bb4e-216fd2e79a45.objobasic a0bd07eed0ced42bc9789f0e0b4df2d56c8dc159f7df92c4ba3c75068e33f576
 # Input: PairKeySet-7d0b7f56-d56b-4fa5-a84f-5f9f8e86c8b1.objobasic e9ed9cfcac78bbfa2b440fbcc2b61d7c2ad25393624cd226b00a22f274b068b0
 # Input: Physics2D-7e9c2aae.objobasic a482a18a11941d5220f84b085c0175ac07d421ba3760abd25e67ef39e73d443d
-# Input: PhysicsConstants-cc1468ea-13f1-45de-b144-e417e51bf847.objobasic 7854e62358af5565baa5d6d6d7fef3d77bff2d38a55e32a19341f643b3c51185
+# Input: PhysicsConstants-cc1468ea-13f1-45de-b144-e417e51bf847.objobasic 6b28df5519005dfeac79a519f5a37396e68d75f480178e033566f6a63737f803
 # Input: PhysicsMaths-907a0865-dfe0-466e-92d2-dc339e472d3a.objobasic 8a4d23cd5753583595fa4a535638351b18ea673d1a1667d81fcd7429f6a181a5
 # Input: Plane-611e5a3a-dc4a-476b-9289-e6bec1dbe7a1.objobasic c8afffbec196c1cdbc82c22286eae1965bc8ead71573f533542997b0ac2afb5f
 # Input: PlaneResult-0a50cbbc-2c28-4672-9ac2-2a7ab494729e.objobasic 7d3bd58e3b238f98a2115f26f16ce0cb50e40ec02dae1326f548a6134f68fcdf
@@ -58,8 +63,14 @@
 # Input: TOIState-977b4239-0171-43d3-a128-e70f478156d5.objobasic 21ec3f3b4e44c5453fd52ebf89a55fa01602e19c47d7c341f29b4e6d777b4ed0
 # Input: TimeOfImpact-d2e89462-ad68-4ac6-9490-02f4b63062e9.objobasic 08a8f00cf8cdd5a257324010ad6e7c979c352acc5cc33fb6547d8223fa1efe35
 # Input: Transform-4faaf070-67dd-4ec2-a52b-73be84cbaab2.objobasic 44761ef264a8f1d5a2c06bd05c49b6c8bdef0cab23365f06de271a2778700123
+# Input: TreeNode-07e0791d-58e5-4886-8c76-88c95c293e37.objobasic 5235e9041d026163161a1cf95a5e6bed6217a3de805f19358aa7ac5c1e7022d3
+# Input: TreeQueryCallback-807ccaac-3fa3-4781-9df7-9f9bd612ac3c.objobasic 9fffb8d4788e16618506b9ee0c331529dcad5464e700326df0a51c724afa2a08
+# Input: TreeRayCastCallback-8fe090c0-11d3-439b-8745-185e3d537f23.objobasic ce9f6318b18b5e19fafbd77a9662840e38fd2d69183eebc2adbf8f9b4236190c
+# Input: TreeScratch-3add8e75-acc6-4f27-996e-372dc4d98372.objobasic 35e077b5cec3caafcc6d334013421d7a9612c3ba18ecf97875019b87ac2f9f55
+# Input: TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic 2abd4a4ca724ab02daa1a476dd447403aea4c5d80a507691f770ed20469a832b
+# Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
 #
-# Source content checksum (SHA-256): e144453f5079c2d32f7306fbabe036e5a8af0b0253a24779c0d7df3c174f2908
+# Source content checksum (SHA-256): c811e2aa66dfdb1406b84d2e3f7336accc1c56702ce4f7e198137fa98ca199d9
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -157,6 +168,64 @@ result.LowerBound.Set(result.LowerBound.X - radius, result.LowerBound.Y - radius
 result.UpperBound.Set(result.UpperBound.X + radius, result.UpperBound.Y + radius)
 End If
 Return result
+End Function
+
+## Returns the perimeter length of the box (twice width plus height), ported
+## from upstream b2Perimeter. Used as the dynamic tree cost metric.
+Shared Function Perimeter(a As AABB) As Double
+Var wx As Double = a.UpperBound.X - a.LowerBound.X
+Var wy As Double = a.UpperBound.Y - a.LowerBound.Y
+Return 2.0 * (wx + wy)
+End Function
+
+## Returns the perimeter of the union of two boxes without constructing the
+## union box, so hot tree code allocates nothing.
+Shared Function UnionPerimeter(a As AABB, b As AABB) As Double
+Var lowerX As Double = Maths.Min(a.LowerBound.X, b.LowerBound.X)
+Var lowerY As Double = Maths.Min(a.LowerBound.Y, b.LowerBound.Y)
+Var upperX As Double = Maths.Max(a.UpperBound.X, b.UpperBound.X)
+Var upperY As Double = Maths.Max(a.UpperBound.Y, b.UpperBound.Y)
+Return 2.0 * ((upperX - lowerX) + (upperY - lowerY))
+End Function
+
+## Expands box a in place to also contain box b and returns True when a grew,
+## ported from upstream b2EnlargeAABB.
+Shared Function Enlarge(a As AABB, b As AABB) As Boolean
+Var changed As Boolean = False
+If b.LowerBound.X < a.LowerBound.X Then
+a.LowerBound.Set(b.LowerBound.X, a.LowerBound.Y)
+changed = True
+End If
+If b.LowerBound.Y < a.LowerBound.Y Then
+a.LowerBound.Set(a.LowerBound.X, b.LowerBound.Y)
+changed = True
+End If
+If a.UpperBound.X < b.UpperBound.X Then
+a.UpperBound.Set(b.UpperBound.X, a.UpperBound.Y)
+changed = True
+End If
+If a.UpperBound.Y < b.UpperBound.Y Then
+a.UpperBound.Set(a.UpperBound.X, b.UpperBound.Y)
+changed = True
+End If
+Return changed
+End Function
+
+## Writes the union of boxes a and b into the caller-owned out box without
+## allocating, and returns out. The reuse form of Union for warm tree and
+## broad-phase code. Previous out contents are fully overwritten.
+Shared Function UnionTo(a As AABB, b As AABB, out As AABB) As AABB
+If a.LowerBound.X < b.LowerBound.X Then
+out.LowerBound.Set(a.LowerBound.X, Maths.Min(a.LowerBound.Y, b.LowerBound.Y))
+Else
+out.LowerBound.Set(b.LowerBound.X, Maths.Min(a.LowerBound.Y, b.LowerBound.Y))
+End If
+If a.UpperBound.X > b.UpperBound.X Then
+out.UpperBound.Set(a.UpperBound.X, Maths.Max(a.UpperBound.Y, b.UpperBound.Y))
+Else
+out.UpperBound.Set(b.UpperBound.X, Maths.Max(a.UpperBound.Y, b.UpperBound.Y))
+End If
+Return out
 End Function
 
 ## Casts a ray from p1 to p2 against the box into a new output, ported from
@@ -442,6 +511,443 @@ While Me.Words.Count < wordCapacity
 Me.Words.Append(0)
 Wend
 End Sub
+End Class
+
+# Kind of body owning a broad-phase proxy, ported from upstream b2BodyType
+# in types.h. The numeric values double as indices into the broad-phase tree
+# array: Static is index 0, Kinematic index 1, and Dynamic index 2.
+Enum BodyType
+StaticBody
+KinematicBody
+DynamicBody
+End Enum
+
+# Broad phase, ported from Box2D 3.1.1 src/broad_phase.c. One dynamic tree
+# per body type (static, kinematic, dynamic), a move buffer of proxies that
+# moved significantly, and a shape-pair set tracking existing contacts.
+#
+# The broad phase does not persist pairs. UpdatePairs reports potentially new
+# pairs once per moved proxy through a BroadPhasePairSink, in deterministic
+# move order, after move-set and pair-set de-duplication and the sink's own
+# collision filter. The world (Stage 6) supplies the sink, registers pair
+# keys in PairSet as contacts appear, and consumes BufferMove from body
+# movement.
+#
+# Proxy keys pack the proxy type into the low two bits and the tree proxy id
+# above them, mirroring upstream B2_PROXY_KEY. Move-set keys add one so the
+# reserved key zero never enters the set.
+#
+# Like upstream, the static tree is only buffered for pairing when
+# explicitly forced (invoke-contact-creation semantics), while kinematic and
+# dynamic proxies always pair.
+Class BroadPhase
+## The three proxy trees indexed by body type: static, kinematic, dynamic.
+Property Trees As Array(Of DynamicTree)
+## Set of moved proxy keys plus one; zero stays reserved.
+Property MoveSet As PairKeySet
+## Moved proxy keys in deterministic arrival order, parallel to MoveSet.
+Property MoveArray As IntegerList
+## Set of shape pair keys that already have a contact.
+Property PairSet As PairKeySet
+
+## Pair pool: shape index A per recorded pair.
+Private Property mPairShapeIndexA As IntegerList
+## Pair pool: shape index B per recorded pair.
+Private Property mPairShapeIndexB As IntegerList
+## Pair pool: next pair index threading each per-proxy result list.
+Private Property mPairNext As IntegerList
+## Number of pairs in the pool for the current UpdatePairs traversal.
+Private Property mPairCount As Integer
+## Head pair index per moved proxy, parallel to the move buffer.
+Private Property mResultHeads As IntegerList
+## Reused pair query context handed to tree queries.
+Private Property mContext As BroadPhaseQueryContext
+## Reused fat bounds of the moved proxy being paired.
+Private Property mFatBounds As AABB
+## Reused traversal stats for pair queries.
+Private Property mStats As TreeStats
+
+## Number of pairs recorded by the current UpdatePairs traversal.
+Property PairCount As Integer
+
+## Creates a broad phase with the upstream initial capacities.
+Constructor()
+Me.Trees = New Array(Of DynamicTree)
+For i As Integer = 0 To 2
+Me.Trees.Append(New DynamicTree)
+Next i
+Me.MoveSet = New PairKeySet(16)
+Me.MoveArray = New IntegerList(16)
+Me.PairSet = New PairKeySet(32)
+Me.mPairShapeIndexA = New IntegerList(64)
+Me.mPairShapeIndexB = New IntegerList(64)
+Me.mPairNext = New IntegerList(64)
+Me.mPairCount = 0
+Me.PairCount = 0
+Me.mResultHeads = New IntegerList(16)
+Me.mContext = Nothing
+Me.mFatBounds = New AABB
+Me.mStats = New TreeStats
+End Constructor
+
+## Returns the tree index encoded in the low two bits of a proxy key.
+Shared Function ProxyType(proxyKey As Integer) As Integer
+Return proxyKey.BitAnd(3)
+End Function
+
+## Returns the tree proxy id encoded above the type bits of a proxy key.
+Shared Function ProxyId(proxyKey As Integer) As Integer
+Return proxyKey.ShiftRight(2)
+End Function
+
+## Packs a tree proxy id and body type index into a proxy key.
+Shared Function MakeProxyKey(proxyId As Integer, typeIndex As Integer) As Integer
+Return proxyId.ShiftLeft(2).BitOr(typeIndex)
+End Function
+
+## Adds a moved proxy to the move buffer. Called by the world whenever a
+## proxy moved enough to deserve a pair query. Adding twice keeps only the
+## first arrival, mirroring upstream b2BufferMove.
+Sub BufferMove(queryProxyKey As Integer)
+# Adding 1 because 0 is the reserved sentinel.
+Var alreadyAdded As Boolean = Me.MoveSet.Add(queryProxyKey + 1)
+If alreadyAdded = False Then
+Me.MoveArray.Append(queryProxyKey)
+End If
+End Sub
+
+## Creates a proxy in the tree for its body type and returns the proxy key.
+## Static proxies only buffer a move when forcePairCreation is set, so new
+## static shapes do not pair with already-moved proxies unless requested.
+Function CreateProxy(proxyType As BodyType, box As AABB, categoryBits As Integer, shapeIndex As Integer, forcePairCreation As Boolean) As Integer
+Var typeIndex As Integer = Integer(proxyType)
+If typeIndex < 0 Or typeIndex > 2 Then
+Throw New InvalidArgumentException("BroadPhase.CreateProxy invalid body type")
+End If
+Var proxyId As Integer = Me.Trees[typeIndex].CreateProxy(box, categoryBits, shapeIndex)
+Var proxyKey As Integer = BroadPhase.MakeProxyKey(proxyId, typeIndex)
+If typeIndex <> Integer(BodyType.StaticBody) Or forcePairCreation Then
+Me.BufferMove(proxyKey)
+End If
+Return proxyKey
+End Function
+
+## Destroys a proxy and removes it from the move buffer.
+Sub DestroyProxy(proxyKey As Integer)
+If Me.MoveArray.Count <> Me.MoveSet.Count Then
+Throw New RuntimeException("BroadPhase move buffer and move set disagree")
+End If
+Me.UnBufferMove(proxyKey)
+
+Var typeIndex As Integer = BroadPhase.ProxyType(proxyKey)
+Var proxyId As Integer = BroadPhase.ProxyId(proxyKey)
+
+If typeIndex < 0 Or typeIndex > 2 Then
+Throw New InvalidArgumentException("BroadPhase.DestroyProxy invalid body type")
+End If
+Me.Trees[typeIndex].DestroyProxy(proxyId)
+End Sub
+
+## Moves a proxy to new bounds and buffers the move.
+Sub MoveProxy(proxyKey As Integer, box As AABB)
+Var typeIndex As Integer = BroadPhase.ProxyType(proxyKey)
+Var proxyId As Integer = BroadPhase.ProxyId(proxyKey)
+
+Me.Trees[typeIndex].MoveProxy(proxyId, box)
+Me.BufferMove(proxyKey)
+End Sub
+
+## Enlarges a proxy in place to bounds strictly containing the old bounds
+## and buffers the move. The new bounds must not be contained by the old
+## bounds.
+Sub EnlargeProxy(proxyKey As Integer, box As AABB)
+If proxyKey = PhysicsConstants.NULL_INDEX Then
+Throw New InvalidArgumentException("BroadPhase.EnlargeProxy null proxy key")
+End If
+Var typeIndex As Integer = BroadPhase.ProxyType(proxyKey)
+Var proxyId As Integer = BroadPhase.ProxyId(proxyKey)
+
+If typeIndex = Integer(BodyType.StaticBody) Then
+Throw New RuntimeException("BroadPhase.EnlargeProxy static proxies cannot enlarge")
+End If
+
+Me.Trees[typeIndex].EnlargeProxy(proxyId, box)
+Me.BufferMove(proxyKey)
+End Sub
+
+## Rebuilds the dynamic and kinematic trees optimally after enlargement,
+## mirroring upstream b2BroadPhase_RebuildTrees. The static tree is not
+## rebuilt because static proxies never enlarge.
+Sub RebuildTrees()
+Me.Trees[Integer(BodyType.DynamicBody)].Rebuild(False)
+Me.Trees[Integer(BodyType.KinematicBody)].Rebuild(False)
+End Sub
+
+## Returns the shape index carried by a proxy.
+Function GetShapeIndex(proxyKey As Integer) As Integer
+Var typeIndex As Integer = BroadPhase.ProxyType(proxyKey)
+Var proxyId As Integer = BroadPhase.ProxyId(proxyKey)
+
+Return Me.Trees[typeIndex].GetUserData(proxyId)
+End Function
+
+## Returns True when the bounds of the two proxies overlap.
+Function TestOverlap(proxyKeyA As Integer, proxyKeyB As Integer) As Boolean
+Var typeIndexA As Integer = BroadPhase.ProxyType(proxyKeyA)
+Var proxyIdA As Integer = BroadPhase.ProxyId(proxyKeyA)
+Var typeIndexB As Integer = BroadPhase.ProxyType(proxyKeyB)
+Var proxyIdB As Integer = BroadPhase.ProxyId(proxyKeyB)
+
+Var aabbA As AABB = Me.Trees[typeIndexA].GetAABB(proxyIdA)
+Var aabbB As AABB = Me.Trees[typeIndexB].GetAABB(proxyIdB)
+Return AABB.Overlaps(aabbA, aabbB)
+End Function
+
+## Removes a proxy from the move buffer and set, mirroring upstream
+## b2UnBufferMove.
+Private Sub UnBufferMove(proxyKey As Integer)
+Var found As Boolean = Me.MoveSet.Remove(proxyKey + 1)
+
+If found Then
+# Purge from the move buffer with a linear search; order is preserved.
+Var count As Integer = Me.MoveArray.Count
+For i As Integer = 0 To count - 1
+If Me.MoveArray.Items[i] = proxyKey Then
+Me.MoveArray.RemoveSwap(i)
+Break
+End If
+Next i
+End If
+End Sub
+
+## Appends one discovered pair to the per-proxy result list without
+## allocating in the warmed steady state. The per-slot lists thread through
+## the pair pool in discovery order so consumption walks them LIFO, exactly
+## like the upstream linked pair lists.
+Sub RecordPair(shapeIndexA As Integer, shapeIndexB As Integer, resultSlot As Integer)
+Me.mPairShapeIndexA.Append(shapeIndexA)
+Me.mPairShapeIndexB.Append(shapeIndexB)
+Me.mPairNext.Append(Me.mResultHeads.Items[resultSlot])
+Me.mResultHeads.Items[resultSlot] = Me.mPairCount
+Me.mPairCount = Me.mPairCount + 1
+Me.PairCount = Me.mPairCount
+End Sub
+
+## Finds candidate pairs for every proxy in the move buffer and reports them
+## through the sink in deterministic move order. The sink filters pairs at
+## record time and receives accepted pairs afterwards. The move buffer and
+## set are cleared at the end, mirroring upstream b2UpdateBroadPhasePairs
+## without the threading and arena machinery.
+##
+## The traversal fat bounds of the moved proxy are queried with the tree's
+## own stored bounds, which already carry the margin the world applies when
+## moving proxies.
+Sub UpdatePairs(sink As BroadPhasePairSink)
+Var moveCount As Integer = Me.MoveArray.Count
+If Me.MoveArray.Count <> Me.MoveSet.Count Then
+Throw New RuntimeException("BroadPhase move buffer and move set disagree")
+End If
+
+Me.PairCount = 0
+Me.mPairCount = 0
+# The pair pool restarts every update: clear the lists so their indices
+# stay aligned with mPairCount. Capacity is retained, so the warmed
+# steady state still allocates nothing.
+Me.mPairShapeIndexA.Clear()
+Me.mPairShapeIndexB.Clear()
+Me.mPairNext.Clear()
+If moveCount = 0 Then
+Return
+End If
+
+If Me.mContext = Nothing Then
+Me.mContext = New BroadPhaseQueryContext
+End If
+Me.mContext.Owner = Me
+Me.mContext.Sink = sink
+
+# One result head per moved proxy. The list is reserved so the warmed
+# steady state never grows it.
+Me.mResultHeads.Clear()
+If Me.mResultHeads.Capacity() < moveCount Then
+Me.mResultHeads.Reserve(moveCount + (moveCount \ 2))
+End If
+For i As Integer = 0 To moveCount - 1
+Me.mResultHeads.Append(-1)
+Next i
+
+For i As Integer = 0 To moveCount - 1
+Var proxyKey As Integer = Me.MoveArray.Items[i]
+If proxyKey = PhysicsConstants.NULL_INDEX Then
+# Proxy was destroyed after it moved.
+Continue
+End If
+
+Var proxyType As Integer = BroadPhase.ProxyType(proxyKey)
+Var proxyId As Integer = BroadPhase.ProxyId(proxyKey)
+Me.mContext.QueryProxyKey = proxyKey
+Me.mContext.ResultSlot = i
+
+Var baseTree As DynamicTree = Me.Trees[proxyType]
+
+# We have to query the tree with the fat bounds so that we do not fail
+# to create a contact that may touch later.
+Var fatAABB As AABB = Me.mFatBounds
+baseTree.GetAABBTo(proxyId, fatAABB)
+Me.mContext.QueryShapeIndex = baseTree.GetUserData(proxyId)
+
+# Query trees. Only dynamic proxies collide with kinematic and static
+# proxies, using the default mask bits so group filtering keeps working.
+If proxyType = Integer(BodyType.DynamicBody) Then
+Me.mContext.QueryTreeType = Integer(BodyType.KinematicBody)
+Me.Trees[Integer(BodyType.KinematicBody)].QueryTo(fatAABB, PhysicsConstants.DEFAULT_MASK_BITS, Me.mContext, Me.mStats)
+
+Me.mContext.QueryTreeType = Integer(BodyType.StaticBody)
+Me.Trees[Integer(BodyType.StaticBody)].QueryTo(fatAABB, PhysicsConstants.DEFAULT_MASK_BITS, Me.mContext, Me.mStats)
+End If
+
+# All proxies collide with dynamic proxies.
+Me.mContext.QueryTreeType = Integer(BodyType.DynamicBody)
+Me.Trees[Integer(BodyType.DynamicBody)].QueryTo(fatAABB, PhysicsConstants.DEFAULT_MASK_BITS, Me.mContext, Me.mStats)
+Next i
+
+# Consume the pairs in deterministic move order.
+For i As Integer = 0 To moveCount - 1
+Var pairIndex As Integer = Me.mResultHeads.Items[i]
+While pairIndex <> -1
+sink.AcceptPair(Me.mPairShapeIndexA.Items[pairIndex], Me.mPairShapeIndexB.Items[pairIndex])
+pairIndex = Me.mPairNext.Items[pairIndex]
+Wend
+Next i
+
+# Reset the move buffer.
+Me.MoveArray.Clear()
+Me.MoveSet.Clear()
+End Sub
+
+## Validates the dynamic and kinematic trees, mirroring upstream
+## b2ValidateBroadphase.
+Sub Validate()
+Me.Trees[Integer(BodyType.DynamicBody)].Validate()
+Me.Trees[Integer(BodyType.KinematicBody)].Validate()
+End Sub
+
+## Checks that no node in any tree carries the enlarged flag, mirroring
+## upstream b2ValidateNoEnlarged. Only meaningful after a full rebuild of
+## every tree.
+Sub ValidateNoEnlarged()
+For j As Integer = 0 To 2
+Me.Trees[j].ValidateNoEnlarged()
+Next j
+End Sub
+End Class
+
+# Client sink receiving candidate shape pairs from the broad phase, the
+# Physics2D counterpart of the pair callback and contact-creation halves of
+# upstream b2PairQueryCallback and b2UpdateBroadPhasePairs.
+#
+# The world (Stage 6) implements this to run its collision filters and
+# create contacts. ShouldCollide is called while pairs are discovered, so
+# rejected candidates never enter the pair buffer; AcceptPair is called
+# afterwards in deterministic move order.
+Abstract Class BroadPhasePairSink
+## Returns True when the two shapes may collide, mirroring the shape and
+## body filter checks upstream b2PairQueryCallback runs at record time.
+Abstract Function ShouldCollide(shapeIndexA As Integer, shapeIndexB As Integer) As Boolean
+
+## Receives one candidate pair after discovery completes, in deterministic
+## move-buffer order, mirroring the contact creation loop of upstream
+## b2UpdateBroadPhasePairs.
+Abstract Sub AcceptPair(shapeIndexA As Integer, shapeIndexB As Integer)
+End Class
+
+# Engine-internal tree query callback that gathers candidate pairs for one
+# moved proxy, ported from upstream b2PairQueryCallback and
+# b2QueryPairContext. One instance is owned by the BroadPhase and reused for
+# every moved proxy. Not part of the public engine surface.
+Class BroadPhaseQueryContext Inherits TreeQueryCallback
+
+## The broad phase that owns this context.
+Property Owner As BroadPhase
+## The pair sink that filters and receives pairs.
+Property Sink As BroadPhasePairSink
+## Tree currently being queried: 0 static, 1 kinematic, 2 dynamic.
+Property QueryTreeType As Integer
+## Proxy key of the moved proxy driving this query.
+Property QueryProxyKey As Integer
+## Shape index carried by the moved proxy.
+Property QueryShapeIndex As Integer
+## Move-buffer slot whose result list receives discovered pairs.
+Property ResultSlot As Integer
+
+## Creates an unbound context.
+Constructor()
+Me.Owner = Nothing
+Me.Sink = Nothing
+Me.QueryTreeType = 0
+Me.QueryProxyKey = 0
+Me.QueryShapeIndex = 0
+Me.ResultSlot = 0
+End Constructor
+
+## Tree query callback: de-duplicates, applies the sink filter, and records
+## surviving pairs. Always returns True to continue traversal.
+Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Var owner As BroadPhase = Me.Owner
+
+Var shapeId As Integer = userData
+Var proxyKey As Integer = BroadPhase.MakeProxyKey(proxyId, Me.QueryTreeType)
+Var queryProxyKey As Integer = Me.QueryProxyKey
+
+# A proxy cannot form a pair with itself.
+If proxyKey = queryProxyKey Then
+Return True
+End If
+
+Var treeType As Integer = Me.QueryTreeType
+Var queryProxyType As Integer = BroadPhase.ProxyType(queryProxyKey)
+
+# De-duplication: prevent duplicate pairs when both proxies are moving.
+If queryProxyType = Integer(BodyType.DynamicBody) Then
+If treeType = Integer(BodyType.DynamicBody) And proxyKey < queryProxyKey Then
+If owner.MoveSet.Contains(proxyKey + 1) Then
+# Both proxies are moving. Avoid duplicate pairs.
+Return True
+End If
+End If
+Else
+# Kinematic and static proxies only ever query the dynamic tree.
+If treeType <> Integer(BodyType.DynamicBody) Then
+Throw New RuntimeException("BroadPhase pair query tree type mismatch")
+End If
+If owner.MoveSet.Contains(proxyKey + 1) Then
+# Both proxies are moving. Avoid duplicate pairs.
+Return True
+End If
+End If
+
+Var pairKey As Integer = PairKeySet.PairKey(shapeId, Me.QueryShapeIndex)
+If owner.PairSet.Contains(pairKey) Then
+# Contact already exists.
+Return True
+End If
+
+Var shapeIdA As Integer = shapeId
+Var shapeIdB As Integer = Me.QueryShapeIndex
+If proxyKey >= queryProxyKey Then
+shapeIdA = Me.QueryShapeIndex
+shapeIdB = shapeId
+End If
+
+If Me.Sink.ShouldCollide(shapeIdA, shapeIdB) = False Then
+Return True
+End If
+
+owner.RecordPair(shapeIdA, shapeIdB, Me.ResultSlot)
+
+# Continue the query.
+Return True
+End Function
 End Class
 
 # A solid capsule: two semicircles connected by a rectangle, ported from
@@ -4216,6 +4722,1635 @@ Return Me.Items.Count + (Me.Items.Count \ 2)
 End Function
 End Class
 
+# Dynamic bounding volume tree, ported from Box2D 3.1.1 src/dynamic_tree.c.
+# This is the AABB hierarchy behind the broad phase. It is protected engine
+# infrastructure: world queries (Stage 6) wrap it so users never touch the
+# tree.
+#
+# Node objects live in a pooled array indexed by node id; free nodes chain
+# through their Parent slot, exactly like upstream. Insertion uses the
+# greedy surface-area-heuristic sibling search with branch-and-bound descent
+# and optional rotation; removal splices the sibling upward and repairs
+# ancestors. Rebuild gathers every leaf and every unenlarged internal node,
+# frees the enlarged internal nodes, and rebuilds a balanced tree with the
+# median-split partition, matching the upstream build (which compiles with
+# B2_TREE_HEURISTIC 0, so the binned SAH partition is not ported).
+#
+# Traversals are iterative over a reusable stack owned by TreeScratch, so
+# tree queries are not reentrant: a callback must not query the same tree.
+# Warm forms (QueryTo, RayCastTo, ShapeCastTo, GetAABBTo, GetRootBoundsTo)
+# fill caller-owned outputs so steady-state traversals allocate nothing.
+Class DynamicTree
+## Index of the root node, or the null sentinel when the tree is empty.
+Property Root As Integer
+## Capacity of the node pool; the backing node array length.
+Property NodeCapacity As Integer
+## Number of allocated nodes, including internal nodes.
+Property NodeCount As Integer
+## Number of leaf proxies in the tree.
+Property ProxyCount As Integer
+## Index of the first free node, or the null sentinel when the pool is full.
+Property FreeList As Integer
+
+## Engine-internal traversal workspace, created on first use.
+Private Property mScratch As TreeScratch
+
+## The node pool. Index with node ids only inside the module.
+Property Nodes() As TreeNode
+
+## Creates an empty tree with the upstream initial pool capacity of 16.
+Constructor()
+Me.Root = PhysicsConstants.NULL_INDEX
+Me.NodeCapacity = 16
+Me.NodeCount = 0
+Me.ProxyCount = 0
+Me.FreeList = 0
+Me.Nodes = New Array(Of TreeNode)
+For i As Integer = 0 To Me.NodeCapacity - 1
+Me.Nodes.Append(New TreeNode)
+Next i
+# Build the linked free list through the Parent slots.
+For i As Integer = 0 To Me.NodeCapacity - 2
+Me.Nodes[i].Parent = i + 1
+Next i
+Me.Nodes[Me.NodeCapacity - 1].Parent = PhysicsConstants.NULL_INDEX
+End Constructor
+
+## Engine-internal reusable workspace, created on first use.
+Function Scratch() As TreeScratch
+If Me.mScratch = Nothing Then
+Me.mScratch = New TreeScratch
+End If
+Return Me.mScratch
+End Function
+
+## Returns the tree to a freshly created state: every node returns to the
+## free list and the proxy count drops to zero.
+Sub Destroy()
+Me.Root = PhysicsConstants.NULL_INDEX
+Me.NodeCount = 0
+Me.ProxyCount = 0
+Me.FreeList = 0
+For i As Integer = 0 To Me.NodeCapacity - 2
+Me.Nodes[i].Reset()
+Me.Nodes[i].Parent = i + 1
+Next i
+Me.Nodes[Me.NodeCapacity - 1].Reset()
+Me.Nodes[Me.NodeCapacity - 1].Parent = PhysicsConstants.NULL_INDEX
+End Sub
+
+## Writes the union of boxes x and y into the target box in place.
+Private Sub UnionInto(target As AABB, x As AABB, y As AABB)
+AABB.UnionTo(x, y, target)
+End Sub
+
+## Pops a node off the free list, growing the pool by half again when the
+## free list is empty, and restores the upstream default node layout.
+Private Function AllocateNode() As Integer
+If Me.FreeList = PhysicsConstants.NULL_INDEX Then
+# The free list is empty; extend the pool by half again.
+Var newCapacity As Integer = Me.NodeCapacity + (Me.NodeCapacity \ 2)
+For i As Integer = Me.NodeCapacity To newCapacity - 1
+Me.Nodes.Append(New TreeNode)
+Next i
+Me.NodeCapacity = newCapacity
+# Chain the new tail through Parent as the free list.
+For i As Integer = Me.NodeCount To Me.NodeCapacity - 2
+Me.Nodes[i].Parent = i + 1
+Next i
+Me.Nodes[Me.NodeCapacity - 1].Parent = PhysicsConstants.NULL_INDEX
+Me.FreeList = Me.NodeCount
+End If
+
+Var nodeIndex As Integer = Me.FreeList
+Var node As TreeNode = Me.Nodes[nodeIndex]
+Me.FreeList = node.Parent
+node.Reset()
+Me.NodeCount = Me.NodeCount + 1
+Return nodeIndex
+End Function
+
+## Pushes a node back onto the free list.
+Private Sub FreeNode(nodeId As Integer)
+If nodeId < 0 Or nodeId >= Me.NodeCapacity Then
+Throw New RuntimeException("DynamicTree free node index out of range")
+End If
+If Me.NodeCount <= 0 Then
+Throw New RuntimeException("DynamicTree freed more nodes than allocated")
+End If
+Var node As TreeNode = Me.Nodes[nodeId]
+node.Parent = Me.FreeList
+node.Flags = 0
+Me.FreeList = nodeId
+Me.NodeCount = Me.NodeCount - 1
+End Sub
+
+## Greedy branch-and-bound sibling search using the surface area heuristic,
+## ported from upstream b2FindBestSibling. All costs are computed from
+## scalars so warm insertion allocates nothing. Descends a single greedy
+## path, breaking ties on centroid distance when neither lower bound rules
+## out a descent.
+## Evaluates one child during the greedy sibling search, ported from the
+## per-child cost halves of upstream b2FindBestSibling. When the child is a
+## leaf, updates the best sibling held in TreeScratch and returns the
+## maximum Double so the child is never descended into. When the child is
+## internal, returns the lower bound cost of descending into it.
+Private Function EvaluateChildCost(childIndex As Integer, lowerDX As Double, lowerDY As Double, upperDX As Double, upperDY As Double, inheritedCost As Double, areaD As Double) As Double
+Var scratch As TreeScratch = Me.Scratch()
+Var box As AABB = Me.Nodes[childIndex].Bounds
+Var width As Double = box.UpperBound.X - box.LowerBound.X
+Var height As Double = box.UpperBound.Y - box.LowerBound.Y
+Var area As Double = 2.0 * (width + height)
+Var directCost As Double = 2.0 * ((Maths.Max(box.UpperBound.X, upperDX) - Maths.Min(box.LowerBound.X, lowerDX)) + (Maths.Max(box.UpperBound.Y, upperDY) - Maths.Min(box.LowerBound.Y, lowerDY)))
+
+If Me.Nodes[childIndex].Height = 0 Then
+# The child is a leaf: cost of a new node plus the inflated parent.
+Var cost As Double = directCost + inheritedCost
+If cost < scratch.SiblingBestCost Then
+scratch.SiblingBest = childIndex
+scratch.SiblingBestCost = cost
+End If
+Return 1.7976931348623157e308
+End If
+
+# The child is internal: lower bound over taking the child as the sibling
+# or descending into it.
+Var grow As Double = areaD - area
+If grow > 0.0 Then
+grow = 0.0
+End If
+Return inheritedCost + directCost + grow
+End Function
+
+## Resolves the two child descent costs for the tie-break rule of the
+## greedy sibling search: when the lower bounds tie and child 1 is internal,
+## both children may fully contain the leaf and the costs fall back to
+## centroid distance. Writes the resolved costs into TreeScratch.
+Private Sub ResolveLowerCosts(child1 As Integer, child2 As Integer, leaf1 As Boolean, lowerCost1 As Double, lowerCost2 As Double, centerDX As Double, centerDY As Double)
+Var scratch As TreeScratch = Me.Scratch()
+If lowerCost1 = lowerCost2 And leaf1 = False Then
+Var box1 As AABB = Me.Nodes[child1].Bounds
+Var box2 As AABB = Me.Nodes[child2].Bounds
+Var d1x As Double = 0.5 * (box1.LowerBound.X + box1.UpperBound.X) - centerDX
+Var d1y As Double = 0.5 * (box1.LowerBound.Y + box1.UpperBound.Y) - centerDY
+Var d2x As Double = 0.5 * (box2.LowerBound.X + box2.UpperBound.X) - centerDX
+Var d2y As Double = 0.5 * (box2.LowerBound.Y + box2.UpperBound.Y) - centerDY
+scratch.SiblingLowerCost1 = d1x * d1x + d1y * d1y
+scratch.SiblingLowerCost2 = d2x * d2x + d2y * d2y
+Else
+scratch.SiblingLowerCost1 = lowerCost1
+scratch.SiblingLowerCost2 = lowerCost2
+End If
+End Sub
+
+## Returns True when the greedy sibling search must stop at the current
+## node: both children are leaves, or no descendant can beat the best cost
+## already found. Applies the centroid tie-break before comparing.
+Private Function DoneDescending(child1 As Integer, child2 As Integer, leaf1 As Boolean, leaf2 As Boolean, lowerCost1 As Double, lowerCost2 As Double, centerDX As Double, centerDY As Double) As Boolean
+If leaf1 And leaf2 Then
+Return True
+End If
+
+Me.ResolveLowerCosts(child1, child2, leaf1, lowerCost1, lowerCost2, centerDX, centerDY)
+Var scratch As TreeScratch = Me.Scratch()
+Return scratch.SiblingBestCost <= scratch.SiblingLowerCost1 And scratch.SiblingBestCost <= scratch.SiblingLowerCost2
+End Function
+
+## Descends along the cheaper child after tie-breaking, ported from the
+## descent tail of upstream b2FindBestSibling. Updates the running area and
+## inflation costs held in TreeScratch and returns the child node index.
+Private Function NextDescendIndex(child1 As Integer, child2 As Integer, leaf1 As Boolean, lowerDX As Double, lowerDY As Double, upperDX As Double, upperDY As Double) As Integer
+Var scratch As TreeScratch = Me.Scratch()
+Var index As Integer = child2
+If scratch.SiblingLowerCost1 < scratch.SiblingLowerCost2 And leaf1 = False Then
+index = child1
+End If
+
+Var chosen As TreeNode = Me.Nodes[index]
+scratch.SiblingAreaBase = 2.0 * ((chosen.Bounds.UpperBound.X - chosen.Bounds.LowerBound.X) + (chosen.Bounds.UpperBound.Y - chosen.Bounds.LowerBound.Y))
+scratch.SiblingDirectCost = 2.0 * ((Maths.Max(chosen.Bounds.UpperBound.X, upperDX) - Maths.Min(chosen.Bounds.LowerBound.X, lowerDX)) + (Maths.Max(chosen.Bounds.UpperBound.Y, upperDY) - Maths.Min(chosen.Bounds.LowerBound.Y, lowerDY)))
+Return index
+End Function
+
+## Greedy branch-and-bound sibling search using the surface area heuristic,
+## ported from upstream b2FindBestSibling. All costs are computed from
+## scalars so warm insertion allocates nothing. Descends a single greedy
+## path, breaking ties on centroid distance when neither lower bound rules
+## out a descent.
+Private Function FindBestSibling(lowerDX As Double, lowerDY As Double, upperDX As Double, upperDY As Double) As Integer
+Var centerDX As Double = 0.5 * (lowerDX + upperDX)
+Var centerDY As Double = 0.5 * (lowerDY + upperDY)
+Var widthD As Double = upperDX - lowerDX
+Var heightD As Double = upperDY - lowerDY
+Var areaD As Double = 2.0 * (widthD + heightD)
+
+Var nodes As Array(Of TreeNode) = Me.Nodes
+Var rootIndex As Integer = Me.Root
+Var rootBox As AABB = nodes[rootIndex].Bounds
+Var scratch As TreeScratch = Me.Scratch()
+
+# Area of the current node.
+scratch.SiblingAreaBase = AABB.Perimeter(rootBox)
+
+# Area of the root inflated to hold the leaf, and the running inherited
+# cost seen by descendants.
+scratch.SiblingDirectCost = 2.0 * ((Maths.Max(rootBox.UpperBound.X, upperDX) - Maths.Min(rootBox.LowerBound.X, lowerDX)) + (Maths.Max(rootBox.UpperBound.Y, upperDY) - Maths.Min(rootBox.LowerBound.Y, lowerDY)))
+Var inheritedCost As Double = 0.0
+
+scratch.SiblingBest = rootIndex
+scratch.SiblingBestCost = scratch.SiblingDirectCost
+
+Var index As Integer = rootIndex
+While nodes[index].Height > 0
+Var child1 As Integer = nodes[index].Child1
+Var child2 As Integer = nodes[index].Child2
+
+# Cost of creating a new parent for this node and the new leaf.
+Var cost As Double = scratch.SiblingDirectCost + inheritedCost
+If cost < scratch.SiblingBestCost Then
+scratch.SiblingBest = index
+scratch.SiblingBestCost = cost
+End If
+
+inheritedCost = inheritedCost + scratch.SiblingDirectCost - scratch.SiblingAreaBase
+
+Var leaf1 As Boolean = nodes[child1].Height = 0
+Var leaf2 As Boolean = nodes[child2].Height = 0
+
+Var lowerCost1 As Double = Me.EvaluateChildCost(child1, lowerDX, lowerDY, upperDX, upperDY, inheritedCost, areaD)
+Var lowerCost2 As Double = Me.EvaluateChildCost(child2, lowerDX, lowerDY, upperDX, upperDY, inheritedCost, areaD)
+
+If Me.DoneDescending(child1, child2, leaf1, leaf2, lowerCost1, lowerCost2, centerDX, centerDY) Then
+Break
+End If
+
+# Descend along the cheaper child.
+index = Me.NextDescendIndex(child1, child2, leaf1, lowerDX, lowerDY, upperDX, upperDY)
+Wend
+
+Return scratch.SiblingBest
+End Function
+
+## Performs a left or right rotation when node iA is imbalanced, ported from
+## upstream b2RotateNodes. Rotations only happen when they reduce the total
+## perimeter cost. Node heights use integers; leaf height is 0.
+Private Sub RotateNodes(iA As Integer)
+Var nodes As Array(Of TreeNode) = Me.Nodes
+Var nodeA As TreeNode = nodes[iA]
+If nodeA.Height < 2 Then
+Return
+End If
+
+Var iB As Integer = nodeA.Child1
+Var iC As Integer = nodeA.Child2
+Var nodeB As TreeNode = nodes[iB]
+Var nodeC As TreeNode = nodes[iC]
+
+If nodeB.Height = 0 Then
+# B is a leaf and C is internal.
+Var iNodeF As Integer = nodeC.Child1
+Var iNodeG As Integer = nodeC.Child2
+Var nodeF As TreeNode = nodes[iNodeF]
+Var nodeG As TreeNode = nodes[iNodeG]
+
+# Base cost.
+Var costBase As Double = AABB.Perimeter(nodeC.Bounds)
+
+# Cost of swapping B and F.
+Var costBF As Double = AABB.UnionPerimeter(nodeB.Bounds, nodeG.Bounds)
+
+# Cost of swapping B and G.
+Var costBG As Double = AABB.UnionPerimeter(nodeB.Bounds, nodeF.Bounds)
+
+If costBase < costBF And costBase < costBG Then
+# Rotation does not improve cost.
+Return
+End If
+
+If costBF < costBG Then
+# Swap B and F.
+nodeA.Child1 = iNodeF
+nodeC.Child1 = iB
+
+nodeB.Parent = iC
+nodeF.Parent = iA
+
+UnionInto(nodeC.Bounds, nodeB.Bounds, nodeG.Bounds)
+
+nodeC.Height = 1 + Maths.Max(nodeB.Height, nodeG.Height)
+nodeA.Height = 1 + Maths.Max(nodeC.Height, nodeF.Height)
+nodeC.CategoryBits = nodeB.CategoryBits.BitOr(nodeG.CategoryBits)
+nodeA.CategoryBits = nodeC.CategoryBits.BitOr(nodeF.CategoryBits)
+nodeC.Flags = nodeC.Flags.BitOr(nodeB.Flags.BitOr(nodeG.Flags).BitAnd(TreeNode.EnlargedFlag))
+nodeA.Flags = nodeA.Flags.BitOr(nodeC.Flags.BitOr(nodeF.Flags).BitAnd(TreeNode.EnlargedFlag))
+Else
+# Swap B and G.
+nodeA.Child1 = iNodeG
+nodeC.Child2 = iB
+
+nodeB.Parent = iC
+nodeG.Parent = iA
+
+UnionInto(nodeC.Bounds, nodeB.Bounds, nodeF.Bounds)
+
+nodeC.Height = 1 + Maths.Max(nodeB.Height, nodeF.Height)
+nodeA.Height = 1 + Maths.Max(nodeC.Height, nodeG.Height)
+nodeC.CategoryBits = nodeB.CategoryBits.BitOr(nodeF.CategoryBits)
+nodeA.CategoryBits = nodeC.CategoryBits.BitOr(nodeG.CategoryBits)
+nodeC.Flags = nodeC.Flags.BitOr(nodeB.Flags.BitOr(nodeF.Flags).BitAnd(TreeNode.EnlargedFlag))
+nodeA.Flags = nodeA.Flags.BitOr(nodeC.Flags.BitOr(nodeG.Flags).BitAnd(TreeNode.EnlargedFlag))
+End If
+ElseIf nodeC.Height = 0 Then
+# C is a leaf and B is internal.
+Var iNodeD As Integer = nodeB.Child1
+Var iNodeE As Integer = nodeB.Child2
+Var nodeD As TreeNode = nodes[iNodeD]
+Var nodeE As TreeNode = nodes[iNodeE]
+
+# Base cost.
+Var costBase As Double = AABB.Perimeter(nodeB.Bounds)
+
+# Cost of swapping C and D.
+Var costCD As Double = AABB.UnionPerimeter(nodeC.Bounds, nodeE.Bounds)
+
+# Cost of swapping C and E.
+Var costCE As Double = AABB.UnionPerimeter(nodeC.Bounds, nodeD.Bounds)
+
+If costBase < costCD And costBase < costCE Then
+Return
+End If
+
+If costCD < costCE Then
+# Swap C and D.
+nodeA.Child2 = iNodeD
+nodeB.Child1 = iC
+
+nodeC.Parent = iB
+nodeD.Parent = iA
+
+UnionInto(nodeB.Bounds, nodeC.Bounds, nodeE.Bounds)
+
+nodeB.Height = 1 + Maths.Max(nodeC.Height, nodeE.Height)
+nodeA.Height = 1 + Maths.Max(nodeB.Height, nodeD.Height)
+nodeB.CategoryBits = nodeC.CategoryBits.BitOr(nodeE.CategoryBits)
+nodeA.CategoryBits = nodeB.CategoryBits.BitOr(nodeD.CategoryBits)
+nodeB.Flags = nodeB.Flags.BitOr(nodeC.Flags.BitOr(nodeE.Flags).BitAnd(TreeNode.EnlargedFlag))
+nodeA.Flags = nodeA.Flags.BitOr(nodeB.Flags.BitOr(nodeD.Flags).BitAnd(TreeNode.EnlargedFlag))
+Else
+# Swap C and E.
+nodeA.Child2 = iNodeE
+nodeB.Child2 = iC
+
+nodeC.Parent = iB
+nodeE.Parent = iA
+
+UnionInto(nodeB.Bounds, nodeC.Bounds, nodeD.Bounds)
+
+nodeB.Height = 1 + Maths.Max(nodeC.Height, nodeD.Height)
+nodeA.Height = 1 + Maths.Max(nodeB.Height, nodeE.Height)
+nodeB.CategoryBits = nodeC.CategoryBits.BitOr(nodeD.CategoryBits)
+nodeA.CategoryBits = nodeB.CategoryBits.BitOr(nodeE.CategoryBits)
+nodeB.Flags = nodeB.Flags.BitOr(nodeC.Flags.BitOr(nodeD.Flags).BitAnd(TreeNode.EnlargedFlag))
+nodeA.Flags = nodeA.Flags.BitOr(nodeB.Flags.BitOr(nodeE.Flags).BitAnd(TreeNode.EnlargedFlag))
+End If
+Else
+# Both children are internal.
+Var iNodeD As Integer = nodeB.Child1
+Var iNodeE As Integer = nodeB.Child2
+Var iNodeF As Integer = nodeC.Child1
+Var iNodeG As Integer = nodeC.Child2
+Var nodeD As TreeNode = nodes[iNodeD]
+Var nodeE As TreeNode = nodes[iNodeE]
+Var nodeF As TreeNode = nodes[iNodeF]
+Var nodeG As TreeNode = nodes[iNodeG]
+
+Var areaB As Double = AABB.Perimeter(nodeB.Bounds)
+Var areaC As Double = AABB.Perimeter(nodeC.Bounds)
+Var costBase As Double = areaB + areaC
+Var bestRotation As Integer = 0
+Var bestCost As Double = costBase
+
+# Cost of swapping B and F.
+Var costBF As Double = areaB + AABB.UnionPerimeter(nodeB.Bounds, nodeG.Bounds)
+If costBF < bestCost Then
+bestRotation = 1
+bestCost = costBF
+End If
+
+# Cost of swapping B and G.
+Var costBG As Double = areaB + AABB.UnionPerimeter(nodeB.Bounds, nodeF.Bounds)
+If costBG < bestCost Then
+bestRotation = 2
+bestCost = costBG
+End If
+
+# Cost of swapping C and D.
+Var costCD As Double = areaC + AABB.UnionPerimeter(nodeC.Bounds, nodeE.Bounds)
+If costCD < bestCost Then
+bestRotation = 3
+bestCost = costCD
+End If
+
+# Cost of swapping C and E.
+Var costCE As Double = areaC + AABB.UnionPerimeter(nodeC.Bounds, nodeD.Bounds)
+If costCE < bestCost Then
+bestRotation = 4
+End If
+
+If bestRotation = 1 Then
+nodeA.Child1 = iNodeF
+nodeC.Child1 = iB
+
+nodeB.Parent = iC
+nodeF.Parent = iA
+
+UnionInto(nodeC.Bounds, nodeB.Bounds, nodeG.Bounds)
+
+nodeC.Height = 1 + Maths.Max(nodeB.Height, nodeG.Height)
+nodeA.Height = 1 + Maths.Max(nodeC.Height, nodeF.Height)
+nodeC.CategoryBits = nodeB.CategoryBits.BitOr(nodeG.CategoryBits)
+nodeA.CategoryBits = nodeC.CategoryBits.BitOr(nodeF.CategoryBits)
+nodeC.Flags = nodeC.Flags.BitOr(nodeB.Flags.BitOr(nodeG.Flags).BitAnd(TreeNode.EnlargedFlag))
+nodeA.Flags = nodeA.Flags.BitOr(nodeC.Flags.BitOr(nodeF.Flags).BitAnd(TreeNode.EnlargedFlag))
+ElseIf bestRotation = 2 Then
+nodeA.Child1 = iNodeG
+nodeC.Child2 = iB
+
+nodeB.Parent = iC
+nodeG.Parent = iA
+
+UnionInto(nodeC.Bounds, nodeB.Bounds, nodeF.Bounds)
+
+nodeC.Height = 1 + Maths.Max(nodeB.Height, nodeF.Height)
+nodeA.Height = 1 + Maths.Max(nodeC.Height, nodeG.Height)
+nodeC.CategoryBits = nodeB.CategoryBits.BitOr(nodeF.CategoryBits)
+nodeA.CategoryBits = nodeC.CategoryBits.BitOr(nodeG.CategoryBits)
+nodeC.Flags = nodeC.Flags.BitOr(nodeB.Flags.BitOr(nodeF.Flags).BitAnd(TreeNode.EnlargedFlag))
+nodeA.Flags = nodeA.Flags.BitOr(nodeC.Flags.BitOr(nodeG.Flags).BitAnd(TreeNode.EnlargedFlag))
+ElseIf bestRotation = 3 Then
+nodeA.Child2 = iNodeD
+nodeB.Child1 = iC
+
+nodeC.Parent = iB
+nodeD.Parent = iA
+
+UnionInto(nodeB.Bounds, nodeC.Bounds, nodeE.Bounds)
+
+nodeB.Height = 1 + Maths.Max(nodeC.Height, nodeE.Height)
+nodeA.Height = 1 + Maths.Max(nodeB.Height, nodeD.Height)
+nodeB.CategoryBits = nodeC.CategoryBits.BitOr(nodeE.CategoryBits)
+nodeA.CategoryBits = nodeB.CategoryBits.BitOr(nodeD.CategoryBits)
+nodeB.Flags = nodeB.Flags.BitOr(nodeC.Flags.BitOr(nodeE.Flags).BitAnd(TreeNode.EnlargedFlag))
+nodeA.Flags = nodeA.Flags.BitOr(nodeB.Flags.BitOr(nodeD.Flags).BitAnd(TreeNode.EnlargedFlag))
+ElseIf bestRotation = 4 Then
+nodeA.Child2 = iNodeE
+nodeB.Child2 = iC
+
+nodeC.Parent = iB
+nodeE.Parent = iA
+
+UnionInto(nodeB.Bounds, nodeC.Bounds, nodeD.Bounds)
+
+nodeB.Height = 1 + Maths.Max(nodeC.Height, nodeD.Height)
+nodeA.Height = 1 + Maths.Max(nodeB.Height, nodeE.Height)
+nodeB.CategoryBits = nodeC.CategoryBits.BitOr(nodeD.CategoryBits)
+nodeA.CategoryBits = nodeB.CategoryBits.BitOr(nodeE.CategoryBits)
+nodeB.Flags = nodeB.Flags.BitOr(nodeC.Flags.BitOr(nodeD.Flags).BitAnd(TreeNode.EnlargedFlag))
+nodeA.Flags = nodeA.Flags.BitOr(nodeB.Flags.BitOr(nodeE.Flags).BitAnd(TreeNode.EnlargedFlag))
+End If
+End If
+End Sub
+
+## Inserts a leaf node into the tree: finds the best sibling, creates a new
+## parent for the leaf and sibling, then walks back to the root repairing
+## bounds, category bits, heights, and enlarged flags, rotating when
+## requested. Ported from upstream b2InsertLeaf.
+Private Sub InsertLeaf(leaf As Integer, shouldRotate As Boolean)
+If Me.Root = PhysicsConstants.NULL_INDEX Then
+Me.Root = leaf
+Me.Nodes[Me.Root].Parent = PhysicsConstants.NULL_INDEX
+Return
+End If
+
+# Stage 1: find the best sibling for the new leaf.
+Var leafNode As TreeNode = Me.Nodes[leaf]
+Var sibling As Integer = Me.FindBestSibling(leafNode.Bounds.LowerBound.X, leafNode.Bounds.LowerBound.Y, leafNode.Bounds.UpperBound.X, leafNode.Bounds.UpperBound.Y)
+
+# Stage 2: create a new parent for the leaf and sibling.
+Var siblingNode As TreeNode = Me.Nodes[sibling]
+Var oldParent As Integer = siblingNode.Parent
+Var newParent As Integer = Me.AllocateNode()
+Var parentNode As TreeNode = Me.Nodes[newParent]
+
+parentNode.Parent = oldParent
+parentNode.UserData = -1
+AABB.UnionTo(leafNode.Bounds, siblingNode.Bounds, parentNode.Bounds)
+parentNode.CategoryBits = leafNode.CategoryBits.BitOr(siblingNode.CategoryBits)
+parentNode.Height = siblingNode.Height + 1
+parentNode.Child1 = sibling
+parentNode.Child2 = leaf
+parentNode.Flags = TreeNode.AllocatedFlag
+
+If oldParent <> PhysicsConstants.NULL_INDEX Then
+# The sibling was not the root.
+Var grandNode As TreeNode = Me.Nodes[oldParent]
+If grandNode.Child1 = sibling Then
+grandNode.Child1 = newParent
+Else
+grandNode.Child2 = newParent
+End If
+Else
+# The sibling was the root.
+Me.Root = newParent
+End If
+
+siblingNode.Parent = newParent
+leafNode.Parent = newParent
+
+# Stage 3: walk back up the tree fixing heights, bounds, and flags.
+Var index As Integer = leafNode.Parent
+While index <> PhysicsConstants.NULL_INDEX
+Var node As TreeNode = Me.Nodes[index]
+Var child1 As TreeNode = Me.Nodes[node.Child1]
+Var child2 As TreeNode = Me.Nodes[node.Child2]
+
+AABB.UnionTo(child1.Bounds, child2.Bounds, node.Bounds)
+node.CategoryBits = child1.CategoryBits.BitOr(child2.CategoryBits)
+node.Height = 1 + Maths.Max(child1.Height, child2.Height)
+node.Flags = node.Flags.BitOr(child1.Flags.BitOr(child2.Flags).BitAnd(TreeNode.EnlargedFlag))
+
+If shouldRotate Then
+Me.RotateNodes(index)
+End If
+
+index = node.Parent
+Wend
+End Sub
+
+## Removes a leaf node, splicing its sibling into the grandparent and
+## repairing ancestors, ported from upstream b2RemoveLeaf.
+Private Sub RemoveLeaf(leaf As Integer)
+If leaf = Me.Root Then
+Me.Root = PhysicsConstants.NULL_INDEX
+Return
+End If
+
+Var nodes As Array(Of TreeNode) = Me.Nodes
+Var leafNode As TreeNode = nodes[leaf]
+Var parent As Integer = leafNode.Parent
+Var parentNode As TreeNode = nodes[parent]
+Var grandParent As Integer = parentNode.Parent
+Var sibling As Integer = parentNode.Child1
+If parentNode.Child1 = leaf Then
+sibling = parentNode.Child2
+End If
+
+If grandParent <> PhysicsConstants.NULL_INDEX Then
+# Destroy the parent and connect the sibling to the grandparent.
+Var grandNode As TreeNode = nodes[grandParent]
+If grandNode.Child1 = parent Then
+grandNode.Child1 = sibling
+Else
+grandNode.Child2 = sibling
+End If
+nodes[sibling].Parent = grandParent
+Me.FreeNode(parent)
+
+# Adjust ancestor bounds.
+Var index As Integer = grandParent
+While index <> PhysicsConstants.NULL_INDEX
+Var node As TreeNode = nodes[index]
+Var child1 As TreeNode = nodes[node.Child1]
+Var child2 As TreeNode = nodes[node.Child2]
+
+AABB.UnionTo(child1.Bounds, child2.Bounds, node.Bounds)
+node.CategoryBits = child1.CategoryBits.BitOr(child2.CategoryBits)
+node.Height = 1 + Maths.Max(child1.Height, child2.Height)
+
+index = node.Parent
+Wend
+Else
+Me.Root = sibling
+nodes[sibling].Parent = PhysicsConstants.NULL_INDEX
+Me.FreeNode(parent)
+End If
+End Sub
+
+## Creates a leaf proxy holding the given bounds, category bits, and client
+## data, and returns its node index. Bounds must be valid and inside the
+## position limit.
+Function CreateProxy(box As AABB, categoryBits As Integer, userData As Integer) As Integer
+If Not AABB.IsValid(box) Then
+Throw New InvalidArgumentException("DynamicTree.CreateProxy invalid bounds")
+End If
+If box.LowerBound.X <= -PhysicsConstants.POSITION_LIMIT Or box.LowerBound.X >= PhysicsConstants.POSITION_LIMIT Or box.LowerBound.Y <= -PhysicsConstants.POSITION_LIMIT Or box.LowerBound.Y >= PhysicsConstants.POSITION_LIMIT Or box.UpperBound.X <= -PhysicsConstants.POSITION_LIMIT Or box.UpperBound.X >= PhysicsConstants.POSITION_LIMIT Or box.UpperBound.Y <= -PhysicsConstants.POSITION_LIMIT Or box.UpperBound.Y >= PhysicsConstants.POSITION_LIMIT Then
+Throw New InvalidArgumentException("DynamicTree.CreateProxy bounds outside position limit")
+End If
+
+Var proxyId As Integer = Me.AllocateNode()
+Var node As TreeNode = Me.Nodes[proxyId]
+
+AABB.UnionTo(box, box, node.Bounds)
+node.UserData = userData
+node.CategoryBits = categoryBits
+node.Height = 0
+node.Flags = TreeNode.AllocatedFlag.BitOr(TreeNode.LeafFlag)
+
+Me.InsertLeaf(proxyId, True)
+
+Me.ProxyCount = Me.ProxyCount + 1
+
+Return proxyId
+End Function
+
+## Removes and frees a leaf proxy.
+Sub DestroyProxy(proxyId As Integer)
+If proxyId < 0 Or proxyId >= Me.NodeCapacity Then
+Throw New InvalidArgumentException("DynamicTree.DestroyProxy index out of range")
+End If
+If Not Me.Nodes[proxyId].IsLeaf() Then
+Throw New RuntimeException("DynamicTree.DestroyProxy index is not a leaf")
+End If
+
+Me.RemoveLeaf(proxyId)
+Me.FreeNode(proxyId)
+
+Me.ProxyCount = Me.ProxyCount - 1
+End Sub
+
+## Moves a leaf proxy to new bounds: removes and reinserts it without
+## rotation. The bounds must be valid and inside the position limit.
+Sub MoveProxy(proxyId As Integer, box As AABB)
+If Not AABB.IsValid(box) Then
+Throw New InvalidArgumentException("DynamicTree.MoveProxy invalid bounds")
+End If
+If box.UpperBound.X - box.LowerBound.X >= PhysicsConstants.POSITION_LIMIT Or box.UpperBound.Y - box.LowerBound.Y >= PhysicsConstants.POSITION_LIMIT Then
+Throw New InvalidArgumentException("DynamicTree.MoveProxy bounds exceed position limit")
+End If
+If proxyId < 0 Or proxyId >= Me.NodeCapacity Then
+Throw New InvalidArgumentException("DynamicTree.MoveProxy index out of range")
+End If
+If Not Me.Nodes[proxyId].IsLeaf() Then
+Throw New RuntimeException("DynamicTree.MoveProxy index is not a leaf")
+End If
+
+Me.RemoveLeaf(proxyId)
+
+Var node As TreeNode = Me.Nodes[proxyId]
+node.Bounds.LowerBound.Set(box.LowerBound.X, box.LowerBound.Y)
+node.Bounds.UpperBound.Set(box.UpperBound.X, box.UpperBound.Y)
+
+Me.InsertLeaf(proxyId, False)
+End Sub
+
+## Enlarges a leaf proxy to bounds that strictly contain the current leaf
+## bounds, repairing ancestors in place without reinsertion. Ancestors are
+## marked enlarged so the next rebuild restructures them. Ported from
+## upstream b2DynamicTree_EnlargeProxy.
+Sub EnlargeProxy(proxyId As Integer, box As AABB)
+If proxyId < 0 Or proxyId >= Me.NodeCapacity Then
+Throw New InvalidArgumentException("DynamicTree.EnlargeProxy index out of range")
+End If
+Var nodes As Array(Of TreeNode) = Me.Nodes
+Var node As TreeNode = nodes[proxyId]
+If Not node.IsLeaf() Then
+Throw New RuntimeException("DynamicTree.EnlargeProxy index is not a leaf")
+End If
+# The caller must ensure the new bounds are not already contained.
+If AABB.Contains(node.Bounds, box) Then
+Throw New RuntimeException("DynamicTree.EnlargeProxy bounds do not enlarge the leaf")
+End If
+
+node.Bounds.LowerBound.Set(box.LowerBound.X, box.LowerBound.Y)
+node.Bounds.UpperBound.Set(box.UpperBound.X, box.UpperBound.Y)
+
+Var parentIndex As Integer = node.Parent
+While parentIndex <> PhysicsConstants.NULL_INDEX
+Var parentNode As TreeNode = nodes[parentIndex]
+Var changed As Boolean = AABB.Enlarge(parentNode.Bounds, box)
+parentNode.Flags = parentNode.Flags.BitOr(TreeNode.EnlargedFlag)
+parentIndex = parentNode.Parent
+
+If changed = False Then
+Break
+End If
+Wend
+
+While parentIndex <> PhysicsConstants.NULL_INDEX
+Var parentNode As TreeNode = nodes[parentIndex]
+If parentNode.IsEnlarged() Then
+# Early out because this ancestor was previously ascended and marked
+# as enlarged.
+Break
+End If
+
+parentNode.Flags = parentNode.Flags.BitOr(TreeNode.EnlargedFlag)
+parentIndex = parentNode.Parent
+Wend
+End Sub
+
+## Replaces the category bits of a leaf proxy and repairs ancestor bits.
+Sub SetCategoryBits(proxyId As Integer, categoryBits As Integer)
+Var nodes As Array(Of TreeNode) = Me.Nodes
+Var node As TreeNode = nodes[proxyId]
+If Not node.IsLeaf() Then
+Throw New RuntimeException("DynamicTree.SetCategoryBits index is not a leaf")
+End If
+
+node.CategoryBits = categoryBits
+
+# Fix up category bits in ancestor internal nodes.
+Var nodeIndex As Integer = node.Parent
+While nodeIndex <> PhysicsConstants.NULL_INDEX
+Var parentNode As TreeNode = nodes[nodeIndex]
+parentNode.CategoryBits = nodes[parentNode.Child1].CategoryBits.BitOr(nodes[parentNode.Child2].CategoryBits)
+
+nodeIndex = parentNode.Parent
+Wend
+End Sub
+
+## Returns the category bits of a node.
+Function GetCategoryBits(proxyId As Integer) As Integer
+If proxyId < 0 Or proxyId >= Me.NodeCapacity Then
+Throw New InvalidArgumentException("DynamicTree.GetCategoryBits index out of range")
+End If
+Return Me.Nodes[proxyId].CategoryBits
+End Function
+
+## Returns the height of the tree, or 0 for an empty tree.
+Function GetHeight() As Integer
+If Me.Root = PhysicsConstants.NULL_INDEX Then
+Return 0
+End If
+
+Return Me.Nodes[Me.Root].Height
+End Function
+
+## Returns the ratio of the summed internal node perimeter to the root
+## perimeter; 0 for an empty tree.
+Function GetAreaRatio() As Double
+If Me.Root = PhysicsConstants.NULL_INDEX Then
+Return 0.0
+End If
+
+Var rootNode As TreeNode = Me.Nodes[Me.Root]
+Var rootArea As Double = AABB.Perimeter(rootNode.Bounds)
+
+Var totalArea As Double = 0.0
+For i As Integer = 0 To Me.NodeCapacity - 1
+Var node As TreeNode = Me.Nodes[i]
+If node.IsAllocated() = False Or node.IsLeaf() Or i = Me.Root Then
+Continue
+End If
+
+totalArea = totalArea + AABB.Perimeter(node.Bounds)
+Next i
+
+Return totalArea / rootArea
+End Function
+
+## Returns the root bounds, or a zero-area box at the origin for an empty
+## tree.
+Function GetRootBounds() As AABB
+Var result As New AABB
+Me.GetRootBoundsTo(result)
+Return result
+End Function
+
+## Writes the root bounds into the caller-owned out box and returns out.
+## A zero-area box at the origin is written for an empty tree. The reuse
+## form of GetRootBounds for warm code.
+Function GetRootBoundsTo(out As AABB) As AABB
+If Me.Root <> PhysicsConstants.NULL_INDEX Then
+Var rootNode As TreeNode = Me.Nodes[Me.Root]
+out.LowerBound.Set(rootNode.Bounds.LowerBound.X, rootNode.Bounds.LowerBound.Y)
+out.UpperBound.Set(rootNode.Bounds.UpperBound.X, rootNode.Bounds.UpperBound.Y)
+Else
+out.LowerBound.Set(0.0, 0.0)
+out.UpperBound.Set(0.0, 0.0)
+End If
+Return out
+End Function
+
+## Returns the client data of a node.
+Function GetUserData(proxyId As Integer) As Integer
+If proxyId < 0 Or proxyId >= Me.NodeCapacity Then
+Throw New InvalidArgumentException("DynamicTree.GetUserData index out of range")
+End If
+Return Me.Nodes[proxyId].UserData
+End Function
+
+## Returns a copy of the bounds of a node.
+Function GetAABB(proxyId As Integer) As AABB
+Var result As New AABB
+Me.GetAABBTo(proxyId, result)
+Return result
+End Function
+
+## Writes the bounds of a node into the caller-owned out box and returns
+## out. The reuse form of GetAABB for warm code.
+Function GetAABBTo(proxyId As Integer, out As AABB) As AABB
+If proxyId < 0 Or proxyId >= Me.NodeCapacity Then
+Throw New InvalidArgumentException("DynamicTree.GetAABB index out of range")
+End If
+Var node As TreeNode = Me.Nodes[proxyId]
+out.LowerBound.Set(node.Bounds.LowerBound.X, node.Bounds.LowerBound.Y)
+out.UpperBound.Set(node.Bounds.UpperBound.X, node.Bounds.UpperBound.Y)
+Return out
+End Function
+
+## Queries the tree for leaves whose bounds overlap the given box and whose
+## category bits intersect maskBits, returning fresh stats. Overlapping
+## leaves are reported through the callback; returning False from the
+## callback stops the traversal early.
+Function Query(box As AABB, maskBits As Integer, callback As TreeQueryCallback) As TreeStats
+Var stats As New TreeStats
+Me.QueryTo(box, maskBits, callback, stats)
+Return stats
+End Function
+
+## The reuse form of Query: fills the caller-owned stats object and returns
+## it.
+Function QueryTo(box As AABB, maskBits As Integer, callback As TreeQueryCallback, stats As TreeStats) As TreeStats
+stats.Reset()
+
+If Me.NodeCount = 0 Then
+Return stats
+End If
+
+Var nodes As Array(Of TreeNode) = Me.Nodes
+Var stack As IntegerList = Me.Scratch().Stack
+stack.Clear()
+stack.Append(Me.Root)
+
+While stack.Count > 0
+Var nodeId As Integer = stack.Pop()
+Var node As TreeNode = nodes[nodeId]
+stats.NodeVisits = stats.NodeVisits + 1
+
+If AABB.Overlaps(node.Bounds, box) And node.CategoryBits.BitAnd(maskBits) <> 0 Then
+If node.IsLeaf() Then
+# Report the leaf to user code.
+Var proceed As Boolean = callback.VisitLeaf(nodeId, node.UserData)
+stats.LeafVisits = stats.LeafVisits + 1
+
+If proceed = False Then
+Return stats
+End If
+Else
+stack.Append(node.Child1)
+stack.Append(node.Child2)
+End If
+End If
+Wend
+
+Return stats
+End Function
+
+## Writes the axis-aligned bounds of the segment from (p1x, p1y) to
+## (p2x, p2y) into the target box without allocating.
+Private Sub WriteSegmentBounds(p1x As Double, p1y As Double, p2x As Double, p2y As Double, target As AABB)
+If p1x < p2x Then
+target.LowerBound.Set(p1x, Maths.Min(p1y, p2y))
+target.UpperBound.Set(p2x, Maths.Max(p1y, p2y))
+Else
+target.LowerBound.Set(p2x, Maths.Min(p1y, p2y))
+target.UpperBound.Set(p1x, Maths.Max(p1y, p2y))
+End If
+End Sub
+
+## Returns True when the segment through (p1x, p1y) with perpendicular
+## direction components (vx, vy) and absolute components (avx, avy) is
+## separated from the node bounds inflated by the given extents. Ported from
+## the Gino p80 separating-axis test used by the tree ray and shape casts.
+Private Function AxisSeparates(nodeBounds As AABB, p1x As Double, p1y As Double, vx As Double, vy As Double, avx As Double, avy As Double, exX As Double, exY As Double) As Boolean
+Var cx As Double = 0.5 * (nodeBounds.LowerBound.X + nodeBounds.UpperBound.X)
+Var cy As Double = 0.5 * (nodeBounds.LowerBound.Y + nodeBounds.UpperBound.Y)
+Var hx As Double = 0.5 * (nodeBounds.UpperBound.X - nodeBounds.LowerBound.X) + exX
+Var hy As Double = 0.5 * (nodeBounds.UpperBound.Y - nodeBounds.LowerBound.Y) + exY
+Var term1 As Double = (vx * (p1x - cx) + vy * (p1y - cy)).Abs()
+Var term2 As Double = avx * hx + avy * hy
+Return term2 < term1
+End Function
+
+## Pushes both children of an internal node onto the traversal stack so the
+## child whose centre is closer to (p1x, p1y) is popped first, matching the
+## upstream traversal order.
+Private Sub PushChildrenByDistance(nodes As Array(Of TreeNode), node As TreeNode, p1x As Double, p1y As Double, stack As IntegerList)
+Var child1 As Integer = node.Child1
+Var child2 As Integer = node.Child2
+Var child1Node As TreeNode = nodes[child1]
+Var child2Node As TreeNode = nodes[child2]
+Var c1x As Double = 0.5 * (child1Node.Bounds.LowerBound.X + child1Node.Bounds.UpperBound.X)
+Var c1y As Double = 0.5 * (child1Node.Bounds.LowerBound.Y + child1Node.Bounds.UpperBound.Y)
+Var c2x As Double = 0.5 * (child2Node.Bounds.LowerBound.X + child2Node.Bounds.UpperBound.X)
+Var c2y As Double = 0.5 * (child2Node.Bounds.LowerBound.Y + child2Node.Bounds.UpperBound.Y)
+Var d1x As Double = c1x - p1x
+Var d1y As Double = c1y - p1y
+Var d2x As Double = c2x - p1x
+Var d2y As Double = c2y - p1y
+If d1x * d1x + d1y * d1y < d2x * d2x + d2y * d2y Then
+stack.Append(child2)
+stack.Append(child1)
+Else
+stack.Append(child1)
+stack.Append(child2)
+End If
+End Sub
+
+## Writes the swept bounds of the origin box translated by (tx, ty) into the
+## target box without allocating, matching the upstream min/max construction.
+Private Sub WriteSweptBounds(originAABB As AABB, tx As Double, ty As Double, totalAABB As AABB)
+Var lowerX As Double = originAABB.LowerBound.X
+Var lowerY As Double = originAABB.LowerBound.Y
+Var upperX As Double = originAABB.UpperBound.X
+Var upperY As Double = originAABB.UpperBound.Y
+If tx < 0.0 Then
+lowerX = lowerX + tx
+End If
+If ty < 0.0 Then
+lowerY = lowerY + ty
+End If
+If tx > 0.0 Then
+upperX = upperX + tx
+End If
+If ty > 0.0 Then
+upperY = upperY + ty
+End If
+totalAABB.LowerBound.Set(lowerX, lowerY)
+totalAABB.UpperBound.Set(upperX, upperY)
+End Sub
+
+## Casts a ray against the tree, reporting candidate leaves through the
+## callback, and returns fresh stats. The callback returns 0 to terminate
+## the cast, -1 to skip a leaf, or a fraction in (0, maxFraction] to narrow
+## the cast. Ported from upstream b2DynamicTree_RayCast.
+Function RayCast(input As RayCastInput, maskBits As Integer, callback As TreeRayCastCallback) As TreeStats
+Var stats As New TreeStats
+Me.RayCastTo(input, maskBits, callback, stats)
+Return stats
+End Function
+
+## The reuse form of RayCast: fills the caller-owned stats object and
+## returns it.
+Function RayCastTo(input As RayCastInput, maskBits As Integer, callback As TreeRayCastCallback, stats As TreeStats) As TreeStats
+stats.Reset()
+
+If Me.NodeCount = 0 Then
+Return stats
+End If
+
+Var scratch As TreeScratch = Me.Scratch()
+Var nodes As Array(Of TreeNode) = Me.Nodes
+Var stack As IntegerList = scratch.Stack
+
+Var p1x As Double = input.Origin.X
+Var p1y As Double = input.Origin.Y
+Var dx As Double = input.Translation.X
+Var dy As Double = input.Translation.Y
+
+# Unit direction of the ray; upstream b2Normalize returns the zero vector
+# below the float epsilon.
+Var length As Double = Maths.Sqrt(dx * dx + dy * dy)
+Var rx As Double = 0.0
+Var ry As Double = 0.0
+If length >= PhysicsConstants.FLT_EPSILON Then
+rx = dx / length
+ry = dy / length
+End If
+
+# v is the left perpendicular of r.
+Var vx As Double = -ry
+Var vy As Double = rx
+Var avx As Double = vx.Abs()
+Var avy As Double = vy.Abs()
+
+# Separating axis for segments (Gino, p80):
+# |dot(v, p1 - c)| > dot(|v|, h)
+
+Var maxFraction As Double = input.MaxFraction
+
+Var p2x As Double = p1x + maxFraction * dx
+Var p2y As Double = p1y + maxFraction * dy
+
+# Build a bounding box for the segment.
+Var segmentAABB As AABB = scratch.SegmentBounds
+Me.WriteSegmentBounds(p1x, p1y, p2x, p2y, segmentAABB)
+
+# The input copy handed to callbacks between leaves.
+Var subInput As RayCastInput = scratch.RayInput
+subInput.Origin.Set(p1x, p1y)
+subInput.Translation.Set(dx, dy)
+
+stack.Clear()
+stack.Append(Me.Root)
+
+While stack.Count > 0
+Var nodeId As Integer = stack.Pop()
+Var node As TreeNode = nodes[nodeId]
+stats.NodeVisits = stats.NodeVisits + 1
+
+If node.CategoryBits.BitAnd(maskBits) = 0 Or AABB.Overlaps(node.Bounds, segmentAABB) = False Then
+Continue
+End If
+
+# Separating axis for segments (Gino, p80). Radius extension is already
+# included in the node bounds.
+If Me.AxisSeparates(node.Bounds, p1x, p1y, vx, vy, avx, avy, 0.0, 0.0) Then
+Continue
+End If
+
+If node.IsLeaf() Then
+subInput.MaxFraction = maxFraction
+
+Var value As Double = callback.VisitLeaf(subInput, nodeId, node.UserData)
+stats.LeafVisits = stats.LeafVisits + 1
+
+If value = 0.0 Then
+# The client has terminated the ray cast.
+Return stats
+End If
+
+If value > 0.0 And value <= maxFraction Then
+# Update the segment bounding box.
+maxFraction = value
+p2x = p1x + maxFraction * dx
+p2y = p1y + maxFraction * dy
+Me.WriteSegmentBounds(p1x, p1y, p2x, p2y, segmentAABB)
+End If
+Else
+# Order children by distance to the ray start so the closer subtree is
+# traversed first.
+Me.PushChildrenByDistance(nodes, node, p1x, p1y, stack)
+End If
+Wend
+
+Return stats
+End Function
+
+## Casts a shape through the tree, reporting candidate leaves through the
+## callback, and returns fresh stats. The callback returns 0 to terminate
+## the cast, -1 to skip a leaf, or a fraction in (0, maxFraction) to narrow
+## the cast. Ported from upstream b2DynamicTree_ShapeCast.
+Function ShapeCast(input As ShapeCastInput, maskBits As Integer, callback As TreeShapeCastCallback) As TreeStats
+Var stats As New TreeStats
+Me.ShapeCastTo(input, maskBits, callback, stats)
+Return stats
+End Function
+
+## The reuse form of ShapeCast: fills the caller-owned stats object and
+## returns it.
+Function ShapeCastTo(input As ShapeCastInput, maskBits As Integer, callback As TreeShapeCastCallback, stats As TreeStats) As TreeStats
+stats.Reset()
+
+If Me.NodeCount = 0 Or input.Proxy.Count = 0 Then
+Return stats
+End If
+
+Var scratch As TreeScratch = Me.Scratch()
+Var nodes As Array(Of TreeNode) = Me.Nodes
+Var stack As IntegerList = scratch.Stack
+
+# Build the start bounds of the cast shape, inflated by its radius.
+Var originAABB As AABB = scratch.OriginBounds
+originAABB.LowerBound.Set(input.Proxy.Points[0].X, input.Proxy.Points[0].Y)
+originAABB.UpperBound.Set(input.Proxy.Points[0].X, input.Proxy.Points[0].Y)
+For i As Integer = 1 To input.Proxy.Count - 1
+Var px As Double = input.Proxy.Points[i].X
+Var py As Double = input.Proxy.Points[i].Y
+If px < originAABB.LowerBound.X Then
+originAABB.LowerBound.Set(px, originAABB.LowerBound.Y)
+End If
+If py < originAABB.LowerBound.Y Then
+originAABB.LowerBound.Set(originAABB.LowerBound.X, py)
+End If
+If originAABB.UpperBound.X < px Then
+originAABB.UpperBound.Set(px, originAABB.UpperBound.Y)
+End If
+If originAABB.UpperBound.Y < py Then
+originAABB.UpperBound.Set(originAABB.UpperBound.X, py)
+End If
+Next i
+
+Var radius As Double = input.Proxy.Radius
+originAABB.LowerBound.Set(originAABB.LowerBound.X - radius, originAABB.LowerBound.Y - radius)
+originAABB.UpperBound.Set(originAABB.UpperBound.X + radius, originAABB.UpperBound.Y + radius)
+
+Var p1x As Double = 0.5 * (originAABB.LowerBound.X + originAABB.UpperBound.X)
+Var p1y As Double = 0.5 * (originAABB.LowerBound.Y + originAABB.UpperBound.Y)
+Var exX As Double = 0.5 * (originAABB.UpperBound.X - originAABB.LowerBound.X)
+Var exY As Double = 0.5 * (originAABB.UpperBound.Y - originAABB.LowerBound.Y)
+
+# v is the left perpendicular of the translation.
+Var rx As Double = input.Translation.X
+Var ry As Double = input.Translation.Y
+Var vx As Double = -ry
+Var vy As Double = rx
+Var avx As Double = vx.Abs()
+Var avy As Double = vy.Abs()
+
+# Separating axis for segments (Gino, p80):
+# |dot(v, p1 - c)| > dot(|v|, h)
+
+Var maxFraction As Double = input.MaxFraction
+
+# Build the total swept box for the cast.
+Var tx As Double = maxFraction * rx
+Var ty As Double = maxFraction * ry
+Var totalAABB As AABB = scratch.TotalBounds
+Me.WriteSweptBounds(originAABB, tx, ty, totalAABB)
+
+# The input copy handed to callbacks between leaves.
+Var subInput As ShapeCastInput = scratch.CastInput
+subInput.Proxy = input.Proxy
+subInput.Translation.Set(rx, ry)
+subInput.CanEncroach = input.CanEncroach
+
+stack.Clear()
+stack.Append(Me.Root)
+
+While stack.Count > 0
+Var nodeId As Integer = stack.Pop()
+Var node As TreeNode = nodes[nodeId]
+stats.NodeVisits = stats.NodeVisits + 1
+
+If node.CategoryBits.BitAnd(maskBits) = 0 Or AABB.Overlaps(node.Bounds, totalAABB) = False Then
+Continue
+End If
+
+# Separating axis for segments (Gino, p80). Radius extension is already
+# included in the node bounds; the cast shape extent is added here.
+If Me.AxisSeparates(node.Bounds, p1x, p1y, vx, vy, avx, avy, exX, exY) Then
+Continue
+End If
+
+If node.IsLeaf() Then
+subInput.MaxFraction = maxFraction
+
+Var value As Double = callback.VisitLeaf(subInput, nodeId, node.UserData)
+stats.LeafVisits = stats.LeafVisits + 1
+
+If value = 0.0 Then
+# The client has terminated the shape cast.
+Return stats
+End If
+
+If value > 0.0 And value < maxFraction Then
+# Update the total swept box.
+maxFraction = value
+tx = maxFraction * rx
+ty = maxFraction * ry
+Me.WriteSweptBounds(originAABB, tx, ty, totalAABB)
+End If
+Else
+# Order children by distance to the cast centre so the closer subtree
+# is traversed first.
+Me.PushChildrenByDistance(nodes, node, p1x, p1y, stack)
+End If
+Wend
+
+Return stats
+End Function
+
+## Computes the exact height of the subtree rooted at nodeId. Debug helper
+## backing Validate.
+Private Function ComputeHeight(nodeId As Integer) As Integer
+If nodeId < 0 Or nodeId >= Me.NodeCapacity Then
+Throw New RuntimeException("DynamicTree.ComputeHeight index out of range")
+End If
+Var node As TreeNode = Me.Nodes[nodeId]
+
+If node.IsLeaf() Then
+Return 0
+End If
+
+Var height1 As Integer = Me.ComputeHeight(node.Child1)
+Var height2 As Integer = Me.ComputeHeight(node.Child2)
+Return 1 + Maths.Max(height1, height2)
+End Function
+
+## Recursively checks parent and child links. Debug helper backing Validate.
+Private Sub ValidateStructure(index As Integer)
+If index = PhysicsConstants.NULL_INDEX Then
+Return
+End If
+
+If index < 0 Or index >= Me.NodeCapacity Then
+Throw New RuntimeException("DynamicTree.ValidateStructure index out of range")
+End If
+
+Var node As TreeNode = Me.Nodes[index]
+
+If node.Flags <> 0 And node.IsAllocated() = False Then
+Throw New RuntimeException("DynamicTree free node still carries flags")
+End If
+
+If node.IsLeaf() Then
+If node.Height <> 0 Then
+Throw New RuntimeException("DynamicTree leaf has nonzero height")
+End If
+Return
+End If
+
+Var child1 As Integer = node.Child1
+Var child2 As Integer = node.Child2
+
+If child1 < 0 Or child1 >= Me.NodeCapacity Or child2 < 0 Or child2 >= Me.NodeCapacity Then
+Throw New RuntimeException("DynamicTree child index out of range")
+End If
+
+If Me.Nodes[child1].Parent <> index Or Me.Nodes[child2].Parent <> index Then
+Throw New RuntimeException("DynamicTree child parent link mismatch")
+End If
+
+Me.ValidateStructure(child1)
+Me.ValidateStructure(child2)
+End Sub
+
+## Recursively checks stored heights, containment, and category bits.
+## Debug helper backing Validate.
+Private Sub ValidateMetrics(index As Integer)
+If index = PhysicsConstants.NULL_INDEX Then
+Return
+End If
+
+Var node As TreeNode = Me.Nodes[index]
+
+If node.IsLeaf() Then
+If node.Height <> 0 Then
+Throw New RuntimeException("DynamicTree leaf has nonzero height")
+End If
+Return
+End If
+
+Var child1 As Integer = node.Child1
+Var child2 As Integer = node.Child2
+
+If child1 < 0 Or child1 >= Me.NodeCapacity Or child2 < 0 Or child2 >= Me.NodeCapacity Then
+Throw New RuntimeException("DynamicTree child index out of range")
+End If
+
+Var height1 As Integer = Me.Nodes[child1].Height
+Var height2 As Integer = Me.Nodes[child2].Height
+Var height As Integer = 1 + Maths.Max(height1, height2)
+If node.Height <> height Then
+Throw New RuntimeException("DynamicTree stored height mismatch")
+End If
+
+If AABB.Contains(node.Bounds, Me.Nodes[child1].Bounds) = False Then
+Throw New RuntimeException("DynamicTree node does not contain child 1 bounds")
+End If
+If AABB.Contains(node.Bounds, Me.Nodes[child2].Bounds) = False Then
+Throw New RuntimeException("DynamicTree node does not contain child 2 bounds")
+End If
+
+Var categoryBits As Integer = Me.Nodes[child1].CategoryBits.BitOr(Me.Nodes[child2].CategoryBits)
+If node.CategoryBits <> categoryBits Then
+Throw New RuntimeException("DynamicTree node category bits mismatch")
+End If
+
+Me.ValidateMetrics(child1)
+Me.ValidateMetrics(child2)
+End Sub
+
+## Validates the whole tree: structure, metrics, free-list integrity,
+## height agreement, and the node accounting identity. Called after
+## mutations by the seeded stress tests and by world validation.
+Sub Validate()
+If Me.Root = PhysicsConstants.NULL_INDEX Then
+Return
+End If
+
+Me.ValidateStructure(Me.Root)
+Me.ValidateMetrics(Me.Root)
+
+Var freeCount As Integer = 0
+Var freeIndex As Integer = Me.FreeList
+While freeIndex <> PhysicsConstants.NULL_INDEX
+If freeIndex < 0 Or freeIndex >= Me.NodeCapacity Then
+Throw New RuntimeException("DynamicTree free-list index out of range")
+End If
+freeIndex = Me.Nodes[freeIndex].Parent
+freeCount = freeCount + 1
+Wend
+
+Var height As Integer = Me.GetHeight()
+Var computedHeight As Integer = Me.ComputeHeight(Me.Root)
+If height <> computedHeight Then
+Throw New RuntimeException("DynamicTree stored height differs from computed height")
+End If
+
+If Me.NodeCount + freeCount <> Me.NodeCapacity Then
+Throw New RuntimeException("DynamicTree node accounting mismatch")
+End If
+End Sub
+
+## Checks that no allocated node carries the enlarged flag, matching
+## upstream b2DynamicTree_ValidateNoEnlarged. Only meaningful right after a
+## rebuild that clears all enlargement.
+Sub ValidateNoEnlarged()
+For i As Integer = 0 To Me.NodeCapacity - 1
+Var node As TreeNode = Me.Nodes[i]
+If node.IsAllocated() Then
+If node.IsEnlarged() Then
+Throw New RuntimeException("DynamicTree node is enlarged after rebuild")
+End If
+End If
+Next i
+End Sub
+
+## Rebuilds the tree optimally, gathering every leaf and every unenlarged
+## internal node as rebuild leaves and freeing enlarged internal nodes.
+## With fullBuild True every internal node is rebuilt. Returns the number
+## of rebuild leaves. Not safe to query the tree during this operation.
+Function Rebuild(fullBuild As Boolean) As Integer
+Var proxyCount As Integer = Me.ProxyCount
+If proxyCount = 0 Then
+Return 0
+End If
+
+Var scratch As TreeScratch = Me.Scratch()
+Var leafIndices As IntegerList = scratch.LeafIndices
+Var centersX As DoubleList = scratch.LeafCentersX
+Var centersY As DoubleList = scratch.LeafCentersY
+Var walkStack As IntegerList = scratch.Stack
+leafIndices.Clear()
+centersX.Clear()
+centersY.Clear()
+walkStack.Clear()
+
+Var nodes As Array(Of TreeNode) = Me.Nodes
+
+# Gather all proxy nodes that have grown and all internal nodes that have
+# not grown; both become leaves of the rebuilt tree. Free internal nodes
+# that have grown.
+Var nodeIndex As Integer = Me.Root
+Var gathering As Boolean = True
+While gathering
+Var node As TreeNode = nodes[nodeIndex]
+
+If node.Height = 0 Or (node.IsEnlarged() = False And fullBuild = False) Then
+leafIndices.Append(nodeIndex)
+centersX.Append(0.5 * (node.Bounds.LowerBound.X + node.Bounds.UpperBound.X))
+centersY.Append(0.5 * (node.Bounds.LowerBound.Y + node.Bounds.UpperBound.Y))
+
+# Detach.
+node.Parent = PhysicsConstants.NULL_INDEX
+Else
+Var doomedNodeIndex As Integer = nodeIndex
+
+# Handle children.
+nodeIndex = node.Child1
+walkStack.Append(node.Child2)
+
+# Remove the doomed node.
+Me.FreeNode(doomedNodeIndex)
+
+Continue
+End If
+
+If walkStack.Count = 0 Then
+gathering = False
+Else
+nodeIndex = walkStack.Pop()
+End If
+Wend
+
+If leafIndices.Count > proxyCount Then
+Throw New RuntimeException("DynamicTree rebuild gathered more leaves than proxies")
+End If
+
+Me.Root = Me.BuildTree(leafIndices.Count)
+
+Me.Validate()
+
+Return leafIndices.Count
+End Function
+
+## Partitions the leaf index range [startIndex, startIndex + count) around
+## the median of the longest centroid axis using the Hoare partition
+## scheme, ported from upstream b2PartitionMid. Returns the split offset
+## relative to startIndex.
+Private Function PartitionMid(startIndex As Integer, count As Integer) As Integer
+# Handle the trivial case.
+If count <= 2 Then
+Return count \ 2
+End If
+
+Var centersX As DoubleList = Me.Scratch().LeafCentersX
+Var centersY As DoubleList = Me.Scratch().LeafCentersY
+
+Var lowerX As Double = centersX.Items[startIndex]
+Var lowerY As Double = centersY.Items[startIndex]
+Var upperX As Double = lowerX
+Var upperY As Double = lowerY
+For i As Integer = 1 To count - 1
+If centersX.Items[startIndex + i] < lowerX Then
+lowerX = centersX.Items[startIndex + i]
+End If
+If centersY.Items[startIndex + i] < lowerY Then
+lowerY = centersY.Items[startIndex + i]
+End If
+If upperX < centersX.Items[startIndex + i] Then
+upperX = centersX.Items[startIndex + i]
+End If
+If upperY < centersY.Items[startIndex + i] Then
+upperY = centersY.Items[startIndex + i]
+End If
+Next i
+
+Var dx As Double = upperX - lowerX
+Var dy As Double = upperY - lowerY
+Var centerX As Double = 0.5 * (lowerX + upperX)
+Var centerY As Double = 0.5 * (lowerY + upperY)
+
+# Partition the longest axis.
+Var i1 As Integer = 0
+If dx > dy Then
+i1 = Me.PartitionAxis(startIndex, count, True, centerX)
+Else
+i1 = Me.PartitionAxis(startIndex, count, False, centerY)
+End If
+
+If i1 > 0 And i1 < count Then
+Return i1
+End If
+
+Return count \ 2
+End Function
+
+## Runs the Hoare partition scan for one centroid axis over the leaf range
+## [startIndex, startIndex + count) and returns the split offset relative to
+## startIndex, ported from the per-axis halves of upstream b2PartitionMid.
+Private Function PartitionAxis(startIndex As Integer, count As Integer, axisIsX As Boolean, pivot As Double) As Integer
+Var indices As IntegerList = Me.Scratch().LeafIndices
+Var centersX As DoubleList = Me.Scratch().LeafCentersX
+Var centersY As DoubleList = Me.Scratch().LeafCentersY
+
+Var i1 As Integer = 0
+Var i2 As Integer = count
+While i1 < i2
+If axisIsX Then
+While i1 < i2 And centersX.Items[startIndex + i1] < pivot
+i1 = i1 + 1
+Wend
+
+While i1 < i2 And centersX.Items[startIndex + i2 - 1] >= pivot
+i2 = i2 - 1
+Wend
+Else
+While i1 < i2 And centersY.Items[startIndex + i1] < pivot
+i1 = i1 + 1
+Wend
+
+While i1 < i2 And centersY.Items[startIndex + i2 - 1] >= pivot
+i2 = i2 - 1
+Wend
+End If
+
+If i1 < i2 Then
+# Swap indices and centres.
+Var tempIndex As Integer = indices.Items[startIndex + i1]
+indices.Items[startIndex + i1] = indices.Items[startIndex + i2 - 1]
+indices.Items[startIndex + i2 - 1] = tempIndex
+
+Var tempX As Double = centersX.Items[startIndex + i1]
+centersX.Items[startIndex + i1] = centersX.Items[startIndex + i2 - 1]
+centersX.Items[startIndex + i2 - 1] = tempX
+
+Var tempY As Double = centersY.Items[startIndex + i1]
+centersY.Items[startIndex + i1] = centersY.Items[startIndex + i2 - 1]
+centersY.Items[startIndex + i2 - 1] = tempY
+
+i1 = i1 + 1
+i2 = i2 - 1
+End If
+Wend
+
+Return i1
+End Function
+
+## Writes one rebuild work item at the given stack depth, appending when the
+## depth is new and overwriting a popped slot otherwise.
+Private Sub SetRebuildItem(depth As Integer, nodeIndex As Integer, childCount As Integer, startIndex As Integer, splitIndex As Integer, endIndex As Integer)
+Var scratch As TreeScratch = Me.Scratch()
+If depth < scratch.RebuildNodeIndex.Count Then
+scratch.RebuildNodeIndex.SetAt(depth, nodeIndex)
+scratch.RebuildChildCount.SetAt(depth, childCount)
+scratch.RebuildStartIndex.SetAt(depth, startIndex)
+scratch.RebuildSplitIndex.SetAt(depth, splitIndex)
+scratch.RebuildEndIndex.SetAt(depth, endIndex)
+Else
+scratch.RebuildNodeIndex.Append(nodeIndex)
+scratch.RebuildChildCount.Append(childCount)
+scratch.RebuildStartIndex.Append(startIndex)
+scratch.RebuildSplitIndex.Append(splitIndex)
+scratch.RebuildEndIndex.Append(endIndex)
+End If
+End Sub
+
+## Builds a balanced tree over the gathered leaf indices with the
+## median-split heuristic, ported from upstream b2BuildTree. Returns the
+## root node index.
+Private Function BuildTree(leafCount As Integer) As Integer
+Var nodes As Array(Of TreeNode) = Me.Nodes
+Var leafIndices As IntegerList = Me.Scratch().LeafIndices
+
+If leafCount = 1 Then
+nodes[leafIndices.Items[0]].Parent = PhysicsConstants.NULL_INDEX
+Return leafIndices.Items[0]
+End If
+
+Var scratch As TreeScratch = Me.Scratch()
+scratch.RebuildNodeIndex.Clear()
+scratch.RebuildChildCount.Clear()
+scratch.RebuildStartIndex.Clear()
+scratch.RebuildSplitIndex.Clear()
+scratch.RebuildEndIndex.Clear()
+
+Var rootSplit As Integer = Me.PartitionMid(0, leafCount)
+Me.SetRebuildItem(0, Me.AllocateNode(), -1, 0, rootSplit, leafCount)
+Var top As Integer = 0
+Var building As Boolean = True
+
+While building
+Var childCount As Integer = scratch.RebuildChildCount.Items[top] + 1
+scratch.RebuildChildCount.SetAt(top, childCount)
+
+If childCount = 2 Then
+# This internal node has both children established.
+If top = 0 Then
+# All done.
+building = False
+End If
+
+If building Then
+Var parentItemIndex As Integer = top - 1
+Var parentNode As TreeNode = nodes[scratch.RebuildNodeIndex.Items[parentItemIndex]]
+
+If scratch.RebuildChildCount.Items[parentItemIndex] = 0 Then
+parentNode.Child1 = scratch.RebuildNodeIndex.Items[top]
+Else
+parentNode.Child2 = scratch.RebuildNodeIndex.Items[top]
+End If
+
+Var node As TreeNode = nodes[scratch.RebuildNodeIndex.Items[top]]
+node.Parent = scratch.RebuildNodeIndex.Items[parentItemIndex]
+
+Var child1 As TreeNode = nodes[node.Child1]
+Var child2 As TreeNode = nodes[node.Child2]
+
+AABB.UnionTo(child1.Bounds, child2.Bounds, node.Bounds)
+node.Height = 1 + Maths.Max(child1.Height, child2.Height)
+node.CategoryBits = child1.CategoryBits.BitOr(child2.CategoryBits)
+
+# Pop the stack.
+top = top - 1
+End If
+Else
+Var startIndex As Integer = 0
+Var endIndex As Integer = 0
+If childCount = 0 Then
+startIndex = scratch.RebuildStartIndex.Items[top]
+endIndex = scratch.RebuildSplitIndex.Items[top]
+Else
+startIndex = scratch.RebuildSplitIndex.Items[top]
+endIndex = scratch.RebuildEndIndex.Items[top]
+End If
+
+Var count As Integer = endIndex - startIndex
+
+If count = 1 Then
+Var childIndex As Integer = leafIndices.Items[startIndex]
+Var node As TreeNode = nodes[scratch.RebuildNodeIndex.Items[top]]
+
+If childCount = 0 Then
+node.Child1 = childIndex
+Else
+node.Child2 = childIndex
+End If
+
+nodes[childIndex].Parent = scratch.RebuildNodeIndex.Items[top]
+Else
+top = top + 1
+Var split As Integer = Me.PartitionMid(startIndex, count) + startIndex
+Me.SetRebuildItem(top, Me.AllocateNode(), -1, startIndex, split, endIndex)
+End If
+End If
+Wend
+
+Var rootNode As TreeNode = nodes[scratch.RebuildNodeIndex.Items[0]]
+Var rootChild1 As TreeNode = nodes[rootNode.Child1]
+Var rootChild2 As TreeNode = nodes[rootNode.Child2]
+
+AABB.UnionTo(rootChild1.Bounds, rootChild2.Bounds, rootNode.Bounds)
+rootNode.Height = 1 + Maths.Max(rootChild1.Height, rootChild2.Height)
+rootNode.CategoryBits = rootChild1.CategoryBits.BitOr(rootChild2.CategoryBits)
+
+Return scratch.RebuildNodeIndex.Items[0]
+End Function
+End Class
+
 # Generational slot allocation: slots that stay safe to reference across reuse.
 #
 # Physics2D identifies bodies, shapes, joints, and similar records by a slot
@@ -5461,6 +7596,14 @@ Public Const INVALID_GENERATION As Integer = 0
 
 ## Position magnitude treated as a runaway simulation (metres). Upstream B2_HUGE.
 Public Const POSITION_LIMIT As Double = 100000.0
+
+## Category bits used when a definition does not set its own. Upstream
+## B2_DEFAULT_CATEGORY_BITS.
+Public Const DEFAULT_CATEGORY_BITS As Integer = 1
+
+## Mask bits that collide with every category. All bits set, expressed as the
+## two's-complement Integer -1. Upstream B2_DEFAULT_MASK_BITS.
+Public Const DEFAULT_MASK_BITS As Integer = -1
 
 ## Small length used as a collision and constraint tolerance (metres). 0.5 cm.
 ## Changing this materially affects stability.
@@ -7631,5 +9774,228 @@ Var vx As Double = p.X - t.P.X
 Var vy As Double = p.Y - t.P.Y
 Return out.Set(t.Q.C * vx + t.Q.S * vy, -t.Q.S * vx + t.Q.C * vy)
 End Function
+End Class
+
+# A node in the dynamic bounding volume tree, ported from upstream
+# b2TreeNode in dynamic_tree.c. Node objects are pooled: allocated nodes
+# form the tree and free nodes chain through Parent acting as the free-list
+# next index, exactly like upstream.
+#
+# An internal node uses Child1 and Child2; a leaf node uses UserData and
+# keeps Child1/Child2 at the null sentinel. Bounds is owned by the node and
+# mutated in place so warm tree code never allocates.
+#
+# Flag constants mirror the upstream node flag enum: AllocatedFlag = 1,
+# EnlargedFlag = 2, LeafFlag = 4.
+Class TreeNode
+## The node bounding box, owned and mutated in place.
+Property Bounds As AABB
+## Union of the category bits of all leaves below the node.
+Property CategoryBits As Integer
+## First child index for an internal node, or the null sentinel for a leaf.
+Property Child1 As Integer
+## Second child index for an internal node, or the null sentinel for a leaf.
+Property Child2 As Integer
+## Client data carried by a leaf node, typically a shape index.
+Property UserData As Integer
+## Parent index for an allocated node, or the free-list next index for a
+## free node.
+Property Parent As Integer
+## Height of the subtree rooted here; leaves have height 0.
+Property Height As Integer
+## Combination of the AllocatedFlag, EnlargedFlag, and LeafFlag bits.
+Property Flags As Integer
+
+## Flag bit marking a node that belongs to the node pool.
+Shared Const AllocatedFlag As Integer = 1
+
+## Flag bit marking a node whose bounds were enlarged without a rebuild.
+Shared Const EnlargedFlag As Integer = 2
+
+## Flag bit marking a leaf node.
+Shared Const LeafFlag As Integer = 4
+
+## Creates a node with the upstream default node layout: allocated, internal,
+## unlinked, with default category bits.
+Constructor()
+Me.Bounds = New AABB
+Me.Reset()
+End Constructor
+
+## Restores the upstream default node layout in place, mirroring the
+## b2_defaultTreeNode copy in b2AllocateNode. Child links and the parent
+## pointer become the null sentinel, height becomes 0, and only the
+## allocated flag is set.
+Sub Reset()
+Me.Bounds.LowerBound.Set(0.0, 0.0)
+Me.Bounds.UpperBound.Set(0.0, 0.0)
+Me.CategoryBits = PhysicsConstants.DEFAULT_CATEGORY_BITS
+Me.Child1 = PhysicsConstants.NULL_INDEX
+Me.Child2 = PhysicsConstants.NULL_INDEX
+Me.UserData = 0
+Me.Parent = PhysicsConstants.NULL_INDEX
+Me.Height = 0
+Me.Flags = TreeNode.AllocatedFlag
+End Sub
+
+## Returns True when this node is a leaf.
+Function IsLeaf() As Boolean
+Return (Me.Flags.BitAnd(TreeNode.LeafFlag)) <> 0
+End Function
+
+## Returns True when this node belongs to the node pool.
+Function IsAllocated() As Boolean
+Return (Me.Flags.BitAnd(TreeNode.AllocatedFlag)) <> 0
+End Function
+
+## Returns True when an ancestor recomputation has enlarged this node's
+## bounds since the last rebuild.
+Function IsEnlarged() As Boolean
+Return (Me.Flags.BitAnd(TreeNode.EnlargedFlag)) <> 0
+End Function
+End Class
+
+# Client callback receiving the leaves of a dynamic tree box query, ported
+# from upstream b2TreeQueryCallbackFcn. Return True to continue traversal or
+# False to stop it early.
+Abstract Class TreeQueryCallback
+## Called for every overlapping leaf. Returning True continues the query;
+## False terminates it with the stats gathered so far.
+Abstract Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+End Class
+
+# Client callback receiving the leaves of a dynamic tree ray cast, ported
+# from upstream b2TreeRayCastCallbackFcn.
+#
+# The input passed to VisitLeaf is a tree-owned scratch object whose
+# MaxFraction changes between leaves; callbacks must read it during the call
+# and must not retain it.
+#
+# Return values follow upstream: 0 terminates the cast, -1 skips the leaf,
+# and any value in (0, current max fraction] becomes the new max fraction.
+Abstract Class TreeRayCastCallback
+## Called for every candidate leaf. Returns 0 to terminate the cast, -1 to
+## skip the leaf, or a fraction in (0, maxFraction] to narrow the cast.
+Abstract Function VisitLeaf(input As RayCastInput, proxyId As Integer, userData As Integer) As Double
+End Class
+
+# Engine-internal reusable workspace for dynamic tree traversals and
+# rebuilds. Owned by a DynamicTree and created lazily. Not part of the
+# public engine surface.
+#
+# The traversal stack is reused across queries, so tree queries are not
+# reentrant: a callback must not query the same tree.
+Class TreeScratch
+## Traversal stack shared by query, ray cast, and shape cast.
+Property Stack As IntegerList
+## Ray cast input copy handed to ray cast callbacks between leaves.
+Property RayInput As RayCastInput
+## Shape cast input copy handed to shape cast callbacks between leaves.
+Property CastInput As ShapeCastInput
+## Segment bounds reused by the ray cast traversal.
+Property SegmentBounds As AABB
+## Cast shape start bounds reused by the shape cast traversal.
+Property OriginBounds As AABB
+## Total swept bounds reused by the shape cast traversal.
+Property TotalBounds As AABB
+## Node bounds reused while reading tree AABBs during traversals.
+Property NodeBounds As AABB
+## Rebuild work item node indices, parallel to the other rebuild stacks.
+Property RebuildNodeIndex As IntegerList
+## Rebuild work item child counters, parallel to the other rebuild stacks.
+Property RebuildChildCount As IntegerList
+## Rebuild work item range starts, parallel to the other rebuild stacks.
+Property RebuildStartIndex As IntegerList
+## Rebuild work item range splits, parallel to the other rebuild stacks.
+Property RebuildSplitIndex As IntegerList
+## Rebuild work item range ends, parallel to the other rebuild stacks.
+Property RebuildEndIndex As IntegerList
+## Leaf indices gathered by Rebuild and partitioned by BuildTree.
+Property LeafIndices As IntegerList
+## Leaf centre x coordinates, parallel to LeafIndices.
+Property LeafCentersX As DoubleList
+## Leaf centre y coordinates, parallel to LeafIndices.
+Property LeafCentersY As DoubleList
+## Best sibling found so far by the greedy sibling search.
+Property SiblingBest As Integer
+## Cost of the best sibling found so far.
+Property SiblingBestCost As Double
+## Perimeter of the subtree root being descended during the sibling search.
+Property SiblingAreaBase As Double
+## Inflation cost of the subtree root being descended.
+Property SiblingDirectCost As Double
+## Resolved descent cost of child 1 after tie-breaking.
+Property SiblingLowerCost1 As Double
+## Resolved descent cost of child 2 after tie-breaking.
+Property SiblingLowerCost2 As Double
+
+## Creates the workspace with empty storage sized for the default traversal.
+Constructor()
+Me.Stack = New IntegerList(256)
+Me.RayInput = New RayCastInput
+Me.CastInput = New ShapeCastInput
+Me.SegmentBounds = New AABB
+Me.OriginBounds = New AABB
+Me.TotalBounds = New AABB
+Me.NodeBounds = New AABB
+Me.RebuildNodeIndex = New IntegerList(64)
+Me.RebuildChildCount = New IntegerList(64)
+Me.RebuildStartIndex = New IntegerList(64)
+Me.RebuildSplitIndex = New IntegerList(64)
+Me.RebuildEndIndex = New IntegerList(64)
+Me.LeafIndices = New IntegerList(64)
+Me.LeafCentersX = New DoubleList(64)
+Me.LeafCentersY = New DoubleList(64)
+Me.SiblingBest = 0
+Me.SiblingBestCost = 0.0
+Me.SiblingAreaBase = 0.0
+Me.SiblingDirectCost = 0.0
+Me.SiblingLowerCost1 = 0.0
+Me.SiblingLowerCost2 = 0.0
+End Constructor
+End Class
+
+# Client callback receiving the leaves of a dynamic tree shape cast, ported
+# from upstream b2TreeShapeCastCallbackFcn.
+#
+# The input passed to VisitLeaf is a tree-owned scratch object whose
+# MaxFraction changes between leaves; callbacks must read it during the call
+# and must not retain it.
+#
+# Return values follow upstream: 0 terminates the cast, -1 skips the leaf,
+# and any value in (0, current max fraction) becomes the new max fraction.
+Abstract Class TreeShapeCastCallback
+## Called for every candidate leaf. Returns 0 to terminate the cast, -1 to
+## skip the leaf, or a fraction in (0, maxFraction) to narrow the cast.
+Abstract Function VisitLeaf(input As ShapeCastInput, proxyId As Integer, userData As Integer) As Double
+End Class
+
+# Traversal counters for a dynamic tree query, ray cast, or shape cast,
+# ported from upstream b2TreeStats in collision.h. Node visits count every
+# node popped from the traversal stack; leaf visits count leaf callbacks.
+# Query results also fold these counters into the tree quality baselines
+# recorded by the benchmarks.
+Class TreeStats
+## Number of tree nodes examined by the traversal.
+Property NodeVisits As Integer
+## Number of leaves passed to the client callback.
+Property LeafVisits As Integer
+
+## Creates zeroed counters.
+Constructor()
+Me.Reset()
+End Constructor
+
+## Resets both counters to zero without allocating.
+Sub Reset()
+Me.NodeVisits = 0
+Me.LeafVisits = 0
+End Sub
+
+## Copies the counters from another stats object without allocating.
+Sub SetFrom(other As TreeStats)
+Me.NodeVisits = other.NodeVisits
+Me.LeafVisits = other.LeafVisits
+End Sub
 End Class
 End Module

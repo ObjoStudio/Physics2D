@@ -1,0 +1,467 @@
+# Unit and adversarial tests for the broad phase, ported from the behaviour
+# of upstream broad_phase.c. Pair output is cross-checked against a
+# brute-force overlap oracle, against the upstream move-set and pair-set
+# de-duplication rules, and for determinism across identical builds.
+Import Physics2D
+
+Class BroadPhaseTests Inherits TestCase
+## Builds a box from a centre and half extents.
+Private Shared Function BoxAt(centerX As Double, centerY As Double, halfX As Double, halfY As Double) As AABB
+Return New AABB(New Vector2(centerX - halfX, centerY - halfY), New Vector2(centerX + halfX, centerY + halfY))
+End Function
+
+## Populates a broad phase with a deterministic layout: dynamic, kinematic,
+## and static rows of boxes, returning the proxy keys and boxes in parallel
+## arrays. Row 0 is dynamic, row 1 kinematic, row 2 static.
+Private Shared Sub Populate(bp As BroadPhase, keys As Array(Of Integer), boxes As Array(Of AABB), types As Array(Of Integer))
+For row As Integer = 0 To 2
+For i As Integer = 0 To 11
+Var bodyType As BodyType = BodyType.DynamicBody
+If row = 1 Then
+bodyType = BodyType.KinematicBody
+End If
+If row = 2 Then
+bodyType = BodyType.StaticBody
+End If
+Var box As AABB = BroadPhaseTests.BoxAt(i * 2.5, row * 1.5, 1.0 + 0.1 * i, 1.0)
+Var key As Integer = bp.CreateProxy(bodyType, box, 1, row * 100 + i, False)
+keys.Append(key)
+boxes.Append(box)
+types.Append(row)
+Next i
+Next row
+End Sub
+
+## Brute-force oracle: every overlapping pair whose union of types includes
+## at least one dynamic proxy, reported as "a b" strings with the pair
+## ordering the broad phase guarantees (lower proxy key first).
+Private Shared Function BruteForcePairs(keys As Array(Of Integer), boxes As Array(Of AABB), types As Array(Of Integer)) As Array(Of Integer)
+Var pairs As New Array(Of Integer)
+For i As Integer = 0 To keys.Count - 1
+For j As Integer = 0 To keys.Count - 1
+If i = j Then
+Continue
+End If
+If types[i] <> 0 And types[j] <> 0 Then
+# Neither proxy is dynamic: the pair can only be found by a dynamic
+# mover, so it never forms.
+Continue
+End If
+If AABB.Overlaps(boxes[i], boxes[j]) Then
+Var a As Integer = i
+Var b As Integer = j
+If keys[j] < keys[i] Then
+a = j
+b = i
+End If
+# Encode in shape-index space so it matches what the sink records.
+Var shapeA As Integer = types[a] * 100 + (a Mod 12)
+Var shapeB As Integer = types[b] * 100 + (b Mod 12)
+pairs.Append(shapeA * 1000 + shapeB)
+End If
+Next j
+Next i
+# Deduplicate while keeping first-seen order.
+Var unique As New Array(Of Integer)
+For i As Integer = 0 To pairs.Count - 1
+Var seen As Boolean = False
+For j As Integer = 0 To unique.Count - 1
+If unique[j] = pairs[i] Then
+seen = True
+Break
+End If
+Next j
+If seen = False Then
+unique.Append(pairs[i])
+End If
+Next i
+Return unique
+End Function
+
+## Sorts an integer array ascending for order-insensitive set comparison.
+Private Shared Function SortedCopy(values As Array(Of Integer)) As Array(Of Integer)
+Var copy As New Array(Of Integer)
+For i As Integer = 0 To values.Count - 1
+copy.Append(values[i])
+Next i
+For i As Integer = 1 To copy.Count - 1
+Var value As Integer = copy[i]
+Var j As Integer = i - 1
+While j >= 0 And copy[j] > value
+copy[j + 1] = copy[j]
+j = j - 1
+Wend
+copy[j + 1] = value
+Next i
+Return copy
+End Function
+
+Public Sub TestProxyKeyPacking()
+For typeIndex As Integer = 0 To 2
+For proxyId As Integer = 0 To 41
+Var key As Integer = BroadPhase.MakeProxyKey(proxyId, typeIndex)
+Assert.Equal(typeIndex, BroadPhase.ProxyType(key), "proxy type round trip")
+Assert.Equal(proxyId, BroadPhase.ProxyId(key), "proxy id round trip")
+Next proxyId
+Next typeIndex
+End Sub
+
+Public Sub TestCreateProxyBufferingRules()
+Var bp As New BroadPhase
+Var box As AABB = BroadPhaseTests.BoxAt(0.0, 0.0, 1.0, 1.0)
+
+# Dynamic and kinematic proxies always buffer a move.
+Var dynamicKey As Integer = bp.CreateProxy(BodyType.DynamicBody, box, 1, 0, False)
+Assert.Equal(1, bp.MoveArray.Count, "dynamic proxy buffered")
+Assert.Equal(1, bp.MoveSet.Count, "move set count")
+
+Var kinematicKey As Integer = bp.CreateProxy(BodyType.KinematicBody, box, 1, 1, False)
+Assert.Equal(2, bp.MoveArray.Count, "kinematic proxy buffered")
+
+# Static proxies do not buffer a move unless pairing is forced.
+Var staticKey As Integer = bp.CreateProxy(BodyType.StaticBody, box, 1, 2, False)
+Assert.Equal(2, bp.MoveArray.Count, "static proxy not buffered")
+Var forcedKey As Integer = bp.CreateProxy(BodyType.StaticBody, box, 1, 3, True)
+Assert.Equal(3, bp.MoveArray.Count, "forced static proxy buffered")
+
+# Destroying a buffered proxy removes it from the buffer.
+bp.DestroyProxy(dynamicKey)
+Assert.Equal(2, bp.MoveArray.Count, "destroy unbuffered the move")
+Assert.Equal(2, bp.MoveSet.Count, "move set shrank")
+
+# Destroying an unbuffered static proxy leaves the buffer alone.
+bp.DestroyProxy(staticKey)
+Assert.Equal(2, bp.MoveArray.Count, "static destroy leaves buffer")
+Assert.Equal(2, bp.Trees[0].ProxyCount + bp.Trees[1].ProxyCount + bp.Trees[2].ProxyCount, "proxy count")
+End Sub
+
+Public Sub TestPairsMatchBruteForce()
+Var bp As New BroadPhase
+Var keys As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+Var types As New Array(Of Integer)
+BroadPhaseTests.Populate(bp, keys, boxes, types)
+
+Var sink As New RecordingPairSink
+sink.BroadPhase = bp
+sink.FilterModulo = 0
+bp.UpdatePairs(sink)
+
+Var oracle As Array(Of Integer) = BroadPhaseTests.BruteForcePairs(keys, boxes, types)
+
+Var sortedOracle As Array(Of Integer) = BroadPhaseTests.SortedCopy(oracle)
+Var sortedRecorded As Array(Of Integer) = BroadPhaseTests.SortedCopy(sink.Pairs)
+Assert.Equal(sortedOracle.Count, sortedRecorded.Count, "pair count matches brute force")
+For i As Integer = 0 To sortedOracle.Count - 1
+Assert.Equal(sortedOracle[i], sortedRecorded[i], "pair " + i.ToString())
+Next i
+
+# The move buffer is drained after the update.
+Assert.Equal(0, bp.MoveArray.Count, "move buffer drained")
+Assert.Equal(0, bp.MoveSet.Count, "move set drained")
+End Sub
+
+Public Sub TestPairDeterminism()
+# Two broad phases built and updated with identical operation order must
+# produce identical pair sequences.
+Var bpA As New BroadPhase
+Var bpB As New BroadPhase
+Var keysA As New Array(Of Integer)
+Var keysB As New Array(Of Integer)
+Var boxesA As New Array(Of AABB)
+Var boxesB As New Array(Of AABB)
+Var typesA As New Array(Of Integer)
+Var typesB As New Array(Of Integer)
+BroadPhaseTests.Populate(bpA, keysA, boxesA, typesA)
+BroadPhaseTests.Populate(bpB, keysB, boxesB, typesB)
+
+Var sinkA As New RecordingPairSink
+sinkA.BroadPhase = bpA
+sinkA.FilterModulo = 0
+bpA.UpdatePairs(sinkA)
+
+Var sinkB As New RecordingPairSink
+sinkB.BroadPhase = bpB
+sinkB.FilterModulo = 0
+bpB.UpdatePairs(sinkB)
+
+Assert.Equal(sinkA.Pairs.Count, sinkB.Pairs.Count, "same pair count")
+For i As Integer = 0 To sinkA.Pairs.Count - 1
+Assert.Equal(sinkA.Pairs[i], sinkB.Pairs[i], "same pair order " + i.ToString())
+Next i
+End Sub
+
+Public Sub TestPairSetPreventsDuplicates()
+Var bp As New BroadPhase
+Var keys As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+Var types As New Array(Of Integer)
+BroadPhaseTests.Populate(bp, keys, boxes, types)
+
+Var sink As New RecordingPairSink
+sink.BroadPhase = bp
+sink.FilterModulo = 0
+bp.UpdatePairs(sink)
+Var firstCount As Integer = sink.Pairs.Count
+Assert.Equal(True, firstCount > 0, "first update found pairs")
+
+# Register every discovered pair in the pair set the way contact creation
+# would, then move one proxy: only genuinely new pairs may appear.
+For i As Integer = 0 To sink.ShapeA.Count - 1
+bp.PairSet.Add(PairKeySet.PairKey(sink.ShapeA[i], sink.ShapeB[i]))
+Next i
+
+sink.Clear()
+Var moved As AABB = BroadPhaseTests.BoxAt(0.5, 0.0, 1.2, 1.2)
+bp.MoveProxy(keys[0], moved)
+boxes[0] = moved
+bp.UpdatePairs(sink)
+
+For i As Integer = 0 To sink.ShapeA.Count - 1
+Var duplicate As Boolean = bp.PairSet.Contains(PairKeySet.PairKey(sink.ShapeA[i], sink.ShapeB[i]))
+Assert.Equal(False, duplicate, "no duplicate pair " + i.ToString())
+Next i
+End Sub
+
+Public Sub TestMoveSetPreventsDuplicateDynamicPairs()
+# Two overlapping dynamic proxies that both move must produce exactly one
+# pair, keyed by proxy key order.
+Var bp As New BroadPhase
+Var boxA As AABB = BroadPhaseTests.BoxAt(0.0, 0.0, 1.0, 1.0)
+Var boxB As AABB = BroadPhaseTests.BoxAt(0.5, 0.0, 1.0, 1.0)
+Var keyA As Integer = bp.CreateProxy(BodyType.DynamicBody, boxA, 1, 0, False)
+Var keyB As Integer = bp.CreateProxy(BodyType.DynamicBody, boxB, 1, 1, False)
+
+Var sink As New RecordingPairSink
+sink.BroadPhase = bp
+sink.FilterModulo = 0
+bp.UpdatePairs(sink)
+Assert.Equal(1, sink.Pairs.Count, "one pair for two moving dynamic proxies")
+
+Var expectedA As Integer = 0
+Var expectedB As Integer = 1
+If keyB < keyA Then
+expectedA = 1
+expectedB = 0
+End If
+Assert.Equal(expectedA, sink.ShapeA[0], "ordered shape A")
+Assert.Equal(expectedB, sink.ShapeB[0], "ordered shape B")
+End Sub
+
+Public Sub TestSinkFilterStopsPairs()
+Var bp As New BroadPhase
+Var keys As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+Var types As New Array(Of Integer)
+BroadPhaseTests.Populate(bp, keys, boxes, types)
+
+# Reject pairs where both shape indices are odd.
+Var sink As New RecordingPairSink
+sink.BroadPhase = bp
+sink.FilterModulo = 2
+bp.UpdatePairs(sink)
+
+For i As Integer = 0 To sink.ShapeA.Count - 1
+Var bothOdd As Boolean = (sink.ShapeA[i] Mod 2 = 1) And (sink.ShapeB[i] Mod 2 = 1)
+Assert.Equal(False, bothOdd, "filtered pair " + i.ToString())
+Next i
+Assert.Equal(True, sink.FilterCalls > sink.Pairs.Count, "filter ran before recording")
+End Sub
+
+Public Sub TestMoveProxyTriggersPairing()
+Var bp As New BroadPhase
+Var staticBox As AABB = BroadPhaseTests.BoxAt(0.0, 0.0, 1.0, 1.0)
+Var staticKey As Integer = bp.CreateProxy(BodyType.StaticBody, staticBox, 1, 0, False)
+Var dynamicKey As Integer = bp.CreateProxy(BodyType.DynamicBody, BroadPhaseTests.BoxAt(20.0, 20.0, 1.0, 1.0), 1, 1, False)
+
+Var sink As New RecordingPairSink
+sink.BroadPhase = bp
+sink.FilterModulo = 0
+bp.UpdatePairs(sink)
+Assert.Equal(0, sink.Pairs.Count, "no pairs while apart")
+
+# Move the dynamic proxy onto the static proxy and pair again.
+bp.MoveProxy(dynamicKey, BroadPhaseTests.BoxAt(0.5, 0.0, 1.0, 1.0))
+sink.Clear()
+bp.UpdatePairs(sink)
+Assert.Equal(1, sink.Pairs.Count, "overlap found after move")
+Assert.Equal(True, bp.TestOverlap(staticKey, dynamicKey), "TestOverlap agrees")
+
+# Moving apart removes the candidate next time.
+bp.MoveProxy(dynamicKey, BroadPhaseTests.BoxAt(30.0, 30.0, 1.0, 1.0))
+sink.Clear()
+bp.UpdatePairs(sink)
+Assert.Equal(0, sink.Pairs.Count, "no pairs after moving apart")
+Assert.Equal(False, bp.TestOverlap(staticKey, dynamicKey), "TestOverlap agrees after move")
+End Sub
+
+Public Sub TestEnlargeProxyAndRebuildTrees()
+Var bp As New BroadPhase
+Var staticBox As AABB = BroadPhaseTests.BoxAt(0.0, 0.0, 1.0, 1.0)
+bp.CreateProxy(BodyType.StaticBody, staticBox, 1, 0, False)
+Var dynamicKey As Integer = bp.CreateProxy(BodyType.DynamicBody, BroadPhaseTests.BoxAt(4.0, 0.0, 1.0, 1.0), 1, 1, False)
+
+Var sink As New RecordingPairSink
+sink.BroadPhase = bp
+sink.FilterModulo = 0
+bp.UpdatePairs(sink)
+Assert.Equal(0, sink.Pairs.Count, "no initial overlap")
+
+# Enlarge the dynamic proxy so its fat bounds touch the static proxy.
+bp.EnlargeProxy(dynamicKey, BroadPhaseTests.BoxAt(1.5, 0.0, 1.5, 1.0))
+sink.Clear()
+bp.UpdatePairs(sink)
+Assert.Equal(1, sink.Pairs.Count, "enlarged bounds pair")
+
+bp.RebuildTrees()
+bp.Validate()
+sink.Clear()
+bp.UpdatePairs(sink)
+Assert.Equal(0, sink.Pairs.Count, "rebuild keeps the world consistent")
+End Sub
+
+Public Sub TestGetShapeIndex()
+Var bp As New BroadPhase
+Var box As AABB = BroadPhaseTests.BoxAt(0.0, 0.0, 1.0, 1.0)
+Var staticKey As Integer = bp.CreateProxy(BodyType.StaticBody, box, 1, 42, False)
+Var dynamicKey As Integer = bp.CreateProxy(BodyType.DynamicBody, box, 1, 7, False)
+Assert.Equal(42, bp.GetShapeIndex(staticKey), "static shape index")
+Assert.Equal(7, bp.GetShapeIndex(dynamicKey), "dynamic shape index")
+End Sub
+
+Public Sub TestErrorsAndValidation()
+Var bp As New BroadPhase
+Var box As AABB = BroadPhaseTests.BoxAt(0.0, 0.0, 1.0, 1.0)
+
+# Enlarging a null proxy key is rejected.
+Var threw As Boolean = False
+Try
+bp.EnlargeProxy(PhysicsConstants.NULL_INDEX, box)
+Catch ex As InvalidArgumentException
+threw = True
+End Try
+Assert.Equal(True, threw, "null enlarge rejected")
+
+# Enlarging a static proxy is a runtime error.
+Var staticKey As Integer = bp.CreateProxy(BodyType.StaticBody, box, 1, 0, False)
+threw = False
+Try
+bp.EnlargeProxy(staticKey, BroadPhaseTests.BoxAt(2.0, 0.0, 2.0, 1.0))
+Catch ex As RuntimeException
+threw = True
+End Try
+Assert.Equal(True, threw, "static enlarge rejected")
+
+# Churn with validation after every round.
+Var random As New TestRandom(864213)
+Var dynamicKeys As New Array(Of Integer)
+For round As Integer = 0 To 7
+For i As Integer = 0 To 7
+Var moved As AABB = BroadPhaseTests.BoxAt(random.NextSigned(10.0), random.NextSigned(10.0), 0.5, 0.5)
+Var key As Integer = bp.CreateProxy(BodyType.DynamicBody, moved, 1, round * 10 + i, False)
+dynamicKeys.Append(key)
+bp.MoveProxy(key, moved)
+Next i
+For i As Integer = 0 To 3
+Var slot As Integer = random.NextInt(0, dynamicKeys.Count - 1)
+bp.DestroyProxy(dynamicKeys[slot])
+dynamicKeys.RemoveAt(slot)
+Next i
+bp.Validate()
+Next round
+End Sub
+
+Public Sub TestWarmPairGenerationAllocatesNothing()
+# After a warm-up update, repeated identical updates must allocate
+# nothing: pools, sets, and context are reused.
+Var bp As New BroadPhase
+Var keys As New Array(Of Integer)
+Var boxes As New Array(Of AABB)
+Var types As New Array(Of Integer)
+BroadPhaseTests.Populate(bp, keys, boxes, types)
+
+Var sink As New RecordingPairSink
+sink.BroadPhase = bp
+sink.FilterModulo = 0
+bp.UpdatePairs(sink)
+
+# Move a fixed subset each round so the steady state repeats.
+For i As Integer = 0 To 15
+bp.MoveProxy(keys[i], boxes[i])
+Next i
+bp.UpdatePairs(sink)
+
+sink.Record = False
+Var before As Integer = System.AllocationCount
+For round As Integer = 0 To 19
+For i As Integer = 0 To 15
+bp.MoveProxy(keys[i], boxes[i])
+Next i
+bp.UpdatePairs(sink)
+Next round
+Var after As Integer = System.AllocationCount
+Assert.Equal(before, after, "warm pair generation allocates nothing")
+End Sub
+End Class
+
+# Pair sink that records filter calls and accepted pairs, optionally
+# applying a deterministic rejection rule.
+Class RecordingPairSink Inherits BroadPhasePairSink
+## The broad phase under test, used by the test to emulate contact
+## registration in PairSet.
+Property BroadPhase As BroadPhase
+## When nonzero, reject pairs where both shape indices are congruent to
+## the value modulo itself.
+Property FilterModulo As Integer
+## Number of ShouldCollide calls.
+Property FilterCalls As Integer
+## Accepted shape A indices in arrival order.
+Property ShapeA As Array(Of Integer)
+## Accepted shape B indices in arrival order.
+Property ShapeB As Array(Of Integer)
+## Accepted pairs encoded as shapeA * 1000 + shapeB in arrival order.
+Property Pairs As Array(Of Integer)
+## When False, AcceptPair records nothing so measured loops stay
+## allocation-free.
+Property Record As Boolean
+
+## Creates an accepting sink with no filter and no recording.
+Constructor()
+Me.BroadPhase = Nothing
+Me.FilterModulo = 0
+Me.FilterCalls = 0
+Me.ShapeA = New Array(Of Integer)
+Me.ShapeB = New Array(Of Integer)
+Me.Pairs = New Array(Of Integer)
+Me.Record = True
+End Constructor
+
+## Clears all recordings.
+Sub Clear()
+Me.FilterCalls = 0
+Me.ShapeA = New Array(Of Integer)
+Me.ShapeB = New Array(Of Integer)
+Me.Pairs = New Array(Of Integer)
+End Sub
+
+## Applies the deterministic filter rule.
+Function ShouldCollide(shapeIndexA As Integer, shapeIndexB As Integer) As Boolean
+Me.FilterCalls = Me.FilterCalls + 1
+If Me.FilterModulo > 0 Then
+If shapeIndexA Mod Me.FilterModulo = shapeIndexB Mod Me.FilterModulo Then
+Return False
+End If
+End If
+Return True
+End Function
+
+## Records the accepted pair when recording is enabled.
+Sub AcceptPair(shapeIndexA As Integer, shapeIndexB As Integer)
+If Me.Record = False Then
+Return
+End If
+Me.ShapeA.Append(shapeIndexA)
+Me.ShapeB.Append(shapeIndexB)
+Me.Pairs.Append(shapeIndexA * 1000 + shapeIndexB)
+End Sub
+End Class

@@ -1,0 +1,88 @@
+# Engine-internal tree query callback that gathers candidate pairs for one
+# moved proxy, ported from upstream b2PairQueryCallback and
+# b2QueryPairContext. One instance is owned by the BroadPhase and reused for
+# every moved proxy. Not part of the public engine surface.
+Class BroadPhaseQueryContext Inherits TreeQueryCallback
+
+## The broad phase that owns this context.
+Property Owner As BroadPhase
+## The pair sink that filters and receives pairs.
+Property Sink As BroadPhasePairSink
+## Tree currently being queried: 0 static, 1 kinematic, 2 dynamic.
+Property QueryTreeType As Integer
+## Proxy key of the moved proxy driving this query.
+Property QueryProxyKey As Integer
+## Shape index carried by the moved proxy.
+Property QueryShapeIndex As Integer
+## Move-buffer slot whose result list receives discovered pairs.
+Property ResultSlot As Integer
+
+## Creates an unbound context.
+Constructor()
+Me.Owner = Nothing
+Me.Sink = Nothing
+Me.QueryTreeType = 0
+Me.QueryProxyKey = 0
+Me.QueryShapeIndex = 0
+Me.ResultSlot = 0
+End Constructor
+
+## Tree query callback: de-duplicates, applies the sink filter, and records
+## surviving pairs. Always returns True to continue traversal.
+Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Var owner As BroadPhase = Me.Owner
+
+Var shapeId As Integer = userData
+Var proxyKey As Integer = BroadPhase.MakeProxyKey(proxyId, Me.QueryTreeType)
+Var queryProxyKey As Integer = Me.QueryProxyKey
+
+# A proxy cannot form a pair with itself.
+If proxyKey = queryProxyKey Then
+Return True
+End If
+
+Var treeType As Integer = Me.QueryTreeType
+Var queryProxyType As Integer = BroadPhase.ProxyType(queryProxyKey)
+
+# De-duplication: prevent duplicate pairs when both proxies are moving.
+If queryProxyType = Integer(BodyType.DynamicBody) Then
+If treeType = Integer(BodyType.DynamicBody) And proxyKey < queryProxyKey Then
+If owner.MoveSet.Contains(proxyKey + 1) Then
+# Both proxies are moving. Avoid duplicate pairs.
+Return True
+End If
+End If
+Else
+# Kinematic and static proxies only ever query the dynamic tree.
+If treeType <> Integer(BodyType.DynamicBody) Then
+Throw New RuntimeException("BroadPhase pair query tree type mismatch")
+End If
+If owner.MoveSet.Contains(proxyKey + 1) Then
+# Both proxies are moving. Avoid duplicate pairs.
+Return True
+End If
+End If
+
+Var pairKey As Integer = PairKeySet.PairKey(shapeId, Me.QueryShapeIndex)
+If owner.PairSet.Contains(pairKey) Then
+# Contact already exists.
+Return True
+End If
+
+Var shapeIdA As Integer = shapeId
+Var shapeIdB As Integer = Me.QueryShapeIndex
+If proxyKey >= queryProxyKey Then
+shapeIdA = Me.QueryShapeIndex
+shapeIdB = shapeId
+End If
+
+If Me.Sink.ShouldCollide(shapeIdA, shapeIdB) = False Then
+Return True
+End If
+
+owner.RecordPair(shapeIdA, shapeIdB, Me.ResultSlot)
+
+# Continue the query.
+Return True
+End Function
+End Class

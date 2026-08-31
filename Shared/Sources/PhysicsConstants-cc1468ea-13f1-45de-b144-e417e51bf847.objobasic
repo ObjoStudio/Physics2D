@@ -19,6 +19,14 @@ Public Const INVALID_GENERATION As Integer = 0
 ## Position magnitude treated as a runaway simulation (metres). Upstream B2_HUGE.
 Public Const POSITION_LIMIT As Double = 100000.0
 
+## Category bits used when a definition does not set its own. Upstream
+## B2_DEFAULT_CATEGORY_BITS.
+Public Const DEFAULT_CATEGORY_BITS As Integer = 1
+
+## Mask bits that collide with every category. All bits set, expressed as the
+## two's-complement Integer -1. Upstream B2_DEFAULT_MASK_BITS.
+Public Const DEFAULT_MASK_BITS As Integer = -1
+
 ## Small length used as a collision and constraint tolerance (metres). 0.5 cm.
 ## Changing this materially affects stability.
 Public Const LINEAR_SLOP As Double = 0.005

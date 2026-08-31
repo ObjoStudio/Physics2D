@@ -1,0 +1,78 @@
+# A node in the dynamic bounding volume tree, ported from upstream
+# b2TreeNode in dynamic_tree.c. Node objects are pooled: allocated nodes
+# form the tree and free nodes chain through Parent acting as the free-list
+# next index, exactly like upstream.
+#
+# An internal node uses Child1 and Child2; a leaf node uses UserData and
+# keeps Child1/Child2 at the null sentinel. Bounds is owned by the node and
+# mutated in place so warm tree code never allocates.
+#
+# Flag constants mirror the upstream node flag enum: AllocatedFlag = 1,
+# EnlargedFlag = 2, LeafFlag = 4.
+Class TreeNode
+## The node bounding box, owned and mutated in place.
+Property Bounds As AABB
+## Union of the category bits of all leaves below the node.
+Property CategoryBits As Integer
+## First child index for an internal node, or the null sentinel for a leaf.
+Property Child1 As Integer
+## Second child index for an internal node, or the null sentinel for a leaf.
+Property Child2 As Integer
+## Client data carried by a leaf node, typically a shape index.
+Property UserData As Integer
+## Parent index for an allocated node, or the free-list next index for a
+## free node.
+Property Parent As Integer
+## Height of the subtree rooted here; leaves have height 0.
+Property Height As Integer
+## Combination of the AllocatedFlag, EnlargedFlag, and LeafFlag bits.
+Property Flags As Integer
+
+## Flag bit marking a node that belongs to the node pool.
+Shared Const AllocatedFlag As Integer = 1
+
+## Flag bit marking a node whose bounds were enlarged without a rebuild.
+Shared Const EnlargedFlag As Integer = 2
+
+## Flag bit marking a leaf node.
+Shared Const LeafFlag As Integer = 4
+
+## Creates a node with the upstream default node layout: allocated, internal,
+## unlinked, with default category bits.
+Constructor()
+Me.Bounds = New AABB
+Me.Reset()
+End Constructor
+
+## Restores the upstream default node layout in place, mirroring the
+## b2_defaultTreeNode copy in b2AllocateNode. Child links and the parent
+## pointer become the null sentinel, height becomes 0, and only the
+## allocated flag is set.
+Sub Reset()
+Me.Bounds.LowerBound.Set(0.0, 0.0)
+Me.Bounds.UpperBound.Set(0.0, 0.0)
+Me.CategoryBits = PhysicsConstants.DEFAULT_CATEGORY_BITS
+Me.Child1 = PhysicsConstants.NULL_INDEX
+Me.Child2 = PhysicsConstants.NULL_INDEX
+Me.UserData = 0
+Me.Parent = PhysicsConstants.NULL_INDEX
+Me.Height = 0
+Me.Flags = TreeNode.AllocatedFlag
+End Sub
+
+## Returns True when this node is a leaf.
+Function IsLeaf() As Boolean
+Return (Me.Flags.BitAnd(TreeNode.LeafFlag)) <> 0
+End Function
+
+## Returns True when this node belongs to the node pool.
+Function IsAllocated() As Boolean
+Return (Me.Flags.BitAnd(TreeNode.AllocatedFlag)) <> 0
+End Function
+
+## Returns True when an ancestor recomputation has enlarged this node's
+## bounds since the last rebuild.
+Function IsEnlarged() As Boolean
+Return (Me.Flags.BitAnd(TreeNode.EnlargedFlag)) <> 0
+End Function
+End Class

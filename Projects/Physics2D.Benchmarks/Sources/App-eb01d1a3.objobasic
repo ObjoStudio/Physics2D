@@ -55,6 +55,10 @@ runner.Add(New Stage4ManifoldScenario())
 runner.Add(New Stage4CastScenario())
 runner.Add(New Stage4TimeOfImpactScenario())
 runner.Add(New Stage4PlaneSolverScenario())
+runner.Add(New Stage5TreeChurnScenario())
+runner.Add(New Stage5TreeQueryScenario())
+runner.Add(New Stage5TreeRebuildScenario())
+runner.Add(New Stage5BroadPhasePairsScenario())
 
 Var results() As BenchmarkResult = runner.RunAll()
 

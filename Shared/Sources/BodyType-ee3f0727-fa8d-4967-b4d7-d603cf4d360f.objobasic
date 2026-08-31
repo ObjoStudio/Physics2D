@@ -1,0 +1,8 @@
+# Kind of body owning a broad-phase proxy, ported from upstream b2BodyType
+# in types.h. The numeric values double as indices into the broad-phase tree
+# array: Static is index 0, Kinematic index 1, and Dynamic index 2.
+Enum BodyType
+StaticBody
+KinematicBody
+DynamicBody
+End Enum

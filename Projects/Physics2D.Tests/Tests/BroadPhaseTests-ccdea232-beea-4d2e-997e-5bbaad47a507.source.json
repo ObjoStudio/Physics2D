@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "BroadPhaseTests",
+  "Id": "ccdea232-beea-4d2e-997e-5bbaad47a507",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "BroadPhaseTests-ccdea232-beea-4d2e-997e-5bbaad47a507.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

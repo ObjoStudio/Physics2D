@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "DynamicTreeTests",
+  "Id": "8131753b-e651-4065-87d2-037b056c5159",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "DynamicTreeTests-8131753b-e651-4065-87d2-037b056c5159.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

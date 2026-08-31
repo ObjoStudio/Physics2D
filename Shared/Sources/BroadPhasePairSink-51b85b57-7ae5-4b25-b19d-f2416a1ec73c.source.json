@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": [],
+  "Name": "BroadPhasePairSink",
+  "Id": "51b85b57-7ae5-4b25-b19d-f2416a1ec73c",
+  "CodeFile": "BroadPhasePairSink-51b85b57-7ae5-4b25-b19d-f2416a1ec73c.objobasic"
+}

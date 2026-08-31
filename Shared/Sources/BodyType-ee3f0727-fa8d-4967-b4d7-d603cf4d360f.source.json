@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "BodyType",
+  "Id": "ee3f0727-fa8d-4967-b4d7-d603cf4d360f",
+  "Kind": "Enum",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "BodyType-ee3f0727-fa8d-4967-b4d7-d603cf4d360f.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

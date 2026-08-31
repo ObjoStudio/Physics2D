@@ -1,0 +1,75 @@
+# Engine-internal reusable workspace for dynamic tree traversals and
+# rebuilds. Owned by a DynamicTree and created lazily. Not part of the
+# public engine surface.
+#
+# The traversal stack is reused across queries, so tree queries are not
+# reentrant: a callback must not query the same tree.
+Class TreeScratch
+## Traversal stack shared by query, ray cast, and shape cast.
+Property Stack As IntegerList
+## Ray cast input copy handed to ray cast callbacks between leaves.
+Property RayInput As RayCastInput
+## Shape cast input copy handed to shape cast callbacks between leaves.
+Property CastInput As ShapeCastInput
+## Segment bounds reused by the ray cast traversal.
+Property SegmentBounds As AABB
+## Cast shape start bounds reused by the shape cast traversal.
+Property OriginBounds As AABB
+## Total swept bounds reused by the shape cast traversal.
+Property TotalBounds As AABB
+## Node bounds reused while reading tree AABBs during traversals.
+Property NodeBounds As AABB
+## Rebuild work item node indices, parallel to the other rebuild stacks.
+Property RebuildNodeIndex As IntegerList
+## Rebuild work item child counters, parallel to the other rebuild stacks.
+Property RebuildChildCount As IntegerList
+## Rebuild work item range starts, parallel to the other rebuild stacks.
+Property RebuildStartIndex As IntegerList
+## Rebuild work item range splits, parallel to the other rebuild stacks.
+Property RebuildSplitIndex As IntegerList
+## Rebuild work item range ends, parallel to the other rebuild stacks.
+Property RebuildEndIndex As IntegerList
+## Leaf indices gathered by Rebuild and partitioned by BuildTree.
+Property LeafIndices As IntegerList
+## Leaf centre x coordinates, parallel to LeafIndices.
+Property LeafCentersX As DoubleList
+## Leaf centre y coordinates, parallel to LeafIndices.
+Property LeafCentersY As DoubleList
+## Best sibling found so far by the greedy sibling search.
+Property SiblingBest As Integer
+## Cost of the best sibling found so far.
+Property SiblingBestCost As Double
+## Perimeter of the subtree root being descended during the sibling search.
+Property SiblingAreaBase As Double
+## Inflation cost of the subtree root being descended.
+Property SiblingDirectCost As Double
+## Resolved descent cost of child 1 after tie-breaking.
+Property SiblingLowerCost1 As Double
+## Resolved descent cost of child 2 after tie-breaking.
+Property SiblingLowerCost2 As Double
+
+## Creates the workspace with empty storage sized for the default traversal.
+Constructor()
+Me.Stack = New IntegerList(256)
+Me.RayInput = New RayCastInput
+Me.CastInput = New ShapeCastInput
+Me.SegmentBounds = New AABB
+Me.OriginBounds = New AABB
+Me.TotalBounds = New AABB
+Me.NodeBounds = New AABB
+Me.RebuildNodeIndex = New IntegerList(64)
+Me.RebuildChildCount = New IntegerList(64)
+Me.RebuildStartIndex = New IntegerList(64)
+Me.RebuildSplitIndex = New IntegerList(64)
+Me.RebuildEndIndex = New IntegerList(64)
+Me.LeafIndices = New IntegerList(64)
+Me.LeafCentersX = New DoubleList(64)
+Me.LeafCentersY = New DoubleList(64)
+Me.SiblingBest = 0
+Me.SiblingBestCost = 0.0
+Me.SiblingAreaBase = 0.0
+Me.SiblingDirectCost = 0.0
+Me.SiblingLowerCost1 = 0.0
+Me.SiblingLowerCost2 = 0.0
+End Constructor
+End Class

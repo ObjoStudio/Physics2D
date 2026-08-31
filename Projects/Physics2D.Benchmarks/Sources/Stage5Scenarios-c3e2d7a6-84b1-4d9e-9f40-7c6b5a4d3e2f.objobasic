@@ -1,0 +1,142 @@
+# Stage 5 benchmark scenarios wrapping the tree and broad-phase workloads.
+Import Physics2D
+
+Class Stage5TreeChurnScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As TreeChurnWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage5-tree-churn"
+Me.Description = "Moves 64 proxies and churns 16 destroy-create pairs in a 2048-leaf tree per iteration."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mWorkload = New TreeChurnWorkload
+End Constructor
+
+## Describes the tree parameters.
+Override Function Parameters() As String
+Return "proxies=2048,moves=64,churn=16"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.Execute()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.FoldedChecksum()
+End Function
+End Class
+
+Class Stage5TreeQueryScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As TreeQueryWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage5-tree-query"
+Me.Description = "4 queries, 4 rays, and one shape cast against a 4096-leaf tree per iteration."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mWorkload = New TreeQueryWorkload
+End Constructor
+
+## Describes the query parameters.
+Override Function Parameters() As String
+Return "proxies=4096,queries=4,rays=4,casts=1"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.Execute()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.FoldedChecksum()
+End Function
+End Class
+
+Class Stage5TreeRebuildScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As TreeRebuildWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage5-tree-rebuild"
+Me.Description = "Enlarges 32 proxies and performs a partial rebuild of a 2048-leaf tree per iteration."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mWorkload = New TreeRebuildWorkload
+End Constructor
+
+## Describes the rebuild parameters.
+Override Function Parameters() As String
+Return "proxies=2048,enlarged=32"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.Execute()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.FoldedChecksum()
+End Function
+End Class
+
+Class Stage5BroadPhasePairsScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As BroadPhasePairsWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage5-broadphase-pairs"
+Me.Description = "Moves 32 of 512 dynamic proxies among kinematic and static trees and reports pairs."
+Me.WarmupIterations = 5
+Me.MeasuredIterations = 20
+Me.mWorkload = New BroadPhasePairsWorkload
+End Constructor
+
+## Describes the broad-phase parameters.
+Override Function Parameters() As String
+Return "dynamic=512,kinematic=128,static=128,movers=32"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.Execute()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.FoldedChecksum()
+End Function
+End Class

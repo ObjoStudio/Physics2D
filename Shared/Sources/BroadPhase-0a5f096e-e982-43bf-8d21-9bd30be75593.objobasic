@@ -1,0 +1,319 @@
+# Broad phase, ported from Box2D 3.1.1 src/broad_phase.c. One dynamic tree
+# per body type (static, kinematic, dynamic), a move buffer of proxies that
+# moved significantly, and a shape-pair set tracking existing contacts.
+#
+# The broad phase does not persist pairs. UpdatePairs reports potentially new
+# pairs once per moved proxy through a BroadPhasePairSink, in deterministic
+# move order, after move-set and pair-set de-duplication and the sink's own
+# collision filter. The world (Stage 6) supplies the sink, registers pair
+# keys in PairSet as contacts appear, and consumes BufferMove from body
+# movement.
+#
+# Proxy keys pack the proxy type into the low two bits and the tree proxy id
+# above them, mirroring upstream B2_PROXY_KEY. Move-set keys add one so the
+# reserved key zero never enters the set.
+#
+# Like upstream, the static tree is only buffered for pairing when
+# explicitly forced (invoke-contact-creation semantics), while kinematic and
+# dynamic proxies always pair.
+Class BroadPhase
+## The three proxy trees indexed by body type: static, kinematic, dynamic.
+Property Trees As Array(Of DynamicTree)
+## Set of moved proxy keys plus one; zero stays reserved.
+Property MoveSet As PairKeySet
+## Moved proxy keys in deterministic arrival order, parallel to MoveSet.
+Property MoveArray As IntegerList
+## Set of shape pair keys that already have a contact.
+Property PairSet As PairKeySet
+
+## Pair pool: shape index A per recorded pair.
+Private Property mPairShapeIndexA As IntegerList
+## Pair pool: shape index B per recorded pair.
+Private Property mPairShapeIndexB As IntegerList
+## Pair pool: next pair index threading each per-proxy result list.
+Private Property mPairNext As IntegerList
+## Number of pairs in the pool for the current UpdatePairs traversal.
+Private Property mPairCount As Integer
+## Head pair index per moved proxy, parallel to the move buffer.
+Private Property mResultHeads As IntegerList
+## Reused pair query context handed to tree queries.
+Private Property mContext As BroadPhaseQueryContext
+## Reused fat bounds of the moved proxy being paired.
+Private Property mFatBounds As AABB
+## Reused traversal stats for pair queries.
+Private Property mStats As TreeStats
+
+## Number of pairs recorded by the current UpdatePairs traversal.
+Property PairCount As Integer
+
+## Creates a broad phase with the upstream initial capacities.
+Constructor()
+Me.Trees = New Array(Of DynamicTree)
+For i As Integer = 0 To 2
+Me.Trees.Append(New DynamicTree)
+Next i
+Me.MoveSet = New PairKeySet(16)
+Me.MoveArray = New IntegerList(16)
+Me.PairSet = New PairKeySet(32)
+Me.mPairShapeIndexA = New IntegerList(64)
+Me.mPairShapeIndexB = New IntegerList(64)
+Me.mPairNext = New IntegerList(64)
+Me.mPairCount = 0
+Me.PairCount = 0
+Me.mResultHeads = New IntegerList(16)
+Me.mContext = Nothing
+Me.mFatBounds = New AABB
+Me.mStats = New TreeStats
+End Constructor
+
+## Returns the tree index encoded in the low two bits of a proxy key.
+Shared Function ProxyType(proxyKey As Integer) As Integer
+Return proxyKey.BitAnd(3)
+End Function
+
+## Returns the tree proxy id encoded above the type bits of a proxy key.
+Shared Function ProxyId(proxyKey As Integer) As Integer
+Return proxyKey.ShiftRight(2)
+End Function
+
+## Packs a tree proxy id and body type index into a proxy key.
+Shared Function MakeProxyKey(proxyId As Integer, typeIndex As Integer) As Integer
+Return proxyId.ShiftLeft(2).BitOr(typeIndex)
+End Function
+
+## Adds a moved proxy to the move buffer. Called by the world whenever a
+## proxy moved enough to deserve a pair query. Adding twice keeps only the
+## first arrival, mirroring upstream b2BufferMove.
+Sub BufferMove(queryProxyKey As Integer)
+# Adding 1 because 0 is the reserved sentinel.
+Var alreadyAdded As Boolean = Me.MoveSet.Add(queryProxyKey + 1)
+If alreadyAdded = False Then
+Me.MoveArray.Append(queryProxyKey)
+End If
+End Sub
+
+## Creates a proxy in the tree for its body type and returns the proxy key.
+## Static proxies only buffer a move when forcePairCreation is set, so new
+## static shapes do not pair with already-moved proxies unless requested.
+Function CreateProxy(proxyType As BodyType, box As AABB, categoryBits As Integer, shapeIndex As Integer, forcePairCreation As Boolean) As Integer
+Var typeIndex As Integer = Integer(proxyType)
+If typeIndex < 0 Or typeIndex > 2 Then
+Throw New InvalidArgumentException("BroadPhase.CreateProxy invalid body type")
+End If
+Var proxyId As Integer = Me.Trees[typeIndex].CreateProxy(box, categoryBits, shapeIndex)
+Var proxyKey As Integer = BroadPhase.MakeProxyKey(proxyId, typeIndex)
+If typeIndex <> Integer(BodyType.StaticBody) Or forcePairCreation Then
+Me.BufferMove(proxyKey)
+End If
+Return proxyKey
+End Function
+
+## Destroys a proxy and removes it from the move buffer.
+Sub DestroyProxy(proxyKey As Integer)
+If Me.MoveArray.Count <> Me.MoveSet.Count Then
+Throw New RuntimeException("BroadPhase move buffer and move set disagree")
+End If
+Me.UnBufferMove(proxyKey)
+
+Var typeIndex As Integer = BroadPhase.ProxyType(proxyKey)
+Var proxyId As Integer = BroadPhase.ProxyId(proxyKey)
+
+If typeIndex < 0 Or typeIndex > 2 Then
+Throw New InvalidArgumentException("BroadPhase.DestroyProxy invalid body type")
+End If
+Me.Trees[typeIndex].DestroyProxy(proxyId)
+End Sub
+
+## Moves a proxy to new bounds and buffers the move.
+Sub MoveProxy(proxyKey As Integer, box As AABB)
+Var typeIndex As Integer = BroadPhase.ProxyType(proxyKey)
+Var proxyId As Integer = BroadPhase.ProxyId(proxyKey)
+
+Me.Trees[typeIndex].MoveProxy(proxyId, box)
+Me.BufferMove(proxyKey)
+End Sub
+
+## Enlarges a proxy in place to bounds strictly containing the old bounds
+## and buffers the move. The new bounds must not be contained by the old
+## bounds.
+Sub EnlargeProxy(proxyKey As Integer, box As AABB)
+If proxyKey = PhysicsConstants.NULL_INDEX Then
+Throw New InvalidArgumentException("BroadPhase.EnlargeProxy null proxy key")
+End If
+Var typeIndex As Integer = BroadPhase.ProxyType(proxyKey)
+Var proxyId As Integer = BroadPhase.ProxyId(proxyKey)
+
+If typeIndex = Integer(BodyType.StaticBody) Then
+Throw New RuntimeException("BroadPhase.EnlargeProxy static proxies cannot enlarge")
+End If
+
+Me.Trees[typeIndex].EnlargeProxy(proxyId, box)
+Me.BufferMove(proxyKey)
+End Sub
+
+## Rebuilds the dynamic and kinematic trees optimally after enlargement,
+## mirroring upstream b2BroadPhase_RebuildTrees. The static tree is not
+## rebuilt because static proxies never enlarge.
+Sub RebuildTrees()
+Me.Trees[Integer(BodyType.DynamicBody)].Rebuild(False)
+Me.Trees[Integer(BodyType.KinematicBody)].Rebuild(False)
+End Sub
+
+## Returns the shape index carried by a proxy.
+Function GetShapeIndex(proxyKey As Integer) As Integer
+Var typeIndex As Integer = BroadPhase.ProxyType(proxyKey)
+Var proxyId As Integer = BroadPhase.ProxyId(proxyKey)
+
+Return Me.Trees[typeIndex].GetUserData(proxyId)
+End Function
+
+## Returns True when the bounds of the two proxies overlap.
+Function TestOverlap(proxyKeyA As Integer, proxyKeyB As Integer) As Boolean
+Var typeIndexA As Integer = BroadPhase.ProxyType(proxyKeyA)
+Var proxyIdA As Integer = BroadPhase.ProxyId(proxyKeyA)
+Var typeIndexB As Integer = BroadPhase.ProxyType(proxyKeyB)
+Var proxyIdB As Integer = BroadPhase.ProxyId(proxyKeyB)
+
+Var aabbA As AABB = Me.Trees[typeIndexA].GetAABB(proxyIdA)
+Var aabbB As AABB = Me.Trees[typeIndexB].GetAABB(proxyIdB)
+Return AABB.Overlaps(aabbA, aabbB)
+End Function
+
+## Removes a proxy from the move buffer and set, mirroring upstream
+## b2UnBufferMove.
+Private Sub UnBufferMove(proxyKey As Integer)
+Var found As Boolean = Me.MoveSet.Remove(proxyKey + 1)
+
+If found Then
+# Purge from the move buffer with a linear search; order is preserved.
+Var count As Integer = Me.MoveArray.Count
+For i As Integer = 0 To count - 1
+If Me.MoveArray.Items[i] = proxyKey Then
+Me.MoveArray.RemoveSwap(i)
+Break
+End If
+Next i
+End If
+End Sub
+
+## Appends one discovered pair to the per-proxy result list without
+## allocating in the warmed steady state. The per-slot lists thread through
+## the pair pool in discovery order so consumption walks them LIFO, exactly
+## like the upstream linked pair lists.
+Sub RecordPair(shapeIndexA As Integer, shapeIndexB As Integer, resultSlot As Integer)
+Me.mPairShapeIndexA.Append(shapeIndexA)
+Me.mPairShapeIndexB.Append(shapeIndexB)
+Me.mPairNext.Append(Me.mResultHeads.Items[resultSlot])
+Me.mResultHeads.Items[resultSlot] = Me.mPairCount
+Me.mPairCount = Me.mPairCount + 1
+Me.PairCount = Me.mPairCount
+End Sub
+
+## Finds candidate pairs for every proxy in the move buffer and reports them
+## through the sink in deterministic move order. The sink filters pairs at
+## record time and receives accepted pairs afterwards. The move buffer and
+## set are cleared at the end, mirroring upstream b2UpdateBroadPhasePairs
+## without the threading and arena machinery.
+##
+## The traversal fat bounds of the moved proxy are queried with the tree's
+## own stored bounds, which already carry the margin the world applies when
+## moving proxies.
+Sub UpdatePairs(sink As BroadPhasePairSink)
+Var moveCount As Integer = Me.MoveArray.Count
+If Me.MoveArray.Count <> Me.MoveSet.Count Then
+Throw New RuntimeException("BroadPhase move buffer and move set disagree")
+End If
+
+Me.PairCount = 0
+Me.mPairCount = 0
+# The pair pool restarts every update: clear the lists so their indices
+# stay aligned with mPairCount. Capacity is retained, so the warmed
+# steady state still allocates nothing.
+Me.mPairShapeIndexA.Clear()
+Me.mPairShapeIndexB.Clear()
+Me.mPairNext.Clear()
+If moveCount = 0 Then
+Return
+End If
+
+If Me.mContext = Nothing Then
+Me.mContext = New BroadPhaseQueryContext
+End If
+Me.mContext.Owner = Me
+Me.mContext.Sink = sink
+
+# One result head per moved proxy. The list is reserved so the warmed
+# steady state never grows it.
+Me.mResultHeads.Clear()
+If Me.mResultHeads.Capacity() < moveCount Then
+Me.mResultHeads.Reserve(moveCount + (moveCount \ 2))
+End If
+For i As Integer = 0 To moveCount - 1
+Me.mResultHeads.Append(-1)
+Next i
+
+For i As Integer = 0 To moveCount - 1
+Var proxyKey As Integer = Me.MoveArray.Items[i]
+If proxyKey = PhysicsConstants.NULL_INDEX Then
+# Proxy was destroyed after it moved.
+Continue
+End If
+
+Var proxyType As Integer = BroadPhase.ProxyType(proxyKey)
+Var proxyId As Integer = BroadPhase.ProxyId(proxyKey)
+Me.mContext.QueryProxyKey = proxyKey
+Me.mContext.ResultSlot = i
+
+Var baseTree As DynamicTree = Me.Trees[proxyType]
+
+# We have to query the tree with the fat bounds so that we do not fail
+# to create a contact that may touch later.
+Var fatAABB As AABB = Me.mFatBounds
+baseTree.GetAABBTo(proxyId, fatAABB)
+Me.mContext.QueryShapeIndex = baseTree.GetUserData(proxyId)
+
+# Query trees. Only dynamic proxies collide with kinematic and static
+# proxies, using the default mask bits so group filtering keeps working.
+If proxyType = Integer(BodyType.DynamicBody) Then
+Me.mContext.QueryTreeType = Integer(BodyType.KinematicBody)
+Me.Trees[Integer(BodyType.KinematicBody)].QueryTo(fatAABB, PhysicsConstants.DEFAULT_MASK_BITS, Me.mContext, Me.mStats)
+
+Me.mContext.QueryTreeType = Integer(BodyType.StaticBody)
+Me.Trees[Integer(BodyType.StaticBody)].QueryTo(fatAABB, PhysicsConstants.DEFAULT_MASK_BITS, Me.mContext, Me.mStats)
+End If
+
+# All proxies collide with dynamic proxies.
+Me.mContext.QueryTreeType = Integer(BodyType.DynamicBody)
+Me.Trees[Integer(BodyType.DynamicBody)].QueryTo(fatAABB, PhysicsConstants.DEFAULT_MASK_BITS, Me.mContext, Me.mStats)
+Next i
+
+# Consume the pairs in deterministic move order.
+For i As Integer = 0 To moveCount - 1
+Var pairIndex As Integer = Me.mResultHeads.Items[i]
+While pairIndex <> -1
+sink.AcceptPair(Me.mPairShapeIndexA.Items[pairIndex], Me.mPairShapeIndexB.Items[pairIndex])
+pairIndex = Me.mPairNext.Items[pairIndex]
+Wend
+Next i
+
+# Reset the move buffer.
+Me.MoveArray.Clear()
+Me.MoveSet.Clear()
+End Sub
+
+## Validates the dynamic and kinematic trees, mirroring upstream
+## b2ValidateBroadphase.
+Sub Validate()
+Me.Trees[Integer(BodyType.DynamicBody)].Validate()
+Me.Trees[Integer(BodyType.KinematicBody)].Validate()
+End Sub
+
+## Checks that no node in any tree carries the enlarged flag, mirroring
+## upstream b2ValidateNoEnlarged. Only meaningful after a full rebuild of
+## every tree.
+Sub ValidateNoEnlarged()
+For j As Integer = 0 To 2
+Me.Trees[j].ValidateNoEnlarged()
+Next j
+End Sub
+End Class

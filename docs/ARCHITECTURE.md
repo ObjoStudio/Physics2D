@@ -218,6 +218,44 @@ Chain segments get their own family (`CollideChainSegmentAnd*`,
 with ghost collisions differently from ordinary segments, including
 normal-flip bookkeeping during SAT selection and clipping.
 
+## Dynamic Tree and Broad Phase (Stage 5)
+
+Stage 5 ports `dynamic_tree.c` and `broad_phase.c` on top of the Stage 3
+containers. Four rules shape the layout:
+
+1. **Node objects with a free list.** Each `TreeNode` owns its `AABB Bounds`
+   (decision 0004): node arrays hold references, and `AllocateNode`/`FreeNode`
+   thread the free list through `Parent`. Every mutator keeps the tree valid
+   incrementally, and `Validate`/`ValidateNoEnlarged` re-derive heights,
+   bounds, category unions, and the enlarged-flag invariant from scratch.
+2. **One scratch bundle per tree.** Traversal stacks, ray/shape-cast input
+   copies, rebuild workspace (`LeafIndices`, leaf centres, explicit rebuild
+   stack), and the greedy sibling-search costs live in a lazily created
+   `TreeScratch`. Queries and mutations are allocation-free once warm but not
+   re-entrant; each tree serialises its own traversals.
+3. **Callbacks are abstract classes.** `TreeQueryCallback`, `TreeRayCastCallback`,
+   and `TreeShapeCastCallback` implement the upstream return-value protocol
+   (0 terminates, -1 skips, a fraction narrows the cast). Cold/warm pairs
+   (`Query`/`QueryTo`, `RayCast`/`RayCastTo`, `ShapeCast`/`ShapeCastTo`,
+   `GetAABB`/`GetAABBTo`) keep the allocating forms out of warm code.
+4. **The broad phase mirrors upstream move and pair bookkeeping.** Three
+   trees (static, kinematic, dynamic) sit behind proxy keys packing the tree
+   proxy id and body type (`(proxyId << 2) | type`). Moves buffer into a
+   `PairKeySet` (key + 1, 0 reserved) plus an ordered array; pair generation
+   queries the kinematic, static, and dynamic trees per moved proxy,
+   de-duplicates through the move set and the pair set (Stage 3 table), and
+   threads per-move candidate lists through parallel `IntegerList` pools that
+   are consumed LIFO in deterministic move order. Pair reporting goes through
+   a `BroadPhasePairSink`: `ShouldCollide` filters at record time and
+   `AcceptPair` receives survivors, letting the Stage 6 world register
+   contacts without exposing the broad phase.
+
+Rebuild always uses the upstream median-split configuration
+(`B2_TREE_HEURISTIC 0`); the binned SAH partitioning is deliberately not
+ported. A partial rebuild dissolves only the enlarged path and treats clean
+sibling subtrees as atomic leaves, so its returned leaf count is bounded by
+but not equal to the proxy count.
+
 ## Deterministic Maths
 
 `PhysicsMaths` ports the upstream trigonometric approximations so
@@ -276,3 +314,14 @@ reuse path after one warm-up query:
 | `stage4-cast` | 8 ray casts and 8 shape casts | 0.17 ms | 0 |
 | `stage4-time-of-impact` | 8 swept-capsule time-of-impact solves | 0.47 ms | 0 |
 | `stage4-plane-solver` | 8 mover solves against 3 planes | 0.13 ms | 0 |
+
+Stage 5 adds the spatial index and broad-phase envelope (same machine, see
+`benchmarks/results/` for the latest run). Tree mutation costs are dominated
+by the interpreted VM's scalar arithmetic; allocation gates still read zero:
+
+| Scenario | Work per iteration | Median | Allocations |
+|---|---|---|---|
+| `stage5-tree-churn` | 64 moves + 16 destroy/create pairs in a 2048-leaf tree | 11.1 ms | 0 |
+| `stage5-tree-query` | 4 queries, 4 rays, 1 shape cast on a 4096-leaf tree | 2.0 ms | 0 |
+| `stage5-tree-rebuild` | 32 enlarges + partial rebuild of a 2048-leaf tree | 12.2 ms | 0 |
+| `stage5-broadphase-pairs` | 32 of 512 dynamic proxies moved; pairs reported | 4.2 ms | 0 |

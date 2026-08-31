@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "TreeRayCastCallback",
+  "Id": "8fe090c0-11d3-439b-8745-185e3d537f23",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "TreeRayCastCallback-8fe090c0-11d3-439b-8745-185e3d537f23.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": [],
+  "Name": "DynamicTree",
+  "Id": "55542eb0-42a0-4347-b11f-3b7e2e8c53c6",
+  "CodeFile": "DynamicTree-55542eb0-42a0-4347-b11f-3b7e2e8c53c6.objobasic"
+}

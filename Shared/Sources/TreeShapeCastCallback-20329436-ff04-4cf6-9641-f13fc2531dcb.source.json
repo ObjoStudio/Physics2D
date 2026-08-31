@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "TreeShapeCastCallback",
+  "Id": "20329436-ff04-4cf6-9641-f13fc2531dcb",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

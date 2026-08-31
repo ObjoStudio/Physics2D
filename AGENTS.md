@@ -187,6 +187,29 @@ in the Objo checkout remains authoritative.
   compiler; closing and reopening parentheses per line is not required.
 - `System.Print` does not exist. Tests surface diagnostic values with
   `Assert.Fail("...")`; benchmarks read `System.AllocationCount` directly.
+- `While` loops end with `Wend`, not `End While`. `While True` triggers an
+  "always true" warning; use a boolean flag instead.
+- `Static` is a keyword; name body-type members `StaticBody`/`KinematicBody`/
+  `DynamicBody` rather than `Static`/`Kinematic`/`Dynamic`.
+- Arrays remove by value with `Remove(item)` and by index with `RemoveAt(i)`;
+  `Remove(slot)` with an index silently fails to compile against a list of
+  the wrong element type.
+- `IntegerList.SetAt(i, v)` requires `i` to be inside the current `Count`; it
+  does not grow the list. Grow with `Clear` plus `Append`, reserving capacity
+  first in zero-alloc loops.
+- `String` does not support `<`/`>` comparison. Encode sort keys as Integers
+  (for example `a * 1000 + b`) instead of sorting strings.
+- Enumerated values convert to `Integer` with `Integer(BodyType.Dynamic)`,
+  but an `Integer` does not convert back to the enum; pass enum values
+  directly to enum-typed parameters.
+- `AABB` has no `Set` method; write `box.LowerBound.Set(x, y)` and
+  `box.UpperBound.Set(x, y)` separately.
+- `AABB`, `Vector2`, and result objects are heap classes: every `New`
+  allocates. Hot callbacks and loops must reuse receiver objects
+  (`GetAABBTo(proxyId, field)`), pre-build inputs outside the loop, and
+  prefer scalar slab math over constructing intermediate geometry.
+- A test-project source item needs a sidecar with `"BuildScope": "Test"`;
+  `"Application"` there is a packaging error.
 
 Forge2D, JBox2D, and the older Xojo Physics project are secondary references
 only. Do not copy implementation code from them into Physics2D. A single pinned

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage5Workloads",
+  "Id": "b2f1c8d4-91a2-4c7d-8e3f-6a5b4c3d2e1f",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage5Workloads-b2f1c8d4-91a2-4c7d-8e3f-6a5b4c3d2e1f.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

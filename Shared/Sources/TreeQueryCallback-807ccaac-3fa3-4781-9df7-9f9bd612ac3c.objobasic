@@ -1,0 +1,8 @@
+# Client callback receiving the leaves of a dynamic tree box query, ported
+# from upstream b2TreeQueryCallbackFcn. Return True to continue traversal or
+# False to stop it early.
+Abstract Class TreeQueryCallback
+## Called for every overlapping leaf. Returning True continues the query;
+## False terminates it with the stats gathered so far.
+Abstract Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+End Class
