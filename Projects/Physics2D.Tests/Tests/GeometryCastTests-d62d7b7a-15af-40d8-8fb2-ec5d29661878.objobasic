@@ -1,0 +1,196 @@
+# Golden fixture tests for ray casts and shape casts.
+#
+# Consumes testdata/golden/raycast.txt and testdata/golden/shapecast.txt,
+# generated from the pinned Box2D 3.1.1 checkout. Shapes, rays, and cast
+# inputs mirror tools/fixture_gen/fixture_gen.c exactly.
+Import Physics2D
+
+Class GeometryCastTests Inherits TestCase
+## The four cast shapes from the fixture generator.
+Private Shared Function FixtureCircle() As Circle
+Return New Circle(New Vector2(0.0, 0.0), 1.0)
+End Function
+
+Private Shared Function FixtureCapsule() As Capsule
+Return New Capsule(New Vector2(-1.0, 0.0), New Vector2(1.0, 0.0), 0.5)
+End Function
+
+Private Shared Function FixtureSegment() As Segment
+Return New Segment(New Vector2(-2.0, 0.0), New Vector2(2.0, 0.0))
+End Function
+
+Private Shared Function FixtureBox() As Polygon
+Return Polygon.MakeBox(1.0, 1.0)
+End Function
+
+Private Shared Function RayInput(caseIndex As Integer) As RayCastInput
+# origin, translation, maxFraction per the generator's table.
+Var input As New RayCastInput
+If caseIndex = 0 Then
+input.Origin.Set(0.0, 5.0)
+input.Translation.Set(0.0, -10.0)
+input.MaxFraction = 1.0
+ElseIf caseIndex = 1 Then
+input.Origin.Set(-5.0, 0.5)
+input.Translation.Set(10.0, 0.0)
+input.MaxFraction = 1.0
+ElseIf caseIndex = 2 Then
+# Miss.
+input.Origin.Set(0.0, 3.0)
+input.Translation.Set(0.0, 1.0)
+input.MaxFraction = 1.0
+ElseIf caseIndex = 3 Then
+# Starts inside the circle.
+input.Origin.Set(0.0, 0.0)
+input.Translation.Set(0.0, -4.0)
+input.MaxFraction = 1.0
+Else
+# Clipped fraction.
+input.Origin.Set(0.0, 2.0)
+input.Translation.Set(0.0, -6.0)
+input.MaxFraction = 0.25
+End If
+Return input
+End Function
+
+Public Sub TestRayCastsMatchGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("raycast.txt")
+Var circle As Circle = GeometryCastTests.FixtureCircle()
+Var capsule As Capsule = GeometryCastTests.FixtureCapsule()
+Var segment As Segment = GeometryCastTests.FixtureSegment()
+Var box As Polygon = GeometryCastTests.FixtureBox()
+
+Var checkedRecords As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+If fields[0] <> "ray" Then
+Continue
+End If
+Var shapeName As String = fields[1]
+Var caseIndex As Integer = Integer.Parse(fields[2])
+Var values() As String = fields[3].Split(" ")
+Var input As RayCastInput = GeometryCastTests.RayInput(caseIndex)
+
+Var output As CastOutput = Nothing
+If shapeName = "circle" Then
+output = Casts.RayCastCircle(input, circle)
+ElseIf shapeName = "capsule" Then
+output = Casts.RayCastCapsule(input, capsule)
+ElseIf shapeName = "segment" Then
+output = Casts.RayCastSegment(input, segment, False)
+ElseIf shapeName = "polygon" Then
+output = Casts.RayCastPolygon(input, box)
+Else
+Assert.Fail("unknown ray fixture shape " + shapeName)
+End If
+
+Var label As String = shapeName + " ray case " + caseIndex.ToString()
+PhysicsAssert.Near(Double.Parse(values[0]), output.Fraction, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " fraction")
+PhysicsAssert.Near(Double.Parse(values[1]), output.Normal.X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " normalx")
+PhysicsAssert.Near(Double.Parse(values[2]), output.Normal.Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " normaly")
+PhysicsAssert.Near(Double.Parse(values[3]), output.Point.X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " pointx")
+PhysicsAssert.Near(Double.Parse(values[4]), output.Point.Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " pointy")
+Assert.Equal(Integer.Parse(values[6]) = 1, output.Hit, label + " hit")
+checkedRecords = checkedRecords + 1
+Next line
+Assert.Equal(20, checkedRecords)
+End Sub
+
+Public Sub TestWarmRayCastsMatchColdForm()
+Var input As RayCastInput = GeometryCastTests.RayInput(0)
+Var capsule As Capsule = GeometryCastTests.FixtureCapsule()
+Var box As Polygon = GeometryCastTests.FixtureBox()
+
+Var cold As CastOutput = Casts.RayCastCapsule(input, capsule)
+Var warm As New CastOutput
+Casts.RayCastCapsuleTo(input, capsule, warm)
+PhysicsAssert.NearVector(cold.Normal, warm.Normal, Tolerances.INTERNAL_ABS, 0.0, "capsule warm normal")
+PhysicsAssert.NearVector(cold.Point, warm.Point, Tolerances.INTERNAL_ABS, 0.0, "capsule warm point")
+PhysicsAssert.Near(cold.Fraction, warm.Fraction, Tolerances.INTERNAL_ABS, 0.0, "capsule warm fraction")
+Assert.Equal(cold.Hit, warm.Hit)
+
+Var coldPoly As CastOutput = Casts.RayCastPolygon(input, box)
+Var warmPoly As New CastOutput
+Casts.RayCastPolygonTo(input, box, warmPoly)
+PhysicsAssert.NearVector(coldPoly.Normal, warmPoly.Normal, Tolerances.INTERNAL_ABS, 0.0, "polygon warm normal")
+PhysicsAssert.NearVector(coldPoly.Point, warmPoly.Point, Tolerances.INTERNAL_ABS, 0.0, "polygon warm point")
+PhysicsAssert.Near(coldPoly.Fraction, warmPoly.Fraction, Tolerances.INTERNAL_ABS, 0.0, "polygon warm fraction")
+Assert.Equal(coldPoly.Hit, warmPoly.Hit)
+End Sub
+
+Public Sub TestShapeCastsMatchGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("shapecast.txt")
+Var circle As Circle = GeometryCastTests.FixtureCircle()
+Var capsule As Capsule = GeometryCastTests.FixtureCapsule()
+Var segment As Segment = GeometryCastTests.FixtureSegment()
+Var box As Polygon = GeometryCastTests.FixtureBox()
+
+# Cast starts and translations per the generator's table.
+Var starts() As Vector2 = [New Vector2(0.0, 4.0), New Vector2(1.5, 4.0), New Vector2(0.0, 0.5)]
+Var translations() As Vector2 = [New Vector2(0.0, -8.0), New Vector2(0.0, -8.0), New Vector2(0.0, -4.0)]
+
+Var checkedRecords As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+If fields[0] <> "shapecast" Then
+Continue
+End If
+Var shapeName As String = fields[1]
+Var caseIndex As Integer = Integer.Parse(fields[2])
+Var values() As String = fields[3].Split(" ")
+
+Var input As New ShapeCastInput
+Var startPoints As New Array(Of Vector2)
+startPoints.Append(New Vector2(starts[caseIndex].X, starts[caseIndex].Y))
+input.Proxy = ShapeProxy.Make(startPoints, 1, 0.25)
+input.Translation.Set(translations[caseIndex].X, translations[caseIndex].Y)
+input.MaxFraction = 1.0
+input.CanEncroach = False
+
+Var output As CastOutput = Nothing
+If shapeName = "circle" Then
+output = Casts.ShapeCastCircle(input, circle)
+ElseIf shapeName = "capsule" Then
+output = Casts.ShapeCastCapsule(input, capsule)
+ElseIf shapeName = "polygon" Then
+output = Casts.ShapeCastPolygon(input, box)
+ElseIf shapeName = "segment" Then
+output = Casts.ShapeCastSegment(input, segment)
+Else
+Assert.Fail("unknown shapecast fixture shape " + shapeName)
+End If
+
+Var label As String = shapeName + " shapecast case " + caseIndex.ToString()
+PhysicsAssert.Near(Double.Parse(values[0]), output.Fraction, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " fraction")
+PhysicsAssert.Near(Double.Parse(values[1]), output.Normal.X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " normalx")
+PhysicsAssert.Near(Double.Parse(values[2]), output.Normal.Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " normaly")
+PhysicsAssert.Near(Double.Parse(values[3]), output.Point.X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " pointx")
+PhysicsAssert.Near(Double.Parse(values[4]), output.Point.Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " pointy")
+Assert.Equal(Integer.Parse(values[5]) = 1, output.Hit, label + " hit")
+checkedRecords = checkedRecords + 1
+Next line
+Assert.Equal(12, checkedRecords)
+End Sub
+
+Public Sub TestUpstreamShapeCastAssertions()
+# Ported from upstream test_distance.c ShapeCastTest.
+Var pointsA As New Array(Of Vector2)
+pointsA.Append(New Vector2(-1.0, -1.0))
+pointsA.Append(New Vector2(1.0, -1.0))
+pointsA.Append(New Vector2(1.0, 1.0))
+pointsA.Append(New Vector2(-1.0, 1.0))
+Var pointsB As New Array(Of Vector2)
+pointsB.Append(New Vector2(2.0, -1.0))
+pointsB.Append(New Vector2(2.0, 1.0))
+
+Var input As New ShapeCastPairInput
+input.ProxyA = ShapeProxy.Make(pointsA, 4, 0.0)
+input.ProxyB = ShapeProxy.Make(pointsB, 2, 0.0)
+input.TranslationB.Set(-2.0, 0.0)
+input.MaxFraction = 1.0
+
+Var output As CastOutput = Casts.ShapeCast(input)
+Assert.True(output.Hit, "expected hit")
+PhysicsAssert.Near(0.5, output.Fraction, 0.005, 0.0, "fraction")
+End Sub
+End Class

@@ -1,0 +1,246 @@
+# Golden fixture tests for narrow-phase collision manifolds.
+#
+# Consumes testdata/golden/manifold.txt, generated from the pinned Box2D
+# 3.1.1 checkout. Shapes and transforms mirror
+# tools/fixture_gen/fixture_gen.c exactly.
+Import Physics2D
+
+Class GeometryManifoldTests Inherits TestCase
+## The circle shape from the fixture generator.
+Private Shared Function FixtureCircle() As Circle
+Return New Circle(New Vector2(0.0, 0.0), 1.0)
+End Function
+
+## The capsule shape from the fixture generator.
+Private Shared Function FixtureCapsule() As Capsule
+Return New Capsule(New Vector2(-1.0, 0.0), New Vector2(1.0, 0.0), 0.5)
+End Function
+
+## The segment shape from the fixture generator.
+Private Shared Function FixtureSegment() As Segment
+Return New Segment(New Vector2(-2.0, 0.0), New Vector2(2.0, 0.0))
+End Function
+
+## The chain segment with ghost vertices from the fixture generator.
+Private Shared Function FixtureChainSegment() As ChainSegment
+Var chainSegment As New ChainSegment
+chainSegment.Segment = New Segment(New Vector2(-2.0, 0.0), New Vector2(2.0, 0.0))
+chainSegment.Ghost1 = New Vector2(-3.0, 0.0)
+chainSegment.Ghost2 = New Vector2(3.0, 0.0)
+chainSegment.ChainId = 0
+Return chainSegment
+End Function
+
+## The identity transform used for shape A.
+Private Shared Function IdentityTransform() As Transform
+Return New Transform(New Vector2(0.0, 0.0), Rot.Identity())
+End Function
+
+## The shape B transform per the generator's case table: offset and
+## optional rotation.
+Private Shared Function CaseTransform(caseIndex As Integer) As Transform
+If caseIndex = 0 Then
+Return New Transform(New Vector2(0.0, -0.5), Rot.Identity())
+ElseIf caseIndex = 1 Then
+Return New Transform(New Vector2(0.75, 0.0), Rot.Identity())
+ElseIf caseIndex = 2 Then
+# Exact overlap.
+Return New Transform(New Vector2(0.0, 0.0), Rot.Identity())
+ElseIf caseIndex = 3 Then
+Return New Transform(New Vector2(1.6, 0.8), Rot.Make(0.3))
+Else
+# Fully separated.
+Return New Transform(New Vector2(0.0, 2.5), Rot.Identity())
+End If
+End Function
+
+## Reads the manifold points and normals from one fixture record.
+Private Shared Function CheckRecord(manifold As Manifold, values() As String, label As String)
+PhysicsAssert.Near(Double.Parse(values[0]), manifold.Normal.X, Tolerances.MANIFOLD_ABS, Tolerances.MANIFOLD_REL, label + " normalx")
+PhysicsAssert.Near(Double.Parse(values[1]), manifold.Normal.Y, Tolerances.MANIFOLD_ABS, Tolerances.MANIFOLD_REL, label + " normaly")
+
+For i As Integer = 0 To manifold.PointCount - 1
+Var mp As ManifoldPoint = manifold.Point1
+If i = 1 Then
+mp = manifold.Point2
+End If
+Var baseIndex As Integer = 2 + i * 9
+Var pointLabel As String = label + " point " + i.ToString()
+PhysicsAssert.Near(Double.Parse(values[baseIndex]), mp.Point.X, Tolerances.MANIFOLD_ABS, Tolerances.MANIFOLD_REL, pointLabel + " pointx")
+PhysicsAssert.Near(Double.Parse(values[baseIndex + 1]), mp.Point.Y, Tolerances.MANIFOLD_ABS, Tolerances.MANIFOLD_REL, pointLabel + " pointy")
+PhysicsAssert.Near(Double.Parse(values[baseIndex + 2]), mp.AnchorA.X, Tolerances.MANIFOLD_ABS, Tolerances.MANIFOLD_REL, pointLabel + " anchorAx")
+PhysicsAssert.Near(Double.Parse(values[baseIndex + 3]), mp.AnchorA.Y, Tolerances.MANIFOLD_ABS, Tolerances.MANIFOLD_REL, pointLabel + " anchorAy")
+PhysicsAssert.Near(Double.Parse(values[baseIndex + 4]), mp.AnchorB.X, Tolerances.MANIFOLD_ABS, Tolerances.MANIFOLD_REL, pointLabel + " anchorBx")
+PhysicsAssert.Near(Double.Parse(values[baseIndex + 5]), mp.AnchorB.Y, Tolerances.MANIFOLD_ABS, Tolerances.MANIFOLD_REL, pointLabel + " anchorBy")
+PhysicsAssert.Near(Double.Parse(values[baseIndex + 6]), mp.Separation, Tolerances.MANIFOLD_ABS, Tolerances.MANIFOLD_REL, pointLabel + " separation")
+Assert.Equal(Integer.Parse(values[baseIndex + 7]), mp.Id, pointLabel + " id")
+Assert.Equal(Integer.Parse(values[baseIndex + 8]) = 1, mp.Persisted, pointLabel + " persisted")
+Next i
+End Function
+
+Public Sub TestManifoldsMatchGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("manifold.txt")
+Var circle As Circle = GeometryManifoldTests.FixtureCircle()
+Var capsule As Capsule = GeometryManifoldTests.FixtureCapsule()
+Var segment As Segment = GeometryManifoldTests.FixtureSegment()
+Var boxA As Polygon = Polygon.MakeBox(1.0, 1.0)
+Var boxB As Polygon = Polygon.MakeBox(0.5, 0.5)
+Var chainSegment As ChainSegment = GeometryManifoldTests.FixtureChainSegment()
+Var xfA As Transform = GeometryManifoldTests.IdentityTransform()
+
+Var checkedRecords As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+If fields[0] <> "manifold" Then
+Continue
+End If
+Var shapeName As String = fields[1]
+Var caseIndex As Integer = Integer.Parse(fields[2])
+Var expectedCount As Integer = Integer.Parse(fields[3])
+Var values() As String = fields[4].Split(" ")
+Var xfB As Transform = GeometryManifoldTests.CaseTransform(caseIndex)
+
+Var manifold As Manifold = Nothing
+If shapeName = "circles" Then
+manifold = Collide.CollideCircles(circle, xfA, circle, xfB)
+ElseIf shapeName = "capsule_circle" Then
+manifold = Collide.CollideCapsuleAndCircle(capsule, xfA, circle, xfB)
+ElseIf shapeName = "segment_circle" Then
+manifold = Collide.CollideSegmentAndCircle(segment, xfA, circle, xfB)
+ElseIf shapeName = "polygon_circle" Then
+manifold = Collide.CollidePolygonAndCircle(boxA, xfA, circle, xfB)
+ElseIf shapeName = "capsules" Then
+manifold = Collide.CollideCapsules(capsule, xfA, capsule, xfB)
+ElseIf shapeName = "segment_capsule" Then
+manifold = Collide.CollideSegmentAndCapsule(segment, xfA, capsule, xfB)
+ElseIf shapeName = "polygon_capsule" Then
+manifold = Collide.CollidePolygonAndCapsule(boxA, xfA, capsule, xfB)
+ElseIf shapeName = "polygons" Then
+manifold = Collide.CollidePolygons(boxA, xfA, boxB, xfB)
+ElseIf shapeName = "segment_polygon" Then
+manifold = Collide.CollideSegmentAndPolygon(segment, xfA, boxB, xfB)
+ElseIf shapeName = "chain_circle" Then
+manifold = Collide.CollideChainSegmentAndCircle(chainSegment, xfA, circle, xfB)
+ElseIf shapeName = "chain_capsule" Then
+Var cache As New SimplexCache
+manifold = Collide.CollideChainSegmentAndCapsule(chainSegment, xfA, capsule, xfB, cache)
+ElseIf shapeName = "chain_polygon" Then
+Var cache As New SimplexCache
+manifold = Collide.CollideChainSegmentAndPolygon(chainSegment, xfA, boxB, xfB, cache)
+Else
+Assert.Fail("unknown manifold fixture shape " + shapeName)
+End If
+
+Var label As String = shapeName + " case " + caseIndex.ToString()
+Assert.Equal(expectedCount, manifold.PointCount, label + " pointCount")
+GeometryManifoldTests.CheckRecord(manifold, values, label)
+checkedRecords = checkedRecords + 1
+Next line
+Assert.Equal(60, checkedRecords)
+End Sub
+
+Public Sub TestWarmManifoldsMatchColdForm()
+Var capsule As Capsule = GeometryManifoldTests.FixtureCapsule()
+Var boxA As Polygon = Polygon.MakeBox(1.0, 1.0)
+Var boxB As Polygon = Polygon.MakeBox(0.5, 0.5)
+Var chainSegment As ChainSegment = GeometryManifoldTests.FixtureChainSegment()
+Var xfA As Transform = GeometryManifoldTests.IdentityTransform()
+Var xfB As Transform = GeometryManifoldTests.CaseTransform(3)
+
+Var coldCapsules As Manifold = Collide.CollideCapsules(capsule, xfA, capsule, xfB)
+Var warmCapsules As New Manifold
+Collide.CollideCapsulesTo(capsule, xfA, capsule, xfB, warmCapsules)
+Assert.Equal(coldCapsules.PointCount, warmCapsules.PointCount, "capsules pointCount")
+PhysicsAssert.NearVector(coldCapsules.Normal, warmCapsules.Normal, Tolerances.INTERNAL_ABS, 0.0, "capsules normal")
+For i As Integer = 0 To coldCapsules.PointCount - 1
+Var cp As ManifoldPoint = coldCapsules.Point1
+Var wp As ManifoldPoint = warmCapsules.Point1
+If i = 1 Then
+cp = coldCapsules.Point2
+wp = warmCapsules.Point2
+End If
+PhysicsAssert.NearVector(cp.AnchorA, wp.AnchorA, Tolerances.INTERNAL_ABS, 0.0, "capsules anchorA " + i.ToString())
+PhysicsAssert.Near(cp.Separation, wp.Separation, Tolerances.INTERNAL_ABS, 0.0, "capsules separation " + i.ToString())
+Assert.Equal(cp.Id, wp.Id, "capsules id " + i.ToString())
+Next i
+
+Var coldPolyCapsule As Manifold = Collide.CollidePolygonAndCapsule(boxA, xfA, capsule, xfB)
+Var warmPolyCapsule As New Manifold
+Collide.CollidePolygonAndCapsuleTo(boxA, xfA, capsule, xfB, warmPolyCapsule)
+Assert.Equal(coldPolyCapsule.PointCount, warmPolyCapsule.PointCount, "polygon capsule pointCount")
+PhysicsAssert.NearVector(coldPolyCapsule.Normal, warmPolyCapsule.Normal, Tolerances.INTERNAL_ABS, 0.0, "polygon capsule normal")
+
+Var coldChain As Manifold = Collide.CollideChainSegmentAndPolygon(chainSegment, xfA, boxB, xfB, New SimplexCache)
+Var warmChain As New Manifold
+Collide.CollideChainSegmentAndPolygonTo(chainSegment, xfA, boxB, xfB, New SimplexCache, warmChain)
+Assert.Equal(coldChain.PointCount, warmChain.PointCount, "chain polygon pointCount")
+PhysicsAssert.NearVector(coldChain.Normal, warmChain.Normal, Tolerances.INTERNAL_ABS, 0.0, "chain polygon normal")
+For i As Integer = 0 To coldChain.PointCount - 1
+Var cp As ManifoldPoint = coldChain.Point1
+Var wp As ManifoldPoint = warmChain.Point1
+If i = 1 Then
+cp = coldChain.Point2
+wp = warmChain.Point2
+End If
+PhysicsAssert.NearVector(cp.AnchorA, wp.AnchorA, Tolerances.INTERNAL_ABS, 0.0, "chain anchorA " + i.ToString())
+Assert.Equal(cp.Id, wp.Id, "chain id " + i.ToString())
+Next i
+
+End Sub
+
+Public Sub TestWarmManifoldReuseAcrossQueries()
+# Reusing one warm manifold across varying queries must reproduce the
+# fresh cold result each time: Reset clears stale points and the scratch
+# workspace is refilled per query.
+Var segment As Segment = GeometryManifoldTests.FixtureSegment()
+Var boxB As Polygon = Polygon.MakeBox(0.5, 0.5)
+Var xfA As Transform = GeometryManifoldTests.IdentityTransform()
+Var reused As New Manifold
+
+For caseIndex As Integer = 0 To 4
+Var xfB As Transform = GeometryManifoldTests.CaseTransform(caseIndex)
+Collide.CollideSegmentAndPolygonTo(segment, xfA, boxB, xfB, reused)
+Var fresh As Manifold = Collide.CollideSegmentAndPolygon(segment, xfA, boxB, xfB)
+
+Var label As String = "case " + caseIndex.ToString()
+Assert.Equal(fresh.PointCount, reused.PointCount, label + " pointCount")
+PhysicsAssert.NearVector(fresh.Normal, reused.Normal, Tolerances.INTERNAL_ABS, 0.0, label + " normal")
+For i As Integer = 0 To fresh.PointCount - 1
+Var fp As ManifoldPoint = fresh.Point1
+Var rp As ManifoldPoint = reused.Point1
+If i = 1 Then
+fp = fresh.Point2
+rp = reused.Point2
+End If
+PhysicsAssert.NearVector(fp.AnchorA, rp.AnchorA, Tolerances.INTERNAL_ABS, 0.0, label + " anchorA " + i.ToString())
+PhysicsAssert.NearVector(fp.AnchorB, rp.AnchorB, Tolerances.INTERNAL_ABS, 0.0, label + " anchorB " + i.ToString())
+PhysicsAssert.Near(fp.Separation, rp.Separation, Tolerances.INTERNAL_ABS, 0.0, label + " separation " + i.ToString())
+Assert.Equal(fp.Id, rp.Id, label + " id " + i.ToString())
+Next i
+Next caseIndex
+End Sub
+
+Public Sub TestEmptyManifoldForSeparation()
+# Separated shapes produce an empty manifold in every pairing.
+Var circle As Circle = GeometryManifoldTests.FixtureCircle()
+Var capsule As Capsule = GeometryManifoldTests.FixtureCapsule()
+Var segment As Segment = GeometryManifoldTests.FixtureSegment()
+Var boxB As Polygon = Polygon.MakeBox(0.5, 0.5)
+Var chainSegment As ChainSegment = GeometryManifoldTests.FixtureChainSegment()
+Var xfA As Transform = GeometryManifoldTests.IdentityTransform()
+Var xfB As Transform = New Transform(New Vector2(0.0, 10.0), Rot.Identity())
+
+Assert.Equal(0, Collide.CollideCircles(circle, xfA, circle, xfB).PointCount)
+Assert.Equal(0, Collide.CollideCapsuleAndCircle(capsule, xfA, circle, xfB).PointCount)
+Assert.Equal(0, Collide.CollideSegmentAndCircle(segment, xfA, circle, xfB).PointCount)
+Assert.Equal(0, Collide.CollidePolygonAndCircle(boxB, xfA, circle, xfB).PointCount)
+Assert.Equal(0, Collide.CollideCapsules(capsule, xfA, capsule, xfB).PointCount)
+Assert.Equal(0, Collide.CollideSegmentAndCapsule(segment, xfA, capsule, xfB).PointCount)
+Assert.Equal(0, Collide.CollidePolygonAndCapsule(boxB, xfA, capsule, xfB).PointCount)
+Assert.Equal(0, Collide.CollidePolygons(boxB, xfA, boxB, xfB).PointCount)
+Assert.Equal(0, Collide.CollideSegmentAndPolygon(segment, xfA, boxB, xfB).PointCount)
+Assert.Equal(0, Collide.CollideChainSegmentAndCircle(chainSegment, xfA, circle, xfB).PointCount)
+Assert.Equal(0, Collide.CollideChainSegmentAndCapsule(chainSegment, xfA, capsule, xfB, New SimplexCache).PointCount)
+Assert.Equal(0, Collide.CollideChainSegmentAndPolygon(chainSegment, xfA, boxB, xfB, New SimplexCache).PointCount)
+End Sub
+End Class

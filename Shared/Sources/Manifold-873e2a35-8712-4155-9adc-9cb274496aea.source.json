@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Manifold",
+  "Id": "873e2a35-8712-4155-9adc-9cb274496aea",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

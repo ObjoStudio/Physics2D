@@ -1,0 +1,33 @@
+# Simplex from the GJK algorithm, ported from upstream b2Simplex in
+# collision.h. Holds up to three vertices. The solve and witness point logic
+# lives in the Distance class to keep this a plain data holder.
+Class Simplex
+## First simplex vertex.
+Property V1 As SimplexVertex
+## Second simplex vertex.
+Property V2 As SimplexVertex
+## Third simplex vertex.
+Property V3 As SimplexVertex
+## Number of valid vertices, from zero to three.
+Property Count As Integer
+
+## Creates a simplex with three reusable vertices and zero count.
+Constructor()
+Me.V1 = New SimplexVertex
+Me.V2 = New SimplexVertex
+Me.V3 = New SimplexVertex
+Me.Count = 0
+End Constructor
+
+## Returns the vertex at the zero-based index. Only indices below Count are
+## valid during a solve.
+Function VertexAt(index As Integer) As SimplexVertex
+If index = 0 Then
+Return Me.V1
+ElseIf index = 1 Then
+Return Me.V2
+Else
+Return Me.V3
+End If
+End Function
+End Class

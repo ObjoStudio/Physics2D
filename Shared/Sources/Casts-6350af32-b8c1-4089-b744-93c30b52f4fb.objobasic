@@ -1,0 +1,581 @@
+# Ray casts and shape casts, ported from upstream geometry.c ray cast
+# functions and distance.c b2ShapeCast.
+#
+# Every function has a cold form that returns a new CastOutput and a warm
+# To-form that fills the caller-owned output and returns it. The To-forms
+# keep all arithmetic scalar so steady-state casting allocates nothing; the
+# GJK shape cast reuses simplex and distance workspaces attached to the
+# output.
+#
+# Upstream validates ray inputs with debug-only asserts. Physics2D release
+# behaviour matches: cast inputs are assumed valid; use
+# RayCastInput.IsValid to check inputs when needed.
+Class Casts
+## Casts a ray against a circle into a new output, ported from upstream
+## b2RayCastCircle.
+Shared Function RayCastCircle(input As RayCastInput, shape As Circle) As CastOutput
+Var out As New CastOutput
+Casts.RayCastCircleCoreTo(input, shape.Center.X, shape.Center.Y, shape.Radius, out)
+Return out
+End Function
+
+## Casts a ray against a circle into the caller-owned out output and returns
+## out. The reused-output form for warm loops.
+Shared Function RayCastCircleTo(input As RayCastInput, shape As Circle, out As CastOutput) As CastOutput
+Return Casts.RayCastCircleCoreTo(input, shape.Center.X, shape.Center.Y, shape.Radius, out)
+End Function
+
+## Scalar core of the circle ray cast so capsules can fall back without
+## building a temporary circle, mirroring upstream.
+Shared Function RayCastCircleCoreTo(input As RayCastInput, centerX As Double, centerY As Double, radius As Double, out As CastOutput) As CastOutput
+out.Reset()
+
+Var sx As Double = input.Origin.X - centerX
+Var sy As Double = input.Origin.Y - centerY
+Var rr As Double = radius * radius
+
+Var tx As Double = input.Translation.X
+Var ty As Double = input.Translation.Y
+Var length As Double = Maths.Sqrt(tx * tx + ty * ty)
+Var dx As Double = 0.0
+Var dy As Double = 0.0
+If length > PhysicsConstants.FLT_EPSILON Then
+Var invLength As Double = 1.0 / length
+dx = invLength * tx
+dy = invLength * ty
+End If
+
+If length = 0.0 Then
+# Zero length ray.
+If sx * sx + sy * sy < rr Then
+# Initial overlap.
+out.Point.Set(input.Origin.X, input.Origin.Y)
+out.Hit = True
+End If
+Return out
+End If
+
+# Find the closest point on the ray to the circle centre.
+
+# Solve: dot(s + t * d, d) = 0.
+Var t As Double = -(sx * dx + sy * dy)
+
+# c is the closest point on the line to the origin.
+Var cx As Double = sx + t * dx
+Var cy As Double = sy + t * dy
+
+Var cc As Double = cx * cx + cy * cy
+
+If cc > rr Then
+# Closest point is outside the circle.
+Return out
+End If
+
+# Pythagoras.
+Var h As Double = Maths.Sqrt(rr - cc)
+
+Var fraction As Double = t - h
+
+If fraction < 0.0 Or input.MaxFraction * length < fraction Then
+# The intersection point is outside the range of the ray segment.
+If sx * sx + sy * sy < rr Then
+# Initial overlap.
+out.Point.Set(input.Origin.X, input.Origin.Y)
+out.Hit = True
+End If
+Return out
+End If
+
+# Hit point relative to the centre.
+Var hx As Double = sx + fraction * dx
+Var hy As Double = sy + fraction * dy
+
+Var invNormalLength As Double = 0.0
+Var normalLength As Double = Maths.Sqrt(hx * hx + hy * hy)
+If normalLength > 0.0 Then
+invNormalLength = 1.0 / normalLength
+End If
+Var nx As Double = hx * invNormalLength
+Var ny As Double = hy * invNormalLength
+
+out.Fraction = fraction / length
+out.Normal.Set(nx, ny)
+out.Point.Set(centerX + radius * nx, centerY + radius * ny)
+out.Hit = True
+Return out
+End Function
+
+## Casts a ray against a capsule into a new output, ported from upstream
+## b2RayCastCapsule.
+Shared Function RayCastCapsule(input As RayCastInput, shape As Capsule) As CastOutput
+Var out As New CastOutput
+Casts.RayCastCapsuleTo(input, shape, out)
+Return out
+End Function
+
+## Casts a ray against a capsule into the caller-owned out output and returns
+## out. The reused-output form for warm loops.
+Shared Function RayCastCapsuleTo(input As RayCastInput, shape As Capsule, out As CastOutput) As CastOutput
+out.Reset()
+
+Var v1x As Double = shape.Center1.X
+Var v1y As Double = shape.Center1.Y
+Var v2x As Double = shape.Center2.X
+Var v2y As Double = shape.Center2.Y
+Var ex As Double = v2x - v1x
+Var ey As Double = v2y - v1y
+
+Var capsuleLength As Double = Maths.Sqrt(ex * ex + ey * ey)
+Var ax As Double = 0.0
+Var ay As Double = 0.0
+If capsuleLength > PhysicsConstants.FLT_EPSILON Then
+Var invCapsuleLength As Double = 1.0 / capsuleLength
+ax = invCapsuleLength * ex
+ay = invCapsuleLength * ey
+End If
+
+If capsuleLength < PhysicsConstants.FLT_EPSILON Then
+# Capsule is really a circle.
+Return Casts.RayCastCircleCoreTo(input, v1x, v1y, shape.Radius, out)
+End If
+
+Var p1x As Double = input.Origin.X
+Var p1y As Double = input.Origin.Y
+Var dx As Double = input.Translation.X
+Var dy As Double = input.Translation.Y
+
+# Ray from capsule start to ray start.
+Var qx As Double = p1x - v1x
+Var qy As Double = p1y - v1y
+Var qa As Double = qx * ax + qy * ay
+
+# Vector to ray start that is perpendicular to the capsule axis.
+Var qpx As Double = qx - qa * ax
+Var qpy As Double = qy - qa * ay
+
+Var radius As Double = shape.Radius
+
+# Does the ray start within the infinite length capsule?
+If qpx * qpx + qpy * qpy < radius * radius Then
+If qa < 0.0 Then
+# Start point behind the capsule segment.
+Return Casts.RayCastCircleCoreTo(input, v1x, v1y, radius, out)
+End If
+
+If qa > capsuleLength Then
+# Start point ahead of the capsule segment.
+Return Casts.RayCastCircleCoreTo(input, v2x, v2y, radius, out)
+End If
+
+# The ray starts inside the capsule: no hit.
+out.Point.Set(p1x, p1y)
+out.Hit = True
+Return out
+End If
+
+# Perpendicular to the capsule axis, pointing right.
+Var nx As Double = ay
+Var ny As Double = -ax
+
+Var rayLength As Double = Maths.Sqrt(dx * dx + dy * dy)
+Var ux As Double = 0.0
+Var uy As Double = 0.0
+If rayLength > PhysicsConstants.FLT_EPSILON Then
+Var invRayLength As Double = 1.0 / rayLength
+ux = invRayLength * dx
+uy = invRayLength * dy
+End If
+
+# Intersect the ray with the infinite length capsule.
+# v1 + radius * n + s1 * a = p1 + s2 * u
+# s1 * a - s2 * u = b, where b = q - radius * n or b = q + radius * n.
+
+# Cramer's rule [a -u].
+Var den As Double = -ax * uy + ux * ay
+If -PhysicsConstants.FLT_EPSILON < den And den < PhysicsConstants.FLT_EPSILON Then
+# The ray is parallel to the capsule and outside the infinite capsule.
+Return out
+End If
+
+Var b1x As Double = qx - radius * nx
+Var b1y As Double = qy - radius * ny
+Var b2x As Double = qx + radius * nx
+Var b2y As Double = qy + radius * ny
+
+Var invDen As Double = 1.0 / den
+
+# Cramer's rule [a b1].
+Var s21 As Double = (ax * b1y - b1x * ay) * invDen
+
+# Cramer's rule [a b2].
+Var s22 As Double = (ax * b2y - b2x * ay) * invDen
+
+Var s2 As Double = 0.0
+Var bx As Double = 0.0
+Var by As Double = 0.0
+If s21 < s22 Then
+s2 = s21
+bx = b1x
+by = b1y
+Else
+s2 = s22
+bx = b2x
+by = b2y
+nx = -nx
+ny = -ny
+End If
+
+If s2 < 0.0 Or input.MaxFraction * rayLength < s2 Then
+Return out
+End If
+
+# Cramer's rule [b -u].
+Var s1 As Double = (-bx * uy + ux * by) * invDen
+
+If s1 < 0.0 Then
+# The ray passes behind the capsule segment.
+Return Casts.RayCastCircleCoreTo(input, v1x, v1y, radius, out)
+ElseIf capsuleLength < s1 Then
+# The ray passes ahead of the capsule segment.
+Return Casts.RayCastCircleCoreTo(input, v2x, v2y, radius, out)
+Else
+# The ray hits the capsule side.
+out.Fraction = s2 / rayLength
+Var lerpT As Double = s1 / capsuleLength
+Var px As Double = v1x + lerpT * (v2x - v1x) + radius * nx
+Var py As Double = v1y + lerpT * (v2y - v1y) + radius * ny
+out.Point.Set(px, py)
+out.Normal.Set(nx, ny)
+out.Hit = True
+Return out
+End If
+End Function
+
+## Casts a ray against a line segment into a new output, ported from
+## upstream b2RayCastSegment. A one-sided segment skips collisions from the
+## left side.
+Shared Function RayCastSegment(input As RayCastInput, shape As Segment, oneSided As Boolean) As CastOutput
+Var out As New CastOutput
+Casts.RayCastSegmentTo(input, shape, oneSided, out)
+Return out
+End Function
+
+## Casts a ray against a line segment into the caller-owned out output and
+## returns out. The reused-output form for warm loops.
+Shared Function RayCastSegmentTo(input As RayCastInput, shape As Segment, oneSided As Boolean, out As CastOutput) As CastOutput
+out.Reset()
+
+Var v1x As Double = shape.Point1.X
+Var v1y As Double = shape.Point1.Y
+Var v2x As Double = shape.Point2.X
+Var v2y As Double = shape.Point2.Y
+Var p1x As Double = input.Origin.X
+Var p1y As Double = input.Origin.Y
+Var dx As Double = input.Translation.X
+Var dy As Double = input.Translation.Y
+
+If oneSided Then
+# Skip left-side collision: cross(origin - point1, point2 - point1).
+Var offset As Double = (p1x - v1x) * (v2y - v1y) - (p1y - v1y) * (v2x - v1x)
+If offset < 0.0 Then
+Return out
+End If
+End If
+
+Var ex As Double = v2x - v1x
+Var ey As Double = v2y - v1y
+
+Var length As Double = Maths.Sqrt(ex * ex + ey * ey)
+Var eUnitX As Double = 0.0
+Var eUnitY As Double = 0.0
+If length > PhysicsConstants.FLT_EPSILON Then
+Var invLength As Double = 1.0 / length
+eUnitX = invLength * ex
+eUnitY = invLength * ey
+End If
+If length = 0.0 Then
+Return out
+End If
+
+# Normal points to the right, looking from v1 towards v2.
+Var nx As Double = eUnitY
+Var ny As Double = -eUnitX
+
+# Intersect the ray with the infinite segment using the normal, similar to
+# intersecting a ray with an infinite plane.
+# p = p1 + t * d
+# dot(normal, p - v1) = 0
+# dot(normal, p1 - v1) + t * dot(normal, d) = 0
+Var numerator As Double = nx * (v1x - p1x) + ny * (v1y - p1y)
+Var denominator As Double = nx * dx + ny * dy
+
+If denominator = 0.0 Then
+# Parallel.
+Return out
+End If
+
+Var t As Double = numerator / denominator
+If t < 0.0 Or input.MaxFraction < t Then
+# Out of ray range.
+Return out
+End If
+
+# Intersection point on the infinite segment.
+Var px As Double = p1x + t * dx
+Var py As Double = p1y + t * dy
+
+# Compute the position of p along the segment.
+# p = v1 + s * e
+Var s As Double = (px - v1x) * eUnitX + (py - v1y) * eUnitY
+If s < 0.0 Or length < s Then
+# Out of segment range.
+Return out
+End If
+
+If numerator > 0.0 Then
+nx = -nx
+ny = -ny
+End If
+
+out.Fraction = t
+out.Point.Set(px, py)
+out.Normal.Set(nx, ny)
+out.Hit = True
+Return out
+End Function
+
+## Casts a ray against a convex polygon into a new output, ported from
+## upstream b2RayCastPolygon.
+Shared Function RayCastPolygon(input As RayCastInput, shape As Polygon) As CastOutput
+Var out As New CastOutput
+Casts.RayCastPolygonTo(input, shape, out)
+Return out
+End Function
+
+## Casts a ray against a convex polygon into the caller-owned out output and
+## returns out. The reused-output form for warm loops.
+Shared Function RayCastPolygonTo(input As RayCastInput, shape As Polygon, out As CastOutput) As CastOutput
+out.Reset()
+
+If shape.Radius = 0.0 Then
+# Shift all math to the first vertex since the polygon may be far from
+# the origin.
+Var baseX As Double = shape.Vertices[0].X
+Var baseY As Double = shape.Vertices[0].Y
+Var p1x As Double = input.Origin.X - baseX
+Var p1y As Double = input.Origin.Y - baseY
+Var dx As Double = input.Translation.X
+Var dy As Double = input.Translation.Y
+
+Var lower As Double = 0.0
+Var upper As Double = input.MaxFraction
+Var index As Integer = -1
+
+For i As Integer = 0 To shape.Count - 1
+# p = p1 + a * d
+# dot(normal, p - v) = 0
+# dot(normal, p1 - v) + a * dot(normal, d) = 0
+Var vertexX As Double = shape.Vertices[i].X - baseX
+Var vertexY As Double = shape.Vertices[i].Y - baseY
+Var nrmX As Double = shape.Normals[i].X
+Var nrmY As Double = shape.Normals[i].Y
+Var numerator As Double = nrmX * (vertexX - p1x) + nrmY * (vertexY - p1y)
+Var denominator As Double = nrmX * dx + nrmY * dy
+
+If denominator = 0.0 Then
+If numerator < 0.0 Then
+Return out
+End If
+Else
+# Note: we want the predicate without division:
+# lower < numerator / denominator, where denominator < 0. Since
+# denominator < 0, flip the inequality:
+# lower < numerator / denominator <==> denominator * lower > numerator.
+If denominator < 0.0 And numerator < lower * denominator Then
+# Increase lower: the segment enters this half-space.
+lower = numerator / denominator
+index = i
+ElseIf denominator > 0.0 And numerator < upper * denominator Then
+# Decrease upper: the segment exits this half-space.
+upper = numerator / denominator
+End If
+End If
+
+If upper < lower Then
+# The ray misses.
+Return out
+End If
+Next i
+
+If index >= 0 Then
+out.Fraction = lower
+out.Normal.Set(shape.Normals[index].X, shape.Normals[index].Y)
+out.Point.Set(input.Origin.X + lower * dx, input.Origin.Y + lower * dy)
+out.Hit = True
+Else
+# Initial overlap.
+out.Point.Set(input.Origin.X, input.Origin.Y)
+out.Hit = True
+End If
+
+Return out
+End If
+
+# A rounded polygon needs the GJK shape cast.
+Var originList As New Array(Of Vector2)
+originList.Append(input.Origin)
+Var pairInput As New ShapeCastPairInput
+pairInput.ProxyA = ShapeProxy.MakeImpl(shape.Vertices, shape.Count, shape.Radius, 0.0, 0.0, 1.0, 0.0)
+pairInput.ProxyB = ShapeProxy.Make(originList, 1, 0.0)
+pairInput.TranslationB.Set(input.Translation.X, input.Translation.Y)
+pairInput.MaxFraction = input.MaxFraction
+Return Casts.ShapeCast(pairInput)
+End Function
+
+## Casts shape B along its translation against shape A into a new output,
+## ported from upstream b2ShapeCast. Initial overlap is treated as a hit
+## with a zero fraction unless encroachment is allowed.
+Shared Function ShapeCast(input As ShapeCastPairInput) As CastOutput
+Var out As New CastOutput
+Casts.ShapeCastTo(input, out)
+Return out
+End Function
+
+## Casts shape B along its translation against shape A into the caller-owned
+## out output and returns out. The reused-output form for warm loops: the
+## distance workspaces live on the output's scratch, so steady-state
+## casting allocates nothing.
+Shared Function ShapeCastTo(input As ShapeCastPairInput, out As CastOutput) As CastOutput
+# Compute tolerance.
+Var linearSlop As Double = PhysicsConstants.LINEAR_SLOP
+Var totalRadius As Double = input.ProxyA.Radius + input.ProxyB.Radius
+Var target As Double = linearSlop
+If totalRadius - linearSlop > target Then
+target = totalRadius - linearSlop
+End If
+Var tolerance As Double = 0.25 * linearSlop
+
+# Prepare the reusable distance query.
+Var scratch As CastScratch = out.Scratch()
+Var distanceInput As DistanceInput = scratch.DistanceInput
+distanceInput.ProxyA = input.ProxyA
+distanceInput.ProxyB = input.ProxyB
+distanceInput.TransformA = input.TransformA
+distanceInput.TransformB = scratch.MovedTransformB
+distanceInput.UseRadii = False
+scratch.MovedTransformB.P.Set(input.TransformB.P.X, input.TransformB.P.Y)
+scratch.MovedTransformB.Q.SetComponents(input.TransformB.Q.C, input.TransformB.Q.S)
+
+Var cache As SimplexCache = scratch.Cache
+cache.Clear()
+
+Var delta2X As Double = input.TranslationB.X
+Var delta2Y As Double = input.TranslationB.Y
+
+out.Reset()
+
+Var fraction As Double = 0.0
+Var maxIterations As Integer = 20
+Var iteration As Integer = 0
+While iteration < maxIterations
+out.Iterations = out.Iterations + 1
+
+Var distanceOutput As DistanceOutput = scratch.DistanceOutput
+Distance.ShapeDistanceTo(distanceInput, cache, distanceOutput)
+
+If distanceOutput.Distance < target + tolerance Then
+If iteration = 0 Then
+If input.CanEncroach And distanceOutput.Distance > 2.0 * linearSlop Then
+# Allow shapes with a radius to move slightly closer.
+target = distanceOutput.Distance - linearSlop
+Else
+# Initial overlap. Compute a common point.
+Var ra As Double = input.ProxyA.Radius
+Var rb As Double = input.ProxyB.Radius
+Var c1x As Double = distanceOutput.PointA.X + ra * distanceOutput.Normal.X
+Var c1y As Double = distanceOutput.PointA.Y + ra * distanceOutput.Normal.Y
+Var c2x As Double = distanceOutput.PointB.X - rb * distanceOutput.Normal.X
+Var c2y As Double = distanceOutput.PointB.Y - rb * distanceOutput.Normal.Y
+out.Point.Set(0.5 * (c1x + c2x), 0.5 * (c1y + c2y))
+out.Hit = True
+Return out
+End If
+Else
+# Regular hit.
+out.Fraction = fraction
+Var px As Double = distanceOutput.PointA.X + input.ProxyA.Radius * distanceOutput.Normal.X
+Var py As Double = distanceOutput.PointA.Y + input.ProxyA.Radius * distanceOutput.Normal.Y
+out.Point.Set(px, py)
+out.Normal.Set(distanceOutput.Normal.X, distanceOutput.Normal.Y)
+out.Hit = True
+Return out
+End If
+End If
+
+# Check if the shapes are approaching each other.
+Var denominator As Double = delta2X * distanceOutput.Normal.X + delta2Y * distanceOutput.Normal.Y
+If denominator >= 0.0 Then
+# Miss.
+Return out
+End If
+
+# Advance the sweep.
+fraction = fraction + (target - distanceOutput.Distance) / denominator
+If fraction >= input.MaxFraction Then
+# Miss.
+Return out
+End If
+
+scratch.MovedTransformB.P.Set(input.TransformB.P.X + fraction * delta2X, input.TransformB.P.Y + fraction * delta2Y)
+iteration = iteration + 1
+Wend
+
+# Failure.
+Return out
+End Function
+
+## Shape casts a circle shape, ported from upstream b2ShapeCastCircle.
+Shared Function ShapeCastCircle(input As ShapeCastInput, shape As Circle) As CastOutput
+Return Casts.ShapeCastViaProxy(input, shape.Center.X, shape.Center.Y, 1, shape.Radius)
+End Function
+
+## Shape casts a capsule shape, ported from upstream b2ShapeCastCapsule.
+Shared Function ShapeCastCapsule(input As ShapeCastInput, shape As Capsule) As CastOutput
+Var points As New Array(Of Vector2)
+points.Append(shape.Center1)
+points.Append(shape.Center2)
+Return Casts.ShapeCastViaProxyPoints(input, points, 2, shape.Radius)
+End Function
+
+## Shape casts a line segment, ported from upstream b2ShapeCastSegment.
+Shared Function ShapeCastSegment(input As ShapeCastInput, shape As Segment) As CastOutput
+Var points As New Array(Of Vector2)
+points.Append(shape.Point1)
+points.Append(shape.Point2)
+Return Casts.ShapeCastViaProxyPoints(input, points, 2, 0.0)
+End Function
+
+## Shape casts a convex polygon, ported from upstream b2ShapeCastPolygon.
+Shared Function ShapeCastPolygon(input As ShapeCastInput, shape As Polygon) As CastOutput
+Return Casts.ShapeCastViaProxyPoints(input, shape.Vertices, shape.Count, shape.Radius)
+End Function
+
+## Builds a one-point proxy for the shape and delegates to the pair cast.
+Shared Function ShapeCastViaProxy(input As ShapeCastInput, x As Double, y As Double, count As Integer, radius As Double) As CastOutput
+Var points As New Array(Of Vector2)
+points.Append(New Vector2(x, y))
+Return Casts.ShapeCastViaProxyPoints(input, points, count, radius)
+End Function
+
+## Builds a proxy from the given point cloud and delegates to the pair
+## cast. Cold path: allocates the pair input per call.
+Shared Function ShapeCastViaProxyPoints(input As ShapeCastInput, points() As Vector2, count As Integer, radius As Double) As CastOutput
+Var pairInput As New ShapeCastPairInput
+pairInput.ProxyA = ShapeProxy.Make(points, count, radius)
+pairInput.ProxyB = input.Proxy
+pairInput.TranslationB.Set(input.Translation.X, input.Translation.Y)
+pairInput.MaxFraction = input.MaxFraction
+pairInput.CanEncroach = input.CanEncroach
+Return Casts.ShapeCast(pairInput)
+End Function
+End Class

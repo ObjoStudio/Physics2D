@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Distance",
+  "Id": "a8dae15a-4200-4d94-9eb8-1be720713a74",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Distance-a8dae15a-4200-4d94-9eb8-1be720713a74.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

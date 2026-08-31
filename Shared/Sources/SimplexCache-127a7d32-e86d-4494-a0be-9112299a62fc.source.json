@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "SimplexCache",
+  "Id": "127a7d32-e86d-4494-a0be-9112299a62fc",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

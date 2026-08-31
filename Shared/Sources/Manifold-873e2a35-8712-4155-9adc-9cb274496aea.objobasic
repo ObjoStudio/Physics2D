@@ -1,0 +1,55 @@
+# A contact manifold describing the contact points between colliding
+# shapes, ported from upstream b2Manifold in collision.h. Box2D uses
+# speculative collision so some contact points may be separated.
+#
+# Collision functions write into existing manifolds (the To-forms), so a
+# warm loop reuses one Manifold and allocates nothing. Every geometry field
+# is overwritten on each call.
+Class Manifold
+## The unit normal vector in world space, pointing from shape A to shape B.
+## Zero when the manifold is empty.
+Property Normal As Vector2
+
+## Angular impulse applied for rolling resistance. N * m * s.
+Property RollingImpulse As Double
+
+## First manifold point. Only meaningful when PointCount is at least one.
+Property Point1 As ManifoldPoint
+
+## Second manifold point. Only meaningful when PointCount is two.
+Property Point2 As ManifoldPoint
+
+## The number of contact points: 0, 1, or 2.
+Property PointCount As Integer
+
+## Lazily created reusable workspace for collision functions.
+Property mScratch As CollideScratch
+
+## Creates an empty manifold.
+Constructor()
+Me.Normal = New Vector2(0.0, 0.0)
+Me.RollingImpulse = 0.0
+Me.Point1 = New ManifoldPoint
+Me.Point2 = New ManifoldPoint
+Me.PointCount = 0
+Me.mScratch = Nothing
+End Constructor
+
+## Resets the manifold to the empty state in place and returns it.
+Function Reset() As Manifold
+Me.Normal.Set(0.0, 0.0)
+Me.RollingImpulse = 0.0
+Me.Point1.Reset()
+Me.Point2.Reset()
+Me.PointCount = 0
+Return Me
+End Function
+
+## Returns the lazily created reusable workspace. Engine code only.
+Function Scratch() As CollideScratch
+If Me.mScratch = Nothing Then
+Me.mScratch = New CollideScratch
+End If
+Return Me.mScratch
+End Function
+End Class

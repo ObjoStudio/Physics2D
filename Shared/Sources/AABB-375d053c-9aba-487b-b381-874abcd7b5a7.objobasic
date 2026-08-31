@@ -1,0 +1,210 @@
+# Axis-aligned bounding box, ported from upstream b2AABB in math_functions.h
+# and src/aabb.c. Used by the broad phase, queries, and shape bounds.
+#
+# Both bounds are owned Vector2 objects. Factories build fresh boxes; the
+# To-form of ray casting fills a caller-owned output.
+Class AABB
+## The lower bounds of the box.
+Property LowerBound As Vector2
+## The upper bounds of the box.
+Property UpperBound As Vector2
+
+## Creates a zero-area box at the origin.
+Constructor()
+Me.LowerBound = New Vector2(0.0, 0.0)
+Me.UpperBound = New Vector2(0.0, 0.0)
+End Constructor
+
+## Creates a box from two corner vectors. The corners are copied.
+Constructor(lower As Vector2, upper As Vector2)
+Me.LowerBound = New Vector2(lower.X, lower.Y)
+Me.UpperBound = New Vector2(upper.X, upper.Y)
+End Constructor
+
+## Copies another box.
+Constructor(other As AABB)
+Me.LowerBound = New Vector2(other.LowerBound.X, other.LowerBound.Y)
+Me.UpperBound = New Vector2(other.UpperBound.X, other.UpperBound.Y)
+End Constructor
+
+## Returns True when the box bounds are finite and ordered, ported from
+## upstream b2IsValidAABB.
+Shared Function IsValid(a As AABB) As Boolean
+If Not a.LowerBound.X.IsFinite() Or Not a.LowerBound.Y.IsFinite() Then
+Return False
+End If
+If Not a.UpperBound.X.IsFinite() Or Not a.UpperBound.Y.IsFinite() Then
+Return False
+End If
+Return a.UpperBound.X >= a.LowerBound.X And a.UpperBound.Y >= a.LowerBound.Y
+End Function
+
+## Returns True when the two boxes overlap, ported from upstream
+## b2AABB_Overlaps.
+Shared Function Overlaps(a As AABB, b As AABB) As Boolean
+Return b.LowerBound.X <= a.UpperBound.X And b.UpperBound.X >= a.LowerBound.X And b.LowerBound.Y <= a.UpperBound.Y And b.UpperBound.Y >= a.LowerBound.Y
+End Function
+
+## Returns True when box a fully contains box b, ported from upstream
+## b2AABB_Contains.
+Shared Function Contains(a As AABB, b As AABB) As Boolean
+Return b.LowerBound.X >= a.LowerBound.X And b.LowerBound.Y >= a.LowerBound.Y And b.UpperBound.X <= a.UpperBound.X And b.UpperBound.Y <= a.UpperBound.Y
+End Function
+
+## Returns the box centre as a new vector, ported from upstream
+## b2AABB_Center.
+Shared Function Center(a As AABB) As Vector2
+Return New Vector2(0.5 * (a.LowerBound.X + a.UpperBound.X), 0.5 * (a.LowerBound.Y + a.UpperBound.Y))
+End Function
+
+## Returns the half-extents as a new vector, ported from upstream
+## b2AABB_Extents.
+Shared Function Extents(a As AABB) As Vector2
+Return New Vector2(0.5 * (a.UpperBound.X - a.LowerBound.X), 0.5 * (a.UpperBound.Y - a.LowerBound.Y))
+End Function
+
+## Returns the union of two boxes as a new box, ported from upstream
+## b2AABB_Union.
+Shared Function Union(a As AABB, b As AABB) As AABB
+Var result As New AABB
+result.LowerBound.Set(Maths.Min(a.LowerBound.X, b.LowerBound.X), Maths.Min(a.LowerBound.Y, b.LowerBound.Y))
+result.UpperBound.Set(Maths.Max(a.UpperBound.X, b.UpperBound.X), Maths.Max(a.UpperBound.Y, b.UpperBound.Y))
+Return result
+End Function
+
+## Builds the smallest box containing the points inflated by radius, ported
+## from upstream b2MakeAABB. The count must be positive and at most
+## PhysicsConstants.MAX_POLYGON_VERTICES.
+Shared Function Make(points() As Vector2, count As Integer, radius As Double) As AABB
+Var result As New AABB
+result.LowerBound.Set(points[0].X, points[0].Y)
+result.UpperBound.Set(points[0].X, points[0].Y)
+For i As Integer = 1 To count - 1
+result.LowerBound.Set(Maths.Min(result.LowerBound.X, points[i].X), Maths.Min(result.LowerBound.Y, points[i].Y))
+result.UpperBound.Set(Maths.Max(result.UpperBound.X, points[i].X), Maths.Max(result.UpperBound.Y, points[i].Y))
+Next i
+If radius > 0.0 Then
+result.LowerBound.Set(result.LowerBound.X - radius, result.LowerBound.Y - radius)
+result.UpperBound.Set(result.UpperBound.X + radius, result.UpperBound.Y + radius)
+End If
+Return result
+End Function
+
+## Casts a ray from p1 to p2 against the box into a new output, ported from
+## upstream b2AABB_RayCast following Real-time Collision Detection p179.
+## Radii are not handled.
+Shared Function RayCast(a As AABB, p1 As Vector2, p2 As Vector2) As CastOutput
+Var result As New CastOutput
+AABB.RayCastTo(a, p1, p2, result)
+Return result
+End Function
+
+## Casts a ray from p1 to p2 against the box into the caller-owned out
+## output and returns out. The reused-output form for warm loops. Previous
+## output contents are fully overwritten.
+Shared Function RayCastTo(a As AABB, p1 As Vector2, p2 As Vector2, out As CastOutput) As CastOutput
+out.Normal.Set(0.0, 0.0)
+out.Point.Set(0.0, 0.0)
+out.Fraction = 0.0
+out.Iterations = 0
+out.Hit = False
+
+Var tmin As Double = -1.7976931348623157e308
+Var tmax As Double = 1.7976931348623157e308
+
+Var dx As Double = p2.X - p1.X
+Var dy As Double = p2.Y - p1.Y
+Var absDx As Double = dx.Abs()
+Var absDy As Double = dy.Abs()
+
+Var normalX As Double = 0.0
+Var normalY As Double = 0.0
+
+# x-coordinate
+Var eps As Double = 0.0000001192092896
+If absDx < eps Then
+# parallel
+If p1.X < a.LowerBound.X Or a.UpperBound.X < p1.X Then
+Return out
+End If
+Else
+Var invD As Double = 1.0 / dx
+Var t1 As Double = (a.LowerBound.X - p1.X) * invD
+Var t2 As Double = (a.UpperBound.X - p1.X) * invD
+
+# Sign of the normal vector.
+Var s As Double = -1.0
+If t1 > t2 Then
+Var tmp As Double = t1
+t1 = t2
+t2 = tmp
+s = 1.0
+End If
+
+# Push the min up.
+If t1 > tmin Then
+normalY = 0.0
+normalX = s
+tmin = t1
+End If
+
+# Pull the max down.
+If t2 < tmax Then
+tmax = t2
+End If
+
+If tmin > tmax Then
+Return out
+End If
+End If
+
+# y-coordinate
+If absDy < eps Then
+# parallel
+If p1.Y < a.LowerBound.Y Or a.UpperBound.Y < p1.Y Then
+Return out
+End If
+Else
+Var invD As Double = 1.0 / dy
+Var t1 As Double = (a.LowerBound.Y - p1.Y) * invD
+Var t2 As Double = (a.UpperBound.Y - p1.Y) * invD
+
+# Sign of the normal vector.
+Var s As Double = -1.0
+If t1 > t2 Then
+Var tmp As Double = t1
+t1 = t2
+t2 = tmp
+s = 1.0
+End If
+
+# Push the min up.
+If t1 > tmin Then
+normalX = 0.0
+normalY = s
+tmin = t1
+End If
+
+# Pull the max down.
+If t2 < tmax Then
+tmax = t2
+End If
+
+If tmin > tmax Then
+Return out
+End If
+End If
+
+# Does the ray start inside the box? Does it intersect beyond the segment?
+If tmin < 0.0 Or 1.0 < tmin Then
+Return out
+End If
+
+# Intersection.
+out.Fraction = tmin
+out.Normal.Set(normalX, normalY)
+out.Point.Set(p1.X + tmin * dx, p1.Y + tmin * dy)
+out.Hit = True
+Return out
+End Function
+End Class

@@ -1,0 +1,87 @@
+# Rigid transform: rotation plus translation, ported from upstream b2Transform
+# in math_functions.h. Transforms convert points between local and world
+# frames.
+#
+# The P and Q properties are reference objects owned by the transform. Helpers
+# that fill a caller-owned vector (the To-forms) never alias caller state;
+# helpers that return a vector allocate a new one.
+Class Transform
+## The translation part of the transform.
+Property P As Vector2
+## The rotation part of the transform.
+Property Q As Rot
+
+## Creates the identity transform.
+Constructor()
+Me.P = New Vector2(0.0, 0.0)
+Me.Q = New Rot(1.0, 0.0)
+End Constructor
+
+## Creates a transform from a position and rotation. Both are copied, so
+## later edits to the arguments do not change the transform.
+Constructor(p As Vector2, q As Rot)
+Me.P = New Vector2(p.X, p.Y)
+Me.Q = New Rot(q.C, q.S)
+End Constructor
+
+## Copies another transform.
+Constructor(t As Transform)
+Me.P = New Vector2(t.P.X, t.P.Y)
+Me.Q = New Rot(t.Q.C, t.Q.S)
+End Constructor
+
+## Returns a new identity transform.
+Shared Function Identity() As Transform
+Return New Transform
+End Function
+
+## Multiplies two transforms, ported from upstream b2MulTransforms. Applying
+## the result to a point local to frame B converts it to frame A's frame and
+## then to the world frame.
+Shared Function Mul(a As Transform, b As Transform) As Transform
+Var result As New Transform
+result.Q = Rot.Mul(a.Q, b.Q)
+Rot.RotateVectorTo(a.Q, b.P, result.P)
+result.P.Add(a.P)
+Return result
+End Function
+
+## Creates the transform that converts a local point in frame B to a local
+## point in frame A, ported from upstream b2InvMulTransforms.
+Shared Function InvMul(a As Transform, b As Transform) As Transform
+Var result As New Transform
+result.Q = Rot.InvMul(a.Q, b.Q)
+Var dx As Double = b.P.X - a.P.X
+Var dy As Double = b.P.Y - a.P.Y
+result.P.Set(a.Q.C * dx + a.Q.S * dy, -a.Q.S * dx + a.Q.C * dy)
+Return result
+End Function
+
+## Transforms a point into a new vector, ported from upstream
+## b2TransformPoint.
+Shared Function TransformPoint(t As Transform, p As Vector2) As Vector2
+Return New Vector2(t.Q.C * p.X - t.Q.S * p.Y + t.P.X, t.Q.S * p.X + t.Q.C * p.Y + t.P.Y)
+End Function
+
+## Transforms a point into the caller-owned out vector and returns out. The
+## reused-output form for warm loops.
+Shared Function TransformPointTo(t As Transform, p As Vector2, out As Vector2) As Vector2
+Return out.Set(t.Q.C * p.X - t.Q.S * p.Y + t.P.X, t.Q.S * p.X + t.Q.C * p.Y + t.P.Y)
+End Function
+
+## Inverse-transforms a point into a new vector, ported from upstream
+## b2InvTransformPoint.
+Shared Function InvTransformPoint(t As Transform, p As Vector2) As Vector2
+Var vx As Double = p.X - t.P.X
+Var vy As Double = p.Y - t.P.Y
+Return New Vector2(t.Q.C * vx + t.Q.S * vy, -t.Q.S * vx + t.Q.C * vy)
+End Function
+
+## Inverse-transforms a point into the caller-owned out vector and returns
+## out. The reused-output form for warm loops.
+Shared Function InvTransformPointTo(t As Transform, p As Vector2, out As Vector2) As Vector2
+Var vx As Double = p.X - t.P.X
+Var vy As Double = p.Y - t.P.Y
+Return out.Set(t.Q.C * vx + t.Q.S * vy, -t.Q.S * vx + t.Q.C * vy)
+End Function
+End Class

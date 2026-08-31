@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Circle",
+  "Id": "25cd4409-7838-4d2c-b734-0f092aeb6d8d",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Circle-25cd4409-7838-4d2c-b734-0f092aeb6d8d.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

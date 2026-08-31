@@ -171,6 +171,22 @@ in the Objo checkout remains authoritative.
   it allocates nothing. It comes from the Objo checkout at commit `485c4fab`
   (issue #1299) and is not yet in a released Studio; see the Minimum Objo
   Version section of `docs/PORTING.md`.
+- `Break` exits the innermost loop only. Inside `While ... For ... Break`,
+  the `Break` leaves the `For`, not the `While`; use a boolean flag when the
+  intent is to leave both.
+- A property and a method cannot share a name in one class. The reuse pattern
+  is a private-name property plus a public accessor, as in `Manifold`'s
+  `mScratch` property and `Scratch()` method.
+- A local variable may not shadow a type name while calling that type's
+  shared members: `Var sweep As New Sweep` makes `Sweep.GetTransformTo(...)`
+  a compile error. Name the local after its role (`motion`, `input`).
+- A missing `.source.json` sidecar makes `tools/assemble_module.py` silently
+  skip the source item, and enum sidecars use `"Kind": "Enum"`, not
+  `"Enumeration"`.
+- Multiline argument lists inside an open parenthesis are accepted by the
+  compiler; closing and reopening parentheses per line is not required.
+- `System.Print` does not exist. Tests surface diagnostic values with
+  `Assert.Fail("...")`; benchmarks read `System.AllocationCount` directly.
 
 Forge2D, JBox2D, and the older Xojo Physics project are secondary references
 only. Do not copy implementation code from them into Physics2D. A single pinned

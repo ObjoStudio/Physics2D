@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "GeometryDistanceTests",
+  "Id": "c7f24f0f-3bcd-415a-9a24-70627844b81e",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "GeometryDistanceTests-c7f24f0f-3bcd-415a-9a24-70627844b81e.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "GeometryHullTests",
+  "Id": "e5b16493-dbe4-4806-af0c-5291e7c1174a",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "GeometryHullTests-e5b16493-dbe4-4806-af0c-5291e7c1174a.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

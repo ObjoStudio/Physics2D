@@ -188,6 +188,36 @@ Determinism note: unlike the built-in `HashSet`, iteration and probe order
 here are fully determined by the keys and capacity, never by object
 hashing or insertion history beyond what the algorithm prescribes.
 
+## Collision Geometry (Stage 4)
+
+The Stage 4 sources port `hull.c`, `geometry.c`, `shape.c` (mass/AABB
+methods), `distance.c`, `manifold.c`, and `mover.c` on top of the
+deterministic maths from Stage 3. Three rules shape the layout:
+
+1. **Cold/warm form pairs.** Every entry point that produces a result has an
+   allocating convenience form and a reuse form that fills a caller-owned
+   output object: `Distance.ShapeDistance`/`ShapeDistanceTo`,
+   `Casts.RayCast*`/`RayCast*To`, `Casts.ShapeCast*`/`ShapeCast*To`,
+   `TimeOfImpact.ComputeTOI`/`ComputeTo`, `Collide.Collide*`/`Collide*To`,
+   and `Mover.SolvePlanes`/`SolvePlanesTo`. The cold form constructs the
+   output, runs the warm form, and returns it; all algorithmic logic lives
+   in the warm form.
+2. **Scratch bundles hide warm-up allocation.** Each output object lazily
+   creates a scratch bundle (`DistanceOutput.Scratch()`, `CastOutput.Scratch()`,
+   `TOIOutput.Scratch()`, `Manifold.Scratch()`) holding the growable lists,
+   simplex workspace, and reused value objects the algorithm needs. Once
+   warm, a repeated query on the same output allocates nothing — the steady
+   state the zero-alloc benchmark gate enforces.
+3. **Index-based shapes.** `ShapeProxy` stores vertices, normals, and radius;
+   collision functions address shapes by index pairs, mirroring the upstream
+   index-based clip points and manifold ids so the golden fixtures compare
+   exactly.
+
+Chain segments get their own family (`CollideChainSegmentAnd*`,
+`ChainSegment`, `ChainNormalType`) because upstream treats one-sided chains
+with ghost collisions differently from ordinary segments, including
+normal-flip bookkeeping during SAT selection and clipping.
+
 ## Deterministic Maths
 
 `PhysicsMaths` ports the upstream trigonometric approximations so
@@ -234,3 +264,15 @@ costs at or below the accepted scalar-array kernel (~182 ms for the full
 
 Growth and `Clear` costs are warm-up costs by design: capacity persists
 across `Clear`, so a warmed engine step never re-grows.
+
+Stage 4 adds the collision geometry envelope (same machine, see
+`benchmarks/results/` for the latest run). Every scenario is the steady-state
+reuse path after one warm-up query:
+
+| Scenario | Work per iteration | Median | Allocations |
+|---|---|---|---|
+| `stage4-distance` | 12 shape-distance queries on warmed outputs | 0.25 ms | 0 |
+| `stage4-manifold` | 8 polygon and capsule collision manifolds | 0.26 ms | 0 |
+| `stage4-cast` | 8 ray casts and 8 shape casts | 0.17 ms | 0 |
+| `stage4-time-of-impact` | 8 swept-capsule time-of-impact solves | 0.47 ms | 0 |
+| `stage4-plane-solver` | 8 mover solves against 3 planes | 0.13 ms | 0 |

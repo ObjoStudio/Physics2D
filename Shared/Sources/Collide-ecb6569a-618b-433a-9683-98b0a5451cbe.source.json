@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Collide",
+  "Id": "ecb6569a-618b-433a-9683-98b0a5451cbe",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Collide-ecb6569a-618b-433a-9683-98b0a5451cbe.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

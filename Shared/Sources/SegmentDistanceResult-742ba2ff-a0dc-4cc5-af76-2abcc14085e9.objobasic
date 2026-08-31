@@ -1,0 +1,26 @@
+# Result of computing the distance between two line segments, ported from
+# upstream b2SegmentDistanceResult in collision.h.
+#
+# The closest-point vectors are owned and reused by the To-form of the
+# distance computation.
+Class SegmentDistanceResult
+## The closest point on the first segment.
+Property Closest1 As Vector2
+## The closest point on the second segment.
+Property Closest2 As Vector2
+## The barycentric coordinate on the first segment.
+Property Fraction1 As Double
+## The barycentric coordinate on the second segment.
+Property Fraction2 As Double
+## The squared distance between the closest points.
+Property DistanceSquared As Double
+
+## Creates a zero result.
+Constructor()
+Me.Closest1 = New Vector2(0.0, 0.0)
+Me.Closest2 = New Vector2(0.0, 0.0)
+Me.Fraction1 = 0.0
+Me.Fraction2 = 0.0
+Me.DistanceSquared = 0.0
+End Constructor
+End Class

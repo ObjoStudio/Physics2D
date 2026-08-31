@@ -1,0 +1,30 @@
+# One segment of a chain shape, ported from upstream b2ChainSegment in
+# collision.h. The ghost points carry the neighbouring chain segments so
+# collisions can smooth across convex and concave vertices.
+Class ChainSegment
+## The core segment.
+Property Segment As Segment
+## Ghost point preceding point1, normally the previous chain vertex.
+Property Ghost1 As Vector2
+## Ghost point following point2, normally the next chain vertex.
+Property Ghost2 As Vector2
+## Identifies the owning chain for shape identity. Upstream stores an
+## int32; Physics2D uses an Integer. Negative means no chain identity.
+Property ChainId As Integer
+
+## Creates a chain segment with no ghosts and no chain identity.
+Constructor()
+Me.Segment = New Segment(New Vector2(0.0, 0.0), New Vector2(0.0, 0.0))
+Me.Ghost1 = New Vector2(0.0, 0.0)
+Me.Ghost2 = New Vector2(0.0, 0.0)
+Me.ChainId = -1
+End Constructor
+
+## Creates a chain segment from its segment and ghost points.
+Constructor(segment As Segment, ghost1 As Vector2, ghost2 As Vector2, chainId As Integer)
+Me.Segment = New Segment(segment.Point1.X, segment.Point1.Y, segment.Point2.X, segment.Point2.Y)
+Me.Ghost1 = New Vector2(ghost1.X, ghost1.Y)
+Me.Ghost2 = New Vector2(ghost2.X, ghost2.Y)
+Me.ChainId = chainId
+End Constructor
+End Class

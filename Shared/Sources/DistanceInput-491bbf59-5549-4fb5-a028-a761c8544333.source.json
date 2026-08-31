@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "DistanceInput",
+  "Id": "491bbf59-5549-4fb5-a028-a761c8544333",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "DistanceInput-491bbf59-5549-4fb5-a028-a761c8544333.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

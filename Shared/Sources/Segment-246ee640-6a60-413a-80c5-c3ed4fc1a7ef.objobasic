@@ -1,0 +1,50 @@
+# A line segment with two-sided collision, ported from upstream b2Segment in
+# collision.h. Chain shapes build one-sided segments instead; see
+# ChainSegment.
+#
+# Constructors validate their input and copy vector arguments. Segments have
+# no mass and no interior, so there is no mass computation or point test.
+Class Segment
+## The first point.
+Property Point1 As Vector2
+## The second point.
+Property Point2 As Vector2
+
+## Creates a segment between two points. The points are copied. Throws
+## InvalidArgumentException when either point is not finite.
+Constructor(point1 As Vector2, point2 As Vector2)
+If Not point1.X.IsFinite() Or Not point1.Y.IsFinite() Then
+Throw New InvalidArgumentException("Segment first point must be finite")
+End If
+If Not point2.X.IsFinite() Or Not point2.Y.IsFinite() Then
+Throw New InvalidArgumentException("Segment second point must be finite")
+End If
+Me.Point1 = New Vector2(point1.X, point1.Y)
+Me.Point2 = New Vector2(point2.X, point2.Y)
+End Constructor
+
+## Creates a segment from four scalar coordinates. The components must be
+## finite.
+Constructor(x1 As Double, y1 As Double, x2 As Double, y2 As Double)
+If Not x1.IsFinite() Or Not y1.IsFinite() Or Not x2.IsFinite() Or Not y2.IsFinite() Then
+Throw New InvalidArgumentException("Segment points must be finite")
+End If
+Me.Point1 = New Vector2(x1, y1)
+Me.Point2 = New Vector2(x2, y2)
+End Constructor
+
+## Copies another segment.
+Constructor(other As Segment)
+Me.Point1 = New Vector2(other.Point1.X, other.Point1.Y)
+Me.Point2 = New Vector2(other.Point2.X, other.Point2.Y)
+End Constructor
+## Computes the world-space AABB of the transformed segment, ported from
+## upstream b2ComputeSegmentAABB.
+Function ComputeAABB(transform As Transform) As AABB
+Var v1x As Double = transform.Q.C * Me.Point1.X - transform.Q.S * Me.Point1.Y + transform.P.X
+Var v1y As Double = transform.Q.S * Me.Point1.X + transform.Q.C * Me.Point1.Y + transform.P.Y
+Var v2x As Double = transform.Q.C * Me.Point2.X - transform.Q.S * Me.Point2.Y + transform.P.X
+Var v2y As Double = transform.Q.S * Me.Point2.X + transform.Q.C * Me.Point2.Y + transform.P.Y
+Return New AABB(New Vector2(Maths.Min(v1x, v2x), Maths.Min(v1y, v2y)), New Vector2(Maths.Max(v1x, v2x), Maths.Max(v1y, v2y)))
+End Function
+End Class

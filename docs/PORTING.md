@@ -61,9 +61,22 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
    one instead, so release behaviour stays correct without debug assertions.
    Key 0 remains reserved exactly as upstream.
 11. **Bit set construction.** Upstream creates an empty `b2BitSet` and calls
-   `b2SetBitCountAndClear` before first use; the Physics2D `BitSet`
-   constructor makes its reserved range immediately usable, with
-   `SetCountAndClear` remaining the step-loop reset path.
+    `b2SetBitCountAndClear` before first use; the Physics2D `BitSet`
+    constructor makes its reserved range immediately usable, with
+    `SetCountAndClear` remaining the step-loop reset path.
+12. **Assertions become validation.** Upstream `b2Assert` calls become
+    documented `InvalidArgumentException` throws for invalid construction
+    input and `RuntimeException` throws for degenerate runtime state.
+    `RayCastInput.IsValid`/`ShapeCastInput.IsValid` remain user-side checks;
+    the cast entry points assume valid input exactly like upstream release
+    builds.
+13. **No debug simplex capture.** Upstream `b2ShapeDistance` accepts a caller
+    buffer to record every simplex for debugging; Physics2D always passes
+    capacity 0, so `DistanceOutput.SimplexCount` stays 0.
+14. **Degenerate polygon factories.** Upstream `b2MakePolygon` falls back to
+    `b2MakeSquare` when hull construction fails; `Polygon.FromHull` and the
+    other polygon factories throw on degenerate input instead and expose
+    explicit `MakeSquare`/`MakeBox` factories.
 
 ## Public Symbol Inventory
 
@@ -575,10 +588,11 @@ Upstream line counts are for orientation only.
 | `src/table.[ch]`, `src/ctz.h` | `PairKeySet` plus `PhysicsMaths.HashKey`/`TrailingZeros` | 3 |
 | `src/id_pool.[ch]`, `src/array.[ch]` | `IdPool`, `GenerationalPool`, `IntegerList`, `DoubleList` | 3 |
 | `src/bitset.[ch]` | `BitSet` | 3 |
-| `src/hull.c` | `PolygonHull` | 4 |
-| `src/geometry.c` | `Geometry` | 4 |
-| `src/distance.c` | `Distance` (GJK) | 4 |
-| `src/manifold.c` | `Manifolds` | 4 |
+| `src/hull.c` | `Hull` (gift-wrap with weld and collinear merge) | 4 |
+| `src/geometry.c`, `src/shape.c` (mass and AABB methods) | `Circle`, `Capsule`, `Segment`, `Polygon`, `MassData`, `ShapeProxy`, value types (`RayCastInput`, `SegmentDistanceResult`, `Plane*`) | 4 |
+| `src/distance.c` (GJK, barycentric simplex, ray/shape casts, time of impact) | `Distance` plus `DistanceInput`/`DistanceOutput`/`DistanceScratch`, `Casts` plus `CastOutput`/`CastScratch`, `TimeOfImpact` plus `TOIInput`/`TOIOutput`/`TOIScratch`, `Simplex*`, `SeparationFunction`, `Sweep` | 4 |
+| `src/manifold.c` | `Collide` plus `CollideScratch`, `Manifold`, `ManifoldPoint`, `ChainSegment`, `ChainNormalType`, `ChainParams` | 4 |
+| `src/mover.c` | `Mover` plus `Plane`, `PlaneResult`, `CollisionPlane`, `PlaneSolverResult` (world-level `CastMover`/`CollideMover` wrappers arrive in Stage 10) | 4 |
 | `src/aabb.c` | `BoundsMath` | 5 |
 | `src/dynamic_tree.c` | `DynamicTree` | 5 |
 | `src/broad_phase.[ch]` | `BroadPhase` | 5 |
@@ -590,7 +604,7 @@ Upstream line counts are for orientation only.
 | `src/sensor.[ch]` | sensor tracking and events | 8 |
 | `src/joint.[ch]` | joint store and common joint solver | 9 |
 | `src/distance_joint.c` … `src/wheel_joint.c` | one source item per joint family | 9 |
-| `src/mover.c` | `Planes` (mover/plane solving) | 10 |
+| `src/mover.c` | Stage 4 delivers the standalone `Mover` solver; the world query wrappers below stay in Stage 10 | 4/10 |
 | `src/timer.c`, `src/arena_allocator.c`, `src/atomic.h` | excluded (v1) — replaced by Objo clocks and GC | 0 |
 
 ## Upstream Test Mapping
@@ -603,8 +617,9 @@ Golden numeric fixtures are generated from the pinned upstream source.
 |---|---|---|
 | `test/test_math.c` | `FoundationMathsTests` | 3 |
 | `test/test_table.c`, `test/test_bitset.c`, `test/test_id.c` | `FoundationPairKeySetTests`, `FoundationBitSetTests`, `FoundationIdentityTests` | 3 |
-| `test/test_collision.c` | `GeometryTests`, `DistanceTests`, `ManifoldTests`, `CastTests` | 4 |
-| `test/test_shape.c` | `ShapeGeometryTests` | 4 |
+| `test/test_collision.c` | `GeometryHullTests`, `GeometryDistanceTests`, `GeometryCastTests`, `GeometryManifoldTests`, `GeometryTOITests`, plus golden fixtures `hull.txt`, `distance.txt`, `raycast.txt`, `shapecast.txt`, `toi.txt`, `manifold.txt` | 4 |
+| `test/test_shape.c` | `GeometryShapeTests`, `GeometryMassTests`, plus golden fixtures `shape.txt`, `mass.txt` | 4 |
+| `src/mover.c` behaviour | `GeometryMoverTests` | 4 |
 | `test/test_world.c` | `WorldTests`, `BodyTests`, `QueryTests` | 6 |
 | `test/test_determinism.c` | `DeterminismTests` | 7 |
 | solver/scenario coverage from `samples/` | solver scene tests | 7 |

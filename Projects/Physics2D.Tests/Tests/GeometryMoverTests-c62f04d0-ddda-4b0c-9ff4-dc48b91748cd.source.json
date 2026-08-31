@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "GeometryMoverTests",
+  "Id": "c62f04d0-ddda-4b0c-9ff4-dc48b91748cd",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "GeometryMoverTests-c62f04d0-ddda-4b0c-9ff4-dc48b91748cd.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

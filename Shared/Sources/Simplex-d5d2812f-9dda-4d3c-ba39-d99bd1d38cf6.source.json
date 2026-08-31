@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Simplex",
+  "Id": "d5d2812f-9dda-4d3c-ba39-d99bd1d38cf6",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Simplex-d5d2812f-9dda-4d3c-ba39-d99bd1d38cf6.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

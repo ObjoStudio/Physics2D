@@ -1,0 +1,182 @@
+# Continuous collision via the local separating axis method, ported from
+# upstream b2TimeOfImpact in distance.c. This seeks progression by computing
+# the largest time at which separation is maintained.
+#
+# The warm To-form reuses the distance and separation workspaces attached to
+# the caller's TOIOutput, so steady-state queries allocate nothing.
+Class TimeOfImpact
+## Computes the upper bound on time before two shapes penetrate into a new
+## output. Time is a fraction in [0, MaxFraction]. This uses a swept
+## separating axis and may miss some intermediate, non-tunnelling
+## collisions. If the time interval changes, call again.
+Shared Function Compute(input As TOIInput) As TOIOutput
+Var out As New TOIOutput
+TimeOfImpact.ComputeTo(input, out)
+Return out
+End Function
+
+## Computes the upper bound on time before two shapes penetrate into the
+## caller-owned out output and returns out. The reused-output form for warm
+## loops.
+Shared Function ComputeTo(input As TOIInput, out As TOIOutput) As TOIOutput
+out.State = TOIState.Unknown
+out.Fraction = input.MaxFraction
+
+Var proxyA As ShapeProxy = input.ProxyA
+Var proxyB As ShapeProxy = input.ProxyB
+
+Var tMax As Double = input.MaxFraction
+
+Var totalRadius As Double = proxyA.Radius + proxyB.Radius
+Var target As Double = PhysicsConstants.LINEAR_SLOP
+If totalRadius - PhysicsConstants.LINEAR_SLOP > target Then
+target = totalRadius - PhysicsConstants.LINEAR_SLOP
+End If
+Var tolerance As Double = 0.25 * PhysicsConstants.LINEAR_SLOP
+
+Var t1 As Double = 0.0
+Var maxIterations As Integer = 20
+Var distanceIterations As Integer = 0
+
+# Prepare the reusable distance query.
+Var scratch As TOIScratch = out.Scratch()
+Var distanceInput As DistanceInput = scratch.DistanceInput
+distanceInput.ProxyA = proxyA
+distanceInput.ProxyB = proxyB
+distanceInput.UseRadii = False
+Var cache As SimplexCache = scratch.Cache
+cache.Clear()
+
+# The outer loop progressively attempts to compute new separating axes.
+# This loop terminates when an axis is repeated, making no progress.
+Var done As Boolean = False
+While Not done
+Sweep.GetTransformTo(input.SweepA, t1, scratch.TransformA)
+Sweep.GetTransformTo(input.SweepB, t1, scratch.TransformB)
+distanceInput.TransformA = scratch.TransformA
+distanceInput.TransformB = scratch.TransformB
+Var distanceOutput As DistanceOutput = scratch.DistanceOutput
+Distance.ShapeDistanceTo(distanceInput, cache, distanceOutput)
+
+distanceIterations = distanceIterations + 1
+
+# If the shapes are overlapped, give up on continuous collision.
+If distanceOutput.Distance <= 0.0 Then
+# Failure.
+out.State = TOIState.Overlapped
+out.Fraction = 0.0
+done = True
+End If
+
+If Not done And distanceOutput.Distance <= target + tolerance Then
+# Victory.
+out.State = TOIState.Hit
+out.Fraction = t1
+done = True
+End If
+
+If Not done Then
+# Initialise the separating axis and resolve the TOI on it.
+Var fcn As SeparationFunction = out.Scratch().Separation
+fcn.Setup(cache, proxyA, input.SweepA, proxyB, input.SweepB, t1)
+t1 = TimeOfImpact.PushBack(fcn, tMax, t1, target, tolerance, out)
+done = out.State <> TOIState.Unknown
+End If
+
+If Not done And distanceIterations = maxIterations Then
+# The root finder got stuck. Semi-victory.
+out.State = TOIState.Failed
+out.Fraction = t1
+done = True
+End If
+Wend
+
+Return out
+End Function
+
+## Advances the swept separating axis by successively resolving the deepest
+## point, ported from the inner loop of upstream b2TimeOfImpact. Returns
+## the new sweep time. A still-unknown output state means the caller should
+## loop again; otherwise the output holds the verdict.
+Shared Function PushBack(fcn As SeparationFunction, tMax As Double, t1 As Double, target As Double, tolerance As Double, out As TOIOutput) As Double
+Var t2 As Double = tMax
+Var pushBackIterations As Integer = 0
+While pushBackIterations < PhysicsConstants.MAX_POLYGON_VERTICES
+# Find the deepest point at t2 and store the witness point indices.
+Var minResult As SeparationResult = fcn.FindMinSeparation(t2)
+Var s2 As Double = minResult.Separation
+
+# Is the final configuration separated?
+If s2 > target + tolerance Then
+# Victory.
+out.State = TOIState.Separated
+out.Fraction = tMax
+Return t1
+End If
+
+# Has the separation reached tolerance?
+If s2 > target - tolerance Then
+# Advance the sweeps.
+Return t2
+End If
+
+# Compute the initial separation of the witness points.
+Var s1 As Double = fcn.EvaluateSeparation(minResult.IndexA, minResult.IndexB, t1)
+
+# Check for initial overlap. This might happen if the root finder runs
+# out of iterations.
+If s1 < target - tolerance Then
+out.State = TOIState.Failed
+out.Fraction = t1
+Return t1
+End If
+
+# Check for touching.
+If s1 <= target + tolerance Then
+# Victory. t1 holds the TOI, possibly zero.
+out.State = TOIState.Hit
+out.Fraction = t1
+Return t1
+End If
+
+# Compute the one-dimensional root of f(x) - target = 0 with a mix of
+# the secant rule and bisection.
+Var rootIterationCount As Integer = 0
+Var a1 As Double = t1
+Var a2 As Double = t2
+While rootIterationCount < 50
+Var t As Double = 0.0
+If rootIterationCount Mod 2 = 1 Then
+# Secant rule to improve convergence.
+t = a1 + (target - s1) * (a2 - a1) / (s2 - s1)
+Else
+# Bisection to guarantee progress.
+t = 0.5 * (a1 + a2)
+End If
+
+rootIterationCount = rootIterationCount + 1
+
+Var s As Double = fcn.EvaluateSeparation(minResult.IndexA, minResult.IndexB, t)
+
+If Maths.Abs(s - target) < tolerance Then
+# t2 holds a tentative value for t1.
+t2 = t
+Exit While
+End If
+
+# Keep bracketing the root.
+If s > target Then
+a1 = t
+s1 = s
+Else
+a2 = t
+s2 = s
+End If
+Wend
+
+pushBackIterations = pushBackIterations + 1
+Wend
+
+Return t1
+End Function
+End Class

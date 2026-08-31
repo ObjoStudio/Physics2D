@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Plane",
+  "Id": "611e5a3a-dc4a-476b-9289-e6bec1dbe7a1",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Plane-611e5a3a-dc4a-476b-9289-e6bec1dbe7a1.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

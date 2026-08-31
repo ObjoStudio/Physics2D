@@ -23,6 +23,14 @@ Public Const POSITION_LIMIT As Double = 100000.0
 ## Changing this materially affects stability.
 Public Const LINEAR_SLOP As Double = 0.005
 
+## 32-bit float machine epsilon, promoted to Double. Upstream uses FLT_EPSILON
+## for float-precision guards; Physics2D keeps the same value so guard
+## behaviour matches the pinned C release.
+Public Const FLT_EPSILON As Double = 0.0000001192092896
+
+## Pi. Matches upstream B2_PI.
+Public Const PI As Double = 3.14159265358979323846
+
 ## Maximum rotation of a body per time step (radians). Prevents numerical
 ## problems; values of half pi or more would break continuous collision.
 Public Const MAX_ROTATION As Double = 0.7853981633974483
@@ -47,6 +55,10 @@ Public Const JOINT_CONSTRAINT_DAMPING_RATIO As Double = 2.0
 ## Constraint graph colour count. Constraints that cannot find a colour join
 ## the overflow set, which is solved single-threaded.
 Public Const GRAPH_COLOUR_COUNT As Integer = 12
+
+## Maximum number of vertices on a convex polygon. Changing this affects
+## performance even when fewer vertices are used.
+Public Const MAX_POLYGON_VERTICES As Integer = 8
 
 ## Dynamic tree node flag: the node slot is allocated.
 Public Const NODE_ALLOCATED_FLAG As Integer = 1

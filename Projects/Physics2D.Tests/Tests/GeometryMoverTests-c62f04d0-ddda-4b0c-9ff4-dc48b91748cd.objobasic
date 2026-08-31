@@ -1,0 +1,101 @@
+# Unit tests for the character-mover plane solver and velocity clipper,
+# ported from the behaviour of upstream mover.c.
+Import Physics2D
+
+Class GeometryMoverTests Inherits TestCase
+## Builds a collision plane from a normal, offset, and push limit.
+Private Shared Function MakePlane(normalX As Double, normalY As Double, offset As Double, pushLimit As Double) As CollisionPlane
+Return New CollisionPlane(New Plane(normalX, normalY, offset), pushLimit, True)
+End Function
+
+Public Sub TestSolvePlanesRestsAboveFloor()
+# A mover pushed into an infinite floor settles one slop above it.
+Var planes As New Array(Of CollisionPlane)
+Var floor As CollisionPlane = GeometryMoverTests.MakePlane(0.0, 1.0, 0.0, 1.7976931348623157e308)
+planes.Append(floor)
+
+Var result As PlaneSolverResult = Mover.SolvePlanes(New Vector2(0.0, -5.0), planes, 1)
+PhysicsAssert.Near(0.0, result.Translation.X, Tolerances.INTERNAL_ABS, 0.0, "floor translation x")
+PhysicsAssert.Near(PhysicsConstants.LINEAR_SLOP, -result.Translation.Y, Tolerances.INTERNAL_ABS, 0.0, "floor translation y")
+PhysicsAssert.Near(5.0 - PhysicsConstants.LINEAR_SLOP, floor.Push, Tolerances.INTERNAL_ABS, 0.0, "floor push")
+Assert.Equal(1, result.IterationCount, "floor iterations")
+End Sub
+
+Public Sub TestSolvePlanesCornerClampsBothPlanes()
+# A corner of floor and wall clamps both components independently.
+Var planes As New Array(Of CollisionPlane)
+planes.Append(GeometryMoverTests.MakePlane(0.0, 1.0, 0.0, 1.7976931348623157e308))
+planes.Append(GeometryMoverTests.MakePlane(1.0, 0.0, 0.0, 1.7976931348623157e308))
+
+Var result As PlaneSolverResult = Mover.SolvePlanes(New Vector2(-5.0, -5.0), planes, 2)
+PhysicsAssert.Near(PhysicsConstants.LINEAR_SLOP, -result.Translation.X, Tolerances.INTERNAL_ABS, 0.0, "corner translation x")
+PhysicsAssert.Near(PhysicsConstants.LINEAR_SLOP, -result.Translation.Y, Tolerances.INTERNAL_ABS, 0.0, "corner translation y")
+PhysicsAssert.Near(5.0 - PhysicsConstants.LINEAR_SLOP, planes[0].Push, Tolerances.INTERNAL_ABS, 0.0, "corner floor push")
+PhysicsAssert.Near(5.0 - PhysicsConstants.LINEAR_SLOP, planes[1].Push, Tolerances.INTERNAL_ABS, 0.0, "corner wall push")
+Assert.Equal(1, result.IterationCount, "corner iterations")
+End Sub
+
+Public Sub TestSolvePlanesPushLimitSoftens()
+# A limited push stops the mover early and then converges without
+# further movement.
+Var planes As New Array(Of CollisionPlane)
+Var floor As CollisionPlane = GeometryMoverTests.MakePlane(0.0, 1.0, 0.0, 1.0)
+planes.Append(floor)
+
+Var result As PlaneSolverResult = Mover.SolvePlanes(New Vector2(0.0, -5.0), planes, 1)
+PhysicsAssert.Near(0.0, result.Translation.X, Tolerances.INTERNAL_ABS, 0.0, "soft translation x")
+PhysicsAssert.Near(4.0, -result.Translation.Y, Tolerances.INTERNAL_ABS, 0.0, "soft translation y")
+PhysicsAssert.Near(1.0, floor.Push, Tolerances.INTERNAL_ABS, 0.0, "soft push")
+Assert.Equal(1, result.IterationCount, "soft iterations")
+End Sub
+
+Public Sub TestSolvePlanesWarmReuseMatchesColdForm()
+Var planes As New Array(Of CollisionPlane)
+planes.Append(GeometryMoverTests.MakePlane(0.0, 1.0, 0.0, 1.7976931348623157e308))
+Var cold As PlaneSolverResult = Mover.SolvePlanes(New Vector2(0.3, -5.0), planes, 1)
+
+Var reused As New PlaneSolverResult
+Var warmPlanes As New Array(Of CollisionPlane)
+warmPlanes.Append(GeometryMoverTests.MakePlane(0.0, 1.0, 0.0, 1.7976931348623157e308))
+Mover.SolvePlanesTo(New Vector2(0.3, -5.0), warmPlanes, 1, reused)
+
+PhysicsAssert.NearVector(cold.Translation, reused.Translation, Tolerances.INTERNAL_ABS, 0.0, "warm translation")
+Assert.Equal(cold.IterationCount, reused.IterationCount, "warm iterations")
+PhysicsAssert.Near(planes[0].Push, warmPlanes[0].Push, Tolerances.INTERNAL_ABS, 0.0, "warm push")
+End Sub
+
+Public Sub TestClipVectorRemovesNormalComponent()
+# Velocity into a pushed plane is removed; tangential motion stays.
+Var planes As New Array(Of CollisionPlane)
+Var floor As CollisionPlane = GeometryMoverTests.MakePlane(0.0, 1.0, 0.0, 1.7976931348623157e308)
+floor.Push = 1.0
+planes.Append(floor)
+
+Var clipped As Vector2 = Mover.ClipVector(New Vector2(3.0, -10.0), planes, 1)
+PhysicsAssert.Near(3.0, clipped.X, Tolerances.INTERNAL_ABS, 0.0, "clip tangent x")
+PhysicsAssert.Near(0.0, clipped.Y, Tolerances.INTERNAL_ABS, 0.0, "clip tangent y")
+End Sub
+
+Public Sub TestClipVectorSkipsInactivePlanes()
+# Zero-push planes and planes without velocity clipping are ignored.
+Var planes As New Array(Of CollisionPlane)
+Var zeroPush As CollisionPlane = GeometryMoverTests.MakePlane(0.0, 1.0, 0.0, 1.7976931348623157e308)
+zeroPush.Push = 0.0
+Var soft As CollisionPlane = GeometryMoverTests.MakePlane(1.0, 0.0, 0.0, 1.7976931348623157e308)
+soft.Push = 1.0
+soft.ClipVelocity = False
+planes.Append(zeroPush)
+planes.Append(soft)
+
+Var clipped As Vector2 = Mover.ClipVector(New Vector2(-4.0, -10.0), planes, 2)
+PhysicsAssert.Near(-4.0, clipped.X, Tolerances.INTERNAL_ABS, 0.0, "skip soft x")
+PhysicsAssert.Near(-10.0, clipped.Y, Tolerances.INTERNAL_ABS, 0.0, "skip zero push y")
+End Sub
+
+Public Sub TestPlaneSeparation()
+Var plane As New Plane(0.0, 1.0, 2.0)
+PhysicsAssert.Near(3.0, plane.Separation(New Vector2(1.0, 5.0)), Tolerances.INTERNAL_ABS, 0.0, "separation above")
+PhysicsAssert.Near(-1.0, plane.Separation(New Vector2(0.0, 1.0)), Tolerances.INTERNAL_ABS, 0.0, "separation below")
+PhysicsAssert.Near(0.0, plane.Separation(New Vector2(7.0, 2.0)), Tolerances.INTERNAL_ABS, 0.0, "separation on plane")
+End Sub
+End Class

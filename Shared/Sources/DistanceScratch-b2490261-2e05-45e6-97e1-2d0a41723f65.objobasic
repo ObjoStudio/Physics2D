@@ -1,0 +1,21 @@
+# Engine-internal reusable workspace for the GJK distance computation. Owned
+# by a DistanceOutput and created lazily so warm distance queries allocate
+# nothing. Not part of the public engine surface.
+Class DistanceScratch
+## Proxy B transformed into frame A, reused across iterations.
+Property LocalProxyB As ShapeProxy
+## Current GJK search direction.
+Property Direction As Vector2
+## Witness point on shape A in frame A.
+Property WitnessA As Vector2
+## Witness point on shape B in frame A.
+Property WitnessB As Vector2
+
+## Creates the workspace with empty storage.
+Constructor()
+Me.LocalProxyB = New ShapeProxy
+Me.Direction = New Vector2(0.0, 0.0)
+Me.WitnessA = New Vector2(0.0, 0.0)
+Me.WitnessB = New Vector2(0.0, 0.0)
+End Constructor
+End Class

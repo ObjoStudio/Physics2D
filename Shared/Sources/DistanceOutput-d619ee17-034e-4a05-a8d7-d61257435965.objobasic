@@ -1,0 +1,54 @@
+# Output for shape distance, ported from upstream b2DistanceOutput in
+# collision.h.
+#
+# Distance functions write into existing outputs (the To-forms) so warm loops
+# can reuse one output object. Every field is overwritten on each call.
+Class DistanceOutput
+## Closest point on shape A, in world space.
+Property PointA As Vector2
+## Closest point on shape B, in world space.
+Property PointB As Vector2
+## Normal vector that points from A to B. Invalid when the distance is zero.
+Property Normal As Vector2
+## The final distance. Zero when the shapes overlap.
+Property Distance As Double
+## Number of GJK iterations used.
+Property Iterations As Integer
+## Number of simplexes stored in the debug simplex array.
+Property SimplexCount As Integer
+
+## Internal reusable workspace for the warm distance path.
+Private Property mScratch As DistanceScratch
+
+## Creates a zero output.
+Constructor()
+Me.PointA = New Vector2(0.0, 0.0)
+Me.PointB = New Vector2(0.0, 0.0)
+Me.Normal = New Vector2(0.0, 0.0)
+Me.Distance = 0.0
+Me.Iterations = 0
+Me.SimplexCount = 0
+Me.mScratch = Nothing
+End Constructor
+
+## Returns the internal workspace, creating it on first use. Engine code
+## only; creating the workspace once per output keeps warm distance queries
+## allocation-free.
+Function Scratch() As DistanceScratch
+If Me.mScratch = Nothing Then
+Me.mScratch = New DistanceScratch
+End If
+Return Me.mScratch
+End Function
+
+## Copies another output's fields in place and returns this output.
+Function SetFrom(other As DistanceOutput) As DistanceOutput
+Me.PointA.Set(other.PointA.X, other.PointA.Y)
+Me.PointB.Set(other.PointB.X, other.PointB.Y)
+Me.Normal.Set(other.Normal.X, other.Normal.Y)
+Me.Distance = other.Distance
+Me.Iterations = other.Iterations
+Me.SimplexCount = other.SimplexCount
+Return Me
+End Function
+End Class

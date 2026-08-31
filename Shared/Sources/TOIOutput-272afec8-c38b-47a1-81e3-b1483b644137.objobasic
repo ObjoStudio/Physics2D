@@ -1,0 +1,31 @@
+# Output parameters for a time-of-impact computation, ported from upstream
+# b2TOIOutput in collision.h.
+#
+# The To-form of TimeOfImpact reuses the scratch workspace attached here, so
+# repeated TOI queries allocate nothing.
+Class TOIOutput
+## The type of result.
+Property State As TOIState
+## The sweep time of the collision.
+Property Fraction As Double
+
+## Internal reusable workspace for the warm TOI path.
+Private Property mScratch As TOIScratch
+
+## Creates an unknown output with full fraction.
+Constructor()
+Me.State = TOIState.Unknown
+Me.Fraction = 1.0
+Me.mScratch = Nothing
+End Constructor
+
+## Returns the internal workspace, creating it on first use. Engine code
+## only; creating the workspace once per output keeps warm TOI queries
+## allocation-free.
+Function Scratch() As TOIScratch
+If Me.mScratch = Nothing Then
+Me.mScratch = New TOIScratch
+End If
+Return Me.mScratch
+End Function
+End Class

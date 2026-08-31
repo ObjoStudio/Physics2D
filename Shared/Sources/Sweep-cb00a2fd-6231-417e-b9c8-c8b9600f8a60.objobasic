@@ -1,0 +1,65 @@
+# Motion of a body between two poses, used by time of impact, ported from
+# upstream b2Sweep in collision.h.
+#
+# Shapes are defined relative to the body origin, which may not coincide with
+# the centre of mass. The sweep stores the local centre of mass so interpolated
+# transforms can shift the origin to the interpolated centre of mass position.
+#
+# Vector fields hold owned vectors; copy constructors deep-copy so sweeps can
+# be assigned without aliasing.
+Class Sweep
+## Local centre of mass position.
+Property LocalCenter As Vector2
+## Starting centre of mass world position.
+Property C1 As Vector2
+## Ending centre of mass world position.
+Property C2 As Vector2
+## Starting world rotation.
+Property Q1 As Rot
+## Ending world rotation.
+Property Q2 As Rot
+
+## Creates a zero sweep with identity rotations.
+Constructor()
+Me.LocalCenter = New Vector2(0.0, 0.0)
+Me.C1 = New Vector2(0.0, 0.0)
+Me.C2 = New Vector2(0.0, 0.0)
+Me.Q1 = New Rot(1.0, 0.0)
+Me.Q2 = New Rot(1.0, 0.0)
+End Constructor
+
+## Copies another sweep.
+Constructor(other As Sweep)
+Me.LocalCenter = New Vector2(other.LocalCenter.X, other.LocalCenter.Y)
+Me.C1 = New Vector2(other.C1.X, other.C1.Y)
+Me.C2 = New Vector2(other.C2.X, other.C2.Y)
+Me.Q1 = New Rot(other.Q1.C, other.Q1.S)
+Me.Q2 = New Rot(other.Q2.C, other.Q2.S)
+End Constructor
+
+## Evaluates the transform sweep at a specific time in [0, 1] into a new
+## transform, ported from upstream b2GetSweepTransform.
+Shared Function GetTransform(motion As Sweep, time As Double) As Transform
+Var result As New Transform
+Sweep.GetTransformTo(motion, time, result)
+Return result
+End Function
+
+## Evaluates the transform sweep at a specific time into the caller-owned
+## out transform and returns out. The reused-output form for warm loops.
+## The time is expected in [0, 1]; values outside interpolate linearly the
+## same way upstream does.
+Shared Function GetTransformTo(motion As Sweep, time As Double, out As Transform) As Transform
+Var omt As Double = 1.0 - time
+out.P.Set(omt * motion.C1.X + time * motion.C2.X, omt * motion.C1.Y + time * motion.C2.Y)
+out.Q.C = omt * motion.Q1.C + time * motion.Q2.C
+out.Q.S = omt * motion.Q1.S + time * motion.Q2.S
+Rot.NormalizeTo(out.Q, out.Q)
+
+# Shift to origin.
+Var rx As Double = out.Q.C * motion.LocalCenter.X - out.Q.S * motion.LocalCenter.Y
+Var ry As Double = out.Q.S * motion.LocalCenter.X + out.Q.C * motion.LocalCenter.Y
+out.P.Set(out.P.X - rx, out.P.Y - ry)
+Return out
+End Function
+End Class

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "SimplexVertex",
+  "Id": "d5584077-050d-4a6b-98d4-c3c28f8be736",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

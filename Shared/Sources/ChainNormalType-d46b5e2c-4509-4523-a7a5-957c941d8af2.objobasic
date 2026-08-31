@@ -1,0 +1,7 @@
+# Smoothness verdict for a contact normal against chain segment ghost
+# geometry, ported from upstream b2NormalType in manifold.c.
+Enum ChainNormalType
+NormalSkip
+NormalAdmit
+NormalSnap
+End Enum

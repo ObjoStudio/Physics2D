@@ -1,0 +1,238 @@
+# Golden fixture and upstream tests for segment distance and GJK shape
+# distance.
+#
+# Consumes testdata/golden/distance.txt, generated from the pinned Box2D
+# 3.1.1 checkout. The segment cases and the circle-versus-box GJK case
+# mirror tools/fixture_gen/fixture_gen.c. Also ports the assertions of
+# upstream test/test_distance.c.
+Import Physics2D
+
+Class GeometryDistanceTests Inherits TestCase
+Private Shared Function SegmentCase(caseIndex As Integer) As Array(Of Vector2)
+# p1, q1, p2, q2 per the generator's table.
+Var points As New Array(Of Vector2)
+If caseIndex = 0 Then
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(1.0, 0.0))
+points.Append(New Vector2(0.0, 1.0))
+points.Append(New Vector2(1.0, 1.0))
+ElseIf caseIndex = 1 Then
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(2.0, 0.0))
+points.Append(New Vector2(1.0, -1.0))
+points.Append(New Vector2(1.0, 3.0))
+ElseIf caseIndex = 2 Then
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(1.0, 1.0))
+points.Append(New Vector2(2.0, 2.0))
+points.Append(New Vector2(3.0, 3.0))
+ElseIf caseIndex = 3 Then
+points.Append(New Vector2(-1.0, 0.0))
+points.Append(New Vector2(1.0, 0.0))
+points.Append(New Vector2(0.0, -2.0))
+points.Append(New Vector2(0.0, 2.0))
+Else
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(1.0, 0.0))
+points.Append(New Vector2(0.5, 0.25))
+points.Append(New Vector2(2.0, 0.25))
+End If
+Return points
+End Function
+
+Public Sub TestSegmentDistanceMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("distance.txt")
+Var checkedCases As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+If fields[0] <> "segdist" Then
+Continue
+End If
+Var caseIndex As Integer = Integer.Parse(fields[1])
+Var values() As String = fields[2].Split(" ")
+
+Var points As Array(Of Vector2) = GeometryDistanceTests.SegmentCase(caseIndex)
+Var result As SegmentDistanceResult = Distance.SegmentDistance(points[0], points[1], points[2], points[3])
+
+Var label As String = "segdist case " + caseIndex.ToString()
+PhysicsAssert.Near(Double.Parse(values[0]), result.Fraction1, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " fraction1")
+PhysicsAssert.Near(Double.Parse(values[1]), result.Fraction2, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " fraction2")
+PhysicsAssert.Near(Double.Parse(values[2]), result.DistanceSquared, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " distanceSquared")
+PhysicsAssert.Near(Double.Parse(values[3]), result.Closest1.X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " closest1x")
+PhysicsAssert.Near(Double.Parse(values[4]), result.Closest1.Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " closest1y")
+PhysicsAssert.Near(Double.Parse(values[5]), result.Closest2.X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " closest2x")
+PhysicsAssert.Near(Double.Parse(values[6]), result.Closest2.Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, label + " closest2y")
+checkedCases = checkedCases + 1
+Next line
+Assert.Equal(5, checkedCases)
+End Sub
+
+Public Sub TestShapeDistanceMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("distance.txt")
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+If fields[0] <> "gjk" Then
+Continue
+End If
+Var values() As String = fields[2].Split(" ")
+
+# Circle {0.5, 0.5} r 0.5 versus box MakeBox(1, 1); transform B at
+# (2.5, 0) rotated 0.3 radians; radii enabled.
+Var circleCenter As New Vector2(0.5, 0.5)
+Var circleCenterList As New Array(Of Vector2)
+circleCenterList.Append(circleCenter)
+Var input As New DistanceInput
+input.ProxyA = ShapeProxy.Make(circleCenterList, 1, 0.5)
+Var box As Polygon = Polygon.MakeBox(1.0, 1.0)
+input.ProxyB = ShapeProxy.Make(box.Vertices, box.Count, box.Radius)
+input.TransformA = New Transform(New Vector2(0.0, 0.0), Rot.Identity())
+input.TransformB = New Transform(New Vector2(2.5, 0.0), Rot.Make(0.3))
+input.UseRadii = True
+
+Var cache As New SimplexCache
+Var output As DistanceOutput = Distance.ShapeDistance(input, cache)
+
+PhysicsAssert.Near(Double.Parse(values[0]), output.Distance, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "gjk distance")
+PhysicsAssert.Near(Double.Parse(values[1]), output.PointA.X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "gjk pointAx")
+PhysicsAssert.Near(Double.Parse(values[2]), output.PointA.Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "gjk pointAy")
+PhysicsAssert.Near(Double.Parse(values[3]), output.PointB.X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "gjk pointBx")
+PhysicsAssert.Near(Double.Parse(values[4]), output.PointB.Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "gjk pointBy")
+Assert.Equal(Integer.Parse(values[5]), cache.Count, "gjk cacheCount")
+
+# The distance output form must agree with the reused-output form.
+Var warmCache As New SimplexCache
+Var warmOutput As New DistanceOutput
+Distance.ShapeDistanceTo(input, warmCache, warmOutput)
+PhysicsAssert.Near(output.Distance, warmOutput.Distance, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "gjk warm distance")
+PhysicsAssert.NearVector(output.PointA, warmOutput.PointA, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "gjk warm pointA")
+PhysicsAssert.NearVector(output.PointB, warmOutput.PointB, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "gjk warm pointB")
+Return
+Next line
+Assert.Fail("gjk fixture record missing")
+End Sub
+
+Public Sub TestUpstreamSegmentDistanceAssertions()
+# Ported from upstream test_distance.c SegmentDistanceTest.
+Var p1 As New Vector2(-1.0, -1.0)
+Var q1 As New Vector2(-1.0, 1.0)
+Var p2 As New Vector2(2.0, 0.0)
+Var q2 As New Vector2(1.0, 0.0)
+Var result As SegmentDistanceResult = Distance.SegmentDistance(p1, q1, p2, q2)
+PhysicsAssert.Near(0.5, result.Fraction1, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "fraction1")
+PhysicsAssert.Near(1.0, result.Fraction2, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "fraction2")
+PhysicsAssert.Near(-1.0, result.Closest1.X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "closest1x")
+PhysicsAssert.Near(0.0, result.Closest1.Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "closest1y")
+PhysicsAssert.Near(1.0, result.Closest2.X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "closest2x")
+PhysicsAssert.Near(0.0, result.Closest2.Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "closest2y")
+PhysicsAssert.Near(4.0, result.DistanceSquared, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "distanceSquared")
+End Sub
+
+Public Sub TestUpstreamShapeDistanceAssertions()
+# Ported from upstream test_distance.c ShapeDistanceTest: a unit square
+# proxy and a vertical segment proxy are one unit apart.
+Var pointsA As New Array(Of Vector2)
+pointsA.Append(New Vector2(-1.0, -1.0))
+pointsA.Append(New Vector2(1.0, -1.0))
+pointsA.Append(New Vector2(1.0, 1.0))
+pointsA.Append(New Vector2(-1.0, 1.0))
+Var proxyA As ShapeProxy = ShapeProxy.Make(pointsA, 4, 0.0)
+
+Var pointsB As New Array(Of Vector2)
+pointsB.Append(New Vector2(2.0, -1.0))
+pointsB.Append(New Vector2(2.0, 1.0))
+Var proxyB As ShapeProxy = ShapeProxy.Make(pointsB, 2, 0.0)
+
+Var input As New DistanceInput
+input.ProxyA = proxyA
+input.ProxyB = proxyB
+input.UseRadii = False
+
+Var cache As New SimplexCache
+Var output As DistanceOutput = Distance.ShapeDistance(input, cache)
+PhysicsAssert.Near(1.0, output.Distance, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "distance")
+
+# The reused-output form must agree.
+Var warmOutput As New DistanceOutput
+Distance.ShapeDistanceTo(input, cache, warmOutput)
+PhysicsAssert.Near(output.Distance, warmOutput.Distance, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "warm distance")
+End Sub
+
+Public Sub TestShapeDistanceRejectsEmptyProxies()
+Var input As New DistanceInput
+input.ProxyA = New ShapeProxy
+input.ProxyB = New ShapeProxy
+Var cache As New SimplexCache
+Try
+Var output As DistanceOutput = Distance.ShapeDistance(input, cache)
+Assert.Fail("empty proxies must be rejected")
+Catch ex As InvalidArgumentException
+Assert.True(ex.Message.Length > 0)
+End Try
+End Sub
+
+Public Sub TestUpstreamTimeOfImpactAssertions()
+# Ported from upstream test_distance.c TimeOfImpactTest: a unit square
+# fixed at the origin and a vertical segment sweeping left onto it.
+Var pointsA As New Array(Of Vector2)
+pointsA.Append(New Vector2(-1.0, -1.0))
+pointsA.Append(New Vector2(1.0, -1.0))
+pointsA.Append(New Vector2(1.0, 1.0))
+pointsA.Append(New Vector2(-1.0, 1.0))
+Var pointsB As New Array(Of Vector2)
+pointsB.Append(New Vector2(2.0, -1.0))
+pointsB.Append(New Vector2(2.0, 1.0))
+
+Var sweepA As New Sweep
+sweepA.Q1.SetComponents(1.0, 0.0)
+sweepA.Q2.SetComponents(1.0, 0.0)
+Var sweepB As New Sweep
+sweepB.C2.Set(-2.0, 0.0)
+sweepB.Q1.SetComponents(1.0, 0.0)
+sweepB.Q2.SetComponents(1.0, 0.0)
+
+Var input As TOIInput = TOIInput.Make(pointsA, 4, 0.0, sweepA, pointsB, 2, 0.0, sweepB, 1.0)
+Var output As TOIOutput = TimeOfImpact.Compute(input)
+Assert.Equal(TOIState.Hit, output.State, "expected hit state")
+PhysicsAssert.Near(0.5, output.Fraction, 0.005, 0.0, "fraction")
+
+# The warm reused-output form must agree.
+Var warmOutput As New TOIOutput
+TimeOfImpact.ComputeTo(input, warmOutput)
+Assert.Equal(output.State, warmOutput.State, "warm state")
+PhysicsAssert.Near(output.Fraction, warmOutput.Fraction, Tolerances.INTERNAL_ABS, 0.0, "warm fraction")
+End Sub
+
+Public Sub TestTimeOfImpactSeparatedAndOverlapped()
+Var pointsA As New Array(Of Vector2)
+pointsA.Append(New Vector2(-1.0, -1.0))
+pointsA.Append(New Vector2(1.0, -1.0))
+pointsA.Append(New Vector2(1.0, 1.0))
+pointsA.Append(New Vector2(-1.0, 1.0))
+Var pointsB As New Array(Of Vector2)
+pointsB.Append(New Vector2(2.0, -1.0))
+pointsB.Append(New Vector2(2.0, 1.0))
+
+# Sweep B right, away from A: separated for the whole interval.
+Var sweepA As New Sweep
+sweepA.Q1.SetComponents(1.0, 0.0)
+sweepA.Q2.SetComponents(1.0, 0.0)
+Var sweepB As New Sweep
+sweepB.C2.Set(2.0, 0.0)
+sweepB.Q1.SetComponents(1.0, 0.0)
+sweepB.Q2.SetComponents(1.0, 0.0)
+
+Var input As TOIInput = TOIInput.Make(pointsA, 4, 0.0, sweepA, pointsB, 2, 0.0, sweepB, 1.0)
+Var output As TOIOutput = TimeOfImpact.Compute(input)
+Assert.Equal(TOIState.Separated, output.State, "expected separated state")
+PhysicsAssert.Near(1.0, output.Fraction, 0.0, 0.0, "separated fraction")
+
+# Start overlapped: TOI gives up with an overlapped verdict.
+Var sweepOverlap As New Sweep
+sweepOverlap.Q1.SetComponents(1.0, 0.0)
+sweepOverlap.Q2.SetComponents(1.0, 0.0)
+Var overlapInput As TOIInput = TOIInput.Make(pointsA, 4, 0.0, sweepA, pointsA, 4, 0.0, sweepOverlap, 1.0)
+Var overlapOutput As TOIOutput = TimeOfImpact.Compute(overlapInput)
+Assert.Equal(TOIState.Overlapped, overlapOutput.State, "expected overlapped state")
+PhysicsAssert.Near(0.0, overlapOutput.Fraction, 0.0, 0.0, "overlapped fraction")
+End Sub
+End Class

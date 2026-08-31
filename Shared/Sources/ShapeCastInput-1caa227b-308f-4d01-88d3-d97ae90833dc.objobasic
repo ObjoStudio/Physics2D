@@ -1,0 +1,32 @@
+# Input for casting a shape along a translation, ported from upstream
+# b2ShapeCastInput in collision.h. The proxy is owned: Make and MakeOffset
+# deep-copy their inputs.
+Class ShapeCastInput
+## The shape being cast.
+Property Proxy As ShapeProxy
+## The translation of the shape cast.
+Property Translation As Vector2
+## The maximum fraction of the translation to consider, typically 1.
+Property MaxFraction As Double
+## Allow the shape cast to encroach when initially touching. This only
+## works if the radius is greater than zero.
+Property CanEncroach As Boolean
+
+## Creates an empty input with identity translation and full fraction.
+Constructor()
+Me.Proxy = New ShapeProxy
+Me.Translation = New Vector2(0.0, 0.0)
+Me.MaxFraction = 1.0
+Me.CanEncroach = False
+End Constructor
+
+## Builds the input from a point cloud, ported from upstream
+## b2MakeShapeCastInput. This is a deep copy.
+Shared Function Make(points() As Vector2, count As Integer, radius As Double, translation As Vector2, maxFraction As Double) As ShapeCastInput
+Var input As New ShapeCastInput
+input.Proxy = ShapeProxy.Make(points, count, radius)
+input.Translation.Set(translation.X, translation.Y)
+input.MaxFraction = maxFraction
+Return input
+End Function
+End Class

@@ -1,0 +1,1892 @@
+# Narrow-phase collision manifolds, ported from upstream manifold.c.
+#
+# Every pairing has a cold form returning a new Manifold and a warm To-form
+# filling the caller-owned manifold in place. The To-forms keep all
+# arithmetic scalar over Doubles and reuse the workspace attached to the
+# manifold, so steady-state narrow-phase queries allocate nothing.
+#
+# Pairings that upstream implements by building a temporary shape delegate
+# to shared scalar cores instead: segment shapes pass zero radii or
+# two-vertex point clouds without allocating. Contact point ids follow
+# upstream B2_MAKE_ID(A, B) = A * 256 + B.
+Class Collide
+## Computes the manifold between two circles into a new manifold, ported
+## from upstream b2CollideCircles.
+Shared Function CollideCircles(circleA As Circle, transformA As Transform, circleB As Circle, transformB As Transform) As Manifold
+Var out As New Manifold
+Collide.CollideCirclesTo(circleA, transformA, circleB, transformB, out)
+Return out
+End Function
+
+## Computes the manifold between two circles into the caller-owned out
+## manifold and returns out.
+Shared Function CollideCirclesTo(circleA As Circle, transformA As Transform, circleB As Circle, transformB As Transform, out As Manifold) As Manifold
+out.Reset()
+
+Var c As Double = transformA.Q.C * transformB.Q.C + transformA.Q.S * transformB.Q.S
+Var s As Double = -transformA.Q.S * transformB.Q.C + transformA.Q.C * transformB.Q.S
+Var dx As Double = transformB.P.X - transformA.P.X
+Var dy As Double = transformB.P.Y - transformA.P.Y
+Var px As Double = transformA.Q.C * dx + transformA.Q.S * dy
+Var py As Double = -transformA.Q.S * dx + transformA.Q.C * dy
+
+# Circle B position in the frame of circle A.
+Var pointAX As Double = circleA.Center.X
+Var pointAY As Double = circleA.Center.Y
+Var pointBX As Double = c * circleB.Center.X - s * circleB.Center.Y + px
+Var pointBY As Double = s * circleB.Center.X + c * circleB.Center.Y + py
+
+Var diffX As Double = pointBX - pointAX
+Var diffY As Double = pointBY - pointAY
+Var distance As Double = Maths.Sqrt(diffX * diffX + diffY * diffY)
+Var nx As Double = 0.0
+Var ny As Double = 0.0
+If distance > PhysicsConstants.FLT_EPSILON Then
+Var invDistance As Double = 1.0 / distance
+nx = invDistance * diffX
+ny = invDistance * diffY
+End If
+
+Var radiusA As Double = circleA.Radius
+Var radiusB As Double = circleB.Radius
+Var separation As Double = distance - radiusA - radiusB
+If separation > PhysicsConstants.SPECULATIVE_DISTANCE Then
+Return out
+End If
+
+Var cAX As Double = pointAX + radiusA * nx
+Var cAY As Double = pointAY + radiusA * ny
+Var cBX As Double = pointBX - radiusB * nx
+Var cBY As Double = pointBY - radiusB * ny
+Var contactX As Double = 0.5 * (cAX + cBX)
+Var contactY As Double = 0.5 * (cAY + cBY)
+
+Var qcx As Double = transformA.Q.C
+Var qsy As Double = transformA.Q.S
+out.Normal.Set(qcx * nx - qsy * ny, qsy * nx + qcx * ny)
+
+Var anchorX As Double = qcx * contactX - qsy * contactY
+Var anchorY As Double = qsy * contactX + qcx * contactY
+Var mp As ManifoldPoint = out.Point1
+mp.AnchorA.Set(anchorX, anchorY)
+mp.AnchorB.Set(anchorX + transformA.P.X - transformB.P.X, anchorY + transformA.P.Y - transformB.P.Y)
+mp.Point.Set(anchorX + transformA.P.X, anchorY + transformA.P.Y)
+mp.Separation = separation
+mp.Id = 0
+out.PointCount = 1
+Return out
+End Function
+
+## Computes the manifold between a capsule and a circle into a new
+## manifold, ported from upstream b2CollideCapsuleAndCircle.
+Shared Function CollideCapsuleAndCircle(capsuleA As Capsule, transformA As Transform, circleB As Circle, transformB As Transform) As Manifold
+Var out As New Manifold
+Collide.CollideCapsuleAndCircleCoreTo(capsuleA.Center1.X, capsuleA.Center1.Y, capsuleA.Center2.X, capsuleA.Center2.Y, capsuleA.Radius, circleB, transformA, transformB, out)
+Return out
+End Function
+
+## Computes the manifold between a capsule and a circle into the
+## caller-owned out manifold and returns out.
+Shared Function CollideCapsuleAndCircleTo(capsuleA As Capsule, transformA As Transform, circleB As Circle, transformB As Transform, out As Manifold) As Manifold
+Return Collide.CollideCapsuleAndCircleCoreTo(capsuleA.Center1.X, capsuleA.Center1.Y, capsuleA.Center2.X, capsuleA.Center2.Y, capsuleA.Radius, circleB, transformA, transformB, out)
+End Function
+
+## Computes the manifold between a line segment and a circle into a new
+## manifold, ported from upstream b2CollideSegmentAndCircle. A segment is a
+## capsule with zero radius.
+Shared Function CollideSegmentAndCircle(segmentA As Segment, transformA As Transform, circleB As Circle, transformB As Transform) As Manifold
+Var out As New Manifold
+Collide.CollideCapsuleAndCircleCoreTo(segmentA.Point1.X, segmentA.Point1.Y, segmentA.Point2.X, segmentA.Point2.Y, 0.0, circleB, transformA, transformB, out)
+Return out
+End Function
+
+## Computes the manifold between a line segment and a circle into the
+## caller-owned out manifold and returns out.
+Shared Function CollideSegmentAndCircleTo(segmentA As Segment, transformA As Transform, circleB As Circle, transformB As Transform, out As Manifold) As Manifold
+Return Collide.CollideCapsuleAndCircleCoreTo(segmentA.Point1.X, segmentA.Point1.Y, segmentA.Point2.X, segmentA.Point2.Y, 0.0, circleB, transformA, transformB, out)
+End Function
+
+## Scalar core of the capsule-versus-circle manifold so segments can pass a
+## zero radius without building a temporary capsule.
+Shared Function CollideCapsuleAndCircleCoreTo(p1x As Double, p1y As Double, p2x As Double, p2y As Double, radiusA As Double, circleB As Circle, transformA As Transform, transformB As Transform, out As Manifold) As Manifold
+out.Reset()
+
+Var c As Double = transformA.Q.C * transformB.Q.C + transformA.Q.S * transformB.Q.S
+Var s As Double = -transformA.Q.S * transformB.Q.C + transformA.Q.C * transformB.Q.S
+Var dx As Double = transformB.P.X - transformA.P.X
+Var dy As Double = transformB.P.Y - transformA.P.Y
+Var px As Double = transformA.Q.C * dx + transformA.Q.S * dy
+Var py As Double = -transformA.Q.S * dx + transformA.Q.C * dy
+
+# Circle position in the frame of the capsule.
+Var pBX As Double = c * circleB.Center.X - s * circleB.Center.Y + px
+Var pBY As Double = s * circleB.Center.X + c * circleB.Center.Y + py
+
+Var ex As Double = p2x - p1x
+Var ey As Double = p2y - p1y
+
+Var s1 As Double = (pBX - p1x) * ex + (pBY - p1y) * ey
+Var s2 As Double = (p2x - pBX) * ex + (p2y - pBY) * ey
+Var pAX As Double = 0.0
+Var pAY As Double = 0.0
+If s1 < 0.0 Then
+# p1 region.
+pAX = p1x
+pAY = p1y
+ElseIf s2 < 0.0 Then
+# p2 region.
+pAX = p2x
+pAY = p2y
+Else
+# Circle colliding with the segment interior.
+Var ee As Double = ex * ex + ey * ey
+Var segT As Double = s1 / ee
+pAX = p1x + segT * ex
+pAY = p1y + segT * ey
+End If
+
+Var diffX As Double = pBX - pAX
+Var diffY As Double = pBY - pAY
+Var distance As Double = Maths.Sqrt(diffX * diffX + diffY * diffY)
+Var nx As Double = 0.0
+Var ny As Double = 0.0
+If distance > PhysicsConstants.FLT_EPSILON Then
+Var invDistance As Double = 1.0 / distance
+nx = invDistance * diffX
+ny = invDistance * diffY
+End If
+
+Var radiusB As Double = circleB.Radius
+Var separation As Double = distance - radiusA - radiusB
+If separation > PhysicsConstants.SPECULATIVE_DISTANCE Then
+Return out
+End If
+
+Var cAX As Double = pAX + radiusA * nx
+Var cAY As Double = pAY + radiusA * ny
+Var cBX As Double = pBX - radiusB * nx
+Var cBY As Double = pBY - radiusB * ny
+Var contactX As Double = 0.5 * (cAX + cBX)
+Var contactY As Double = 0.5 * (cAY + cBY)
+
+Var qc As Double = transformA.Q.C
+Var qs As Double = transformA.Q.S
+out.Normal.Set(qc * nx - qs * ny, qs * nx + qc * ny)
+
+Var anchorX As Double = qc * contactX - qs * contactY
+Var anchorY As Double = qs * contactX + qc * contactY
+Var mp As ManifoldPoint = out.Point1
+mp.AnchorA.Set(anchorX, anchorY)
+mp.AnchorB.Set(anchorX + transformA.P.X - transformB.P.X, anchorY + transformA.P.Y - transformB.P.Y)
+mp.Point.Set(transformA.P.X + anchorX, transformA.P.Y + anchorY)
+mp.Separation = separation
+mp.Id = 0
+out.PointCount = 1
+Return out
+End Function
+
+## Computes the manifold between a convex polygon and a circle into a new
+## manifold, ported from upstream b2CollidePolygonAndCircle.
+Shared Function CollidePolygonAndCircle(polygonA As Polygon, transformA As Transform, circleB As Circle, transformB As Transform) As Manifold
+Var out As New Manifold
+Collide.CollidePolygonAndCircleTo(polygonA, transformA, circleB, transformB, out)
+Return out
+End Function
+
+## Computes the manifold between a convex polygon and a circle into the
+## caller-owned out manifold and returns out.
+Shared Function CollidePolygonAndCircleTo(polygonA As Polygon, transformA As Transform, circleB As Circle, transformB As Transform, out As Manifold) As Manifold
+out.Reset()
+Var speculativeDistance As Double = PhysicsConstants.SPECULATIVE_DISTANCE
+
+Var c As Double = transformA.Q.C * transformB.Q.C + transformA.Q.S * transformB.Q.S
+Var s As Double = -transformA.Q.S * transformB.Q.C + transformA.Q.C * transformB.Q.S
+Var dx As Double = transformB.P.X - transformA.P.X
+Var dy As Double = transformB.P.Y - transformA.P.Y
+Var px As Double = transformA.Q.C * dx + transformA.Q.S * dy
+Var py As Double = -transformA.Q.S * dx + transformA.Q.C * dy
+
+# Circle position in the frame of the polygon.
+Var centerX As Double = c * circleB.Center.X - s * circleB.Center.Y + px
+Var centerY As Double = s * circleB.Center.X + c * circleB.Center.Y + py
+Var radiusA As Double = polygonA.Radius
+Var radiusB As Double = circleB.Radius
+Var radius As Double = radiusA + radiusB
+
+# Find the minimum separating edge.
+Var normalIndex As Integer = 0
+Var separation As Double = -1.7976931348623157e308
+Var vertexCount As Integer = polygonA.Count
+For i As Integer = 0 To vertexCount - 1
+Var nX As Double = polygonA.Normals[i].X
+Var nY As Double = polygonA.Normals[i].Y
+Var edgeS As Double = nX * (centerX - polygonA.Vertices[i].X) + nY * (centerY - polygonA.Vertices[i].Y)
+If edgeS > separation Then
+separation = edgeS
+normalIndex = i
+End If
+Next i
+
+If separation > radius + speculativeDistance Then
+Return out
+End If
+
+# Vertices of the reference edge.
+Var vertIndex1 As Integer = normalIndex
+Var vertIndex2 As Integer = normalIndex + 1
+If vertIndex2 >= vertexCount Then
+vertIndex2 = 0
+End If
+Var v1X As Double = polygonA.Vertices[vertIndex1].X
+Var v1Y As Double = polygonA.Vertices[vertIndex1].Y
+Var v2X As Double = polygonA.Vertices[vertIndex2].X
+Var v2Y As Double = polygonA.Vertices[vertIndex2].Y
+
+# Barycentric coordinates.
+Var e1x As Double = v2X - v1X
+Var e1y As Double = v2Y - v1Y
+Var u1 As Double = (centerX - v1X) * e1x + (centerY - v1Y) * e1y
+Var u2 As Double = (centerX - v2X) * -e1x + (centerY - v2Y) * -e1y
+
+Var mp As ManifoldPoint = out.Point1
+Var qc As Double = transformA.Q.C
+Var qs As Double = transformA.Q.S
+
+If u1 < 0.0 And separation > PhysicsConstants.FLT_EPSILON Then
+# Circle centre is closest to v1 and safely outside the polygon.
+Var diffX As Double = centerX - v1X
+Var diffY As Double = centerY - v1Y
+Var length As Double = Maths.Sqrt(diffX * diffX + diffY * diffY)
+Var nx As Double = 0.0
+Var ny As Double = 0.0
+If length > PhysicsConstants.FLT_EPSILON Then
+Var invLength As Double = 1.0 / length
+nx = invLength * diffX
+ny = invLength * diffY
+End If
+Var vertexSeparation As Double = diffX * nx + diffY * ny
+If vertexSeparation > radius + speculativeDistance Then
+Return out
+End If
+
+Var cAX As Double = v1X + radiusA * nx
+Var cAY As Double = v1Y + radiusA * ny
+Var cBX As Double = centerX - radiusB * nx
+Var cBY As Double = centerY - radiusB * ny
+Var contactX As Double = 0.5 * (cAX + cBX)
+Var contactY As Double = 0.5 * (cAY + cBY)
+
+out.Normal.Set(qc * nx - qs * ny, qs * nx + qc * ny)
+Var anchorX As Double = qc * contactX - qs * contactY
+Var anchorY As Double = qs * contactX + qc * contactY
+mp.AnchorA.Set(anchorX, anchorY)
+mp.AnchorB.Set(anchorX + transformA.P.X - transformB.P.X, anchorY + transformA.P.Y - transformB.P.Y)
+mp.Point.Set(transformA.P.X + anchorX, transformA.P.Y + anchorY)
+mp.Separation = (cBX - cAX) * nx + (cBY - cAY) * ny
+mp.Id = 0
+out.PointCount = 1
+ElseIf u2 < 0.0 And separation > PhysicsConstants.FLT_EPSILON Then
+# Circle centre is closest to v2 and safely outside the polygon.
+Var diffX As Double = centerX - v2X
+Var diffY As Double = centerY - v2Y
+Var length As Double = Maths.Sqrt(diffX * diffX + diffY * diffY)
+Var nx As Double = 0.0
+Var ny As Double = 0.0
+If length > PhysicsConstants.FLT_EPSILON Then
+Var invLength As Double = 1.0 / length
+nx = invLength * diffX
+ny = invLength * diffY
+End If
+Var vertexSeparation As Double = diffX * nx + diffY * ny
+If vertexSeparation > radius + speculativeDistance Then
+Return out
+End If
+
+Var cAX As Double = v2X + radiusA * nx
+Var cAY As Double = v2Y + radiusA * ny
+Var cBX As Double = centerX - radiusB * nx
+Var cBY As Double = centerY - radiusB * ny
+Var contactX As Double = 0.5 * (cAX + cBX)
+Var contactY As Double = 0.5 * (cAY + cBY)
+
+out.Normal.Set(qc * nx - qs * ny, qs * nx + qc * ny)
+Var anchorX As Double = qc * contactX - qs * contactY
+Var anchorY As Double = qs * contactX + qc * contactY
+mp.AnchorA.Set(anchorX, anchorY)
+mp.AnchorB.Set(anchorX + transformA.P.X - transformB.P.X, anchorY + transformA.P.Y - transformB.P.Y)
+mp.Point.Set(transformA.P.X + anchorX, transformA.P.Y + anchorY)
+mp.Separation = (cBX - cAX) * nx + (cBY - cAY) * ny
+mp.Id = 0
+out.PointCount = 1
+Else
+# Circle centre is between v1 and v2. The centre may be inside the
+# polygon.
+Var nX As Double = polygonA.Normals[normalIndex].X
+Var nY As Double = polygonA.Normals[normalIndex].Y
+out.Normal.Set(qc * nX - qs * nY, qs * nX + qc * nY)
+
+# cA is the projection of the circle centre onto the reference edge.
+Var edgeOffset As Double = (centerX - v1X) * nX + (centerY - v1Y) * nY
+Var cAX As Double = centerX + (radiusA - edgeOffset) * nX
+Var cAY As Double = centerY + (radiusA - edgeOffset) * nY
+
+# cB is the deepest point on the circle with respect to the reference
+# edge.
+Var cBX As Double = centerX - radiusB * nX
+Var cBY As Double = centerY - radiusB * nY
+
+Var contactX As Double = 0.5 * (cAX + cBX)
+Var contactY As Double = 0.5 * (cAY + cBY)
+
+Var anchorX As Double = qc * contactX - qs * contactY
+Var anchorY As Double = qs * contactX + qc * contactY
+mp.AnchorA.Set(anchorX, anchorY)
+mp.AnchorB.Set(anchorX + transformA.P.X - transformB.P.X, anchorY + transformA.P.Y - transformB.P.Y)
+mp.Point.Set(transformA.P.X + anchorX, transformA.P.Y + anchorY)
+mp.Separation = separation - radius
+mp.Id = 0
+out.PointCount = 1
+End If
+
+Return out
+End Function
+
+## Computes the manifold between two capsules into a new manifold, ported
+## from upstream b2CollideCapsules.
+Shared Function CollideCapsules(capsuleA As Capsule, transformA As Transform, capsuleB As Capsule, transformB As Transform) As Manifold
+Var out As New Manifold
+Collide.CollideCapsulesCoreTo(capsuleA.Center1.X, capsuleA.Center1.Y, capsuleA.Center2.X, capsuleA.Center2.Y, capsuleA.Radius,
+capsuleB.Center1.X, capsuleB.Center1.Y, capsuleB.Center2.X, capsuleB.Center2.Y, capsuleB.Radius, transformA, transformB, out.Scratch(), out)
+Return out
+End Function
+
+## Computes the manifold between two capsules into the caller-owned out
+## manifold and returns out.
+Shared Function CollideCapsulesTo(capsuleA As Capsule, transformA As Transform, capsuleB As Capsule, transformB As Transform, out As Manifold) As Manifold
+Return Collide.CollideCapsulesCoreTo(capsuleA.Center1.X, capsuleA.Center1.Y, capsuleA.Center2.X, capsuleA.Center2.Y, capsuleA.Radius,
+capsuleB.Center1.X, capsuleB.Center1.Y, capsuleB.Center2.X, capsuleB.Center2.Y, capsuleB.Radius, transformA, transformB, out.Scratch(), out)
+End Function
+
+## Computes the manifold between a line segment and a capsule into a new
+## manifold, ported from upstream b2CollideSegmentAndCapsule. A segment is
+## a capsule with zero radius.
+Shared Function CollideSegmentAndCapsule(segmentA As Segment, transformA As Transform, capsuleB As Capsule, transformB As Transform) As Manifold
+Var out As New Manifold
+Collide.CollideCapsulesCoreTo(segmentA.Point1.X, segmentA.Point1.Y, segmentA.Point2.X, segmentA.Point2.Y, 0.0,
+capsuleB.Center1.X, capsuleB.Center1.Y, capsuleB.Center2.X, capsuleB.Center2.Y, capsuleB.Radius, transformA, transformB, out.Scratch(), out)
+Return out
+End Function
+
+## Computes the manifold between a line segment and a capsule into the
+## caller-owned out manifold and returns out.
+Shared Function CollideSegmentAndCapsuleTo(segmentA As Segment, transformA As Transform, capsuleB As Capsule, transformB As Transform, out As Manifold) As Manifold
+Return Collide.CollideCapsulesCoreTo(segmentA.Point1.X, segmentA.Point1.Y, segmentA.Point2.X, segmentA.Point2.Y, 0.0,
+capsuleB.Center1.X, capsuleB.Center1.Y, capsuleB.Center2.X, capsuleB.Center2.Y, capsuleB.Radius, transformA, transformB, out.Scratch(), out)
+End Function
+
+## Computes the manifold between a convex polygon and a capsule into a
+## new manifold, ported from upstream b2CollidePolygonAndCapsule. The
+## capsule becomes a two-vertex polygon.
+Shared Function CollidePolygonAndCapsule(polygonA As Polygon, transformA As Transform, capsuleB As Capsule, transformB As Transform) As Manifold
+Var out As New Manifold
+Collide.CollidePolygonAndCapsuleTo(polygonA, transformA, capsuleB, transformB, out)
+Return out
+End Function
+
+## Computes the manifold between a convex polygon and a capsule into the
+## caller-owned out manifold and returns out.
+Shared Function CollidePolygonAndCapsuleTo(polygonA As Polygon, transformA As Transform, capsuleB As Capsule, transformB As Transform, out As Manifold) As Manifold
+Var scratch As CollideScratch = out.Scratch()
+Var polyVerts As Array(Of Vector2) = scratch.GrowPoints(scratch.CapsulePolyVertices, 2)
+Var polyNormals As Array(Of Vector2) = scratch.GrowPoints(scratch.CapsulePolyNormals, 2)
+
+Var ex As Double = capsuleB.Center2.X - capsuleB.Center1.X
+Var ey As Double = capsuleB.Center2.Y - capsuleB.Center1.Y
+Var length As Double = Maths.Sqrt(ex * ex + ey * ey)
+Var nx As Double = 0.0
+Var ny As Double = 0.0
+If length > PhysicsConstants.FLT_EPSILON Then
+nx = ey / length
+ny = -ex / length
+End If
+
+polyVerts[0].Set(capsuleB.Center1.X, capsuleB.Center1.Y)
+polyVerts[1].Set(capsuleB.Center2.X, capsuleB.Center2.Y)
+polyNormals[0].Set(nx, ny)
+polyNormals[1].Set(-nx, -ny)
+
+Return Collide.CollidePolygonsCoreTo(polygonA.Vertices, polygonA.Normals, polygonA.Count, polygonA.Radius,
+polyVerts, polyNormals, 2, capsuleB.Radius, transformA, transformB, scratch, out)
+End Function
+
+## Scalar core of the capsule-versus-capsule manifold following Ericson
+## 5.1.9 with clipping so two contact points are possible.
+Shared Function CollideCapsulesCoreTo(p1x As Double, p1y As Double, p2x As Double, p2y As Double, radiusA As Double, q1x As Double, q1y As Double, q2x As Double, q2y As Double, radiusB As Double, transformA As Transform, transformB As Transform, scratch As CollideScratch, out As Manifold) As Manifold
+out.Reset()
+
+# Shift capsule A to the origin: pw = q * pbs + (p + q * origin).
+Var originX As Double = p1x
+Var originY As Double = p1y
+Var sfPX As Double = transformA.P.X + transformA.Q.C * originX - transformA.Q.S * originY
+Var sfPY As Double = transformA.P.Y + transformA.Q.S * originX + transformA.Q.C * originY
+Var c As Double = transformA.Q.C * transformB.Q.C + transformA.Q.S * transformB.Q.S
+Var s As Double = -transformA.Q.S * transformB.Q.C + transformA.Q.C * transformB.Q.S
+Var dx As Double = transformB.P.X - sfPX
+Var dy As Double = transformB.P.Y - sfPY
+Var px As Double = transformA.Q.C * dx + transformA.Q.S * dy
+Var py As Double = -transformA.Q.S * dx + transformA.Q.C * dy
+
+Var sp1x As Double = 0.0
+Var sp1y As Double = 0.0
+Var sq1x As Double = p2x - originX
+Var sq1y As Double = p2y - originY
+Var sp2x As Double = c * q1x - s * q1y + px
+Var sp2y As Double = s * q1x + c * q1y + py
+Var sq2x As Double = c * q2x - s * q2y + px
+Var sq2y As Double = s * q2x + c * q2y + py
+
+Var d1x As Double = sq1x - sp1x
+Var d1y As Double = sq1y - sp1y
+Var d2x As Double = sq2x - sp2x
+Var d2y As Double = sq2y - sp2y
+
+Var dd1 As Double = d1x * d1x + d1y * d1y
+Var dd2 As Double = d2x * d2x + d2y * d2y
+
+Var epsSqr As Double = PhysicsConstants.FLT_EPSILON * PhysicsConstants.FLT_EPSILON
+
+Var rx As Double = sp1x - sp2x
+Var ry As Double = sp1y - sp2y
+Var rd1 As Double = rx * d1x + ry * d1y
+Var rd2 As Double = rx * d2x + ry * d2y
+
+Var d12 As Double = d1x * d2x + d1y * d2y
+
+Var denom As Double = dd1 * dd2 - d12 * d12
+
+# Fraction on segment 1.
+Var f1 As Double = 0.0
+If denom <> 0.0 Then
+# Not parallel.
+f1 = Collide.Clamp01((d12 * rd2 - rd1 * dd2) / denom)
+End If
+
+# Point on segment 2 closest to p1 + f1 * d1.
+Var f2 As Double = (d12 * f1 + rd2) / dd2
+
+# Clamping of segment 2 requires a do-over on segment 1.
+If f2 < 0.0 Then
+f2 = 0.0
+f1 = Collide.Clamp01(-rd1 / dd1)
+ElseIf f2 > 1.0 Then
+f2 = 1.0
+f1 = Collide.Clamp01((d12 - rd1) / dd1)
+End If
+
+Var closest1x As Double = sp1x + f1 * d1x
+Var closest1y As Double = sp1y + f1 * d1y
+Var closest2x As Double = sp2x + f2 * d2x
+Var closest2y As Double = sp2y + f2 * d2y
+Var distX As Double = closest1x - closest2x
+Var distY As Double = closest1y - closest2y
+Var distanceSquared As Double = distX * distX + distY * distY
+
+Var radius As Double = radiusA + radiusB
+Var maxDistance As Double = radius + PhysicsConstants.SPECULATIVE_DISTANCE
+
+If distanceSquared > maxDistance * maxDistance Then
+Return out
+End If
+
+Var distance As Double = Maths.Sqrt(distanceSquared)
+
+Var length1 As Double = Maths.Sqrt(d1x * d1x + d1y * d1y)
+Var u1x As Double = 0.0
+Var u1y As Double = 0.0
+If length1 > PhysicsConstants.FLT_EPSILON Then
+u1x = d1x / length1
+u1y = d1y / length1
+End If
+Var length2 As Double = Maths.Sqrt(d2x * d2x + d2y * d2y)
+Var u2x As Double = 0.0
+Var u2y As Double = 0.0
+If length2 > PhysicsConstants.FLT_EPSILON Then
+u2x = d2x / length2
+u2y = d2y / length2
+End If
+
+# Does segment B project outside segment A?
+Var fp2 As Double = (sp2x - sp1x) * u1x + (sp2y - sp1y) * u1y
+Var fq2 As Double = (sq2x - sp1x) * u1x + (sq2y - sp1y) * u1y
+Var outsideA As Boolean = (fp2 <= 0.0 And fq2 <= 0.0) Or (fp2 >= length1 And fq2 >= length1)
+
+# Does segment A project outside segment B?
+Var fp1 As Double = (sp1x - sp2x) * u2x + (sp1y - sp2y) * u2y
+Var fq1 As Double = (sq1x - sp2x) * u2x + (sq1y - sp2y) * u2y
+Var outsideB As Boolean = (fp1 <= 0.0 And fq1 <= 0.0) Or (fp1 >= length2 And fq1 >= length2)
+
+If Not outsideA And Not outsideB Then
+# Attempt to clip. This may yield contact points with excessive
+# separation; in that case fall back to single point collision below.
+
+# Find the reference edge using the SAT, biased to avoid feature
+# flip-flop.
+Var separationA As Double = Collide.CapsuleEdgeSeparation(u1x, u1y, sp1x, sp1y, sp2x, sp2y, sq2x, sq2y, scratch.ClipNormalA)
+Var normalAX As Double = scratch.ClipNormalA.X
+Var normalAY As Double = scratch.ClipNormalA.Y
+
+Var separationB As Double = Collide.CapsuleEdgeSeparation(u2x, u2y, sp2x, sp2y, sp1x, sp1y, sq1x, sq1y, scratch.ClipNormalB)
+Var normalBX As Double = scratch.ClipNormalB.X
+Var normalBY As Double = scratch.ClipNormalB.Y
+
+If separationA + 0.1 * PhysicsConstants.LINEAR_SLOP >= separationB Then
+# Reference edge on A. The normal points from A to B.
+out.Normal.Set(normalAX, normalAY)
+Var cp As Vector2 = scratch.ClipCp
+Var cq As Vector2 = scratch.ClipCq
+cp.Set(sp2x, sp2y)
+cq.Set(sq2x, sq2y)
+Collide.ClipEndpoints(fp2, fq2, 0.0, sp2x, sp2y, sq2x, sq2y, cp, cq)
+Collide.ClipEndpoints(fp2, fq2, length1, sp2x, sp2y, sq2x, sq2y, cp, cq)
+Var sp As Double = (cp.X - sp1x) * normalAX + (cp.Y - sp1y) * normalAY
+Var sq As Double = (cq.X - sp1x) * normalAX + (cq.Y - sp1y) * normalAY
+
+If sp <= distance + PhysicsConstants.LINEAR_SLOP Or sq <= distance + PhysicsConstants.LINEAR_SLOP Then
+Var mp1 As ManifoldPoint = out.Point1
+mp1.AnchorA.Set(cp.X + 0.5 * (radiusA - radiusB - sp) * normalAX, cp.Y + 0.5 * (radiusA - radiusB - sp) * normalAY)
+mp1.Separation = sp - radius
+mp1.Id = 0
+
+Var mp2 As ManifoldPoint = out.Point2
+mp2.AnchorA.Set(cq.X + 0.5 * (radiusA - radiusB - sq) * normalAX, cq.Y + 0.5 * (radiusA - radiusB - sq) * normalAY)
+mp2.Separation = sq - radius
+mp2.Id = 1
+out.PointCount = 2
+End If
+Else
+# Reference edge on B. The normal always points from A to B.
+out.Normal.Set(-normalBX, -normalBY)
+Var cp As Vector2 = scratch.ClipCp
+Var cq As Vector2 = scratch.ClipCq
+cp.Set(sp1x, sp1y)
+cq.Set(sq1x, sq1y)
+Collide.ClipEndpoints(fp1, fq1, 0.0, sp1x, sp1y, sq1x, sq1y, cp, cq)
+Collide.ClipEndpoints(fp1, fq1, length2, sp1x, sp1y, sq1x, sq1y, cp, cq)
+Var sp As Double = (cp.X - sp2x) * normalBX + (cp.Y - sp2y) * normalBY
+Var sq As Double = (cq.X - sp2x) * normalBX + (cq.Y - sp2y) * normalBY
+
+If sp <= distance + PhysicsConstants.LINEAR_SLOP Or sq <= distance + PhysicsConstants.LINEAR_SLOP Then
+Var mp1 As ManifoldPoint = out.Point1
+mp1.AnchorA.Set(cp.X + 0.5 * (radiusB - radiusA - sp) * normalBX, cp.Y + 0.5 * (radiusB - radiusA - sp) * normalBY)
+mp1.Separation = sp - radius
+mp1.Id = 0
+
+Var mp2 As ManifoldPoint = out.Point2
+mp2.AnchorA.Set(cq.X + 0.5 * (radiusB - radiusA - sq) * normalBX, cq.Y + 0.5 * (radiusB - radiusA - sq) * normalBY)
+mp2.Separation = sq - radius
+mp2.Id = 256
+out.PointCount = 2
+End If
+End If
+End If
+
+If out.PointCount = 0 Then
+# Single point collision.
+Var nx As Double = closest2x - closest1x
+Var ny As Double = closest2y - closest1y
+If nx * nx + ny * ny > epsSqr Then
+Var nLen As Double = Maths.Sqrt(nx * nx + ny * ny)
+nx = nx / nLen
+ny = ny / nLen
+Else
+# Left perpendicular of u1.
+nx = u1y
+ny = -u1x
+End If
+
+Var c1x As Double = closest1x + radiusA * nx
+Var c1y As Double = closest1y + radiusA * ny
+Var c2x As Double = closest2x - radiusB * nx
+Var c2y As Double = closest2y - radiusB * ny
+
+Var i1 As Integer = 0
+If f1 <> 0.0 Then
+i1 = 1
+End If
+Var i2 As Integer = 0
+If f2 <> 0.0 Then
+i2 = 1
+End If
+
+out.Normal.Set(nx, ny)
+out.Point1.AnchorA.Set(0.5 * (c1x + c2x), 0.5 * (c1y + c2y))
+out.Point1.Separation = distance - radius
+out.Point1.Id = i1 * 256 + i2
+out.PointCount = 1
+End If
+
+# Convert the manifold to world space.
+out.Normal.Set(transformA.Q.C * out.Normal.X - transformA.Q.S * out.Normal.Y, transformA.Q.S * out.Normal.X + transformA.Q.C * out.Normal.Y)
+For i As Integer = 0 To out.PointCount - 1
+Var mp As ManifoldPoint = out.Point1
+If i = 1 Then
+mp = out.Point2
+End If
+
+# Anchor points relative to the shape origin in world space.
+Var localX As Double = mp.AnchorA.X + originX
+Var localY As Double = mp.AnchorA.Y + originY
+mp.AnchorA.Set(transformA.Q.C * localX - transformA.Q.S * localY, transformA.Q.S * localX + transformA.Q.C * localY)
+mp.AnchorB.Set(mp.AnchorA.X + transformA.P.X - transformB.P.X, mp.AnchorA.Y + transformA.P.Y - transformB.P.Y)
+mp.Point.Set(transformA.P.X + mp.AnchorA.X, transformA.P.Y + mp.AnchorA.Y)
+Next i
+
+Return out
+End Function
+
+## Computes the manifold between two convex polygons into a new manifold,
+## ported from upstream b2CollidePolygons.
+Shared Function CollidePolygons(polygonA As Polygon, transformA As Transform, polygonB As Polygon, transformB As Transform) As Manifold
+Var out As New Manifold
+Collide.CollidePolygonsTo(polygonA, transformA, polygonB, transformB, out)
+Return out
+End Function
+
+## Computes the manifold between two convex polygons into the caller-owned
+## out manifold and returns out.
+Shared Function CollidePolygonsTo(polygonA As Polygon, transformA As Transform, polygonB As Polygon, transformB As Transform, out As Manifold) As Manifold
+Var scratch As CollideScratch = out.Scratch()
+Return Collide.CollidePolygonsCoreTo(polygonA.Vertices, polygonA.Normals, polygonA.Count, polygonA.Radius,
+polygonB.Vertices, polygonB.Normals, polygonB.Count, polygonB.Radius, transformA, transformB, scratch, out)
+End Function
+
+## Computes the manifold between a line segment and a convex polygon into
+## a new manifold, ported from upstream b2CollideSegmentAndPolygon. The
+## segment becomes a two-vertex polygon with zero radius.
+Shared Function CollideSegmentAndPolygon(segmentA As Segment, transformA As Transform, polygonB As Polygon, transformB As Transform) As Manifold
+Var out As New Manifold
+Collide.CollideSegmentAndPolygonTo(segmentA, transformA, polygonB, transformB, out)
+Return out
+End Function
+
+## Computes the manifold between a line segment and a convex polygon into
+## the caller-owned out manifold and returns out.
+Shared Function CollideSegmentAndPolygonTo(segmentA As Segment, transformA As Transform, polygonB As Polygon, transformB As Transform, out As Manifold) As Manifold
+Var scratch As CollideScratch = out.Scratch()
+Var polyVerts As Array(Of Vector2) = scratch.GrowPoints(scratch.CapsulePolyVertices, 2)
+Var polyNormals As Array(Of Vector2) = scratch.GrowPoints(scratch.CapsulePolyNormals, 2)
+
+Var ex As Double = segmentA.Point2.X - segmentA.Point1.X
+Var ey As Double = segmentA.Point2.Y - segmentA.Point1.Y
+Var length As Double = Maths.Sqrt(ex * ex + ey * ey)
+Var nx As Double = 0.0
+Var ny As Double = 0.0
+If length > PhysicsConstants.FLT_EPSILON Then
+nx = ey / length
+ny = -ex / length
+End If
+
+polyVerts[0].Set(segmentA.Point1.X, segmentA.Point1.Y)
+polyVerts[1].Set(segmentA.Point2.X, segmentA.Point2.Y)
+polyNormals[0].Set(nx, ny)
+polyNormals[1].Set(-nx, -ny)
+
+Return Collide.CollidePolygonsCoreTo(polyVerts, polyNormals, 2, 0.0,
+polygonB.Vertices, polygonB.Normals, polygonB.Count, polygonB.Radius, transformA, transformB, scratch, out)
+End Function
+
+## Scalar core of the polygon-versus-polygon manifold. Ports the upstream
+## SAT, closest-edge, and clipping logic.
+Shared Function CollidePolygonsCoreTo(vertsA() As Vector2, normalsA() As Vector2, countA As Integer, radiusA As Double, vertsB() As Vector2, normalsB() As Vector2, countB As Integer, radiusB As Double, transformA As Transform, transformB As Transform, scratch As CollideScratch, out As Manifold) As Manifold
+out.Reset()
+Var linearSlop As Double = PhysicsConstants.LINEAR_SLOP
+Var speculativeDistance As Double = PhysicsConstants.SPECULATIVE_DISTANCE
+
+# Shift polygon A to the origin: pw = q * pbs + (p + q * origin).
+Var originX As Double = vertsA[0].X
+Var originY As Double = vertsA[0].Y
+scratch.ShiftedTransformA.P.Set(transformA.P.X + transformA.Q.C * originX - transformA.Q.S * originY, transformA.P.Y + transformA.Q.S * originX + transformA.Q.C * originY)
+scratch.ShiftedTransformA.Q.SetComponents(transformA.Q.C, transformA.Q.S)
+Var sfA As Transform = scratch.ShiftedTransformA
+
+Var c As Double = sfA.Q.C * transformB.Q.C + sfA.Q.S * transformB.Q.S
+Var s As Double = -sfA.Q.S * transformB.Q.C + sfA.Q.C * transformB.Q.S
+Var dx As Double = transformB.P.X - sfA.P.X
+Var dy As Double = transformB.P.Y - sfA.P.Y
+Var px As Double = sfA.Q.C * dx + sfA.Q.S * dy
+Var py As Double = -sfA.Q.S * dx + sfA.Q.C * dy
+scratch.RelativeTransform.P.Set(px, py)
+scratch.RelativeTransform.Q.SetComponents(c, s)
+Var xf As Transform = scratch.RelativeTransform
+
+# Local polygon A: shifted vertices, original normals.
+Var localA As Array(Of Vector2) = scratch.GrowPoints(scratch.PolyAVertices, countA)
+Var localANormals As Array(Of Vector2) = scratch.GrowPoints(scratch.PolyANormals, countA)
+localA[0].Set(0.0, 0.0)
+localANormals[0].Set(normalsA[0].X, normalsA[0].Y)
+For i As Integer = 1 To countA - 1
+localA[i].Set(vertsA[i].X - originX, vertsA[i].Y - originY)
+localANormals[i].Set(normalsA[i].X, normalsA[i].Y)
+Next i
+
+# Put polygon B in polygon A's frame to reduce round-off error.
+Var localB As Array(Of Vector2) = scratch.GrowPoints(scratch.PolyBVertices, countB)
+Var localBNormals As Array(Of Vector2) = scratch.GrowPoints(scratch.PolyBNormals, countB)
+For i As Integer = 0 To countB - 1
+localB[i].Set(xf.Q.C * vertsB[i].X - xf.Q.S * vertsB[i].Y + xf.P.X, xf.Q.S * vertsB[i].X + xf.Q.C * vertsB[i].Y + xf.P.Y)
+localBNormals[i].Set(xf.Q.C * normalsB[i].X - xf.Q.S * normalsB[i].Y, xf.Q.S * normalsB[i].X + xf.Q.C * normalsB[i].Y)
+Next i
+
+FindMaxSeparation(localANormals, localA, countA, localB, countB, True, scratch)
+Var edgeA As Integer = scratch.EdgeIndexA
+Var separationA As Double = scratch.EdgeSeparation
+FindMaxSeparation(localBNormals, localB, countB, localA, countA, False, scratch)
+Var edgeB As Integer = scratch.EdgeIndexB
+Var separationB As Double = scratch.EdgeSeparation
+
+Var radius As Double = radiusA + radiusB
+
+If separationA > speculativeDistance + radius Or separationB > speculativeDistance + radius Then
+Return out
+End If
+
+# Find the incident edge.
+Var flip As Boolean = False
+If separationA >= separationB Then
+flip = False
+edgeB = Collide.FindIncidentEdge(localANormals[edgeA].X, localANormals[edgeA].Y, localBNormals, countB)
+Else
+flip = True
+edgeA = Collide.FindIncidentEdge(localBNormals[edgeB].X, localBNormals[edgeB].Y, localANormals, countA)
+End If
+
+# Using slop here so vertex-vertex normal vectors can be safely
+# normalised; edge clipping must handle slightly non-overlapping edges.
+If separationA > 0.1 * linearSlop Or separationB > 0.1 * linearSlop Then
+# Edges are disjoint: find closest points between the reference edge
+# and the incident edge.
+Collide.CollidePolygonsDisjointTo(localA, localANormals, countA, radiusA, localB, localBNormals, countB, radiusB, edgeA, edgeB, flip, radius, speculativeDistance, linearSlop, scratch, out)
+Else
+# Polygons overlap.
+Collide.ClipPolygons(localA, localANormals, countA, radiusA, localB, localBNormals, countB, radiusB, edgeA, edgeB, flip, out)
+End If
+
+# Convert the manifold to world space.
+If out.PointCount > 0 Then
+out.Normal.Set(transformA.Q.C * out.Normal.X - transformA.Q.S * out.Normal.Y, transformA.Q.S * out.Normal.X + transformA.Q.C * out.Normal.Y)
+For i As Integer = 0 To out.PointCount - 1
+Var mp As ManifoldPoint = out.Point1
+If i = 1 Then
+mp = out.Point2
+End If
+
+# Anchor points relative to the shape origin in world space.
+Var localX As Double = mp.AnchorA.X + originX
+Var localY As Double = mp.AnchorA.Y + originY
+mp.AnchorA.Set(transformA.Q.C * localX - transformA.Q.S * localY, transformA.Q.S * localX + transformA.Q.C * localY)
+mp.AnchorB.Set(mp.AnchorA.X + transformA.P.X - transformB.P.X, mp.AnchorA.Y + transformA.P.Y - transformB.P.Y)
+mp.Point.Set(transformA.P.X + mp.AnchorA.X, transformA.P.Y + mp.AnchorA.Y)
+Next i
+End If
+
+Return out
+End Function
+
+## Finds the closest points between disjoint reference and incident edges
+## and writes either clipped edge points or a single vertex-vertex point,
+## ported from the disjoint-edge branch of upstream b2CollidePolygons.
+Shared Sub CollidePolygonsDisjointTo(localA() As Vector2, localANormals() As Vector2, countA As Integer, radiusA As Double, localB() As Vector2, localBNormals() As Vector2, countB As Integer, radiusB As Double, edgeA As Integer, edgeB As Integer, flip As Boolean, radius As Double, speculativeDistance As Double, linearSlop As Double, scratch As CollideScratch, out As Manifold)
+Var i11 As Integer = edgeA
+Var i12 As Integer = edgeA + 1
+If i12 >= countA Then
+i12 = 0
+End If
+Var i21 As Integer = edgeB
+Var i22 As Integer = edgeB + 1
+If i22 >= countB Then
+i22 = 0
+End If
+
+Var result As SegmentDistanceResult = scratch.SegmentResult
+Distance.SegmentDistanceTo(localA[i11], localA[i12], localB[i21], localB[i22], result)
+Var distance As Double = Maths.Sqrt(result.DistanceSquared)
+Var separation As Double = distance - radius
+
+If distance - radius > speculativeDistance Then
+# This can happen in the vertex-vertex case.
+Return
+End If
+
+# Attempt to clip the edges.
+Collide.ClipPolygons(localA, localANormals, countA, radiusA, localB, localBNormals, countB, radiusB, edgeA, edgeB, flip, out)
+
+Var minSeparation As Double = 1.7976931348623157e308
+For i As Integer = 0 To out.PointCount - 1
+Var mp As ManifoldPoint = out.Point1
+If i = 1 Then
+mp = out.Point2
+End If
+If mp.Separation < minSeparation Then
+minSeparation = mp.Separation
+End If
+Next i
+
+# Does vertex-vertex have substantially larger separation?
+If separation + 0.1 * linearSlop < minSeparation Then
+If result.Fraction1 = 0.0 And result.Fraction2 = 0.0 Then
+# v11 - v21
+Collide.WriteVertexVertexPoint(localA[i11].X, localA[i11].Y, localB[i21].X, localB[i21].Y, i11, i21, radiusA, radiusB, radius, distance, out)
+ElseIf result.Fraction1 = 0.0 And result.Fraction2 = 1.0 Then
+# v11 - v22
+Collide.WriteVertexVertexPoint(localA[i11].X, localA[i11].Y, localB[i22].X, localB[i22].Y, i11, i22, radiusA, radiusB, radius, distance, out)
+ElseIf result.Fraction1 = 1.0 And result.Fraction2 = 0.0 Then
+# v12 - v21
+Collide.WriteVertexVertexPoint(localA[i12].X, localA[i12].Y, localB[i21].X, localB[i21].Y, i12, i21, radiusA, radiusB, radius, distance, out)
+ElseIf result.Fraction1 = 1.0 And result.Fraction2 = 1.0 Then
+# v12 - v22
+Collide.WriteVertexVertexPoint(localA[i12].X, localA[i12].Y, localB[i22].X, localB[i22].Y, i12, i22, radiusA, radiusB, radius, distance, out)
+End If
+End If
+End Sub
+
+## Finds the max separation between two polygons using edge normals from
+## polygon 1, ported from upstream b2FindMaxSeparation. Stores the best
+## edge index and separation in the scratch under the requested slot.
+Shared Function FindMaxSeparation(normals1() As Vector2, verts1() As Vector2, count1 As Integer, verts2() As Vector2, count2 As Integer, forA As Boolean, scratch As CollideScratch) As Double
+Var bestIndex As Integer = 0
+Var maxSeparation As Double = -1.7976931348623157e308
+For i As Integer = 0 To count1 - 1
+Var nX As Double = normals1[i].X
+Var nY As Double = normals1[i].Y
+Var v1X As Double = verts1[i].X
+Var v1Y As Double = verts1[i].Y
+
+# Find the deepest point for normal i.
+Var si As Double = 1.7976931348623157e308
+For j As Integer = 0 To count2 - 1
+Var sij As Double = nX * (verts2[j].X - v1X) + nY * (verts2[j].Y - v1Y)
+If sij < si Then
+si = sij
+End If
+Next j
+
+If si > maxSeparation Then
+maxSeparation = si
+bestIndex = i
+End If
+Next i
+
+If forA Then
+scratch.EdgeIndexA = bestIndex
+Else
+scratch.EdgeIndexB = bestIndex
+End If
+scratch.EdgeSeparation = maxSeparation
+Return maxSeparation
+End Function
+
+## Finds the incident edge on polygon 2 whose normal is most anti-parallel
+## to the search direction.
+Shared Function FindIncidentEdge(searchX As Double, searchY As Double, normals2() As Vector2, count2 As Integer) As Integer
+Var bestIndex As Integer = 0
+Var minDot As Double = 1.7976931348623157e308
+For i As Integer = 0 To count2 - 1
+Var dot As Double = searchX * normals2[i].X + searchY * normals2[i].Y
+If dot < minDot Then
+minDot = dot
+bestIndex = i
+End If
+Next i
+Return bestIndex
+End Function
+
+## Polygon clipper used to compute contact points when there are
+## potentially two contact points, ported from upstream b2ClipPolygons.
+## polygon 1 is the reference; flip swaps the roles.
+Shared Sub ClipPolygons(vertsA() As Vector2, normalsA() As Vector2, countA As Integer, radiusA As Double, vertsB() As Vector2, normalsB() As Vector2, countB As Integer, radiusB As Double, edgeA As Integer, edgeB As Integer, flip As Boolean, out As Manifold)
+out.Reset()
+
+Var i11 As Integer = 0
+Var i12 As Integer = 0
+Var i21 As Integer = 0
+Var i22 As Integer = 0
+Var v11X As Double = 0.0
+Var v11Y As Double = 0.0
+Var v12X As Double = 0.0
+Var v12Y As Double = 0.0
+Var v21X As Double = 0.0
+Var v21Y As Double = 0.0
+Var v22X As Double = 0.0
+Var v22Y As Double = 0.0
+
+Var normalX As Double = 0.0
+Var normalY As Double = 0.0
+Var r1 As Double = radiusA
+Var r2 As Double = radiusB
+If flip Then
+# Reference polygon is B; incident polygon is A.
+i11 = edgeB
+i12 = edgeB + 1
+If i12 >= countB Then
+i12 = 0
+End If
+i21 = edgeA
+i22 = edgeA + 1
+If i22 >= countA Then
+i22 = 0
+End If
+v11X = vertsB[i11].X
+v11Y = vertsB[i11].Y
+v12X = vertsB[i12].X
+v12Y = vertsB[i12].Y
+v21X = vertsA[i21].X
+v21Y = vertsA[i21].Y
+v22X = vertsA[i22].X
+v22Y = vertsA[i22].Y
+normalX = normalsB[edgeB].X
+normalY = normalsB[edgeB].Y
+r1 = radiusB
+r2 = radiusA
+Else
+i11 = edgeA
+i12 = edgeA + 1
+If i12 >= countA Then
+i12 = 0
+End If
+i21 = edgeB
+i22 = edgeB + 1
+If i22 >= countB Then
+i22 = 0
+End If
+v11X = vertsA[i11].X
+v11Y = vertsA[i11].Y
+v12X = vertsA[i12].X
+v12Y = vertsA[i12].Y
+v21X = vertsB[i21].X
+v21Y = vertsB[i21].Y
+v22X = vertsB[i22].X
+v22Y = vertsB[i22].Y
+normalX = normalsA[edgeA].X
+normalY = normalsA[edgeA].Y
+End If
+
+# Tangent is crossSV(1, normal) = (-normal.y, normal.x).
+Var tangentX As Double = -normalY
+Var tangentY As Double = normalX
+
+Var lower1 As Double = 0.0
+Var upper1 As Double = (v12X - v11X) * tangentX + (v12Y - v11Y) * tangentY
+
+# Incident edge points opposite of tangent due to CCW winding.
+Var upper2 As Double = (v21X - v11X) * tangentX + (v21Y - v11Y) * tangentY
+Var lower2 As Double = (v22X - v11X) * tangentX + (v22Y - v11Y) * tangentY
+
+# Are the segments disjoint?
+If upper2 < lower1 Or upper1 < lower2 Then
+Return
+End If
+
+Var vLowerX As Double = v22X
+Var vLowerY As Double = v22Y
+If lower2 < lower1 And upper2 - lower2 > PhysicsConstants.FLT_EPSILON Then
+Var tLower As Double = (lower1 - lower2) / (upper2 - lower2)
+vLowerX = v22X + tLower * (v21X - v22X)
+vLowerY = v22Y + tLower * (v21Y - v22Y)
+End If
+
+Var vUpperX As Double = v21X
+Var vUpperY As Double = v21Y
+If upper2 > upper1 And upper2 - lower2 > PhysicsConstants.FLT_EPSILON Then
+Var tUpper As Double = (upper1 - lower2) / (upper2 - lower2)
+vUpperX = v22X + tUpper * (v21X - v22X)
+vUpperY = v22Y + tUpper * (v21Y - v22Y)
+End If
+
+Var separationLower As Double = (vLowerX - v11X) * normalX + (vLowerY - v11Y) * normalY
+Var separationUpper As Double = (vUpperX - v11X) * normalX + (vUpperY - v11Y) * normalY
+
+# Put contact points at the midpoint, accounting for radii.
+vLowerX = vLowerX + 0.5 * (r1 - r2 - separationLower) * normalX
+vLowerY = vLowerY + 0.5 * (r1 - r2 - separationLower) * normalY
+vUpperX = vUpperX + 0.5 * (r1 - r2 - separationUpper) * normalX
+vUpperY = vUpperY + 0.5 * (r1 - r2 - separationUpper) * normalY
+
+Var radius As Double = r1 + r2
+
+Var cp As ManifoldPoint = out.Point1
+If flip = False Then
+out.Normal.Set(normalX, normalY)
+
+cp.AnchorA.Set(vLowerX, vLowerY)
+cp.Separation = separationLower - radius
+cp.Id = i11 * 256 + i22
+out.PointCount = out.PointCount + 1
+
+cp = out.Point2
+cp.AnchorA.Set(vUpperX, vUpperY)
+cp.Separation = separationUpper - radius
+cp.Id = i12 * 256 + i21
+out.PointCount = out.PointCount + 1
+Else
+out.Normal.Set(-normalX, -normalY)
+
+cp.AnchorA.Set(vUpperX, vUpperY)
+cp.Separation = separationUpper - radius
+cp.Id = i21 * 256 + i12
+out.PointCount = out.PointCount + 1
+
+cp = out.Point2
+cp.AnchorA.Set(vLowerX, vLowerY)
+cp.Separation = separationLower - radius
+cp.Id = i22 * 256 + i11
+out.PointCount = out.PointCount + 1
+End If
+End Sub
+
+## Writes the single vertex-vertex contact point chosen by the disjoint
+## edge path of the polygon pairing.
+Shared Sub WriteVertexVertexPoint(v1x As Double, v1y As Double, v2x As Double, v2y As Double, id1 As Integer, id2 As Integer, radiusA As Double, radiusB As Double, radius As Double, distance As Double, out As Manifold)
+Var nx As Double = v2x - v1x
+Var ny As Double = v2y - v1y
+Var invDistance As Double = 1.0 / distance
+nx = nx * invDistance
+ny = ny * invDistance
+
+Var c1x As Double = v1x + radiusA * nx
+Var c1y As Double = v1y + radiusA * ny
+Var c2x As Double = v2x - radiusB * nx
+Var c2y As Double = v2y - radiusB * ny
+
+out.Normal.Set(nx, ny)
+out.Point1.AnchorA.Set(0.5 * (c1x + c2x), 0.5 * (c1y + c2y))
+out.Point1.Separation = distance - radius
+out.Point1.Id = id1 * 256 + id2
+out.PointCount = 1
+End Sub
+
+## Computes the SAT separation of one capsule edge against the other
+## capsule's endpoints and writes the chosen normal into the out vector.
+## Mirrors the two reference-edge blocks of upstream b2CollideCapsules.
+Shared Function CapsuleEdgeSeparation(ux As Double, uy As Double, px As Double, py As Double, a1x As Double, a1y As Double, a2x As Double, a2y As Double, out As Vector2) As Double
+# Left perpendicular of u.
+Var nx As Double = -uy
+Var ny As Double = ux
+Var ss1 As Double = (a1x - px) * nx + (a1y - py) * ny
+Var ss2 As Double = (a2x - px) * nx + (a2y - py) * ny
+Var s1p As Double = ss1
+If ss2 < s1p Then
+s1p = ss2
+End If
+Var s1n As Double = -ss1
+If -ss2 < s1n Then
+s1n = -ss2
+End If
+
+If s1p > s1n Then
+out.Set(nx, ny)
+Return s1p
+End If
+out.Set(-nx, -ny)
+Return s1n
+End Function
+
+## Clips the endpoints cp/cq of the moving segment against the bounds zero
+## and bound, mirroring the clip blocks of upstream b2CollideCapsules.
+Shared Sub ClipEndpoints(fp As Double, fq As Double, bound As Double, px As Double, py As Double, qx As Double, qy As Double, cp As Vector2, cq As Vector2)
+If bound = 0.0 Then
+# Clip to the segment start.
+If fp < 0.0 And fq > 0.0 Then
+Var t As Double = (0.0 - fp) / (fq - fp)
+cp.Set(px + t * (qx - px), py + t * (qy - py))
+ElseIf fq < 0.0 And fp > 0.0 Then
+Var t As Double = (0.0 - fq) / (fp - fq)
+cq.Set(qx + t * (px - qx), qy + t * (py - qy))
+End If
+Else
+# Clip to the segment end.
+If fp > bound And fq < bound Then
+Var t As Double = (fp - bound) / (fp - fq)
+cp.Set(px + t * (qx - px), py + t * (qy - py))
+ElseIf fq > bound And fp < bound Then
+Var t As Double = (fq - bound) / (fq - fp)
+cq.Set(qx + t * (px - qx), qy + t * (py - qy))
+End If
+End If
+End Sub
+
+## Clamps the value to the zero-to-one range.
+Shared Function Clamp01(value As Double) As Double
+If value < 0.0 Then
+Return 0.0
+End If
+If value > 1.0 Then
+Return 1.0
+End If
+Return value
+End Function
+## Computes the manifold between a chain segment and a circle into a new
+## manifold, ported from upstream b2CollideChainSegmentAndCircle.
+Shared Function CollideChainSegmentAndCircle(segmentA As ChainSegment, transformA As Transform, circleB As Circle, transformB As Transform) As Manifold
+Var out As New Manifold
+Collide.CollideChainSegmentAndCircleTo(segmentA, transformA, circleB, transformB, out)
+Return out
+End Function
+
+## Computes the manifold between a chain segment and a circle into the
+## caller-owned out manifold and returns out.
+Shared Function CollideChainSegmentAndCircleTo(segmentA As ChainSegment, transformA As Transform, circleB As Circle, transformB As Transform, out As Manifold) As Manifold
+out.Reset()
+
+Var c As Double = transformA.Q.C * transformB.Q.C + transformA.Q.S * transformB.Q.S
+Var s As Double = -transformA.Q.S * transformB.Q.C + transformA.Q.C * transformB.Q.S
+Var dx As Double = transformB.P.X - transformA.P.X
+Var dy As Double = transformB.P.Y - transformA.P.Y
+Var px As Double = transformA.Q.C * dx + transformA.Q.S * dy
+Var py As Double = -transformA.Q.S * dx + transformA.Q.C * dy
+
+# Circle in the frame of the segment.
+Var pBX As Double = c * circleB.Center.X - s * circleB.Center.Y + px
+Var pBY As Double = s * circleB.Center.X + c * circleB.Center.Y + py
+
+Var p1x As Double = segmentA.Segment.Point1.X
+Var p1y As Double = segmentA.Segment.Point1.Y
+Var p2x As Double = segmentA.Segment.Point2.X
+Var p2y As Double = segmentA.Segment.Point2.Y
+Var ex As Double = p2x - p1x
+Var ey As Double = p2y - p1y
+
+# Normal points to the right: dot(rightPerp(e), pB - p1).
+Var offset As Double = ey * (pBX - p1x) - ex * (pBY - p1y)
+If offset < 0.0 Then
+# Collision is one-sided.
+Return out
+End If
+
+# Barycentric coordinates.
+Var u As Double = ex * (p2x - pBX) + ey * (p2y - pBY)
+Var v As Double = ex * (pBX - p1x) + ey * (pBY - p1y)
+
+Var pAX As Double = 0.0
+Var pAY As Double = 0.0
+
+If v <= 0.0 Then
+# Behind point1: is pB in the Voronoi region of the previous edge?
+Var prevEx As Double = p1x - segmentA.Ghost1.X
+Var prevEy As Double = p1y - segmentA.Ghost1.Y
+Var uPrev As Double = prevEx * (pBX - p1x) + prevEy * (pBY - p1y)
+If uPrev <= 0.0 Then
+Return out
+End If
+pAX = p1x
+pAY = p1y
+ElseIf u <= 0.0 Then
+# Ahead of point2: is pB in the Voronoi region of the next edge?
+Var nextEx As Double = segmentA.Ghost2.X - p2x
+Var nextEy As Double = segmentA.Ghost2.Y - p2y
+Var vNext As Double = nextEx * (pBX - p2x) + nextEy * (pBY - p2y)
+If vNext > 0.0 Then
+Return out
+End If
+pAX = p2x
+pAY = p2y
+Else
+Var ee As Double = ex * ex + ey * ey
+If ee > 0.0 Then
+pAX = (u * p1x + v * p2x) / ee
+pAY = (u * p1y + v * p2y) / ee
+Else
+pAX = p1x
+pAY = p1y
+End If
+End If
+
+Var diffX As Double = pBX - pAX
+Var diffY As Double = pBY - pAY
+Var distance As Double = Maths.Sqrt(diffX * diffX + diffY * diffY)
+Var nx As Double = 0.0
+Var ny As Double = 0.0
+If distance > PhysicsConstants.FLT_EPSILON Then
+Var invDistance As Double = 1.0 / distance
+nx = invDistance * diffX
+ny = invDistance * diffY
+End If
+
+Var radius As Double = circleB.Radius
+Var separation As Double = distance - radius
+If separation > PhysicsConstants.SPECULATIVE_DISTANCE Then
+Return out
+End If
+
+Var cBX As Double = pBX - radius * nx
+Var cBY As Double = pBY - radius * ny
+Var contactX As Double = 0.5 * (pAX + cBX)
+Var contactY As Double = 0.5 * (pAY + cBY)
+
+Var qc As Double = transformA.Q.C
+Var qs As Double = transformA.Q.S
+out.Normal.Set(qc * nx - qs * ny, qs * nx + qc * ny)
+
+Var anchorX As Double = qc * contactX - qs * contactY
+Var anchorY As Double = qs * contactX + qc * contactY
+Var mp As ManifoldPoint = out.Point1
+mp.AnchorA.Set(anchorX, anchorY)
+mp.AnchorB.Set(anchorX + transformA.P.X - transformB.P.X, anchorY + transformA.P.Y - transformB.P.Y)
+mp.Point.Set(transformA.P.X + anchorX, transformA.P.Y + anchorY)
+mp.Separation = separation
+mp.Id = 0
+out.PointCount = 1
+Return out
+End Function
+
+## Computes the manifold between a chain segment and a capsule into a new
+## manifold, ported from upstream b2CollideChainSegmentAndCapsule. The
+## cache is input and output: set its count to zero on the first call.
+Shared Function CollideChainSegmentAndCapsule(segmentA As ChainSegment, transformA As Transform, capsuleB As Capsule, transformB As Transform, cache As SimplexCache) As Manifold
+Var out As New Manifold
+Collide.CollideChainSegmentAndCapsuleTo(segmentA, transformA, capsuleB, transformB, cache, out)
+Return out
+End Function
+
+## Computes the manifold between a chain segment and a capsule into the
+## caller-owned out manifold and returns out.
+Shared Function CollideChainSegmentAndCapsuleTo(segmentA As ChainSegment, transformA As Transform, capsuleB As Capsule, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Var scratch As CollideScratch = out.Scratch()
+Var polyVerts As Array(Of Vector2) = scratch.GrowPoints(scratch.CapsulePolyVertices, 2)
+Var polyNormals As Array(Of Vector2) = scratch.GrowPoints(scratch.CapsulePolyNormals, 2)
+
+Var ex As Double = capsuleB.Center2.X - capsuleB.Center1.X
+Var ey As Double = capsuleB.Center2.Y - capsuleB.Center1.Y
+Var length As Double = Maths.Sqrt(ex * ex + ey * ey)
+Var nx As Double = 0.0
+Var ny As Double = 0.0
+If length > PhysicsConstants.FLT_EPSILON Then
+nx = ey / length
+ny = -ex / length
+End If
+
+polyVerts[0].Set(capsuleB.Center1.X, capsuleB.Center1.Y)
+polyVerts[1].Set(capsuleB.Center2.X, capsuleB.Center2.Y)
+polyNormals[0].Set(nx, ny)
+polyNormals[1].Set(-nx, -ny)
+
+Var centroidX As Double = 0.5 * (capsuleB.Center1.X + capsuleB.Center2.X)
+Var centroidY As Double = 0.5 * (capsuleB.Center1.Y + capsuleB.Center2.Y)
+
+Return Collide.CollideChainSegmentAndPolygonCoreTo(segmentA, transformA, polyVerts, polyNormals, 2, centroidX, centroidY, capsuleB.Radius, transformB, cache, scratch, out)
+End Function
+
+## Computes the manifold between a chain segment and a convex polygon into
+## a new manifold, ported from upstream b2CollideChainSegmentAndPolygon.
+## The cache is input and output: set its count to zero on the first call.
+Shared Function CollideChainSegmentAndPolygon(segmentA As ChainSegment, transformA As Transform, polygonB As Polygon, transformB As Transform, cache As SimplexCache) As Manifold
+Var out As New Manifold
+Collide.CollideChainSegmentAndPolygonTo(segmentA, transformA, polygonB, transformB, cache, out)
+Return out
+End Function
+
+## Computes the manifold between a chain segment and a convex polygon into
+## the caller-owned out manifold and returns out.
+Shared Function CollideChainSegmentAndPolygonTo(segmentA As ChainSegment, transformA As Transform, polygonB As Polygon, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Var scratch As CollideScratch = out.Scratch()
+Return Collide.CollideChainSegmentAndPolygonCoreTo(segmentA, transformA, polygonB.Vertices, polygonB.Normals, polygonB.Count, polygonB.Centroid.X, polygonB.Centroid.Y, polygonB.Radius, transformB, cache, scratch, out)
+End Function
+
+## Scalar core of the chain-segment-versus-polygon manifold with ghost
+## smoothing, ported from upstream b2CollideChainSegmentAndPolygon.
+Shared Function CollideChainSegmentAndPolygonCoreTo(segmentA As ChainSegment, transformA As Transform, vertsB() As Vector2, normalsB() As Vector2, countB As Integer, centroidBX As Double, centroidBY As Double, radiusB As Double, transformB As Transform, cache As SimplexCache, scratch As CollideScratch, out As Manifold) As Manifold
+out.Reset()
+
+Var c As Double = transformA.Q.C * transformB.Q.C + transformA.Q.S * transformB.Q.S
+Var s As Double = -transformA.Q.S * transformB.Q.C + transformA.Q.C * transformB.Q.S
+Var dx As Double = transformB.P.X - transformA.P.X
+Var dy As Double = transformB.P.Y - transformA.P.Y
+Var px As Double = transformA.Q.C * dx + transformA.Q.S * dy
+Var py As Double = -transformA.Q.S * dx + transformA.Q.C * dy
+
+Var centroidX As Double = c * centroidBX - s * centroidBY + px
+Var centroidY As Double = s * centroidBX + c * centroidBY + py
+
+Var p1x As Double = segmentA.Segment.Point1.X
+Var p1y As Double = segmentA.Segment.Point1.Y
+Var p2x As Double = segmentA.Segment.Point2.X
+Var p2y As Double = segmentA.Segment.Point2.Y
+
+Var edge1x As Double = p2x - p1x
+Var edge1y As Double = p2y - p1y
+Var edge1Length As Double = Maths.Sqrt(edge1x * edge1x + edge1y * edge1y)
+Var e1x As Double = 0.0
+Var e1y As Double = 0.0
+If edge1Length > PhysicsConstants.FLT_EPSILON Then
+e1x = edge1x / edge1Length
+e1y = edge1y / edge1Length
+End If
+
+Var params As ChainParams = scratch.ChainParams
+params.Edge1.Set(e1x, e1y)
+
+Var convexTol As Double = 0.01
+Var edge0x As Double = p1x - segmentA.Ghost1.X
+Var edge0y As Double = p1y - segmentA.Ghost1.Y
+Var edge0Length As Double = Maths.Sqrt(edge0x * edge0x + edge0y * edge0y)
+Var u0x As Double = 0.0
+Var u0y As Double = 0.0
+If edge0Length > PhysicsConstants.FLT_EPSILON Then
+u0x = edge0x / edge0Length
+u0y = edge0y / edge0Length
+End If
+# Right perpendicular: (y, -x).
+params.Normal0.Set(u0y, -u0x)
+Var cross01 As Double = u0x * e1y - u0y * e1x
+params.Convex1 = cross01 >= convexTol
+
+Var edge2x As Double = segmentA.Ghost2.X - p2x
+Var edge2y As Double = segmentA.Ghost2.Y - p2y
+Var edge2Length As Double = Maths.Sqrt(edge2x * edge2x + edge2y * edge2y)
+Var u2x As Double = 0.0
+Var u2y As Double = 0.0
+If edge2Length > PhysicsConstants.FLT_EPSILON Then
+u2x = edge2x / edge2Length
+u2y = edge2y / edge2Length
+End If
+params.Normal2.Set(u2y, -u2x)
+Var cross12 As Double = e1x * u2y - e1y * u2x
+params.Convex2 = cross12 >= convexTol
+
+# Normal points to the right.
+Var normal1x As Double = e1y
+Var normal1y As Double = -e1x
+Var behind1 As Boolean = normal1x * (centroidX - p1x) + normal1y * (centroidY - p1y) < 0.0
+Var behind0 As Boolean = True
+Var behind2 As Boolean = True
+If params.Convex1 Then
+behind0 = params.Normal0.X * (centroidX - p1x) + params.Normal0.Y * (centroidY - p1y) < 0.0
+End If
+If params.Convex2 Then
+behind2 = params.Normal2.X * (centroidX - p2x) + params.Normal2.Y * (centroidY - p2y) < 0.0
+End If
+
+If behind1 And behind0 And behind2 Then
+# One-sided collision.
+Return out
+End If
+params.Behind1 = behind1
+
+# Get the polygon in frame A.
+Var vertices As Array(Of Vector2) = scratch.GrowPoints(scratch.ChainVertices, countB)
+Var normals As Array(Of Vector2) = scratch.GrowPoints(scratch.ChainNormals, countB)
+For i As Integer = 0 To countB - 1
+vertices[i].Set(c * vertsB[i].X - s * vertsB[i].Y + px, s * vertsB[i].X + c * vertsB[i].Y + py)
+normals[i].Set(c * normalsB[i].X - s * normalsB[i].Y, s * normalsB[i].X + c * normalsB[i].Y)
+Next i
+
+# Distance does not work correctly with partial polygons: use the core
+# segment as a two-point proxy.
+Var proxyA As ShapeProxy = scratch.ChainProxyA
+proxyA.Count = 2
+proxyA.Radius = 0.0
+Var proxyAPoints As Array(Of Vector2) = scratch.GrowPoints(scratch.ChainProxyPoints, 2)
+proxyA.Points = proxyAPoints
+proxyAPoints[0].Set(p1x, p1y)
+proxyAPoints[1].Set(p2x, p2y)
+
+Var input As DistanceInput = scratch.ChainDistanceInput
+input.ProxyA = proxyA
+input.ProxyB = scratch.ChainProxyB
+input.UseRadii = False
+Var proxyB As ShapeProxy = scratch.ChainProxyB
+proxyB.Count = countB
+proxyB.Radius = 0.0
+Var proxyBPoints As Array(Of Vector2) = scratch.GrowPoints(scratch.ChainProxyBPoints, countB)
+proxyB.Points = proxyBPoints
+For i As Integer = 0 To countB - 1
+proxyBPoints[i].Set(vertices[i].X, vertices[i].Y)
+Next i
+input.TransformA = Transform.Identity()
+input.TransformB = Transform.Identity()
+
+Var output As DistanceOutput = scratch.ChainDistanceOutput
+Distance.ShapeDistanceTo(input, cache, output)
+
+If output.Distance > radiusB + PhysicsConstants.SPECULATIVE_DISTANCE Then
+Return out
+End If
+
+Return Collide.ChainFinish(transformA, transformB, p1x, p1y, p2x, p2y, normal1x, normal1y, vertices, normals, countB, radiusB, output, cache, scratch, out)
+End Function
+
+## Resolves the chain manifold after the distance query, ported from the
+## second half of upstream b2CollideChainSegmentAndPolygon.
+Shared Function ChainFinish(transformA As Transform, transformB As Transform, p1x As Double, p1y As Double, p2x As Double, p2y As Double, normal1x As Double, normal1y As Double, vertices() As Vector2, normals() As Vector2, countB As Integer, radiusB As Double, output As DistanceOutput, cache As SimplexCache, scratch As CollideScratch, out As Manifold) As Manifold
+Var params As ChainParams = scratch.ChainParams
+
+# Index of the incident vertex or normal on the polygon.
+scratch.ChainIncidentIndex = -1
+scratch.ChainIncidentNormal = -1
+
+If Not params.Behind1 And output.Distance > 0.1 * PhysicsConstants.LINEAR_SLOP Then
+# The closest features may be two vertices or an edge and a vertex
+# even when there should be face contact. The response returns 0 to
+# skip contact, 1 when the manifold has been written, or 2 to snap to
+# the segment normal.
+Var status As Integer = 0
+If cache.Count = 1 Then
+status = Collide.ChainVertexVertex(params, output, cache, transformA, transformB, radiusB, scratch, out)
+Else
+status = Collide.ChainVertexEdge(params, output, cache, p1x, p1y, p2x, p2y, normal1x, normal1y, vertices, normals, countB, radiusB, transformA, transformB, scratch, out)
+End If
+
+If status = 2 Then
+Return Collide.ChainFinalClip(p1x, p1y, p2x, p2y, normal1x, normal1y, scratch.ChainIncidentNormal, scratch.ChainIncidentIndex, vertices, normals, countB, radiusB, transformA, transformB, out)
+End If
+Return out
+End If
+
+# SAT edge normal.
+Return Collide.ChainSatSelection(p1x, p1y, p2x, p2y, normal1x, normal1y, vertices, normals, countB, radiusB, transformA, transformB, scratch, out)
+End Function
+
+## Handles the vertex-vertex chain response. Returns 0 to skip contact, 1
+## when the manifold has been written, or 2 to snap to the segment normal
+## with the incident vertex recorded in the scratch workspace.
+Shared Function ChainVertexVertex(params As ChainParams, output As DistanceOutput, cache As SimplexCache, transformA As Transform, transformB As Transform, radiusB As Double, scratch As CollideScratch, out As Manifold) As Integer
+Var pAX As Double = output.PointA.X
+Var pAY As Double = output.PointA.Y
+Var pBX As Double = output.PointB.X
+Var pBY As Double = output.PointB.Y
+
+Var diffX As Double = pBX - pAX
+Var diffY As Double = pBY - pAY
+Var length As Double = Maths.Sqrt(diffX * diffX + diffY * diffY)
+Var nx As Double = 0.0
+Var ny As Double = 0.0
+If length > PhysicsConstants.FLT_EPSILON Then
+nx = diffX / length
+ny = diffY / length
+End If
+
+Var normalType As ChainNormalType = Collide.ClassifyNormal(params, nx, ny)
+If normalType = ChainNormalType.NormalSkip Then
+Return 0
+End If
+
+If normalType = ChainNormalType.NormalAdmit Then
+Var qc As Double = transformA.Q.C
+Var qs As Double = transformA.Q.S
+out.Normal.Set(qc * nx - qs * ny, qs * nx + qc * ny)
+Var cp As ManifoldPoint = out.Point1
+cp.AnchorA.Set(qc * pAX - qs * pAY, qs * pAX + qc * pAY)
+cp.AnchorB.Set(cp.AnchorA.X + transformA.P.X - transformB.P.X, cp.AnchorA.Y + transformA.P.Y - transformB.P.Y)
+cp.Point.Set(transformA.P.X + cp.AnchorA.X, transformA.P.Y + cp.AnchorA.Y)
+cp.Separation = output.Distance - radiusB
+cp.Id = cache.IndexA[0] * 256 + cache.IndexB[0]
+out.PointCount = 1
+Return 1
+End If
+
+# Fall through NormalSnap.
+scratch.ChainIncidentIndex = cache.IndexB[0]
+Return 2
+End Function
+
+## Handles the vertex-edge chain response. Returns 0 to skip contact, 1
+## when the manifold has been written, or 2 to snap to the segment normal
+## with the incident feature recorded in the scratch workspace.
+Shared Function ChainVertexEdge(params As ChainParams, output As DistanceOutput, cache As SimplexCache, p1x As Double, p1y As Double, p2x As Double, p2y As Double, normal1x As Double, normal1y As Double, vertices() As Vector2, normals() As Vector2, countB As Integer, radiusB As Double, transformA As Transform, transformB As Transform, scratch As CollideScratch, out As Manifold) As Integer
+Var ia1 As Integer = cache.IndexA[0]
+Var ia2 As Integer = cache.IndexA[1]
+Var ib1 As Integer = cache.IndexB[0]
+Var ib2 As Integer = cache.IndexB[1]
+
+If ia1 <> ia2 Then
+# Get the index of the incident polygon vertex.
+Var vd1 As Double = normal1x * (vertices[ib1].X - p1x) + normal1y * (vertices[ib1].Y - p1y)
+Var vd2 As Double = normal1x * (vertices[ib2].X - p2x) + normal1y * (vertices[ib2].Y - p2y)
+scratch.ChainIncidentIndex = ib2
+If vd1 < vd2 Then
+scratch.ChainIncidentIndex = ib1
+End If
+Return 2
+End If
+
+# One point on A, expect two points on B: find the polygon normal most
+# aligned with the vector between closest points; this effectively sorts
+# ib1 and ib2.
+Var dirX As Double = output.PointA.X - output.PointB.X
+Var dirY As Double = output.PointA.Y - output.PointB.Y
+Var fd1 As Double = dirX * normals[ib1].X + dirY * normals[ib1].Y
+Var fd2 As Double = dirX * normals[ib2].X + dirY * normals[ib2].Y
+Var ib As Integer = ib2
+If fd1 > fd2 Then
+ib = ib1
+End If
+
+# Use the accurate normal.
+Var normalBx As Double = normals[ib].X
+Var normalBy As Double = normals[ib].Y
+
+Var normalType As ChainNormalType = Collide.ClassifyNormal(params, -normalBx, -normalBy)
+If normalType = ChainNormalType.NormalSkip Then
+Return 0
+End If
+
+If normalType = ChainNormalType.NormalSnap Then
+# Fall through NormalSnap.
+scratch.ChainIncidentNormal = ib
+Return 2
+End If
+
+# Get the polygon edge associated with the normal.
+Var eb1 As Integer = ib
+Var eb2 As Integer = ib + 1
+If eb2 > countB - 1 Then
+eb2 = 0
+End If
+
+# Find the incident segment vertex.
+Var sd1 As Double = normalBx * (p1x - vertices[eb1].X) + normalBy * (p1y - vertices[eb1].Y)
+Var sd2 As Double = normalBx * (p2x - vertices[eb1].X) + normalBy * (p2y - vertices[eb1].Y)
+If Collide.ChainNeighbourIncident(params, normal1x, normal1y, normalBx, normalBy, sd1, sd2) Then
+# The neighbour is incident.
+Return 0
+End If
+
+Collide.ChainPolygonEdgeClip(vertices[eb1].X, vertices[eb1].Y, vertices[eb2].X, vertices[eb2].Y, p1x, p1y, p2x, p2y, normalBx, normalBy, radiusB, eb1 * 256 + 1, eb2 * 256 + 0, transformA, transformB, out)
+Return 1
+End Function
+
+## SAT selection path of the chain-segment-versus-polygon manifold, ported
+## from the edge-normal branch of upstream b2CollideChainSegmentAndPolygon.
+Shared Function ChainSatSelection(p1x As Double, p1y As Double, p2x As Double, p2y As Double, normal1x As Double, normal1y As Double, vertices() As Vector2, normals() As Vector2, countB As Integer, radiusB As Double, transformA As Transform, transformB As Transform, scratch As CollideScratch, out As Manifold) As Manifold
+Var params As ChainParams = scratch.ChainParams
+
+Var edgeSeparation As Double = Collide.ChainEdgeScan(vertices, countB, normal1x, normal1y, p1x, p1y, scratch)
+Var incidentIndex As Integer = scratch.ChainIncidentIndex
+
+# Check the convex neighbour for edge separation.
+If params.Convex1 Then
+Var s0 As Double = Collide.ChainEdgeScan(vertices, countB, params.Normal0.X, params.Normal0.Y, p1x, p1y, scratch)
+If s0 > edgeSeparation Then
+edgeSeparation = s0
+# The neighbour owns the edge separation.
+incidentIndex = -1
+End If
+End If
+
+If params.Convex2 Then
+Var s2 As Double = Collide.ChainEdgeScan(vertices, countB, params.Normal2.X, params.Normal2.Y, p2x, p2y, scratch)
+If s2 > edgeSeparation Then
+edgeSeparation = s2
+# The neighbour owns the edge separation.
+incidentIndex = -1
+End If
+End If
+
+# SAT polygon normals.
+Var polygonSeparation As Double = -1.7976931348623157e308
+Var referenceIndex As Integer = -1
+
+For i As Integer = 0 To countB - 1
+Var nx As Double = normals[i].X
+Var ny As Double = normals[i].Y
+
+Var normalType As ChainNormalType = Collide.ClassifyNormal(params, -nx, -ny)
+If normalType <> ChainNormalType.NormalAdmit Then
+Continue
+End If
+
+Var px As Double = vertices[i].X
+Var py As Double = vertices[i].Y
+Var sep1 As Double = nx * (p2x - px) + ny * (p2y - py)
+Var sep2 As Double = nx * (p1x - px) + ny * (p1y - py)
+Var s As Double = sep1
+If sep2 < s Then
+s = sep2
+End If
+
+If s > polygonSeparation Then
+polygonSeparation = s
+referenceIndex = i
+End If
+Next i
+
+If polygonSeparation > edgeSeparation Then
+Var ia1 As Integer = referenceIndex
+Var ia2 As Integer = ia1 + 1
+If ia2 > countB - 1 Then
+ia2 = 0
+End If
+Var a1x As Double = vertices[ia1].X
+Var a1y As Double = vertices[ia1].Y
+Var a2x As Double = vertices[ia2].X
+Var a2y As Double = vertices[ia2].Y
+
+Var nx As Double = normals[ia1].X
+Var ny As Double = normals[ia1].Y
+
+Var dot1 As Double = nx * (p1x - a1x) + ny * (p1y - a1y)
+Var dot2 As Double = nx * (p2x - a1x) + ny * (p2y - a1y)
+
+If Collide.ChainNeighbourIncident(params, normal1x, normal1y, nx, ny, dot1, dot2) Then
+# The neighbour is incident.
+Return out
+End If
+
+Collide.ChainPolygonEdgeClip(a1x, a1y, a2x, a2y, p1x, p1y, p2x, p2y, nx, ny, radiusB, ia1 * 256 + 1, ia2 * 256 + 0, transformA, transformB, out)
+Return out
+End If
+
+If incidentIndex = -1 Then
+# The neighbouring segment is the separating axis.
+Return out
+End If
+
+# Fall through to the segment normal axis.
+Return Collide.ChainFinalClip(p1x, p1y, p2x, p2y, normal1x, normal1y, -1, incidentIndex, vertices, normals, countB, radiusB, transformA, transformB, out)
+End Function
+
+## Finds the minimum separation of the polygon vertices along a direction
+## relative to a point and records the argmin index in the scratch
+## workspace.
+Shared Function ChainEdgeScan(vertices() As Vector2, countB As Integer, dirX As Double, dirY As Double, px As Double, py As Double, scratch As CollideScratch) As Double
+Var best As Double = 1.7976931348623157e308
+Var bestIndex As Integer = -1
+For i As Integer = 0 To countB - 1
+Var sep As Double = dirX * (vertices[i].X - px) + dirY * (vertices[i].Y - py)
+If sep < best Then
+best = sep
+bestIndex = i
+End If
+Next i
+scratch.ChainIncidentIndex = bestIndex
+Return best
+End Function
+
+## Returns True when the neighbouring ghost segment, not the core edge,
+## owns the contact and the manifold must be skipped. The ghost normals
+## are snapped to the core segment normal at concave vertices.
+Shared Function ChainNeighbourIncident(params As ChainParams, normal1x As Double, normal1y As Double, nx As Double, ny As Double, dot1 As Double, dot2 As Double) As Boolean
+Var n0x As Double = params.Normal0.X
+Var n0y As Double = params.Normal0.Y
+If Not params.Convex1 Then
+n0x = normal1x
+n0y = normal1y
+End If
+
+If dot1 < dot2 Then
+Return n0x * nx + n0y * ny < normal1x * nx + normal1y * ny
+End If
+
+Var n2x As Double = params.Normal2.X
+Var n2y As Double = params.Normal2.Y
+If Not params.Convex2 Then
+n2x = normal1x
+n2y = normal1y
+End If
+Return n2x * nx + n2y * ny < normal1x * nx + normal1y * ny
+End Function
+
+## Clips a polygon edge against the segment and converts the resulting
+## manifold to world space with the negated polygon normal. Ported from
+## the polygon face paths of upstream b2CollideChainSegmentAndPolygon.
+Shared Sub ChainPolygonEdgeClip(a1x As Double, a1y As Double, a2x As Double, a2y As Double, p1x As Double, p1y As Double, p2x As Double, p2y As Double, nx As Double, ny As Double, radiusB As Double, id1 As Integer, id2 As Integer, transformA As Transform, transformB As Transform, out As Manifold)
+Collide.ClipSegments(a1x, a1y, a2x, a2y, p1x, p1y, p2x, p2y, nx, ny, radiusB, 0.0, id1, id2, out)
+
+If out.PointCount = 2 Then
+Collide.ConvertChainManifoldToWorld(transformA, transformB, -nx, -ny, out)
+End If
+End Sub
+
+## Final segment-normal clip of the chain-segment-versus-polygon manifold.
+## The incident feature comes from either a snapped polygon normal or a
+## snapped polygon vertex.
+Shared Function ChainFinalClip(p1x As Double, p1y As Double, p2x As Double, p2y As Double, normal1x As Double, normal1y As Double, incidentNormal As Integer, incidentIndex As Integer, vertices() As Vector2, normals() As Vector2, countB As Integer, radiusB As Double, transformA As Transform, transformB As Transform, out As Manifold) As Manifold
+Var ib1 As Integer = 0
+Var ib2 As Integer = 0
+Var b1x As Double = 0.0
+Var b1y As Double = 0.0
+Var b2x As Double = 0.0
+Var b2y As Double = 0.0
+
+If incidentNormal <> -1 Then
+ib1 = incidentNormal
+ib2 = ib1 + 1
+If ib2 > countB - 1 Then
+ib2 = 0
+End If
+Else
+Var i2 As Integer = incidentIndex
+Var i1 As Integer = i2 - 1
+If i1 < 0 Then
+i1 = countB - 1
+End If
+Var d1 As Double = normal1x * normals[i1].X + normal1y * normals[i1].Y
+Var d2 As Double = normal1x * normals[i2].X + normal1y * normals[i2].Y
+If d1 < d2 Then
+ib1 = i1
+ib2 = i2
+Else
+ib1 = i2
+ib2 = i2 + 1
+If ib2 > countB - 1 Then
+ib2 = 0
+End If
+End If
+End If
+b1x = vertices[ib1].X
+b1y = vertices[ib1].Y
+b2x = vertices[ib2].X
+b2y = vertices[ib2].Y
+
+Collide.ClipSegments(p1x, p1y, p2x, p2y, b1x, b1y, b2x, b2y, normal1x, normal1y, 0.0, radiusB, 0 * 256 + ib2, 1 * 256 + ib1, out)
+
+If out.PointCount = 2 Then
+Collide.ConvertChainManifoldToWorld(transformA, transformB, normal1x, normal1y, out)
+End If
+
+Return out
+End Function
+
+## Final segment-normal clip of the chain-segment-versus-polygon manifold.
+Shared Function ChainFinalClip(p1x As Double, p1y As Double, p2x As Double, p2y As Double, normal1x As Double, normal1y As Double, incidentIndex As Integer, vertices() As Vector2, normals() As Vector2, countB As Integer, radiusB As Double, transformA As Transform, transformB As Transform, out As Manifold) As Manifold
+Var ib1 As Integer = 0
+Var ib2 As Integer = 0
+Var b1x As Double = 0.0
+Var b1y As Double = 0.0
+Var b2x As Double = 0.0
+Var b2y As Double = 0.0
+
+Var i2 As Integer = incidentIndex
+Var i1 As Integer = i2 - 1
+If i1 < 0 Then
+i1 = countB - 1
+End If
+Var d1 As Double = normal1x * normals[i1].X + normal1y * normals[i1].Y
+Var d2 As Double = normal1x * normals[i2].X + normal1y * normals[i2].Y
+If d1 < d2 Then
+ib1 = i1
+ib2 = i2
+Else
+ib1 = i2
+ib2 = i2 + 1
+If ib2 > countB - 1 Then
+ib2 = 0
+End If
+End If
+b1x = vertices[ib1].X
+b1y = vertices[ib1].Y
+b2x = vertices[ib2].X
+b2y = vertices[ib2].Y
+
+Collide.ClipSegments(p1x, p1y, p2x, p2y, b1x, b1y, b2x, b2y, normal1x, normal1y, 0.0, radiusB, 0 * 256 + ib2, 1 * 256 + ib1, out)
+
+If out.PointCount = 2 Then
+Collide.ConvertChainManifoldToWorld(transformA, transformB, normal1x, normal1y, out)
+End If
+
+Return out
+End Function
+
+## Converts a chain manifold from frame A to world space.
+Shared Sub ConvertChainManifoldToWorld(transformA As Transform, transformB As Transform, normalX As Double, normalY As Double, out As Manifold)
+Var qc As Double = transformA.Q.C
+Var qs As Double = transformA.Q.S
+out.Normal.Set(qc * normalX - qs * normalY, qs * normalX + qc * normalY)
+out.Point1.AnchorA.Set(qc * out.Point1.AnchorA.X - qs * out.Point1.AnchorA.Y, qs * out.Point1.AnchorA.X + qc * out.Point1.AnchorA.Y)
+out.Point2.AnchorA.Set(qc * out.Point2.AnchorA.X - qs * out.Point2.AnchorA.Y, qs * out.Point2.AnchorA.X + qc * out.Point2.AnchorA.Y)
+Var pABx As Double = transformA.P.X - transformB.P.X
+Var pABy As Double = transformA.P.Y - transformB.P.Y
+out.Point1.AnchorB.Set(out.Point1.AnchorA.X + pABx, out.Point1.AnchorA.Y + pABy)
+out.Point2.AnchorB.Set(out.Point2.AnchorA.X + pABx, out.Point2.AnchorA.Y + pABy)
+out.Point1.Point.Set(transformA.P.X + out.Point1.AnchorA.X, transformA.P.Y + out.Point1.AnchorA.Y)
+out.Point2.Point.Set(transformA.P.X + out.Point2.AnchorA.X, transformA.P.Y + out.Point2.AnchorA.Y)
+End Sub
+
+## Clips two segments against each other and writes a two-point manifold in
+## the local frame, ported from upstream b2ClipSegments.
+Shared Sub ClipSegments(a1x As Double, a1y As Double, a2x As Double, a2y As Double, b1x As Double, b1y As Double, b2x As Double, b2y As Double, nx As Double, ny As Double, ra As Double, rb As Double, id1 As Integer, id2 As Integer, out As Manifold)
+out.Reset()
+
+# Left perpendicular of the normal.
+Var tangentX As Double = -ny
+Var tangentY As Double = nx
+
+# Barycentric coordinates of each point relative to a1 along the
+# tangent.
+Var lower1 As Double = 0.0
+Var upper1 As Double = (a2x - a1x) * tangentX + (a2y - a1y) * tangentY
+
+# Incident edge points opposite of tangent due to CCW winding.
+Var upper2 As Double = (b1x - a1x) * tangentX + (b1y - a1y) * tangentY
+Var lower2 As Double = (b2x - a1x) * tangentX + (b2y - a1y) * tangentY
+
+# Do the segments overlap?
+If upper2 < lower1 Or upper1 < lower2 Then
+Return
+End If
+
+Var vLowerX As Double = b2x
+Var vLowerY As Double = b2y
+If lower2 < lower1 And upper2 - lower2 > PhysicsConstants.FLT_EPSILON Then
+Var tLower As Double = (lower1 - lower2) / (upper2 - lower2)
+vLowerX = b2x + tLower * (b1x - b2x)
+vLowerY = b2y + tLower * (b1y - b2y)
+End If
+
+Var vUpperX As Double = b1x
+Var vUpperY As Double = b1y
+If upper2 > upper1 And upper2 - lower2 > PhysicsConstants.FLT_EPSILON Then
+Var tUpper As Double = (upper1 - lower2) / (upper2 - lower2)
+vUpperX = b2x + tUpper * (b1x - b2x)
+vUpperY = b2y + tUpper * (b1y - b2y)
+End If
+
+Var separationLower As Double = (vLowerX - a1x) * nx + (vLowerY - a1y) * ny
+Var separationUpper As Double = (vUpperX - a1x) * nx + (vUpperY - a1y) * ny
+
+# Put contact points at the midpoint, accounting for radii.
+vLowerX = vLowerX + 0.5 * (ra - rb - separationLower) * nx
+vLowerY = vLowerY + 0.5 * (ra - rb - separationLower) * ny
+vUpperX = vUpperX + 0.5 * (ra - rb - separationUpper) * nx
+vUpperY = vUpperY + 0.5 * (ra - rb - separationUpper) * ny
+
+Var radius As Double = ra + rb
+
+out.Normal.Set(nx, ny)
+out.Point1.AnchorA.Set(vLowerX, vLowerY)
+out.Point1.Separation = separationLower - radius
+out.Point1.Id = id1
+
+out.Point2.AnchorA.Set(vUpperX, vUpperY)
+out.Point2.Separation = separationUpper - radius
+out.Point2.Id = id2
+
+out.PointCount = 2
+End Sub
+
+## Evaluates the Gauss map of a contact normal against the chain ghost
+## geometry, ported from upstream b2ClassifyNormal. Returns a
+## ChainNormalType value.
+Shared Function ClassifyNormal(params As ChainParams, nx As Double, ny As Double) As ChainNormalType
+Var sinTol As Double = 0.01
+
+If nx * params.Edge1.X + ny * params.Edge1.Y <= 0.0 Then
+# The normal points towards the segment tail.
+If params.Convex1 Then
+If nx * params.Normal0.Y - ny * params.Normal0.X > sinTol Then
+Return ChainNormalType.NormalSkip
+End If
+Return ChainNormalType.NormalAdmit
+End If
+Return ChainNormalType.NormalSnap
+End If
+
+# The normal points towards the segment head.
+If params.Convex2 Then
+If params.Normal2.X * ny - params.Normal2.Y * nx > sinTol Then
+Return ChainNormalType.NormalSkip
+End If
+Return ChainNormalType.NormalAdmit
+End If
+Return ChainNormalType.NormalSnap
+End Function
+End Class

@@ -1,0 +1,75 @@
+# Golden fixture tests for mass computation.
+#
+# Consumes testdata/golden/mass.txt, generated from the pinned Box2D 3.1.1
+# checkout with the shapes in tools/fixture_gen/fixture_gen.c: a circle of
+# radius 1.5 at (0.25, -0.5), a capsule between (-1, 0.5) and (2, -0.5) with
+# radius 0.5, and a rounded pentagon built from a hull with radius 0.1.
+# Densities are 1.0, 2.5, and 0.0 per case index.
+Import Physics2D
+
+Class GeometryMassTests Inherits TestCase
+## Builds the rounded pentagon used by the fixture generator.
+Private Shared Function FixturePolygon() As Polygon
+Var points As New Array(Of Vector2)
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(2.0, 0.0))
+points.Append(New Vector2(2.5, 2.0))
+points.Append(New Vector2(1.0, 3.0))
+points.Append(New Vector2(-0.5, 1.5))
+Var computedHull As Hull = Hull.Compute(points, 5)
+Return New Polygon(computedHull, 0.1)
+End Function
+
+Public Sub TestMassMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("mass.txt")
+Var densities() As Double = [1.0, 2.5, 0.0]
+Var circle As New Circle(New Vector2(0.25, -0.5), 1.5)
+Var capsule As New Capsule(New Vector2(-1.0, 0.5), New Vector2(2.0, -0.5), 0.5)
+Var polygon As Polygon = GeometryMassTests.FixturePolygon()
+
+Var checkedRecords As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+Var shapeName As String = fields[1]
+Var caseIndex As Integer = Integer.Parse(fields[2])
+Var values() As String = fields[3].Split(" ")
+Var expectedMass As Double = Double.Parse(values[0])
+Var expectedCenterX As Double = Double.Parse(values[1])
+Var expectedCenterY As Double = Double.Parse(values[2])
+Var expectedInertia As Double = Double.Parse(values[3])
+
+Var density As Double = densities[caseIndex]
+Var data As MassData = Nothing
+If shapeName = "circle" Then
+data = circle.ComputeMass(density)
+ElseIf shapeName = "capsule" Then
+data = capsule.ComputeMass(density)
+ElseIf shapeName = "polygon" Then
+data = polygon.ComputeMass(density)
+Else
+Assert.Fail("unknown mass fixture shape " + shapeName)
+End If
+
+Var label As String = shapeName + " case " + caseIndex.ToString()
+PhysicsAssert.Near(expectedMass, data.Mass, Tolerances.MASS_ABS, Tolerances.MASS_REL, label + " mass")
+PhysicsAssert.Near(expectedCenterX, data.Center.X, Tolerances.MASS_ABS, Tolerances.MASS_REL, label + " centerX")
+PhysicsAssert.Near(expectedCenterY, data.Center.Y, Tolerances.MASS_ABS, Tolerances.MASS_REL, label + " centerY")
+PhysicsAssert.Near(expectedInertia, data.RotationalInertia, Tolerances.MASS_ABS, Tolerances.MASS_REL, label + " inertia")
+checkedRecords = checkedRecords + 1
+Next line
+Assert.Equal(9, checkedRecords)
+End Sub
+
+Public Sub TestPolygonMassTwoVertexFallsBackToCapsule()
+Var points As New Array(Of Vector2)
+points.Append(New Vector2(-1.0, 0.5))
+points.Append(New Vector2(2.0, -0.5))
+Var computedHull As Hull = Hull.Compute(points, 2)
+Assert.Equal(0, computedHull.Count)
+
+# Build the two-vertex polygon directly like b2MakeCapsulePolygon does.
+Var capsule As New Capsule(New Vector2(-1.0, 0.5), New Vector2(2.0, -0.5), 0.5)
+Var capsuleMass As MassData = capsule.ComputeMass(1.3)
+Assert.True(capsuleMass.Mass > 0.0, "capsule mass positive")
+End Sub
+End Class

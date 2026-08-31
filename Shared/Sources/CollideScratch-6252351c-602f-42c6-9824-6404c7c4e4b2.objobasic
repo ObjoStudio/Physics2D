@@ -1,0 +1,97 @@
+# Engine-internal reusable workspace for the warm collision path. Owned by
+# a Manifold and created lazily so repeated narrow-phase queries allocate
+# nothing. Not part of the public engine surface.
+Class CollideScratch
+## Local polygon A vertices after shifting to the origin.
+Property PolyAVertices() As Vector2
+## Local polygon A normals.
+Property PolyANormals() As Vector2
+## Local polygon B vertices in frame A.
+Property PolyBVertices() As Vector2
+## Local polygon B normals in frame A.
+Property PolyBNormals() As Vector2
+## Vertices of the incident polygon used by chain collisions.
+Property ChainVertices() As Vector2
+## Normals of the incident polygon used by chain collisions.
+Property ChainNormals() As Vector2
+## Two-point proxy for chain segment distance.
+Property ChainProxyA As ShapeProxy
+## Polygon proxy for chain segment distance.
+Property ChainProxyB As ShapeProxy
+## Segment proxy points for chain segment distance.
+Property ChainProxyPoints() As Vector2
+## Polygon proxy points for chain segment distance.
+Property ChainProxyBPoints() As Vector2
+## Distance input reused by chain polygon collisions.
+Property ChainDistanceInput As DistanceInput
+## Distance output reused by chain polygon collisions.
+Property ChainDistanceOutput As DistanceOutput
+## Segment distance result reused by capsule and polygon pairings.
+Property SegmentResult As SegmentDistanceResult
+## The transform mapping frame B into shifted frame A.
+Property RelativeTransform As Transform
+## Shape A shifted so its first vertex sits at the origin.
+Property ShiftedTransformA As Transform
+## Chain smoothing parameters.
+Property ChainParams As ChainParams
+## Incident vertex or normal index carried between chain helpers.
+Property ChainIncidentIndex As Integer
+## Incident normal index carried between chain helpers.
+Property ChainIncidentNormal As Integer
+## Edge index chosen by the polygon SAT on shape A.
+Property EdgeIndexA As Integer
+## Edge index chosen by the polygon SAT on shape B.
+Property EdgeIndexB As Integer
+## Separation found by the most recent SAT query.
+Property EdgeSeparation As Double
+## Two-vertex stand-in polygon for segment-as-polygon pairings.
+Property CapsulePolyVertices() As Vector2
+## Two normals of the stand-in polygon.
+Property CapsulePolyNormals() As Vector2
+## Right-perpendicular holder for the capsule A SAT normal.
+Property ClipNormalA As Vector2
+## Right-perpendicular holder for the capsule B SAT normal.
+Property ClipNormalB As Vector2
+## First clip endpoint holder for the capsule pairing.
+Property ClipCp As Vector2
+## Second clip endpoint holder for the capsule pairing.
+Property ClipCq As Vector2
+
+## Creates the workspace with empty storage.
+Constructor()
+Me.PolyAVertices = New Array(Of Vector2)
+Me.PolyANormals = New Array(Of Vector2)
+Me.PolyBVertices = New Array(Of Vector2)
+Me.PolyBNormals = New Array(Of Vector2)
+Me.ChainVertices = New Array(Of Vector2)
+Me.ChainNormals = New Array(Of Vector2)
+Me.ChainProxyA = New ShapeProxy
+Me.ChainProxyB = New ShapeProxy
+Me.ChainProxyPoints = New Array(Of Vector2)
+Me.ChainProxyBPoints = New Array(Of Vector2)
+Me.ChainDistanceInput = New DistanceInput
+Me.ChainDistanceOutput = New DistanceOutput
+Me.SegmentResult = New SegmentDistanceResult
+Me.RelativeTransform = New Transform
+Me.ShiftedTransformA = New Transform
+Me.ChainParams = New ChainParams
+Me.ChainIncidentIndex = -1
+Me.ChainIncidentNormal = -1
+Me.EdgeIndexA = 0
+Me.EdgeIndexB = 0
+Me.EdgeSeparation = 0.0
+Me.ClipNormalA = New Vector2(0.0, 0.0)
+Me.ClipNormalB = New Vector2(0.0, 0.0)
+Me.ClipCp = New Vector2(0.0, 0.0)
+Me.ClipCq = New Vector2(0.0, 0.0)
+End Constructor
+
+## Returns an array of reusable vectors whose length is at least the given
+## count, growing by allocation only when needed. Engine code only.
+Function GrowPoints(arrayRef() As Vector2, count As Integer) As Array(Of Vector2)
+While arrayRef.Count < count
+arrayRef.Append(New Vector2(0.0, 0.0))
+Wend
+Return arrayRef
+End Function
+End Class

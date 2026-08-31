@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Casts",
+  "Id": "6350af32-b8c1-4089-b744-93c30b52f4fb",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Casts-6350af32-b8c1-4089-b744-93c30b52f4fb.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

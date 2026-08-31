@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Capsule",
+  "Id": "f9484042-9a35-4f26-b657-5c45a198eca0",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Capsule-f9484042-9a35-4f26-b657-5c45a198eca0.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

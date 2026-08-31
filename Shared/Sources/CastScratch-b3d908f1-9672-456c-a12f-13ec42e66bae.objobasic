@@ -1,0 +1,23 @@
+# Engine-internal reusable workspace for the warm shape-cast path. Owned by
+# a CastOutput and created lazily so repeated casts allocate nothing. Not
+# part of the public engine surface.
+Class CastScratch
+## Distance input prepared from the pair cast input. Its proxies alias the
+## cast input's proxies; its transforms alias the cast input's transform A
+## and the scratch transform B.
+Property DistanceInput As DistanceInput
+## Distance output reused across cast iterations.
+Property DistanceOutput As DistanceOutput
+## Warm start cache reused across casts and iterations.
+Property Cache As SimplexCache
+## Transform B moved to the current cast fraction. Mutated per iteration.
+Property MovedTransformB As Transform
+
+## Creates the workspace with empty storage.
+Constructor()
+Me.DistanceInput = New DistanceInput
+Me.DistanceOutput = New DistanceOutput
+Me.Cache = New SimplexCache
+Me.MovedTransformB = New Transform
+End Constructor
+End Class

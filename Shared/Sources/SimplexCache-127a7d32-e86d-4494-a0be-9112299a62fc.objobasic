@@ -1,0 +1,49 @@
+# Warm start cache for the GJK simplex, ported from upstream b2SimplexCache
+# in collision.h. Repeated distance queries with nearby transforms can pass
+# the previous cache to reduce iterations; otherwise leave it zeroed.
+#
+# The cache owns a lazily created internal simplex workspace so the hot
+# distance path allocates nothing after the first call. The workspace is
+# engine-internal state; callers treat the cache as count and indices only.
+Class SimplexCache
+## The number of stored simplex points, from zero to three.
+Property Count As Integer
+## The cached simplex indices on shape A.
+Property IndexA() As Integer
+## The cached simplex indices on shape B.
+Property IndexB() As Integer
+
+## Internal reusable simplex storage for the warm distance path.
+Private Property mWorkspace As Simplex
+
+## Creates an empty cache.
+Constructor()
+Me.Count = 0
+Me.IndexA = New Array(Of Integer)
+Me.IndexB = New Array(Of Integer)
+For i As Integer = 0 To 2
+Me.IndexA.Append(0)
+Me.IndexB.Append(0)
+Next i
+Me.mWorkspace = Nothing
+End Constructor
+
+## Returns the internal simplex workspace, creating it on first use. Engine
+## code only; allocating once per cache keeps warm distance queries
+## allocation-free.
+Function Workspace() As Simplex
+If Me.mWorkspace = Nothing Then
+Me.mWorkspace = New Simplex
+End If
+Return Me.mWorkspace
+End Function
+
+## Clears the cached indices so the next distance call starts cold.
+Sub Clear()
+Me.Count = 0
+For i As Integer = 0 To 2
+Me.IndexA[i] = 0
+Me.IndexB[i] = 0
+Next i
+End Sub
+End Class

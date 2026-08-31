@@ -1,0 +1,170 @@
+# Ports of upstream test/test_shape.c: mass properties, AABBs, point
+# containment, and shape ray casts. Golden fixture coverage lives in the
+# other geometry test classes; this class pins the upstream assertions.
+Import Physics2D
+
+Class GeometryShapeTests Inherits TestCase
+Private Shared Function UnitBox() As Polygon
+Return Polygon.MakeBox(1.0, 1.0)
+End Function
+
+Public Sub TestCircleMassMatchesUpstreamAssertions()
+Var circle As New Circle(New Vector2(1.0, 0.0), 1.0)
+Var data As MassData = circle.ComputeMass(1.0)
+PhysicsAssert.Near(Maths.PI, data.Mass, Tolerances.MATHS_ABS, 0.0, "mass")
+PhysicsAssert.Near(1.0, data.Center.X, Tolerances.MATHS_ABS, 0.0, "centerX")
+PhysicsAssert.Near(0.0, data.Center.Y, Tolerances.MATHS_ABS, 0.0, "centerY")
+PhysicsAssert.Near(1.5 * Maths.PI, data.RotationalInertia, Tolerances.MATHS_ABS, 0.0, "inertia")
+End Sub
+
+Public Sub TestCapsuleMassIsBoundedByBoxAndHullApproximation()
+# Ported from upstream: the mass of a capsule sits between the mass of a
+# hull approximation and the mass of a fully containing box.
+Var capsule As New Capsule(New Vector2(-1.0, 0.0), New Vector2(1.0, 0.0), 1.0)
+Var md As MassData = capsule.ComputeMass(1.0)
+
+Var radius As Double = capsule.Radius
+Var ex As Double = capsule.Center2.X - capsule.Center1.X
+Var ey As Double = capsule.Center2.Y - capsule.Center1.Y
+Var length As Double = Maths.Sqrt(ex * ex + ey * ey)
+
+# Box that fully contains the capsule.
+Var r As Polygon = Polygon.MakeBox(radius, radius + 0.5 * length)
+Var mdr As MassData = r.ComputeMass(1.0)
+
+# Approximate the capsule using a convex hull.
+Var points As New Array(Of Vector2)
+Var n As Integer = 4
+Var d As Double = Maths.PI / (n - 1)
+Var angle As Double = -0.5 * Maths.PI
+For i As Integer = 0 To n - 1
+points.Append(New Vector2(1.0 + radius * Maths.Cos(angle), radius * Maths.Sin(angle)))
+angle = angle + d
+Next i
+angle = 0.5 * Maths.PI
+For i As Integer = n To 2 * n - 1
+points.Append(New Vector2(-1.0 + radius * Maths.Cos(angle), radius * Maths.Sin(angle)))
+angle = angle + d
+Next i
+Var computedHull As Hull = Hull.Compute(points, 2 * n)
+Var ac As Polygon = New Polygon(computedHull, 0.0)
+Var ma As MassData = ac.ComputeMass(1.0)
+
+Assert.True(ma.Mass < md.Mass And md.Mass < mdr.Mass, "capsule mass bounds")
+Assert.True(ma.RotationalInertia < md.RotationalInertia And md.RotationalInertia < mdr.RotationalInertia, "capsule inertia bounds")
+End Sub
+
+Public Sub TestBoxMassMatchesUpstreamAssertions()
+Var box As Polygon = GeometryShapeTests.UnitBox()
+Var data As MassData = box.ComputeMass(1.0)
+PhysicsAssert.Near(4.0, data.Mass, Tolerances.MATHS_ABS, 0.0, "mass")
+PhysicsAssert.Near(0.0, data.Center.X, Tolerances.MATHS_ABS, 0.0, "centerX")
+PhysicsAssert.Near(0.0, data.Center.Y, Tolerances.MATHS_ABS, 0.0, "centerY")
+PhysicsAssert.Near(8.0 / 3.0, data.RotationalInertia, Tolerances.MATHS_ABS, 0.0, "inertia")
+End Sub
+
+Public Sub TestShapeAABBsMatchUpstreamAssertions()
+Var circle As New Circle(New Vector2(1.0, 0.0), 1.0)
+Var transform As Transform = Transform.Identity()
+
+Var circleAABB As AABB = circle.ComputeAABB(transform)
+PhysicsAssert.Near(0.0, circleAABB.LowerBound.X, Tolerances.MATHS_ABS, 0.0, "circle lower x")
+PhysicsAssert.Near(-1.0, circleAABB.LowerBound.Y, Tolerances.MATHS_ABS, 0.0, "circle lower y")
+PhysicsAssert.Near(2.0, circleAABB.UpperBound.X, Tolerances.MATHS_ABS, 0.0, "circle upper x")
+PhysicsAssert.Near(1.0, circleAABB.UpperBound.Y, Tolerances.MATHS_ABS, 0.0, "circle upper y")
+
+Var box As Polygon = GeometryShapeTests.UnitBox()
+Var boxAABB As AABB = box.ComputeAABB(transform)
+PhysicsAssert.Near(-1.0, boxAABB.LowerBound.X, Tolerances.MATHS_ABS, 0.0, "box lower x")
+PhysicsAssert.Near(-1.0, boxAABB.LowerBound.Y, Tolerances.MATHS_ABS, 0.0, "box lower y")
+PhysicsAssert.Near(1.0, boxAABB.UpperBound.X, Tolerances.MATHS_ABS, 0.0, "box upper x")
+PhysicsAssert.Near(1.0, boxAABB.UpperBound.Y, Tolerances.MATHS_ABS, 0.0, "box upper y")
+
+Var segment As New Segment(New Vector2(0.0, 1.0), New Vector2(0.0, -1.0))
+Var segmentAABB As AABB = segment.ComputeAABB(transform)
+PhysicsAssert.Near(0.0, segmentAABB.LowerBound.X, Tolerances.MATHS_ABS, 0.0, "segment lower x")
+PhysicsAssert.Near(-1.0, segmentAABB.LowerBound.Y, Tolerances.MATHS_ABS, 0.0, "segment lower y")
+PhysicsAssert.Near(0.0, segmentAABB.UpperBound.X, Tolerances.MATHS_ABS, 0.0, "segment upper x")
+PhysicsAssert.Near(1.0, segmentAABB.UpperBound.Y, Tolerances.MATHS_ABS, 0.0, "segment upper y")
+End Sub
+
+Public Sub TestPointInShapeMatchesUpstreamAssertions()
+Var p1 As New Vector2(0.5, 0.5)
+Var p2 As New Vector2(4.0, -4.0)
+
+Var circle As New Circle(New Vector2(1.0, 0.0), 1.0)
+Assert.True(circle.ContainsPoint(p1), "circle contains p1")
+Assert.False(circle.ContainsPoint(p2), "circle rejects p2")
+
+Var box As Polygon = GeometryShapeTests.UnitBox()
+Assert.True(box.ContainsPoint(p1), "polygon contains p1")
+Assert.False(box.ContainsPoint(p2), "polygon rejects p2")
+
+Var capsule As New Capsule(New Vector2(-1.0, 0.0), New Vector2(1.0, 0.0), 1.0)
+Assert.True(capsule.ContainsPoint(p1), "capsule contains p1")
+Assert.False(capsule.ContainsPoint(p2), "capsule rejects p2")
+End Sub
+
+Public Sub TestRayCastShapeMatchesUpstreamAssertions()
+Var input As New RayCastInput
+input.Origin.Set(-4.0, 0.0)
+input.Translation.Set(8.0, 0.0)
+input.MaxFraction = 1.0
+
+Var circle As New Circle(New Vector2(1.0, 0.0), 1.0)
+Var circleOutput As CastOutput = Casts.RayCastCircle(input, circle)
+Assert.True(circleOutput.Hit, "circle hit")
+PhysicsAssert.Near(-1.0, circleOutput.Normal.X, Tolerances.GEOMETRY_ABS, 0.0, "circle normal x")
+PhysicsAssert.Near(0.0, circleOutput.Normal.Y, Tolerances.GEOMETRY_ABS, 0.0, "circle normal y")
+PhysicsAssert.Near(0.5, circleOutput.Fraction, Tolerances.GEOMETRY_ABS, 0.0, "circle fraction")
+
+Var box As Polygon = GeometryShapeTests.UnitBox()
+Var polygonOutput As CastOutput = Casts.RayCastPolygon(input, box)
+Assert.True(polygonOutput.Hit, "polygon hit")
+PhysicsAssert.Near(-1.0, polygonOutput.Normal.X, Tolerances.GEOMETRY_ABS, 0.0, "polygon normal x")
+PhysicsAssert.Near(0.0, polygonOutput.Normal.Y, Tolerances.GEOMETRY_ABS, 0.0, "polygon normal y")
+PhysicsAssert.Near(0.375, polygonOutput.Fraction, Tolerances.GEOMETRY_ABS, 0.0, "polygon fraction")
+
+Var segment As New Segment(New Vector2(0.0, 1.0), New Vector2(0.0, -1.0))
+Var segmentOutput As CastOutput = Casts.RayCastSegment(input, segment, True)
+Assert.True(segmentOutput.Hit, "segment hit")
+PhysicsAssert.Near(-1.0, segmentOutput.Normal.X, Tolerances.GEOMETRY_ABS, 0.0, "segment normal x")
+PhysicsAssert.Near(0.0, segmentOutput.Normal.Y, Tolerances.GEOMETRY_ABS, 0.0, "segment normal y")
+PhysicsAssert.Near(0.5, segmentOutput.Fraction, Tolerances.GEOMETRY_ABS, 0.0, "segment fraction")
+End Sub
+
+Public Sub TestShapeConstructorsRejectInvalidInput()
+Try
+Var circle As Circle = New Circle(New Vector2(0.0, 0.0), -1.0)
+Assert.Fail("negative circle radius must be rejected")
+Catch ex As InvalidArgumentException
+Assert.True(ex.Message.Length > 0)
+End Try
+
+Try
+Var capsule As Capsule = New Capsule(New Vector2(0.0, 0.0), New Vector2(1.0, 0.0), -0.5)
+Assert.Fail("negative capsule radius must be rejected")
+Catch ex As InvalidArgumentException
+Assert.True(ex.Message.Length > 0)
+End Try
+End Sub
+
+Public Sub TestShapeConstructorsCopyVectors()
+# Editing caller-owned vectors after construction must not mutate shapes.
+Var center As New Vector2(0.5, 0.5)
+Var circle As New Circle(center, 1.0)
+center.Set(9.0, 9.0)
+PhysicsAssert.Near(0.5, circle.Center.X, 0.0, 0.0, "circle center x")
+PhysicsAssert.Near(0.5, circle.Center.Y, 0.0, 0.0, "circle center y")
+
+Var p1 As New Vector2(0.0, 0.0)
+Var p2 As New Vector2(1.0, 0.0)
+Var capsule As New Capsule(p1, p2, 0.5)
+p1.Set(7.0, 7.0)
+p2.Set(8.0, 8.0)
+PhysicsAssert.Near(0.0, capsule.Center1.X, 0.0, 0.0, "capsule center1 x")
+PhysicsAssert.Near(0.0, capsule.Center1.Y, 0.0, 0.0, "capsule center1 y")
+PhysicsAssert.Near(1.0, capsule.Center2.X, 0.0, 0.0, "capsule center2 x")
+PhysicsAssert.Near(0.0, capsule.Center2.Y, 0.0, 0.0, "capsule center2 y")
+End Sub
+End Class

@@ -1,0 +1,92 @@
+# Character-mover plane geometry, ported from upstream mover.c. The plane
+# solver relaxes a desired translation against collision planes; the
+# vector clipper removes velocity into planes that registered push.
+Class Mover
+## Solves the position of a mover that satisfies the given collision
+## planes into a new result. The planes' Push values are updated in place,
+## matching upstream b2SolvePlanes.
+Shared Function SolvePlanes(targetDelta As Vector2, planes() As CollisionPlane, count As Integer) As PlaneSolverResult
+Var out As New PlaneSolverResult
+Mover.SolvePlanesTo(targetDelta, planes, count, out)
+Return out
+End Function
+
+## Solves the position of a mover that satisfies the given collision
+## planes into the caller-owned out result and returns out.
+Shared Function SolvePlanesTo(targetDelta As Vector2, planes() As CollisionPlane, count As Integer, out As PlaneSolverResult) As PlaneSolverResult
+For i As Integer = 0 To count - 1
+planes[i].Push = 0.0
+Next i
+
+Var deltaX As Double = targetDelta.X
+Var deltaY As Double = targetDelta.Y
+Var tolerance As Double = PhysicsConstants.LINEAR_SLOP
+
+Var iteration As Integer = 0
+Var converged As Boolean = False
+While iteration < 20 And converged = False
+Var totalPush As Double = 0.0
+For planeIndex As Integer = 0 To count - 1
+Var plane As CollisionPlane = planes[planeIndex]
+
+# Add slop to prevent jitter. The separation is evaluated against the
+# running delta, matching b2PlaneSeparation(plane, delta).
+Var separation As Double = plane.Plane.Normal.X * deltaX + plane.Plane.Normal.Y * deltaY - plane.Plane.Offset + PhysicsConstants.LINEAR_SLOP
+Var push As Double = -separation
+
+# Clamp accumulated push.
+Var accumulatedPush As Double = plane.Push
+Var updated As Double = plane.Push + push
+If updated < 0.0 Then
+updated = 0.0
+ElseIf updated > plane.PushLimit Then
+updated = plane.PushLimit
+End If
+plane.Push = updated
+push = updated - accumulatedPush
+deltaX = deltaX + push * plane.Plane.Normal.X
+deltaY = deltaY + push * plane.Plane.Normal.Y
+
+# Track maximum push for convergence.
+Var absPush As Double = push
+If absPush < 0.0 Then
+absPush = -absPush
+End If
+totalPush = totalPush + absPush
+Next planeIndex
+
+If totalPush < tolerance Then
+converged = True
+Else
+iteration = iteration + 1
+End If
+Wend
+
+out.Translation.Set(deltaX, deltaY)
+out.IterationCount = iteration
+Return out
+End Function
+
+## Clips the velocity against the given collision planes and returns the
+## clipped vector. Planes with zero push or ClipVelocity set to false are
+## skipped, ported from upstream b2ClipVector.
+Shared Function ClipVector(vector As Vector2, planes() As CollisionPlane, count As Integer) As Vector2
+Var vX As Double = vector.X
+Var vY As Double = vector.Y
+
+For planeIndex As Integer = 0 To count - 1
+Var plane As CollisionPlane = planes[planeIndex]
+If plane.Push = 0.0 Or plane.ClipVelocity = False Then
+Continue
+End If
+
+Var dot As Double = vX * plane.Plane.Normal.X + vY * plane.Plane.Normal.Y
+If dot < 0.0 Then
+vX = vX - dot * plane.Plane.Normal.X
+vY = vY - dot * plane.Plane.Normal.Y
+End If
+Next planeIndex
+
+Return New Vector2(vX, vY)
+End Function
+End Class

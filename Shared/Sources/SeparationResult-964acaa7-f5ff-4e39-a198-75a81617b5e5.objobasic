@@ -1,0 +1,17 @@
+# Engine-internal holder for the support indices found by
+# SeparationFunction.FindMinSeparation. Reused across calls.
+Class SeparationResult
+## Support index on proxy A. Negative for face-B queries.
+Property IndexA As Integer
+## Support index on proxy B. Negative for face-A queries.
+Property IndexB As Integer
+## The minimum separation at the queried time.
+Property Separation As Double
+
+## Creates a result with invalid indices.
+Constructor()
+Me.IndexA = -1
+Me.IndexB = -1
+Me.Separation = 0.0
+End Constructor
+End Class

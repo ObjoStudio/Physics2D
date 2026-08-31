@@ -1,0 +1,34 @@
+# A collision plane fed to the plane solver, ported from upstream
+# b2CollisionPlane in collision.h. Users normally assemble these from
+# PlaneResult values.
+Class CollisionPlane
+## The collision plane between the mover and some shape.
+Property Plane As Plane
+
+## The maximum accumulated push along the plane. Use positive infinity for
+## a fully rigid plane; lower values soften the collision. In metres.
+Property PushLimit As Double
+
+## The push along the plane determined by Mover.SolvePlanes. In metres.
+Property Push As Double
+
+## True when Mover.ClipVector should clip velocity against this plane.
+## Keep false for soft collision.
+Property ClipVelocity As Boolean
+
+## Creates a plane with unlimited push and velocity clipping enabled.
+Constructor()
+Me.Plane = New Plane
+Me.PushLimit = 1.7976931348623157e308
+Me.Push = 0.0
+Me.ClipVelocity = True
+End Constructor
+
+## Creates a plane from a plane, push limit, and clip velocity flag.
+Constructor(plane As Plane, pushLimit As Double, clipVelocity As Boolean)
+Me.Plane = plane
+Me.PushLimit = pushLimit
+Me.Push = 0.0
+Me.ClipVelocity = clipVelocity
+End Constructor
+End Class

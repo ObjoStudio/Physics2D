@@ -1,0 +1,358 @@
+# Convex hull of up to MAX_POLYGON_VERTICES points in counter-clockwise
+# winding, ported from upstream b2Hull and hull.c.
+#
+# ComputeHull welds close points, removes collinear points, and returns an
+# empty hull when it fails (fewer than three points, all points nearly
+# collinear, or too many points). ValidateHull checks convexity and
+# collinearity and is meant for tests and shape construction, not per-step
+# code.
+#
+# Upstream uses fixed-size arrays; this port sizes the point array to the
+# hull count, so a computed hull never carries unused vertices.
+Class Hull
+## The final points of the hull in counter-clockwise order.
+Property Points() As Vector2
+## The number of points. Zero marks an empty (failed) hull.
+Property Count As Integer
+
+## Creates an empty hull.
+Constructor()
+Me.Points = New Array(Of Vector2)
+Me.Count = 0
+End Constructor
+
+## Copies another hull, including its point array.
+Constructor(other As Hull)
+Me.Count = other.Count
+Me.Points = New Array(Of Vector2)
+For i As Integer = 0 To other.Count - 1
+Me.Points.Append(New Vector2(other.Points[i].X, other.Points[i].Y))
+Next i
+End Constructor
+
+## Computes the convex hull of a point set, ported from upstream
+## b2ComputeHull. Returns an empty hull on failure. Input beyond
+## MAX_POLYGON_VERTICES points fails; weld tolerance follows the upstream
+## linear slop rules.
+Shared Function Compute(points() As Vector2, count As Integer) As Hull
+Var hull As New Hull
+
+If count < 3 Or count > PhysicsConstants.MAX_POLYGON_VERTICES Then
+Return hull
+End If
+
+Var lowerX As Double = points[0].X
+Var lowerY As Double = points[0].Y
+Var upperX As Double = points[0].X
+Var upperY As Double = points[0].Y
+
+# Aggressive point welding. The first point always remains. Also compute
+# the bounding box for later.
+Var ps() As Vector2 = New Array(Of Vector2)
+Var linearSlop As Double = PhysicsConstants.LINEAR_SLOP
+Var tolSqr As Double = 16.0 * linearSlop * linearSlop
+For i As Integer = 0 To count - 1
+lowerX = Maths.Min(lowerX, points[i].X)
+lowerY = Maths.Min(lowerY, points[i].Y)
+upperX = Maths.Max(upperX, points[i].X)
+upperY = Maths.Max(upperY, points[i].Y)
+
+WeldPoint(points, i, ps, tolSqr)
+Next i
+
+Var n As Integer = ps.Count
+If n < 3 Then
+# All points very close together.
+Return hull
+End If
+
+# Find an extreme point as the first hull point.
+Var cx As Double = 0.5 * (lowerX + upperX)
+Var cy As Double = 0.5 * (lowerY + upperY)
+Var f1 As Integer = 0
+Var dsq1 As Double = DistanceSquared(cx, cy, ps[f1])
+For i As Integer = 1 To n - 1
+Var dsq As Double = DistanceSquared(cx, cy, ps[i])
+If dsq > dsq1 Then
+f1 = i
+dsq1 = dsq
+End If
+Next i
+
+# Remove p1 from the working set. Copy so the hull owns its vectors.
+Var p1 As Vector2 = New Vector2(ps[f1].X, ps[f1].Y)
+ps[f1] = ps[n - 1]
+n = n - 1
+
+Var f2 As Integer = 0
+Var dsq2 As Double = DistanceSquared(p1.X, p1.Y, ps[f2])
+For i As Integer = 1 To n - 1
+Var dsq As Double = DistanceSquared(p1.X, p1.Y, ps[i])
+If dsq > dsq2 Then
+f2 = i
+dsq2 = dsq
+End If
+Next i
+
+# Remove p2 from the working set. Copy so the hull owns its vectors.
+Var p2 As Vector2 = New Vector2(ps[f2].X, ps[f2].Y)
+ps[f2] = ps[n - 1]
+n = n - 1
+
+# Split the points into those left and right of the line p1-p2.
+Var rightPoints() As Vector2 = New Array(Of Vector2)
+Var leftPoints() As Vector2 = New Array(Of Vector2)
+Var ex As Double = p2.X - p1.X
+Var ey As Double = p2.Y - p1.Y
+Var invLen As Double = 0.0
+Var len As Double = Maths.Sqrt(ex * ex + ey * ey)
+If len > 0.0 Then
+invLen = 1.0 / len
+End If
+ex = ex * invLen
+ey = ey * invLen
+
+For i As Integer = 0 To n - 1
+Var d As Double = (ps[i].X - p1.X) * ey - (ps[i].Y - p1.Y) * ex
+
+# The slop skips points very close to the line p1-p2.
+If d >= 2.0 * linearSlop Then
+rightPoints.Append(New Vector2(ps[i].X, ps[i].Y))
+ElseIf d <= -2.0 * linearSlop Then
+leftPoints.Append(New Vector2(ps[i].X, ps[i].Y))
+End If
+Next i
+
+# Compute hulls on the right and left.
+Var hull1 As Hull = Recurse(p1, p2, rightPoints)
+Var hull2 As Hull = Recurse(p2, p1, leftPoints)
+
+If hull1.Count = 0 And hull2.Count = 0 Then
+# All points collinear.
+Return hull
+End If
+
+# Stitch the hulls together, preserving counter-clockwise winding.
+hull.Points.Append(p1)
+For i As Integer = 0 To hull1.Count - 1
+hull.Points.Append(hull1.Points[i])
+Next i
+hull.Points.Append(p2)
+For i As Integer = 0 To hull2.Count - 1
+hull.Points.Append(hull2.Points[i])
+Next i
+hull.Count = hull.Points.Count
+
+MergeCollinear(hull, linearSlop)
+
+If hull.Count < 3 Then
+# All points collinear; not normally reached because the split above
+# already rejected collinear sets.
+hull.Count = 0
+hull.Points = New Array(Of Vector2)
+End If
+
+Return hull
+End Function
+
+## Welds one candidate point into the working set when it is farther than
+## the weld tolerance from every earlier point. The appended vector is a
+## copy so the hull never aliases caller-owned vectors.
+Shared Sub WeldPoint(points() As Vector2, index As Integer, ps() As Vector2, tolSqr As Double)
+Var vi As Vector2 = points[index]
+For j As Integer = 0 To index - 1
+Var vj As Vector2 = points[j]
+Var dx As Double = vi.X - vj.X
+Var dy As Double = vi.Y - vj.Y
+If dx * dx + dy * dy < tolSqr Then
+Return
+End If
+Next j
+ps.Append(New Vector2(vi.X, vi.Y))
+End Sub
+
+## Removes collinear points from a stitched hull, ported from the merge
+## phase of upstream b2ComputeHull.
+Shared Sub MergeCollinear(hull As Hull, linearSlop As Double)
+Var searching As Boolean = True
+While searching And hull.Count > 2
+searching = False
+
+For i As Integer = 0 To hull.Count - 1
+Var i1 As Integer = i
+Var i2 As Integer = (i + 1) Mod hull.Count
+Var i3 As Integer = (i + 2) Mod hull.Count
+
+Var s1 As Vector2 = hull.Points[i1]
+Var s2 As Vector2 = hull.Points[i2]
+Var s3 As Vector2 = hull.Points[i3]
+
+# Unit edge vector for s1-s3.
+Var rx As Double = s3.X - s1.X
+Var ry As Double = s3.Y - s1.Y
+Var rlen As Double = Maths.Sqrt(rx * rx + ry * ry)
+Var invR As Double = 0.0
+If rlen > 0.0 Then
+invR = 1.0 / rlen
+End If
+rx = rx * invR
+ry = ry * invR
+
+Var distance As Double = (s2.X - s1.X) * ry - (s2.Y - s1.Y) * rx
+If distance <= 2.0 * linearSlop Then
+# Remove the midpoint from the hull.
+hull.Points.RemoveAt(i2)
+hull.Count = hull.Count - 1
+
+# Continue searching for collinear points.
+searching = True
+Exit For
+End If
+Next i
+Wend
+End Sub
+
+## Determines whether a hull is valid: convex and free of collinear points,
+## ported from upstream b2ValidateHull. Expensive; use outside step loops.
+Shared Function Validate(hull As Hull) As Boolean
+If hull.Count < 3 Or PhysicsConstants.MAX_POLYGON_VERTICES < hull.Count Then
+Return False
+End If
+
+# Test that every point is behind every edge.
+For i As Integer = 0 To hull.Count - 1
+Var i1 As Integer = i
+Var i2 As Integer = i
+If i1 < hull.Count - 1 Then
+i2 = i1 + 1
+Else
+i2 = 0
+End If
+Var p As Vector2 = hull.Points[i1]
+Var ex As Double = hull.Points[i2].X - p.X
+Var ey As Double = hull.Points[i2].Y - p.Y
+Var len As Double = Maths.Sqrt(ex * ex + ey * ey)
+Var invLen As Double = 0.0
+If len > 0.0 Then
+invLen = 1.0 / len
+End If
+ex = ex * invLen
+ey = ey * invLen
+
+For j As Integer = 0 To hull.Count - 1
+# Skip points that subtend the current edge.
+If j = i1 Or j = i2 Then
+Continue
+End If
+
+Var distance As Double = (hull.Points[j].X - p.X) * ey - (hull.Points[j].Y - p.Y) * ex
+If distance >= 0.0 Then
+Return False
+End If
+Next j
+Next i
+
+# Test for collinear points.
+Var linearSlop As Double = PhysicsConstants.LINEAR_SLOP
+For i As Integer = 0 To hull.Count - 1
+Var i1 As Integer = i
+Var i2 As Integer = (i + 1) Mod hull.Count
+Var i3 As Integer = (i + 2) Mod hull.Count
+
+Var p1 As Vector2 = hull.Points[i1]
+Var p2 As Vector2 = hull.Points[i2]
+Var p3 As Vector2 = hull.Points[i3]
+
+Var ex As Double = p3.X - p1.X
+Var ey As Double = p3.Y - p1.Y
+Var len As Double = Maths.Sqrt(ex * ex + ey * ey)
+Var invLen As Double = 0.0
+If len > 0.0 Then
+invLen = 1.0 / len
+End If
+ex = ex * invLen
+ey = ey * invLen
+
+Var distance As Double = (p2.X - p1.X) * ey - (p2.Y - p1.Y) * ex
+If distance <= linearSlop Then
+# p1-p2-p3 are collinear.
+Return False
+End If
+Next i
+
+Return True
+End Function
+
+## Quickhull recursion, ported from upstream b2RecurseHull. Collects the
+## hull points strictly right of the directed edge p1-p2, in winding order.
+Shared Function Recurse(p1 As Vector2, p2 As Vector2, ps() As Vector2) As Hull
+Var hull As New Hull
+
+Var count As Integer = ps.Count
+If count = 0 Then
+Return hull
+End If
+
+# Edge vector pointing from p1 to p2.
+Var ex As Double = p2.X - p1.X
+Var ey As Double = p2.Y - p1.Y
+Var len As Double = Maths.Sqrt(ex * ex + ey * ey)
+Var invLen As Double = 0.0
+If len > 0.0 Then
+invLen = 1.0 / len
+End If
+ex = ex * invLen
+ey = ey * invLen
+
+# Discard points left of the edge and find the point furthest right.
+Var rightPoints() As Vector2 = New Array(Of Vector2)
+Var bestIndex As Integer = 0
+Var bestDistance As Double = (ps[0].X - p1.X) * ey - (ps[0].Y - p1.Y) * ex
+If bestDistance > 0.0 Then
+rightPoints.Append(New Vector2(ps[0].X, ps[0].Y))
+End If
+
+For i As Integer = 1 To count - 1
+Var distance As Double = (ps[i].X - p1.X) * ey - (ps[i].Y - p1.Y) * ex
+If distance > bestDistance Then
+bestIndex = i
+bestDistance = distance
+End If
+
+If distance > 0.0 Then
+rightPoints.Append(New Vector2(ps[i].X, ps[i].Y))
+End If
+Next i
+
+If bestDistance < 2.0 * PhysicsConstants.LINEAR_SLOP Then
+Return hull
+End If
+
+Var bestPoint As Vector2 = New Vector2(ps[bestIndex].X, ps[bestIndex].Y)
+
+# Compute the hull to the right of p1-bestPoint.
+Var hull1 As Hull = Recurse(p1, bestPoint, rightPoints)
+
+# Compute the hull to the right of bestPoint-p2.
+Var hull2 As Hull = Recurse(bestPoint, p2, rightPoints)
+
+# Stitch the hulls together.
+For i As Integer = 0 To hull1.Count - 1
+hull.Points.Append(hull1.Points[i])
+Next i
+hull.Points.Append(bestPoint)
+For i As Integer = 0 To hull2.Count - 1
+hull.Points.Append(hull2.Points[i])
+Next i
+hull.Count = hull.Points.Count
+
+Return hull
+End Function
+
+## Squared distance from a point given as components to a vertex.
+Shared Function DistanceSquared(ax As Double, ay As Double, v As Vector2) As Double
+Var dx As Double = v.X - ax
+Var dy As Double = v.Y - ay
+Return dx * dx + dy * dy
+End Function
+End Class

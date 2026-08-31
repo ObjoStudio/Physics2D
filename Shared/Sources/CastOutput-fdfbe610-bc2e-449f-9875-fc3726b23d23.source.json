@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "CastOutput",
+  "Id": "fdfbe610-bc2e-449f-9875-fc3726b23d23",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "CastOutput-fdfbe610-bc2e-449f-9875-fc3726b23d23.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

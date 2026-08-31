@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "TimeOfImpact",
+  "Id": "d2e89462-ad68-4ac6-9490-02f4b63062e9",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "TimeOfImpact-d2e89462-ad68-4ac6-9490-02f4b63062e9.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

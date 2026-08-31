@@ -1,0 +1,38 @@
+# One GJK simplex vertex, ported from upstream b2SimplexVertex in
+# collision.h. The w vectors are owned objects reused across iterations.
+Class SimplexVertex
+## Support point in proxy A.
+Property WA As Vector2
+## Support point in proxy B.
+Property WB As Vector2
+## The Minkowski difference WB - WA.
+Property W As Vector2
+## Barycentric coordinate for the closest point.
+Property A As Double
+## Index of the support point in proxy A.
+Property IndexA As Integer
+## Index of the support point in proxy B.
+Property IndexB As Integer
+
+## Creates a vertex with zero vectors and invalid barycentric weight.
+Constructor()
+Me.WA = New Vector2(0.0, 0.0)
+Me.WB = New Vector2(0.0, 0.0)
+Me.W = New Vector2(0.0, 0.0)
+Me.A = -1.0
+Me.IndexA = 0
+Me.IndexB = 0
+End Constructor
+
+## Copies another vertex's fields in place and returns this vertex. Used by
+## the simplex reduction paths.
+Function SetFrom(other As SimplexVertex) As SimplexVertex
+Me.WA.Set(other.WA.X, other.WA.Y)
+Me.WB.Set(other.WB.X, other.WB.Y)
+Me.W.Set(other.W.X, other.W.Y)
+Me.A = other.A
+Me.IndexA = other.IndexA
+Me.IndexB = other.IndexB
+Return Me
+End Function
+End Class

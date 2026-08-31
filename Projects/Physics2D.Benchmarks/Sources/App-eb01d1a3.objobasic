@@ -50,6 +50,11 @@ runner.Add(New Stage3SlotPoolScenario())
 runner.Add(New Stage3BitSetScenario())
 runner.Add(New Stage3PairKeySetScenario())
 runner.Add(New Stage3ScratchListsScenario())
+runner.Add(New Stage4DistanceScenario())
+runner.Add(New Stage4ManifoldScenario())
+runner.Add(New Stage4CastScenario())
+runner.Add(New Stage4TimeOfImpactScenario())
+runner.Add(New Stage4PlaneSolverScenario())
 
 Var results() As BenchmarkResult = runner.RunAll()
 

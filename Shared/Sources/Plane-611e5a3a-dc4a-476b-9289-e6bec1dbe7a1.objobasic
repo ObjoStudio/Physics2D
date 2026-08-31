@@ -1,0 +1,28 @@
+# A plane in 2D: signed separation = dot(normal, point) - offset, ported
+# from upstream b2Plane in math_functions.h. The normal must be a unit
+# vector for the separation to be a true distance.
+Class Plane
+## The unit normal of the plane.
+Property Normal As Vector2
+
+## The offset of the plane along its normal.
+Property Offset As Double
+
+## Creates a plane with a zero normal and offset.
+Constructor()
+Me.Normal = New Vector2(0.0, 0.0)
+Me.Offset = 0.0
+End Constructor
+
+## Creates a plane from a unit normal and offset.
+Constructor(normalX As Double, normalY As Double, offset As Double)
+Me.Normal = New Vector2(normalX, normalY)
+Me.Offset = offset
+End Constructor
+
+## Returns the signed separation of the point from the plane, ported from
+## upstream b2PlaneSeparation.
+Function Separation(point As Vector2) As Double
+Return Me.Normal.X * point.X + Me.Normal.Y * point.Y - Me.Offset
+End Function
+End Class

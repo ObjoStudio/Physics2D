@@ -1,0 +1,22 @@
+# The result of the plane solver, ported from upstream b2PlaneSolverResult
+# in collision.h.
+Class PlaneSolverResult
+## The translation of the mover that satisfies the planes.
+Property Translation As Vector2
+
+## The number of iterations the solver used, for diagnostics.
+Property IterationCount As Integer
+
+## Creates an empty result.
+Constructor()
+Me.Translation = New Vector2(0.0, 0.0)
+Me.IterationCount = 0
+End Constructor
+
+## Resets the result in place and returns it for warm reuse.
+Function Reset() As PlaneSolverResult
+Me.Translation.Set(0.0, 0.0)
+Me.IterationCount = 0
+Return Me
+End Function
+End Class

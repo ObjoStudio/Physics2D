@@ -1,0 +1,27 @@
+# Engine-internal smoothing parameters for chain segment collisions, ported
+# from upstream b2ChainSegmentParams in manifold.c. Owned by a
+# CollideScratch and refilled per query.
+Class ChainParams
+## Unit vector along the chain segment.
+Property Edge1 As Vector2
+## Right perpendicular of the edge from ghost1 to point1.
+Property Normal0 As Vector2
+## Right perpendicular of the edge from point2 to ghost2.
+Property Normal2 As Vector2
+## Is the ghost1 vertex convex?
+Property Convex1 As Boolean
+## Is the ghost2 vertex convex?
+Property Convex2 As Boolean
+## True when the polygon centroid lies behind the core segment.
+Property Behind1 As Boolean
+
+## Creates zeroed parameters.
+Constructor()
+Me.Edge1 = New Vector2(0.0, 0.0)
+Me.Normal0 = New Vector2(0.0, 0.0)
+Me.Normal2 = New Vector2(0.0, 0.0)
+Me.Convex1 = False
+Me.Convex2 = False
+Me.Behind1 = False
+End Constructor
+End Class

@@ -1,0 +1,9 @@
+# Result states for a time-of-impact computation, ported from upstream
+# b2TOIState in collision.h.
+Enum TOIState
+Unknown
+Failed
+Overlapped
+Hit
+Separated
+End Enum

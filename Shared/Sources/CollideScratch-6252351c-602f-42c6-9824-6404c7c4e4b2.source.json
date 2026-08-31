@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "CollideScratch",
+  "Id": "6252351c-602f-42c6-9824-6404c7c4e4b2",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "CollideScratch-6252351c-602f-42c6-9824-6404c7c4e4b2.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

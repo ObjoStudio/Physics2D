@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Hull",
+  "Id": "46e523c2-f9cc-462f-91b6-53ab922cc560",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Hull-46e523c2-f9cc-462f-91b6-53ab922cc560.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

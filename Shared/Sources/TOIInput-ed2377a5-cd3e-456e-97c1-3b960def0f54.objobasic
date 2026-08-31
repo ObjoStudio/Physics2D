@@ -1,0 +1,48 @@
+# Input parameters for a time-of-impact computation, ported from upstream
+# b2TOIInput in collision.h.
+#
+# Make deep-copies the proxies; the sweeps are copied on construction.
+Class TOIInput
+## The proxy for shape A.
+Property ProxyA As ShapeProxy
+## The proxy for shape B.
+Property ProxyB As ShapeProxy
+## The movement of shape A.
+Property SweepA As Sweep
+## The movement of shape B.
+Property SweepB As Sweep
+## Defines the sweep interval [0, MaxFraction].
+Property MaxFraction As Double
+
+## Creates an empty input with identity sweeps and full fraction.
+Constructor()
+Me.ProxyA = New ShapeProxy
+Me.ProxyB = New ShapeProxy
+Me.SweepA = New Sweep
+Me.SweepB = New Sweep
+Me.MaxFraction = 1.0
+End Constructor
+
+## Builds the input from two point clouds and sweeps, ported from upstream
+## b2MakeTOIInput? No such upstream factory; this helper mirrors the other
+## Make helpers for convenience and deep-copies its inputs.
+Shared Function Make(pointsA() As Vector2, countA As Integer, radiusA As Double, sweepA As Sweep, pointsB() As Vector2, countB As Integer, radiusB As Double, sweepB As Sweep, maxFraction As Double) As TOIInput
+Var input As New TOIInput
+input.ProxyA = ShapeProxy.Make(pointsA, countA, radiusA)
+input.ProxyB = ShapeProxy.Make(pointsB, countB, radiusB)
+input.SweepA = New Sweep
+input.SweepA.LocalCenter.Set(sweepA.LocalCenter.X, sweepA.LocalCenter.Y)
+input.SweepA.C1.Set(sweepA.C1.X, sweepA.C1.Y)
+input.SweepA.C2.Set(sweepA.C2.X, sweepA.C2.Y)
+input.SweepA.Q1.SetComponents(sweepA.Q1.C, sweepA.Q1.S)
+input.SweepA.Q2.SetComponents(sweepA.Q2.C, sweepA.Q2.S)
+input.SweepB = New Sweep
+input.SweepB.LocalCenter.Set(sweepB.LocalCenter.X, sweepB.LocalCenter.Y)
+input.SweepB.C1.Set(sweepB.C1.X, sweepB.C1.Y)
+input.SweepB.C2.Set(sweepB.C2.X, sweepB.C2.Y)
+input.SweepB.Q1.SetComponents(sweepB.Q1.C, sweepB.Q1.S)
+input.SweepB.Q2.SetComponents(sweepB.Q2.C, sweepB.Q2.S)
+input.MaxFraction = maxFraction
+Return input
+End Function
+End Class

@@ -1,0 +1,24 @@
+# Input for shape distance, ported from upstream b2DistanceInput in
+# collision.h. Both proxies and transforms are owned copies.
+Class DistanceInput
+## The proxy for shape A.
+Property ProxyA As ShapeProxy
+## The proxy for shape B.
+Property ProxyB As ShapeProxy
+## The world transform for shape A.
+Property TransformA As Transform
+## The world transform for shape B.
+Property TransformB As Transform
+## Should the proxy radius be considered?
+Property UseRadii As Boolean
+
+## Creates distance input with empty proxies, identity transforms, and
+## radii disabled.
+Constructor()
+Me.ProxyA = New ShapeProxy
+Me.ProxyB = New ShapeProxy
+Me.TransformA = New Transform
+Me.TransformB = New Transform
+Me.UseRadii = False
+End Constructor
+End Class

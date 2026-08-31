@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Rot",
+  "Id": "e55b6716-f6ac-48d7-90e7-36c4c5a6a40a",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Rot-e55b6716-f6ac-48d7-90e7-36c4c5a6a40a.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

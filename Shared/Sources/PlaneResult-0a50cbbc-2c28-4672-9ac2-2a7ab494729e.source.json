@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "PlaneResult",
+  "Id": "0a50cbbc-2c28-4672-9ac2-2a7ab494729e",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "PlaneResult-0a50cbbc-2c28-4672-9ac2-2a7ab494729e.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

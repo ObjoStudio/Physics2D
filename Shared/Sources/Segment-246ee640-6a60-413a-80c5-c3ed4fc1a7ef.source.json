@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Segment",
+  "Id": "246ee640-6a60-413a-80c5-c3ed4fc1a7ef",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Segment-246ee640-6a60-413a-80c5-c3ed4fc1a7ef.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

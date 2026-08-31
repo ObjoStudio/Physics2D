@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "GeometryMassTests",
+  "Id": "7f7b34ec-1f4e-48a5-bd84-313d89030cb2",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "GeometryMassTests-7f7b34ec-1f4e-48a5-bd84-313d89030cb2.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

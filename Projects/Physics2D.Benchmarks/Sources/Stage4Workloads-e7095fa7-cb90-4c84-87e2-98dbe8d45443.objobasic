@@ -1,0 +1,308 @@
+# Stage 4 geometry benchmark workloads.
+#
+# Each workload drives the hot geometry paths through reused-output warm
+# loops: GJK distance, polygon and capsule manifolds, ray and shape casts,
+# time of impact, and the character-mover plane solver. Queries cycle
+# through prebuilt configuration tables so no query degenerates, and every
+# iteration produces an identical folded checksum. After the warm-up in
+# Prepare, the measured iterations must allocate nothing.
+Import Physics2D
+
+Class Stage4Workload Inherits Stage3Workload
+## Allocates the shared checksum sample buffer. Call from Prepare.
+Override Sub PrepareSamples()
+Me.Samples = New Array(Of Double)
+Me.Samples.Reserve(64)
+For i As Integer = 1 To 64
+Me.Samples.Append(0.0)
+Next i
+Me.SampleCount = 0
+End Sub
+End Class
+
+## GJK distance between a box proxy and a capsule proxy swept through a
+## table of relative offsets.
+Class DistanceWorkload Inherits Stage4Workload
+## Query count per iteration.
+Const QUERY_COUNT As Integer = 12
+
+## Reused distance input.
+Property Input As DistanceInput
+## Reused simplex cache.
+Property Cache As SimplexCache
+## Reused distance output.
+Property Output As DistanceOutput
+## Box proxy points.
+Property PointsA() As Vector2
+## Capsule proxy points.
+Property PointsB() As Vector2
+## Per-query B translations.
+Property OffsetsX() As Double
+Property OffsetsY() As Double
+
+Sub Prepare()
+Me.PrepareSamples()
+Me.Input = New DistanceInput
+Me.Cache = New SimplexCache
+Me.Output = New DistanceOutput
+
+Me.PointsA = New Array(Of Vector2)
+Me.PointsA.Append(New Vector2(-1.0, -1.0))
+Me.PointsA.Append(New Vector2(1.0, -1.0))
+Me.PointsA.Append(New Vector2(1.0, 1.0))
+Me.PointsA.Append(New Vector2(-1.0, 1.0))
+Me.PointsB = New Array(Of Vector2)
+Me.PointsB.Append(New Vector2(-0.5, -0.25))
+Me.PointsB.Append(New Vector2(0.5, 0.25))
+
+Me.OffsetsX = New Array(Of Double)
+Me.OffsetsY = New Array(Of Double)
+For i As Integer = 0 To QUERY_COUNT - 1
+Var angle As Double = 6.2831853071795864769 * i / QUERY_COUNT
+Var radius As Double = 0.75 + 0.25 * i
+Me.OffsetsX.Append(radius * Maths.Cos(angle))
+Me.OffsetsY.Append(radius * Maths.Sin(angle))
+Next i
+
+Me.Input.ProxyA = ShapeProxy.Make(Me.PointsA, 4, 0.05)
+Me.Input.ProxyB = ShapeProxy.Make(Me.PointsB, 2, 0.05)
+Me.Input.TransformA = New Transform(New Vector2(0.0, 0.0), Rot.Identity())
+Me.Input.TransformB = New Transform(New Vector2(0.0, 0.0), Rot.Identity())
+Me.Input.UseRadii = True
+
+# Warm every query so proxy point storage and scratch arrays exist.
+Me.Execute()
+End Sub
+
+Sub RunKernels()
+For i As Integer = 0 To QUERY_COUNT - 1
+Me.Input.TransformB.P.Set(Me.OffsetsX[i], Me.OffsetsY[i])
+Me.Cache.Clear()
+Distance.ShapeDistanceTo(Me.Input, Me.Cache, Me.Output)
+Me.AddSample(Me.Output.Distance)
+Me.AddSample(Me.Output.Iterations)
+Next i
+End Sub
+End Class
+
+## Polygon-versus-polygon and capsule-versus-capsule manifolds across a
+## table of relative placements.
+Class ManifoldWorkload Inherits Stage4Workload
+## Query count per pairing table.
+Const QUERY_COUNT As Integer = 8
+
+## Fixed polygon A.
+Property PolygonA As Polygon
+## Moving polygon B.
+Property PolygonB As Polygon
+## Capsule shapes.
+Property CapsuleA As Capsule
+Property CapsuleB As Capsule
+## Per-query B translations.
+Property OffsetsX() As Double
+Property OffsetsY() As Double
+## Reused manifold.
+Property Manifold As Manifold
+## Reused shape A transform.
+Property TransformA As Transform
+## Reused shape B transform.
+Property TransformB As Transform
+
+Sub Prepare()
+Me.PrepareSamples()
+Me.PolygonA = Polygon.MakeBox(1.0, 1.0)
+Me.PolygonB = Polygon.MakeBox(0.5, 0.75)
+Me.CapsuleA = New Capsule(New Vector2(-1.0, 0.0), New Vector2(1.0, 0.0), 0.5)
+Me.CapsuleB = New Capsule(New Vector2(-0.5, 0.0), New Vector2(0.5, 0.0), 0.25)
+
+Me.OffsetsX = New Array(Of Double)
+Me.OffsetsY = New Array(Of Double)
+For i As Integer = 0 To QUERY_COUNT - 1
+Var angle As Double = 6.2831853071795864769 * i / QUERY_COUNT
+Var radius As Double = 0.5 + 0.35 * i
+Me.OffsetsX.Append(radius * Maths.Cos(angle))
+Me.OffsetsY.Append(radius * Maths.Sin(angle))
+Next i
+
+Me.Manifold = New Manifold
+Me.TransformA = New Transform(New Vector2(0.0, 0.0), Rot.Identity())
+Me.TransformB = New Transform(New Vector2(0.0, 0.0), Rot.Identity())
+
+Me.Execute()
+End Sub
+
+Sub RunKernels()
+For i As Integer = 0 To QUERY_COUNT - 1
+Me.TransformB.P.Set(Me.OffsetsX[i], Me.OffsetsY[i])
+Collide.CollidePolygonsTo(Me.PolygonA, Me.TransformA, Me.PolygonB, Me.TransformB, Me.Manifold)
+Me.AddSample(Me.Manifold.PointCount)
+Me.AddSample(Me.Manifold.Normal.X)
+Me.AddSample(Me.Manifold.Normal.Y)
+Collide.CollideCapsulesTo(Me.CapsuleA, Me.TransformA, Me.CapsuleB, Me.TransformB, Me.Manifold)
+Me.AddSample(Me.Manifold.PointCount)
+Me.AddSample(Me.Manifold.Point1.Separation)
+Next i
+End Sub
+End Class
+
+## Ray and shape casts against a capsule across a table of ray origins.
+Class CastWorkload Inherits Stage4Workload
+## Query count per table.
+Const QUERY_COUNT As Integer = 8
+
+## Cast target capsule.
+Property Target As Capsule
+## Ray inputs.
+Property Rays() As RayCastInput
+## Reused cast output.
+Property Output As CastOutput
+## Shape cast pair input.
+Property PairInput As ShapeCastPairInput
+
+Sub Prepare()
+Me.PrepareSamples()
+Me.Target = New Capsule(New Vector2(-1.0, 0.0), New Vector2(1.0, 0.0), 0.5)
+
+Me.Rays = New Array(Of RayCastInput)
+For i As Integer = 0 To QUERY_COUNT - 1
+Var ray As New RayCastInput
+ray.Origin.Set(0.0, 2.0 + 0.25 * i)
+ray.Translation.Set(1.0 - 0.25 * i, -6.0)
+ray.MaxFraction = 1.0
+Me.Rays.Append(ray)
+Next i
+
+Me.Output = New CastOutput
+Me.PairInput = New ShapeCastPairInput
+Me.PairInput.ProxyA = ShapeProxy.Make(Me.SinglePoint(), 1, 0.25)
+Me.PairInput.ProxyB = ShapeProxy.Make(Me.TargetPoints(), 2, 0.0)
+Me.PairInput.MaxFraction = 1.0
+
+Me.Execute()
+End Sub
+
+## The one-point shape-cast proxy.
+Function SinglePoint() As Array(Of Vector2)
+Var points As New Array(Of Vector2)
+points.Append(New Vector2(0.0, 4.0))
+Return points
+End Function
+
+## The capsule proxy points.
+Function TargetPoints() As Array(Of Vector2)
+Var points As New Array(Of Vector2)
+points.Append(New Vector2(-1.0, 0.0))
+points.Append(New Vector2(1.0, 0.0))
+Return points
+End Function
+
+Sub RunKernels()
+For i As Integer = 0 To QUERY_COUNT - 1
+Casts.RayCastCapsuleTo(Me.Rays[i], Me.Target, Me.Output)
+Me.AddSample(Me.Output.Fraction)
+Me.AddSample(Me.Output.Normal.X)
+Me.AddSample(Me.Output.Normal.Y)
+
+Me.PairInput.TranslationB.Set(0.0, -6.0 - 0.125 * i)
+Casts.ShapeCastTo(Me.PairInput, Me.Output)
+Me.AddSample(Me.Output.Fraction)
+Me.AddSample(Me.Output.Normal.Y)
+Next i
+End Sub
+End Class
+
+## Time of impact between a moving box and a stationary box.
+Class TimeOfImpactWorkload Inherits Stage4Workload
+## Shared box proxy points.
+Property BoxPoints() As Vector2
+## Reused TOI input.
+Property Input As TOIInput
+## Reused TOI output.
+Property Output As TOIOutput
+
+Sub Prepare()
+Me.PrepareSamples()
+Var sweepA As New Sweep
+sweepA.LocalCenter = New Vector2(0.0, 0.0)
+sweepA.C1 = New Vector2(-6.0, 0.0)
+sweepA.C2 = New Vector2(-6.0, 0.0)
+sweepA.Q1 = Rot.Identity()
+sweepA.Q2 = Rot.Identity()
+Var sweepB As New Sweep
+sweepB.LocalCenter = New Vector2(0.0, 0.0)
+sweepB.C1 = New Vector2(6.0, 0.0)
+sweepB.C2 = New Vector2(-4.0, 0.0)
+sweepB.Q1 = Rot.Identity()
+sweepB.Q2 = Rot.Identity()
+
+Me.BoxPoints = New Array(Of Vector2)
+Me.BoxPoints.Append(New Vector2(-1.0, -1.0))
+Me.BoxPoints.Append(New Vector2(1.0, -1.0))
+Me.BoxPoints.Append(New Vector2(1.0, 1.0))
+Me.BoxPoints.Append(New Vector2(-1.0, 1.0))
+Me.Input = TOIInput.Make(Me.BoxPoints, 4, 0.0, sweepA, Me.BoxPoints, 4, 0.0, sweepB, 1.0)
+Me.Output = New TOIOutput
+
+Me.Execute()
+End Sub
+
+Sub RunKernels()
+For i As Integer = 0 To 3
+Me.Input.MaxFraction = 1.0
+TimeOfImpact.ComputeTo(Me.Input, Me.Output)
+Me.AddSample(Me.Output.Fraction)
+Me.Input.MaxFraction = 0.5
+TimeOfImpact.ComputeTo(Me.Input, Me.Output)
+Me.AddSample(Me.Output.Fraction)
+Next i
+End Sub
+End Class
+
+## Character-mover plane solving across a table of target deltas.
+Class PlaneSolverWorkload Inherits Stage4Workload
+## Query count per iteration.
+Const QUERY_COUNT As Integer = 8
+
+## Collision planes.
+Property Planes As Array(Of CollisionPlane)
+## Reused solver result.
+Property Output As PlaneSolverResult
+## Per-query target deltas.
+Property DeltasX() As Double
+Property DeltasY() As Double
+## Reused per-query target delta vectors.
+Property Deltas() As Vector2
+
+Sub Prepare()
+Me.PrepareSamples()
+Me.Planes = New Array(Of CollisionPlane)
+Me.Planes.Append(New CollisionPlane(New Plane(0.0, 1.0, 0.0), 1.7976931348623157e308, True))
+Me.Planes.Append(New CollisionPlane(New Plane(1.0, 0.0, 0.0), 1.7976931348623157e308, True))
+Me.Planes.Append(New CollisionPlane(New Plane(-0.7071067811865476, 0.7071067811865476, 1.0), 1.7976931348623157e308, True))
+
+Me.Output = New PlaneSolverResult
+Me.DeltasX = New Array(Of Double)
+Me.DeltasY = New Array(Of Double)
+Me.Deltas = New Array(Of Vector2)
+For i As Integer = 0 To QUERY_COUNT - 1
+Var angle As Double = 6.2831853071795864769 * i / QUERY_COUNT
+Var dx As Double = -2.0 * Maths.Cos(angle)
+Var dy As Double = -2.0 * Maths.Sin(angle)
+Me.DeltasX.Append(dx)
+Me.DeltasY.Append(dy)
+Me.Deltas.Append(New Vector2(dx, dy))
+Next i
+
+Me.Execute()
+End Sub
+
+Sub RunKernels()
+For i As Integer = 0 To QUERY_COUNT - 1
+Mover.SolvePlanesTo(Me.Deltas[i], Me.Planes, 3, Me.Output)
+Me.AddSample(Me.Output.Translation.X)
+Me.AddSample(Me.Output.Translation.Y)
+Me.AddSample(Me.Output.IterationCount)
+Me.AddSample(Me.Planes[0].Push)
+Next i
+End Sub
+End Class

@@ -1,0 +1,78 @@
+# One contact point of a collision manifold, ported from upstream
+# b2ManifoldPoint in collision.h.
+#
+# Collision functions write into existing manifold points in place, so a
+# warm loop reuses one Manifold and allocates nothing. Solver fields
+# (impulses, normal velocity, persistence) are zero on creation and managed
+# by the solver in a later stage.
+Class ManifoldPoint
+## Location of the contact point in world space. Subject to precision loss
+## at large coordinates. Only used for debugging.
+Property Point As Vector2
+
+## Location of the contact point relative to shape A's origin in world
+## space. When used internally by the solver, this is relative to the body
+## centre of mass.
+Property AnchorA As Vector2
+
+## Location of the contact point relative to shape B's origin in world
+## space. When used internally by the solver, this is relative to the body
+## centre of mass.
+Property AnchorB As Vector2
+
+## The separation of the contact point, negative if penetrating.
+Property Separation As Double
+
+## The impulse along the manifold normal vector.
+Property NormalImpulse As Double
+
+## The friction impulse.
+Property TangentImpulse As Double
+
+## The total normal impulse applied across sub-stepping and restitution.
+## This identifies speculative contact points that had an interaction in
+## the time step.
+Property TotalNormalImpulse As Double
+
+## Relative normal velocity pre-solve. Used for hit events. If the normal
+## impulse is zero then there was no hit. Negative means the shapes are
+## approaching.
+Property NormalVelocity As Double
+
+## Uniquely identifies a contact point between two shapes. Upstream stores
+## a uint16; Physics2D uses an Integer holding the same 0..65535 value.
+Property Id As Integer
+
+## Did this contact point exist in the previous step?
+Property Persisted As Boolean
+
+## Creates a zero point.
+Constructor()
+Me.Point = New Vector2(0.0, 0.0)
+Me.AnchorA = New Vector2(0.0, 0.0)
+Me.AnchorB = New Vector2(0.0, 0.0)
+Me.Separation = 0.0
+Me.NormalImpulse = 0.0
+Me.TangentImpulse = 0.0
+Me.TotalNormalImpulse = 0.0
+Me.NormalVelocity = 0.0
+Me.Id = 0
+Me.Persisted = False
+End Constructor
+
+## Resets the geometry fields to zero. Solver fields are also reset; the
+## solver copies them out before regenerating manifolds.
+Function Reset() As ManifoldPoint
+Me.Point.Set(0.0, 0.0)
+Me.AnchorA.Set(0.0, 0.0)
+Me.AnchorB.Set(0.0, 0.0)
+Me.Separation = 0.0
+Me.NormalImpulse = 0.0
+Me.TangentImpulse = 0.0
+Me.TotalNormalImpulse = 0.0
+Me.NormalVelocity = 0.0
+Me.Id = 0
+Me.Persisted = False
+Return Me
+End Function
+End Class

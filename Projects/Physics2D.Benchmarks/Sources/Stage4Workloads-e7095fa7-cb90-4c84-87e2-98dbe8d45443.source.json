@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage4Workloads",
+  "Id": "e7095fa7-cb90-4c84-87e2-98dbe8d45443",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage4Workloads-e7095fa7-cb90-4c84-87e2-98dbe8d45443.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

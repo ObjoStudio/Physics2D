@@ -1,0 +1,56 @@
+# Distance proxy for the GJK algorithm, ported from upstream b2ShapeProxy in
+# collision.h. A proxy is a point cloud of one to MAX_POLYGON_VERTICES points
+# with an external radius.
+#
+# Make and MakeOffset deep-copy their inputs, following the upstream
+# documentation.
+Class ShapeProxy
+## The point cloud. The array holds exactly Count vectors.
+Property Points() As Vector2
+## The number of points. Must be greater than zero after construction.
+Property Count As Integer
+## The external radius of the point cloud. May be zero.
+Property Radius As Double
+
+## Creates an empty proxy with zero radius. Use Make instead.
+Constructor()
+Me.Points = New Array(Of Vector2)
+Me.Count = 0
+Me.Radius = 0.0
+End Constructor
+
+## Builds a proxy from a point cloud, ported from upstream b2MakeProxy.
+## This is a deep copy. Input beyond MAX_POLYGON_VERTICES points is clipped
+## to the first MAX_POLYGON_VERTICES, matching upstream. Throws
+## InvalidArgumentException when count is not positive.
+Shared Function Make(points() As Vector2, count As Integer, radius As Double) As ShapeProxy
+Return ShapeProxy.MakeImpl(points, count, radius, 0.0, 0.0, 1.0, 0.0)
+End Function
+
+## Builds a proxy from a point cloud with a position and rotation transform,
+## ported from upstream b2MakeOffsetProxy. This is a deep copy.
+Shared Function MakeOffset(points() As Vector2, count As Integer, radius As Double, position As Vector2, rotation As Rot) As ShapeProxy
+Return ShapeProxy.MakeImpl(points, count, radius, position.X, position.Y, rotation.C, rotation.S)
+End Function
+
+## Shared implementation for Make and MakeOffset. For Make the offset is
+## the identity, which reproduces the input exactly.
+Shared Function MakeImpl(points() As Vector2, count As Integer, radius As Double, px As Double, py As Double, qc As Double, qs As Double) As ShapeProxy
+If count <= 0 Then
+Throw New InvalidArgumentException("ShapeProxy needs at least one point")
+End If
+If count > PhysicsConstants.MAX_POLYGON_VERTICES Then
+count = PhysicsConstants.MAX_POLYGON_VERTICES
+End If
+
+Var proxy As New ShapeProxy
+For i As Integer = 0 To count - 1
+Var x As Double = qc * points[i].X - qs * points[i].Y + px
+Var y As Double = qs * points[i].X + qc * points[i].Y + py
+proxy.Points.Append(New Vector2(x, y))
+Next i
+proxy.Count = count
+proxy.Radius = radius
+Return proxy
+End Function
+End Class

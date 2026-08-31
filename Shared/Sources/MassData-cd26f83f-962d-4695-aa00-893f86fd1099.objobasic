@@ -1,0 +1,37 @@
+# Mass data computed for a shape, ported from upstream b2MassData in
+# collision.h.
+#
+# Mass is in kilograms. The centre is the shape centroid relative to the
+# shape origin. Rotational inertia is about the local origin, not the centre
+# of mass.
+Class MassData
+## The mass of the shape in kilograms.
+Property Mass As Double
+## The position of the shape's centroid relative to the shape's origin.
+Property Center As Vector2
+## The rotational inertia of the shape about the local origin.
+Property RotationalInertia As Double
+
+## Creates zero mass data at the origin.
+Constructor()
+Me.Mass = 0.0
+Me.Center = New Vector2(0.0, 0.0)
+Me.RotationalInertia = 0.0
+End Constructor
+
+## Copies another mass data record. The centre is copied, not aliased.
+Constructor(other As MassData)
+Me.Mass = other.Mass
+Me.Center = New Vector2(other.Center.X, other.Center.Y)
+Me.RotationalInertia = other.RotationalInertia
+End Constructor
+
+## Fills this record from another in place and returns this record. The
+## reused-output form for warm loops.
+Function SetFrom(other As MassData) As MassData
+Me.Mass = other.Mass
+Me.Center.Set(other.Center.X, other.Center.Y)
+Me.RotationalInertia = other.RotationalInertia
+Return Me
+End Function
+End Class

@@ -1,0 +1,57 @@
+# A solid circle, ported from upstream b2Circle in collision.h.
+#
+# Constructors validate their input and copy vector arguments, so later edits
+# to the caller's vectors never mutate the circle. All members are
+# module-internal for now; the public surface is finalised at the API freeze.
+Class Circle
+## The local centre.
+Property Center As Vector2
+## The radius.
+Property Radius As Double
+
+## Creates a circle from a centre and a radius. The centre is copied.
+## Throws InvalidArgumentException when the centre or radius is not finite
+## or the radius is negative.
+Constructor(center As Vector2, radius As Double)
+If Not center.X.IsFinite() Or Not center.Y.IsFinite() Then
+Throw New InvalidArgumentException("Circle centre must be finite")
+End If
+If Not radius.IsFinite() Or radius < 0.0 Then
+Throw New InvalidArgumentException("Circle radius must be finite and non-negative")
+End If
+Me.Center = New Vector2(center.X, center.Y)
+Me.Radius = radius
+End Constructor
+
+## Copies another circle.
+Constructor(other As Circle)
+Me.Center = New Vector2(other.Center.X, other.Center.Y)
+Me.Radius = other.Radius
+End Constructor
+## Computes the mass data of the circle, ported from upstream
+## b2ComputeCircleMass. Inertia is about the local origin.
+Function ComputeMass(density As Double) As MassData
+Var rr As Double = Me.Radius * Me.Radius
+Var data As New MassData
+data.Mass = density * PhysicsConstants.PI * rr
+data.Center.Set(Me.Center.X, Me.Center.Y)
+data.RotationalInertia = data.Mass * (0.5 * rr + (Me.Center.X * Me.Center.X + Me.Center.Y * Me.Center.Y))
+Return data
+End Function
+
+## Computes the world-space AABB of the transformed circle, ported from
+## upstream b2ComputeCircleAABB.
+Function ComputeAABB(transform As Transform) As AABB
+Var px As Double = transform.Q.C * Me.Center.X - transform.Q.S * Me.Center.Y + transform.P.X
+Var py As Double = transform.Q.S * Me.Center.X + transform.Q.C * Me.Center.Y + transform.P.Y
+Return New AABB(New Vector2(px - Me.Radius, py - Me.Radius), New Vector2(px + Me.Radius, py + Me.Radius))
+End Function
+
+## Determines whether the point lies within the circle, ported from upstream
+## b2PointInCircle.
+Function ContainsPoint(point As Vector2) As Boolean
+Var dx As Double = point.X - Me.Center.X
+Var dy As Double = point.Y - Me.Center.Y
+Return dx * dx + dy * dy <= Me.Radius * Me.Radius
+End Function
+End Class

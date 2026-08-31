@@ -1,0 +1,178 @@
+# Golden fixture tests for convex hulls and polygons built from hulls.
+#
+# Consumes testdata/golden/hull.txt, which was generated from the pinned
+# Box2D 3.1.1 checkout. The point sets below mirror tools/fixture_gen/
+# fixture_gen.c exactly; the fixture holds the expected hull, polygon, and
+# reference box outputs. Comparisons use the geometry tolerance classes
+# because the generator prints nine-digit float32 values.
+Import Physics2D
+
+Class GeometryHullTests Inherits TestCase
+## Builds the five deterministic point sets used by the fixture generator.
+Private Shared Function FixturePointSet(caseIndex As Integer) As Array(Of Vector2)
+Var points As New Array(Of Vector2)
+If caseIndex = 0 Then
+# Square with an interior point.
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(2.0, 0.0))
+points.Append(New Vector2(2.0, 2.0))
+points.Append(New Vector2(0.0, 2.0))
+points.Append(New Vector2(1.0, 1.0))
+ElseIf caseIndex = 1 Then
+# Convex pentagon.
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(4.0, 0.0))
+points.Append(New Vector2(5.0, 2.0))
+points.Append(New Vector2(2.5, 4.0))
+points.Append(New Vector2(0.5, 2.0))
+ElseIf caseIndex = 2 Then
+# Collinear points plus extremes.
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(1.0, 1.0))
+points.Append(New Vector2(2.0, 2.0))
+points.Append(New Vector2(3.0, 0.0))
+points.Append(New Vector2(1.5, 0.5))
+ElseIf caseIndex = 3 Then
+# Duplicated points.
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(1.0, 0.0))
+points.Append(New Vector2(1.0, 1.0))
+points.Append(New Vector2(0.0, 1.0))
+points.Append(New Vector2(1.0, 0.0))
+Else
+# Near-collinear.
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(1.0, 0.0001))
+points.Append(New Vector2(2.0, 0.0))
+points.Append(New Vector2(1.0, 1.0))
+End If
+Return points
+End Function
+
+Public Sub TestHullMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("hull.txt")
+Var checkedCases As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+If fields[0] <> "hull" Then
+Continue
+End If
+Var caseIndex As Integer = Integer.Parse(fields[1])
+Var expectedCount As Integer = Integer.Parse(fields[2])
+Var coordinates() As String = fields[3].Split(" ")
+Var valid As Boolean = fields[4] = "1"
+
+Var points As Array(Of Vector2) = GeometryHullTests.FixturePointSet(caseIndex)
+Var computedHull As Hull = Hull.Compute(points, points.Count)
+
+Assert.Equal(expectedCount, computedHull.Count, "hull case " + caseIndex.ToString() + " count")
+For j As Integer = 0 To computedHull.Count - 1
+Var expectedX As Double = Double.Parse(coordinates[2 * j])
+Var expectedY As Double = Double.Parse(coordinates[2 * j + 1])
+PhysicsAssert.Near(expectedX, computedHull.Points[j].X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "hull case " + caseIndex.ToString() + " x")
+PhysicsAssert.Near(expectedY, computedHull.Points[j].Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "hull case " + caseIndex.ToString() + " y")
+Next j
+Assert.Equal(valid, Hull.Validate(computedHull), "hull case " + caseIndex.ToString() + " valid")
+checkedCases = checkedCases + 1
+Next line
+Assert.Equal(5, checkedCases)
+End Sub
+
+Public Sub TestPolygonFromHullMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("hull.txt")
+Var checkedCases As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+If fields[0] <> "poly" Then
+Continue
+End If
+Var caseIndex As Integer = Integer.Parse(fields[1])
+Var expectedCount As Integer = Integer.Parse(fields[2])
+Var coordinates() As String = fields[3].Split(" ")
+Var expectedRadius As Double = Double.Parse(fields[4])
+
+Var points As Array(Of Vector2) = GeometryHullTests.FixturePointSet(caseIndex)
+Var computedHull As Hull = Hull.Compute(points, points.Count)
+Var polygon As Polygon = New Polygon(computedHull, 0.0)
+
+Assert.Equal(expectedCount, polygon.Count, "poly case " + caseIndex.ToString() + " count")
+For j As Integer = 0 To polygon.Count - 1
+Var expectedX As Double = Double.Parse(coordinates[2 * j])
+Var expectedY As Double = Double.Parse(coordinates[2 * j + 1])
+PhysicsAssert.Near(expectedX, polygon.Vertices[j].X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "poly case " + caseIndex.ToString() + " x")
+PhysicsAssert.Near(expectedY, polygon.Vertices[j].Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "poly case " + caseIndex.ToString() + " y")
+Next j
+PhysicsAssert.Near(expectedRadius, polygon.Radius, 0.0, 0.0, "poly case " + caseIndex.ToString() + " radius")
+checkedCases = checkedCases + 1
+Next line
+Assert.True(checkedCases >= 4, "expected at least four valid hull cases")
+End Sub
+
+Public Sub TestMakeBoxMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("hull.txt")
+Var found As Boolean = False
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+If fields[0] <> "box" Then
+Continue
+End If
+Var expectedCount As Integer = Integer.Parse(fields[2])
+Var coordinates() As String = fields[3].Split(" ")
+
+Var box As Polygon = Polygon.MakeBox(1.0, 0.5)
+Assert.Equal(expectedCount, box.Count)
+For j As Integer = 0 To box.Count - 1
+Var expectedX As Double = Double.Parse(coordinates[2 * j])
+Var expectedY As Double = Double.Parse(coordinates[2 * j + 1])
+PhysicsAssert.Near(expectedX, box.Vertices[j].X, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "box x")
+PhysicsAssert.Near(expectedY, box.Vertices[j].Y, Tolerances.GEOMETRY_ABS, Tolerances.GEOMETRY_REL, "box y")
+Next j
+found = True
+Exit For
+Next line
+Assert.True(found, "box fixture record missing")
+End Sub
+
+Public Sub TestHullRejectsDegenerateInputs()
+Var two As New Array(Of Vector2)
+two.Append(New Vector2(0.0, 0.0))
+two.Append(New Vector2(1.0, 0.0))
+Var computedHull As Hull = Hull.Compute(two, 2)
+Assert.Equal(0, computedHull.Count)
+
+Var collinear As New Array(Of Vector2)
+collinear.Append(New Vector2(0.0, 0.0))
+collinear.Append(New Vector2(1.0, 0.0))
+collinear.Append(New Vector2(2.0, 0.0))
+Var collinearHull As Hull = Hull.Compute(collinear, 3)
+Assert.Equal(0, collinearHull.Count)
+End Sub
+
+Public Sub TestPolygonConstructionRejectsInvalidHull()
+Var emptyHull As New Hull
+Try
+Var polygon As Polygon = New Polygon(emptyHull, 0.0)
+Assert.Fail("empty hull must be rejected")
+Catch ex As InvalidArgumentException
+Assert.True(ex.Message.Length > 0)
+End Try
+End Sub
+
+Public Sub TestPolygonCopiesConstructorVectors()
+# Editing the hull's points after construction must not mutate the polygon.
+Var points As New Array(Of Vector2)
+points.Append(New Vector2(0.0, 0.0))
+points.Append(New Vector2(2.0, 0.0))
+points.Append(New Vector2(2.0, 2.0))
+points.Append(New Vector2(0.0, 2.0))
+Var computedHull As Hull = Hull.Compute(points, 4)
+Var polygon As Polygon = New Polygon(computedHull, 0.0)
+computedHull.Points[0].Set(99.0, 99.0)
+points[1].Set(88.0, 88.0)
+PhysicsAssert.Near(0.0, polygon.Vertices[0].X, 0.0, 0.0, "vertex 0 x")
+PhysicsAssert.Near(0.0, polygon.Vertices[0].Y, 0.0, 0.0, "vertex 0 y")
+PhysicsAssert.Near(2.0, polygon.Vertices[1].X, 0.0, 0.0, "vertex 1 x")
+PhysicsAssert.Near(0.0, polygon.Vertices[1].Y, 0.0, 0.0, "vertex 1 y")
+End Sub
+End Class

@@ -1,0 +1,62 @@
+# Low level ray cast or shape cast output, ported from upstream b2CastOutput
+# in collision.h. A miss leaves fraction zero, normal and point zero, and hit
+# False. Initial overlap returns a zero fraction with the hit point set.
+#
+# Collision functions write into existing output objects (the To-forms), so a
+# warm loop can reuse one output and allocate nothing. All fields are
+# overwritten on every cast, so reuse never observes stale results.
+Class CastOutput
+## The surface normal at the hit point. Zero on a miss.
+Property Normal As Vector2
+## The surface hit point. Zero on a miss.
+Property Point As Vector2
+## The fraction of the input translation at collision. Zero on a miss.
+Property Fraction As Double
+## The number of iterations used. Zero on a miss.
+Property Iterations As Integer
+## Did the cast hit?
+Property Hit As Boolean
+
+## Internal reusable workspace for the warm shape-cast path.
+Private Property mScratch As CastScratch
+
+## Creates a miss output at the origin.
+Constructor()
+Me.Normal = New Vector2(0.0, 0.0)
+Me.Point = New Vector2(0.0, 0.0)
+Me.Fraction = 0.0
+Me.Iterations = 0
+Me.Hit = False
+Me.mScratch = Nothing
+End Constructor
+
+## Returns the internal workspace, creating it on first use. Engine code
+## only; creating the workspace once per output keeps warm casts
+## allocation-free.
+Function Scratch() As CastScratch
+If Me.mScratch = Nothing Then
+Me.mScratch = New CastScratch
+End If
+Return Me.mScratch
+End Function
+
+## Resets every field to the miss state in place and returns this output.
+Function Reset() As CastOutput
+Me.Normal.Set(0.0, 0.0)
+Me.Point.Set(0.0, 0.0)
+Me.Fraction = 0.0
+Me.Iterations = 0
+Me.Hit = False
+Return Me
+End Function
+
+## Copies another output's fields in place and returns this output.
+Function SetFrom(other As CastOutput) As CastOutput
+Me.Normal.Set(other.Normal.X, other.Normal.Y)
+Me.Point.Set(other.Point.X, other.Point.Y)
+Me.Fraction = other.Fraction
+Me.Iterations = other.Iterations
+Me.Hit = other.Hit
+Return Me
+End Function
+End Class

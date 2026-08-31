@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "PlaneSolverResult",
+  "Id": "16f2d027-5199-456a-a7dd-b6936ba3fe6e",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "PlaneSolverResult-16f2d027-5199-456a-a7dd-b6936ba3fe6e.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

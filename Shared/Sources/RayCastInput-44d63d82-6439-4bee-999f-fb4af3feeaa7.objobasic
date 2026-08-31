@@ -1,0 +1,44 @@
+# Low level ray cast input, ported from upstream b2RayCastInput in
+# collision.h. The ray extends from origin along translation, clipped to
+# maxFraction of the translation.
+#
+# Both vectors are owned copies, so building an input from existing vectors
+# never aliases them.
+Class RayCastInput
+## Start point of the ray cast.
+Property Origin As Vector2
+## Translation of the ray cast.
+Property Translation As Vector2
+## The maximum fraction of the translation to consider, typically 1.
+Property MaxFraction As Double
+
+## Creates a zero-length ray covering the full translation fraction.
+Constructor()
+Me.Origin = New Vector2(0.0, 0.0)
+Me.Translation = New Vector2(0.0, 0.0)
+Me.MaxFraction = 1.0
+End Constructor
+
+## Creates a ray from an origin, translation, and maximum fraction. The
+## vectors are copied.
+Constructor(origin As Vector2, translation As Vector2, maxFraction As Double)
+Me.Origin = New Vector2(origin.X, origin.Y)
+Me.Translation = New Vector2(translation.X, translation.Y)
+Me.MaxFraction = maxFraction
+End Constructor
+
+## Returns True when the input components are finite and the fraction is in
+## [0, POSITION_LIMIT), ported from upstream b2IsValidRay.
+Shared Function IsValid(input As RayCastInput) As Boolean
+If Not input.Origin.X.IsFinite() Or Not input.Origin.Y.IsFinite() Then
+Return False
+End If
+If Not input.Translation.X.IsFinite() Or Not input.Translation.Y.IsFinite() Then
+Return False
+End If
+If Not input.MaxFraction.IsFinite() Then
+Return False
+End If
+Return 0.0 <= input.MaxFraction And input.MaxFraction < PhysicsConstants.POSITION_LIMIT
+End Function
+End Class

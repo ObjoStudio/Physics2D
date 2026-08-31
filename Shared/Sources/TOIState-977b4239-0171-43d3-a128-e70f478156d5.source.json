@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "TOIState",
+  "Id": "977b4239-0171-43d3-a128-e70f478156d5",
+  "Kind": "Enum",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "TOIState-977b4239-0171-43d3-a128-e70f478156d5.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

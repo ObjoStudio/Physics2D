@@ -1,0 +1,125 @@
+# A solid capsule: two semicircles connected by a rectangle, ported from
+# upstream b2Capsule in collision.h.
+#
+# Constructors validate their input and copy vector arguments. A capsule with
+# coincident endpoints behaves as a circle in every algorithm, matching
+# upstream.
+Class Capsule
+## Local centre of the first semicircle.
+Property Center1 As Vector2
+## Local centre of the second semicircle.
+Property Center2 As Vector2
+## The radius of the semicircles.
+Property Radius As Double
+
+## Creates a capsule from two endpoints and a radius. The endpoints are
+## copied. Throws InvalidArgumentException when an endpoint or the radius is
+## not finite or the radius is negative.
+Constructor(center1 As Vector2, center2 As Vector2, radius As Double)
+If Not center1.X.IsFinite() Or Not center1.Y.IsFinite() Then
+Throw New InvalidArgumentException("Capsule first centre must be finite")
+End If
+If Not center2.X.IsFinite() Or Not center2.Y.IsFinite() Then
+Throw New InvalidArgumentException("Capsule second centre must be finite")
+End If
+If Not radius.IsFinite() Or radius < 0.0 Then
+Throw New InvalidArgumentException("Capsule radius must be finite and non-negative")
+End If
+Me.Center1 = New Vector2(center1.X, center1.Y)
+Me.Center2 = New Vector2(center2.X, center2.Y)
+Me.Radius = radius
+End Constructor
+
+## Copies another capsule.
+Constructor(other As Capsule)
+Me.Center1 = New Vector2(other.Center1.X, other.Center1.Y)
+Me.Center2 = New Vector2(other.Center2.X, other.Center2.Y)
+Me.Radius = other.Radius
+End Constructor
+## Computes the mass data of the capsule, ported from upstream
+## b2ComputeCapsuleMass. Inertia is about the local origin.
+Function ComputeMass(density As Double) As MassData
+Var radius As Double = Me.Radius
+Var rr As Double = radius * radius
+Var p1x As Double = Me.Center1.X
+Var p1y As Double = Me.Center1.Y
+Var p2x As Double = Me.Center2.X
+Var p2y As Double = Me.Center2.Y
+Var ex As Double = p2x - p1x
+Var ey As Double = p2y - p1y
+Var length As Double = Maths.Sqrt(ex * ex + ey * ey)
+Var ll As Double = length * length
+
+Var circleMass As Double = density * (PhysicsConstants.PI * radius * radius)
+Var boxMass As Double = density * (2.0 * radius * length)
+
+Var data As New MassData
+data.Mass = circleMass + boxMass
+data.Center.Set(0.5 * (p1x + p2x), 0.5 * (p1y + p2y))
+
+# Two offset half circles, both halves add up to a full circle and each
+# half is offset by half length. Apply the parallel-axis theorem twice.
+# Half circle centroid: lc = 4r / 3pi.
+Var lc As Double = 4.0 * radius / (3.0 * PhysicsConstants.PI)
+
+# Half length of the rectangular portion of the capsule.
+Var h As Double = 0.5 * length
+
+Var circleInertia As Double = circleMass * (0.5 * rr + h * h + 2.0 * h * lc)
+Var boxInertia As Double = boxMass * (4.0 * rr + ll) / 12.0
+data.RotationalInertia = circleInertia + boxInertia
+
+# Inertia about the local origin.
+Var cc As Double = data.Center.X * data.Center.X + data.Center.Y * data.Center.Y
+data.RotationalInertia = data.RotationalInertia + data.Mass * cc
+
+Return data
+End Function
+
+## Computes the world-space AABB of the transformed capsule, ported from
+## upstream b2ComputeCapsuleAABB.
+Function ComputeAABB(transform As Transform) As AABB
+Var v1x As Double = transform.Q.C * Me.Center1.X - transform.Q.S * Me.Center1.Y + transform.P.X
+Var v1y As Double = transform.Q.S * Me.Center1.X + transform.Q.C * Me.Center1.Y + transform.P.Y
+Var v2x As Double = transform.Q.C * Me.Center2.X - transform.Q.S * Me.Center2.Y + transform.P.X
+Var v2y As Double = transform.Q.S * Me.Center2.X + transform.Q.C * Me.Center2.Y + transform.P.Y
+Var lowerX As Double = Maths.Min(v1x, v2x) - Me.Radius
+Var lowerY As Double = Maths.Min(v1y, v2y) - Me.Radius
+Var upperX As Double = Maths.Max(v1x, v2x) + Me.Radius
+Var upperY As Double = Maths.Max(v1y, v2y) + Me.Radius
+Return New AABB(New Vector2(lowerX, lowerY), New Vector2(upperX, upperY))
+End Function
+
+## Determines whether the point lies within the capsule, ported from
+## upstream b2PointInCapsule.
+Function ContainsPoint(point As Vector2) As Boolean
+Var rr As Double = Me.Radius * Me.Radius
+Var p1x As Double = Me.Center1.X
+Var p1y As Double = Me.Center1.Y
+Var p2x As Double = Me.Center2.X
+Var p2y As Double = Me.Center2.Y
+Var dx As Double = p2x - p1x
+Var dy As Double = p2y - p1y
+Var dd As Double = dx * dx + dy * dy
+If dd = 0.0 Then
+# Capsule is really a circle.
+Var cdx As Double = point.X - p1x
+Var cdy As Double = point.Y - p1y
+Return cdx * cdx + cdy * cdy <= rr
+End If
+
+# Closest point on the capsule segment: c = p1 + t * d.
+Var t As Double = ((point.X - p1x) * dx + (point.Y - p1y) * dy) / dd
+If t < 0.0 Then
+t = 0.0
+End If
+If t > 1.0 Then
+t = 1.0
+End If
+Var cx As Double = p1x + t * dx
+Var cy As Double = p1y + t * dy
+Var cdx As Double = point.X - cx
+Var cdy As Double = point.Y - cy
+Return cdx * cdx + cdy * cdy <= rr
+End Function
+End Class

@@ -1,0 +1,27 @@
+# The collision plane between a mover and a convex shape, ported from
+# upstream b2PlaneResult in collision.h. World queries produce these; the
+# character mover consumes them.
+Class PlaneResult
+## The collision plane between the mover and a convex shape.
+Property Plane As Plane
+
+## The collision point on the shape.
+Property Point As Vector2
+
+## True when the collision registered a hit; otherwise ignore the plane.
+Property Hit As Boolean
+
+## Creates an empty result.
+Constructor()
+Me.Plane = New Plane
+Me.Point = New Vector2(0.0, 0.0)
+Me.Hit = False
+End Constructor
+
+## Creates a result from its fields.
+Constructor(plane As Plane, point As Vector2, hit As Boolean)
+Me.Plane = plane
+Me.Point = point
+Me.Hit = hit
+End Constructor
+End Class

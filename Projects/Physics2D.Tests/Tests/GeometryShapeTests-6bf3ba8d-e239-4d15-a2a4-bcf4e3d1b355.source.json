@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "GeometryShapeTests",
+  "Id": "6bf3ba8d-e239-4d15-a2a4-bcf4e3d1b355",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "GeometryShapeTests-6bf3ba8d-e239-4d15-a2a4-bcf4e3d1b355.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,315 @@
+# Engine-internal separating axis function for the time-of-impact root
+# finder, ported from upstream b2SeparationFunction in distance.c. The
+# proxies are aliased read-only and the sweeps are copied on make.
+Class SeparationFunction
+## Which feature defines the separating axis.
+Private Property mType As Integer
+
+## pointsType: the axis runs between two witness points.
+Private Const POINTS_TYPE As Integer = 0
+## faceAType: the axis is a face normal on shape A.
+Private Const FACE_A_TYPE As Integer = 1
+## faceBType: the axis is a face normal on shape B.
+Private Const FACE_B_TYPE As Integer = 2
+
+## The proxy for shape A.
+Property ProxyA As ShapeProxy
+## The proxy for shape B.
+Property ProxyB As ShapeProxy
+## The movement of shape A.
+Property SweepA As Sweep
+## The movement of shape B.
+Property SweepB As Sweep
+## Reused transform holder for shape A queries.
+Property TransformA As Transform
+## Reused transform holder for shape B queries.
+Property TransformB As Transform
+## Local anchor of the separating feature.
+Property LocalPoint As Vector2
+## The separating axis in world space at t1.
+Property Axis As Vector2
+## Reused result holder for FindMinSeparation.
+Private Property mResult As SeparationResult
+
+## Creates an uninitialised function.
+Constructor()
+Me.ProxyA = Nothing
+Me.ProxyB = Nothing
+Me.SweepA = Nothing
+Me.SweepB = Nothing
+Me.LocalPoint = New Vector2(0.0, 0.0)
+Me.Axis = New Vector2(0.0, 0.0)
+Me.mType = 0
+Me.mResult = Nothing
+End Constructor
+
+## Builds the separation function from the cached simplex, ported from
+## upstream b2MakeSeparationFunction.
+## Refills the separation function from the cached simplex in place,
+## ported from upstream b2MakeSeparationFunction. The warm path reuses one
+## function and its sweeps.
+Function Setup(cache As SimplexCache, proxyA As ShapeProxy, sweepA As Sweep, proxyB As ShapeProxy, sweepB As Sweep, t1 As Double) As SeparationFunction
+Me.ProxyA = proxyA
+Me.ProxyB = proxyB
+Var count As Integer = cache.Count
+If count <= 0 Or count >= 3 Then
+Throw New RuntimeException("Separation function needs one or two cached points")
+End If
+
+If Me.SweepA = Nothing Then
+Me.SweepA = New Sweep
+Me.SweepB = New Sweep
+Me.TransformA = New Transform
+Me.TransformB = New Transform
+End If
+Me.SweepA.LocalCenter.Set(sweepA.LocalCenter.X, sweepA.LocalCenter.Y)
+Me.SweepA.C1.Set(sweepA.C1.X, sweepA.C1.Y)
+Me.SweepA.C2.Set(sweepA.C2.X, sweepA.C2.Y)
+Me.SweepA.Q1.SetComponents(sweepA.Q1.C, sweepA.Q1.S)
+Me.SweepA.Q2.SetComponents(sweepA.Q2.C, sweepA.Q2.S)
+Me.SweepB.LocalCenter.Set(sweepB.LocalCenter.X, sweepB.LocalCenter.Y)
+Me.SweepB.C1.Set(sweepB.C1.X, sweepB.C1.Y)
+Me.SweepB.C2.Set(sweepB.C2.X, sweepB.C2.Y)
+Me.SweepB.Q1.SetComponents(sweepB.Q1.C, sweepB.Q1.S)
+Me.SweepB.Q2.SetComponents(sweepB.Q2.C, sweepB.Q2.S)
+
+Sweep.GetTransformTo(sweepA, t1, Me.TransformA)
+Sweep.GetTransformTo(sweepB, t1, Me.TransformB)
+Var xfA As Transform = Me.TransformA
+Var xfB As Transform = Me.TransformB
+
+If count = 1 Then
+Me.mType = SeparationFunction.POINTS_TYPE
+Var localPointA As Vector2 = proxyA.Points[cache.IndexA[0]]
+Var localPointB As Vector2 = proxyB.Points[cache.IndexB[0]]
+Var pointAX As Double = xfA.Q.C * localPointA.X - xfA.Q.S * localPointA.Y + xfA.P.X
+Var pointAY As Double = xfA.Q.S * localPointA.X + xfA.Q.C * localPointA.Y + xfA.P.Y
+Var pointBX As Double = xfB.Q.C * localPointB.X - xfB.Q.S * localPointB.Y + xfB.P.X
+Var pointBY As Double = xfB.Q.S * localPointB.X + xfB.Q.C * localPointB.Y + xfB.P.Y
+Var dirX As Double = pointBX - pointAX
+Var dirY As Double = pointBY - pointAY
+Var length As Double = Maths.Sqrt(dirX * dirX + dirY * dirY)
+If length > PhysicsConstants.FLT_EPSILON Then
+Me.Axis.Set(dirX / length, dirY / length)
+Else
+Me.Axis.Set(0.0, 0.0)
+End If
+Me.LocalPoint.Set(0.0, 0.0)
+Return Me
+End If
+
+If cache.IndexA[0] = cache.IndexA[1] Then
+# Two points on B and one on A.
+Me.mType = SeparationFunction.FACE_B_TYPE
+Var localPointB1 As Vector2 = proxyB.Points[cache.IndexB[0]]
+Var localPointB2 As Vector2 = proxyB.Points[cache.IndexB[1]]
+
+Var edgeX As Double = localPointB2.X - localPointB1.X
+Var edgeY As Double = localPointB2.Y - localPointB1.Y
+# crossVS(edge, 1) = (edge.y, -edge.x).
+Var axisX As Double = edgeY
+Var axisY As Double = -edgeX
+Var axisLength As Double = Maths.Sqrt(axisX * axisX + axisY * axisY)
+If axisLength > PhysicsConstants.FLT_EPSILON Then
+axisX = axisX / axisLength
+axisY = axisY / axisLength
+Else
+axisX = 0.0
+axisY = 0.0
+End If
+Me.Axis.Set(axisX, axisY)
+Var normalX As Double = xfB.Q.C * axisX - xfB.Q.S * axisY
+Var normalY As Double = xfB.Q.S * axisX + xfB.Q.C * axisY
+
+Me.LocalPoint.Set(0.5 * (localPointB1.X + localPointB2.X), 0.5 * (localPointB1.Y + localPointB2.Y))
+Var pointBX As Double = xfB.Q.C * Me.LocalPoint.X - xfB.Q.S * Me.LocalPoint.Y + xfB.P.X
+Var pointBY As Double = xfB.Q.S * Me.LocalPoint.X + xfB.Q.C * Me.LocalPoint.Y + xfB.P.Y
+
+Var localPointA As Vector2 = proxyA.Points[cache.IndexA[0]]
+Var pointAX As Double = xfA.Q.C * localPointA.X - xfA.Q.S * localPointA.Y + xfA.P.X
+Var pointAY As Double = xfA.Q.S * localPointA.X + xfA.Q.C * localPointA.Y + xfA.P.Y
+
+Var s As Double = (pointAX - pointBX) * normalX + (pointAY - pointBY) * normalY
+If s < 0.0 Then
+Me.Axis.Set(-axisX, -axisY)
+End If
+Return Me
+End If
+
+# Two points on A and one or two points on B.
+Me.mType = SeparationFunction.FACE_A_TYPE
+Var localPointA1 As Vector2 = proxyA.Points[cache.IndexA[0]]
+Var localPointA2 As Vector2 = proxyA.Points[cache.IndexA[1]]
+
+Var edgeX As Double = localPointA2.X - localPointA1.X
+Var edgeY As Double = localPointA2.Y - localPointA1.Y
+# crossVS(edge, 1) = (edge.y, -edge.x).
+Var axisX As Double = edgeY
+Var axisY As Double = -edgeX
+Var axisLength As Double = Maths.Sqrt(axisX * axisX + axisY * axisY)
+If axisLength > PhysicsConstants.FLT_EPSILON Then
+axisX = axisX / axisLength
+axisY = axisY / axisLength
+Else
+axisX = 0.0
+axisY = 0.0
+End If
+Me.Axis.Set(axisX, axisY)
+Var normalX As Double = xfA.Q.C * axisX - xfA.Q.S * axisY
+Var normalY As Double = xfA.Q.S * axisX + xfA.Q.C * axisY
+
+Me.LocalPoint.Set(0.5 * (localPointA1.X + localPointA2.X), 0.5 * (localPointA1.Y + localPointA2.Y))
+Var pointAX As Double = xfA.Q.C * Me.LocalPoint.X - xfA.Q.S * Me.LocalPoint.Y + xfA.P.X
+Var pointAY As Double = xfA.Q.S * Me.LocalPoint.X + xfA.Q.C * Me.LocalPoint.Y + xfA.P.Y
+
+Var localPointB As Vector2 = proxyB.Points[cache.IndexB[0]]
+Var pointBX As Double = xfB.Q.C * localPointB.X - xfB.Q.S * localPointB.Y + xfB.P.X
+Var pointBY As Double = xfB.Q.S * localPointB.X + xfB.Q.C * localPointB.Y + xfB.P.Y
+
+Var s As Double = (pointBX - pointAX) * normalX + (pointBY - pointAY) * normalY
+If s < 0.0 Then
+Me.Axis.Set(-axisX, -axisY)
+End If
+Return Me
+End Function
+
+## Builds the separation function from the cached simplex into a new
+## instance, ported from upstream b2MakeSeparationFunction.
+Shared Function Make(cache As SimplexCache, proxyA As ShapeProxy, sweepA As Sweep, proxyB As ShapeProxy, sweepB As Sweep, t1 As Double) As SeparationFunction
+Return (New SeparationFunction).Setup(cache, proxyA, sweepA, proxyB, sweepB, t1)
+End Function
+
+## Finds the minimum separation at time t and stores the support indices in
+## the reused result, ported from upstream b2FindMinSeparation.
+Function FindMinSeparation(t As Double) As SeparationResult
+If Me.mResult = Nothing Then
+Me.mResult = New SeparationResult
+End If
+If Me.TransformA = Nothing Then
+Me.TransformA = New Transform
+Me.TransformB = New Transform
+End If
+Sweep.GetTransformTo(Me.SweepA, t, Me.TransformA)
+Sweep.GetTransformTo(Me.SweepB, t, Me.TransformB)
+Var xfA As Transform = Me.TransformA
+Var xfB As Transform = Me.TransformB
+
+If Me.mType = SeparationFunction.POINTS_TYPE Then
+Var axisAX As Double = xfA.Q.C * Me.Axis.X + xfA.Q.S * Me.Axis.Y
+Var axisAY As Double = -xfA.Q.S * Me.Axis.X + xfA.Q.C * Me.Axis.Y
+Var invAxisBX As Double = -Me.Axis.X
+Var invAxisBY As Double = -Me.Axis.Y
+Var axisBX As Double = xfB.Q.C * invAxisBX + xfB.Q.S * invAxisBY
+Var axisBY As Double = -xfB.Q.S * invAxisBX + xfB.Q.C * invAxisBY
+
+Me.mResult.IndexA = Distance.FindSupport(Me.ProxyA, axisAX, axisAY)
+Me.mResult.IndexB = Distance.FindSupport(Me.ProxyB, axisBX, axisBY)
+
+Var localPointA As Vector2 = Me.ProxyA.Points[Me.mResult.IndexA]
+Var localPointB As Vector2 = Me.ProxyB.Points[Me.mResult.IndexB]
+
+Var pointAX As Double = xfA.Q.C * localPointA.X - xfA.Q.S * localPointA.Y + xfA.P.X
+Var pointAY As Double = xfA.Q.S * localPointA.X + xfA.Q.C * localPointA.Y + xfA.P.Y
+Var pointBX As Double = xfB.Q.C * localPointB.X - xfB.Q.S * localPointB.Y + xfB.P.X
+Var pointBY As Double = xfB.Q.S * localPointB.X + xfB.Q.C * localPointB.Y + xfB.P.Y
+
+Me.mResult.Separation = (pointBX - pointAX) * Me.Axis.X + (pointBY - pointAY) * Me.Axis.Y
+Return Me.mResult
+End If
+
+If Me.mType = SeparationFunction.FACE_A_TYPE Then
+Var normalX As Double = xfA.Q.C * Me.Axis.X - xfA.Q.S * Me.Axis.Y
+Var normalY As Double = xfA.Q.S * Me.Axis.X + xfA.Q.C * Me.Axis.Y
+Var pointAX As Double = xfA.Q.C * Me.LocalPoint.X - xfA.Q.S * Me.LocalPoint.Y + xfA.P.X
+Var pointAY As Double = xfA.Q.S * Me.LocalPoint.X + xfA.Q.C * Me.LocalPoint.Y + xfA.P.Y
+
+Var invNormalX As Double = -normalX
+Var invNormalY As Double = -normalY
+Var axisBX As Double = xfB.Q.C * invNormalX + xfB.Q.S * invNormalY
+Var axisBY As Double = -xfB.Q.S * invNormalX + xfB.Q.C * invNormalY
+
+Me.mResult.IndexA = -1
+Me.mResult.IndexB = Distance.FindSupport(Me.ProxyB, axisBX, axisBY)
+
+Var localPointB As Vector2 = Me.ProxyB.Points[Me.mResult.IndexB]
+Var pointBX As Double = xfB.Q.C * localPointB.X - xfB.Q.S * localPointB.Y + xfB.P.X
+Var pointBY As Double = xfB.Q.S * localPointB.X + xfB.Q.C * localPointB.Y + xfB.P.Y
+
+Me.mResult.Separation = (pointBX - pointAX) * normalX + (pointBY - pointAY) * normalY
+Return Me.mResult
+End If
+
+# FACE_B_TYPE.
+Var normalX As Double = xfB.Q.C * Me.Axis.X - xfB.Q.S * Me.Axis.Y
+Var normalY As Double = xfB.Q.S * Me.Axis.X + xfB.Q.C * Me.Axis.Y
+Var pointBX As Double = xfB.Q.C * Me.LocalPoint.X - xfB.Q.S * Me.LocalPoint.Y + xfB.P.X
+Var pointBY As Double = xfB.Q.S * Me.LocalPoint.X + xfB.Q.C * Me.LocalPoint.Y + xfB.P.Y
+
+Var invNormalX As Double = -normalX
+Var invNormalY As Double = -normalY
+Var axisAX As Double = xfA.Q.C * invNormalX + xfA.Q.S * invNormalY
+Var axisAY As Double = -xfA.Q.S * invNormalX + xfA.Q.C * invNormalY
+
+Me.mResult.IndexB = -1
+Me.mResult.IndexA = Distance.FindSupport(Me.ProxyA, axisAX, axisAY)
+
+Var localPointA As Vector2 = Me.ProxyA.Points[Me.mResult.IndexA]
+Var pointAX As Double = xfA.Q.C * localPointA.X - xfA.Q.S * localPointA.Y + xfA.P.X
+Var pointAY As Double = xfA.Q.S * localPointA.X + xfA.Q.C * localPointA.Y + xfA.P.Y
+
+Me.mResult.Separation = (pointAX - pointBX) * normalX + (pointAY - pointBY) * normalY
+Return Me.mResult
+End Function
+
+## Evaluates the separation of the witness points at time t, ported from
+## upstream b2EvaluateSeparation.
+Function EvaluateSeparation(indexA As Integer, indexB As Integer, t As Double) As Double
+If Me.mResult = Nothing Then
+Me.mResult = New SeparationResult
+End If
+If Me.TransformA = Nothing Then
+Me.TransformA = New Transform
+Me.TransformB = New Transform
+End If
+Sweep.GetTransformTo(Me.SweepA, t, Me.TransformA)
+Sweep.GetTransformTo(Me.SweepB, t, Me.TransformB)
+Var xfA As Transform = Me.TransformA
+Var xfB As Transform = Me.TransformB
+
+If Me.mType = SeparationFunction.POINTS_TYPE Then
+Var localPointA As Vector2 = Me.ProxyA.Points[indexA]
+Var localPointB As Vector2 = Me.ProxyB.Points[indexB]
+Var pointAX As Double = xfA.Q.C * localPointA.X - xfA.Q.S * localPointA.Y + xfA.P.X
+Var pointAY As Double = xfA.Q.S * localPointA.X + xfA.Q.C * localPointA.Y + xfA.P.Y
+Var pointBX As Double = xfB.Q.C * localPointB.X - xfB.Q.S * localPointB.Y + xfB.P.X
+Var pointBY As Double = xfB.Q.S * localPointB.X + xfB.Q.C * localPointB.Y + xfB.P.Y
+
+Return (pointBX - pointAX) * Me.Axis.X + (pointBY - pointAY) * Me.Axis.Y
+End If
+
+If Me.mType = SeparationFunction.FACE_A_TYPE Then
+Var normalX As Double = xfA.Q.C * Me.Axis.X - xfA.Q.S * Me.Axis.Y
+Var normalY As Double = xfA.Q.S * Me.Axis.X + xfA.Q.C * Me.Axis.Y
+Var pointAX As Double = xfA.Q.C * Me.LocalPoint.X - xfA.Q.S * Me.LocalPoint.Y + xfA.P.X
+Var pointAY As Double = xfA.Q.S * Me.LocalPoint.X + xfA.Q.C * Me.LocalPoint.Y + xfA.P.Y
+
+Var localPointB As Vector2 = Me.ProxyB.Points[indexB]
+Var pointBX As Double = xfB.Q.C * localPointB.X - xfB.Q.S * localPointB.Y + xfB.P.X
+Var pointBY As Double = xfB.Q.S * localPointB.X + xfB.Q.C * localPointB.Y + xfB.P.Y
+
+Return (pointBX - pointAX) * normalX + (pointBY - pointAY) * normalY
+End If
+
+# FACE_B_TYPE.
+Var normalX As Double = xfB.Q.C * Me.Axis.X - xfB.Q.S * Me.Axis.Y
+Var normalY As Double = xfB.Q.S * Me.Axis.X + xfB.Q.C * Me.Axis.Y
+Var pointBX As Double = xfB.Q.C * Me.LocalPoint.X - xfB.Q.S * Me.LocalPoint.Y + xfB.P.X
+Var pointBY As Double = xfB.Q.S * Me.LocalPoint.X + xfB.Q.C * Me.LocalPoint.Y + xfB.P.Y
+
+Var localPointA As Vector2 = Me.ProxyA.Points[indexA]
+Var pointAX As Double = xfA.Q.C * localPointA.X - xfA.Q.S * localPointA.Y + xfA.P.X
+Var pointAY As Double = xfA.Q.S * localPointA.X + xfA.Q.C * localPointA.Y + xfA.P.Y
+
+Return (pointAX - pointBX) * normalX + (pointAY - pointBY) * normalY
+End Function
+End Class

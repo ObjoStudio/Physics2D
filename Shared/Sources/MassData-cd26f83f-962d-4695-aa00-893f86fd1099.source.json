@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "MassData",
+  "Id": "cd26f83f-962d-4695-aa00-893f86fd1099",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "MassData-cd26f83f-962d-4695-aa00-893f86fd1099.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

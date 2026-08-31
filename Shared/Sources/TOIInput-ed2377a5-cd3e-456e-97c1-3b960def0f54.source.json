@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "TOIInput",
+  "Id": "ed2377a5-cd3e-456e-97c1-3b960def0f54",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "TOIInput-ed2377a5-cd3e-456e-97c1-3b960def0f54.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "GeometryManifoldTests",
+  "Id": "4b6d8f02-9a51-4c73-9e2f-4d0c2b8d61c4",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "GeometryManifoldTests-4b6d8f02-9a51-4c73-9e2f-4d0c2b8d61c4.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,577 @@
+# Distance computations, ported from upstream distance.c.
+#
+# ShapeDistance runs the GJK algorithm between two point-cloud proxies. The
+# warm To-form reuses the simplex stored in the caller's SimplexCache and the
+# scratch storage owned by the caller's DistanceOutput, so repeated queries
+# allocate nothing. SegmentDistance follows Ericson 5.1.9.
+#
+# All arithmetic is scalar over Doubles and writes into owned vectors,
+# mirroring the upstream float arithmetic component by component. Upstream's
+# optional debug simplex capture is not ported; DistanceOutput.SimplexCount
+# stays zero.
+Class Distance
+## Computes the distance between two line segments into a new result,
+## ported from upstream b2SegmentDistance. Clamps at the endpoints when
+## needed.
+Shared Function SegmentDistance(p1 As Vector2, q1 As Vector2, p2 As Vector2, q2 As Vector2) As SegmentDistanceResult
+Var result As New SegmentDistanceResult
+Distance.SegmentDistanceTo(p1, q1, p2, q2, result)
+Return result
+End Function
+
+## Computes the distance between two line segments into the caller-owned
+## out result and returns out. The reused-output form for warm loops.
+Shared Function SegmentDistanceTo(p1 As Vector2, q1 As Vector2, p2 As Vector2, q2 As Vector2, out As SegmentDistanceResult) As SegmentDistanceResult
+Var d1x As Double = q1.X - p1.X
+Var d1y As Double = q1.Y - p1.Y
+Var d2x As Double = q2.X - p2.X
+Var d2y As Double = q2.Y - p2.Y
+Var rx As Double = p1.X - p2.X
+Var ry As Double = p1.Y - p2.Y
+Var dd1 As Double = d1x * d1x + d1y * d1y
+Var dd2 As Double = d2x * d2x + d2y * d2y
+Var rd1 As Double = rx * d1x + ry * d1y
+Var rd2 As Double = rx * d2x + ry * d2y
+
+Var epsSqr As Double = 0.0000001192092896 * 0.0000001192092896
+
+Var f1 As Double = 0.0
+Var f2 As Double = 0.0
+
+If dd1 < epsSqr Or dd2 < epsSqr Then
+# Handle all degeneracies.
+If dd1 >= epsSqr Then
+# Segment 2 is degenerate.
+f1 = Distance.Clamp01(-rd1 / dd1)
+f2 = 0.0
+ElseIf dd2 >= epsSqr Then
+# Segment 1 is degenerate.
+f1 = 0.0
+f2 = Distance.Clamp01(rd2 / dd2)
+Else
+f1 = 0.0
+f2 = 0.0
+End If
+Else
+# Non-degenerate segments.
+Var d12 As Double = d1x * d2x + d1y * d2y
+
+Var denominator As Double = dd1 * dd2 - d12 * d12
+
+# Fraction on segment 1.
+If denominator <> 0.0 Then
+# Not parallel.
+f1 = Distance.Clamp01((d12 * rd2 - rd1 * dd2) / denominator)
+End If
+
+# Compute point on segment 2 closest to p1 + f1 * d1.
+f2 = (d12 * f1 + rd2) / dd2
+
+# Clamping of segment 2 requires a do-over on segment 1.
+If f2 < 0.0 Then
+f2 = 0.0
+f1 = Distance.Clamp01(-rd1 / dd1)
+ElseIf f2 > 1.0 Then
+f2 = 1.0
+f1 = Distance.Clamp01((d12 - rd1) / dd1)
+End If
+End If
+
+out.Fraction1 = f1
+out.Fraction2 = f2
+out.Closest1.Set(p1.X + f1 * d1x, p1.Y + f1 * d1y)
+out.Closest2.Set(p2.X + f2 * d2x, p2.Y + f2 * d2y)
+Var ex As Double = out.Closest1.X - out.Closest2.X
+Var ey As Double = out.Closest1.Y - out.Closest2.Y
+out.DistanceSquared = ex * ex + ey * ey
+Return out
+End Function
+
+## Computes the closest points between two shapes represented as point
+## clouds into a new output, ported from upstream b2ShapeDistance. The
+## cache is input and output: set its count to zero on the first call.
+Shared Function ShapeDistance(input As DistanceInput, cache As SimplexCache) As DistanceOutput
+Var out As New DistanceOutput
+Distance.ShapeDistanceTo(input, cache, out)
+Return out
+End Function
+
+## Computes the closest points between two shapes into the caller-owned
+## out output and returns out. The reused-output form for warm loops: the
+## simplex lives in the cache and scratch storage in the output, so steady
+## state allocates nothing.
+Shared Function ShapeDistanceTo(input As DistanceInput, cache As SimplexCache, out As DistanceOutput) As DistanceOutput
+If input.ProxyA.Count <= 0 Or input.ProxyB.Count <= 0 Then
+Throw New InvalidArgumentException("ShapeDistance proxies must hold at least one point")
+End If
+If input.ProxyA.Radius < 0.0 Or input.ProxyB.Radius < 0.0 Then
+Throw New InvalidArgumentException("ShapeDistance proxy radii must be non-negative")
+End If
+
+Var proxyA As ShapeProxy = input.ProxyA
+Var scratch As DistanceScratch = out.Scratch()
+Var localProxyB As ShapeProxy = scratch.LocalProxyB
+
+# Get proxy B in frame A to avoid further transforms in the main loop.
+Var qa As Double = input.TransformA.Q.C
+Var sa As Double = input.TransformA.Q.S
+Var qb As Double = input.TransformB.Q.C
+Var sb As Double = input.TransformB.Q.S
+Var c As Double = qa * qb + sa * sb
+Var s As Double = -sa * qb + qa * sb
+Var bx0 As Double = input.TransformB.P.X - input.TransformA.P.X
+Var by0 As Double = input.TransformB.P.Y - input.TransformA.P.Y
+Var px As Double = qa * bx0 + sa * by0
+Var py As Double = -sa * bx0 + qa * by0
+
+Var bCount As Integer = input.ProxyB.Count
+localProxyB.Count = bCount
+localProxyB.Radius = input.ProxyB.Radius
+While localProxyB.Points.Count < bCount
+localProxyB.Points.Append(New Vector2(0.0, 0.0))
+Wend
+For i As Integer = 0 To bCount - 1
+Var bx As Double = input.ProxyB.Points[i].X
+Var by As Double = input.ProxyB.Points[i].Y
+localProxyB.Points[i].Set(c * bx - s * by + px, s * bx + c * by + py)
+Next i
+
+# Initialize the simplex from the cache.
+Var simplex As Simplex = cache.Workspace()
+Distance.MakeSimplexFromCache(cache, proxyA, localProxyB, simplex)
+
+Var nonUnitNormalX As Double = 0.0
+Var nonUnitNormalY As Double = 0.0
+
+# These store the vertices of the last simplex so duplicates can be
+# detected and cycling prevented.
+Var saveA0 As Integer = 0
+Var saveA1 As Integer = 0
+Var saveA2 As Integer = 0
+Var saveB0 As Integer = 0
+Var saveB1 As Integer = 0
+Var saveB2 As Integer = 0
+
+# Main iteration loop. All computations are done in frame A.
+Var maxIterations As Integer = 20
+Var iteration As Integer = 0
+While iteration < maxIterations
+# Copy the simplex so duplicates can be identified.
+Var saveCount As Integer = simplex.Count
+saveA0 = simplex.V1.IndexA
+saveB0 = simplex.V1.IndexB
+If saveCount > 1 Then
+saveA1 = simplex.V2.IndexA
+saveB1 = simplex.V2.IndexB
+End If
+If saveCount > 2 Then
+saveA2 = simplex.V3.IndexA
+saveB2 = simplex.V3.IndexB
+End If
+
+If simplex.Count = 1 Then
+scratch.Direction.Set(-simplex.V1.W.X, -simplex.V1.W.Y)
+ElseIf simplex.Count = 2 Then
+Distance.SolveSimplex2(simplex, scratch.Direction)
+Else
+Distance.SolveSimplex3(simplex, scratch.Direction)
+End If
+
+# If there are three points the origin is inside the triangle: overlap.
+If simplex.Count = 3 Then
+Distance.WriteOverlapOutput(input, out, simplex)
+Return out
+End If
+
+# Ensure the search direction is numerically fit.
+Var dX As Double = scratch.Direction.X
+Var dY As Double = scratch.Direction.Y
+If dX * dX + dY * dY < 0.0000001192092896 * 0.0000001192092896 Then
+# The origin is probably contained by a line segment or triangle, so
+# the shapes overlap. Return overlap due to the invalid normal.
+Distance.WriteOverlapOutput(input, out, simplex)
+Return out
+End If
+
+# Save the normal.
+nonUnitNormalX = dX
+nonUnitNormalY = dY
+
+# Compute a tentative new simplex vertex using support points.
+# support = support(a, d) - support(b, -d)
+Var vertex As SimplexVertex = simplex.VertexAt(simplex.Count)
+vertex.IndexA = Distance.FindSupport(proxyA, dX, dY)
+vertex.WA.Set(proxyA.Points[vertex.IndexA].X, proxyA.Points[vertex.IndexA].Y)
+vertex.IndexB = Distance.FindSupport(localProxyB, -dX, -dY)
+vertex.WB.Set(localProxyB.Points[vertex.IndexB].X, localProxyB.Points[vertex.IndexB].Y)
+vertex.W.Set(vertex.WA.X - vertex.WB.X, vertex.WA.Y - vertex.WB.Y)
+
+# The iteration count equals the number of support point calls.
+iteration = iteration + 1
+
+# Check for duplicate support points: the main termination criterion. A
+# duplicate means we must exit to avoid cycling.
+If Distance.IsDuplicateSupport(saveCount, vertex.IndexA, vertex.IndexB, saveA0, saveA1, saveA2, saveB0, saveB1, saveB2) Then
+Exit While
+End If
+
+# The new vertex is valid and needed.
+simplex.Count = simplex.Count + 1
+Wend
+
+# Prepare output, cache the simplex, and apply radii if requested.
+Distance.WriteDistanceOutput(input, out, cache, simplex, qa, sa, nonUnitNormalX, nonUnitNormalY, iteration)
+Return out
+End Function
+
+## Fills the workspace simplex from the cache, ported from upstream
+## b2MakeSimplexFromCache.
+Shared Sub MakeSimplexFromCache(cache As SimplexCache, proxyA As ShapeProxy, localProxyB As ShapeProxy, simplex As Simplex)
+If cache.Count > 3 Then
+Throw New RuntimeException("SimplexCache count must not exceed three")
+End If
+
+simplex.Count = cache.Count
+For i As Integer = 0 To simplex.Count - 1
+Var v As SimplexVertex = simplex.VertexAt(i)
+v.IndexA = cache.IndexA[i]
+v.IndexB = cache.IndexB[i]
+v.WA.Set(proxyA.Points[v.IndexA].X, proxyA.Points[v.IndexA].Y)
+v.WB.Set(localProxyB.Points[v.IndexB].X, localProxyB.Points[v.IndexB].Y)
+v.W.Set(v.WA.X - v.WB.X, v.WA.Y - v.WB.Y)
+
+# Invalid until solved.
+v.A = -1.0
+Next i
+
+# If the cache is empty or invalid, seed with the first support pair.
+If simplex.Count = 0 Then
+Var v As SimplexVertex = simplex.V1
+v.IndexA = 0
+v.IndexB = 0
+v.WA.Set(proxyA.Points[0].X, proxyA.Points[0].Y)
+v.WB.Set(localProxyB.Points[0].X, localProxyB.Points[0].Y)
+v.W.Set(v.WA.X - v.WB.X, v.WA.Y - v.WB.Y)
+v.A = 1.0
+simplex.Count = 1
+End If
+End Sub
+
+## Writes the simplex back into the cache, ported from upstream
+## b2MakeSimplexCache.
+Shared Sub MakeSimplexCache(cache As SimplexCache, simplex As Simplex)
+cache.Count = simplex.Count
+For i As Integer = 0 To simplex.Count - 1
+Var v As SimplexVertex = simplex.VertexAt(i)
+cache.IndexA[i] = v.IndexA
+cache.IndexB[i] = v.IndexB
+Next i
+End Sub
+
+## Writes the two witness points of the simplex into the caller-owned
+## vectors, ported from upstream b2ComputeSimplexWitnessPoints.
+Shared Sub ComputeWitnessPoints(simplex As Simplex, a As Vector2, b As Vector2)
+If simplex.Count = 1 Then
+a.Set(simplex.V1.WA.X, simplex.V1.WA.Y)
+b.Set(simplex.V1.WB.X, simplex.V1.WB.Y)
+ElseIf simplex.Count = 2 Then
+Var a1 As Double = simplex.V1.A
+Var a2 As Double = simplex.V2.A
+a.Set(a1 * simplex.V1.WA.X + a2 * simplex.V2.WA.X, a1 * simplex.V1.WA.Y + a2 * simplex.V2.WA.Y)
+b.Set(a1 * simplex.V1.WB.X + a2 * simplex.V2.WB.X, a1 * simplex.V1.WB.Y + a2 * simplex.V2.WB.Y)
+ElseIf simplex.Count = 3 Then
+Var a1 As Double = simplex.V1.A
+Var a2 As Double = simplex.V2.A
+Var a3 As Double = simplex.V3.A
+Var ax As Double = a1 * simplex.V1.WA.X + a2 * simplex.V2.WA.X + a3 * simplex.V3.WA.X
+Var ay As Double = a1 * simplex.V1.WA.Y + a2 * simplex.V2.WA.Y + a3 * simplex.V3.WA.Y
+a.Set(ax, ay)
+b.Set(ax, ay)
+Else
+a.Set(0.0, 0.0)
+b.Set(0.0, 0.0)
+Throw New RuntimeException("Simplex count must be between one and three")
+End If
+End Sub
+
+## Solves a two-vertex simplex with barycentric coordinates and writes the
+## search direction that points towards the origin, ported from upstream
+## b2SolveSimplex2.
+Shared Sub SolveSimplex2(simplex As Simplex, direction As Vector2)
+Var w1x As Double = simplex.V1.W.X
+Var w1y As Double = simplex.V1.W.Y
+Var w2x As Double = simplex.V2.W.X
+Var w2y As Double = simplex.V2.W.Y
+Var e12x As Double = w2x - w1x
+Var e12y As Double = w2y - w1y
+
+# w1 region
+Var d12_2 As Double = -(w1x * e12x + w1y * e12y)
+If d12_2 <= 0.0 Then
+# a2 <= 0, so clamp it to zero.
+simplex.V1.A = 1.0
+simplex.Count = 1
+direction.Set(-w1x, -w1y)
+Return
+End If
+
+# w2 region
+Var d12_1 As Double = w2x * e12x + w2y * e12y
+If d12_1 <= 0.0 Then
+# a1 <= 0, so clamp it to zero.
+simplex.V2.A = 1.0
+simplex.Count = 1
+simplex.V1.SetFrom(simplex.V2)
+direction.Set(-w2x, -w2y)
+Return
+End If
+
+# Must be in the e12 region.
+Var invD12 As Double = 1.0 / (d12_1 + d12_2)
+simplex.V1.A = d12_1 * invD12
+simplex.V2.A = d12_2 * invD12
+simplex.Count = 2
+
+# Direction is crossSV(cross(w1 + w2, e12), e12).
+Var wx As Double = w1x + w2x
+Var wy As Double = w1y + w2y
+Var c As Double = wx * e12y - wy * e12x
+direction.Set(-c * e12y, c * e12x)
+End Sub
+
+## Solves a three-vertex simplex, reducing it to the feature containing the
+## origin and writing the search direction, ported from upstream
+## b2SolveSimplex3.
+Shared Sub SolveSimplex3(simplex As Simplex, direction As Vector2)
+Var w1x As Double = simplex.V1.W.X
+Var w1y As Double = simplex.V1.W.Y
+Var w2x As Double = simplex.V2.W.X
+Var w2y As Double = simplex.V2.W.Y
+Var w3x As Double = simplex.V3.W.X
+Var w3y As Double = simplex.V3.W.Y
+
+# Edge12
+Var e12x As Double = w2x - w1x
+Var e12y As Double = w2y - w1y
+Var w1e12 As Double = w1x * e12x + w1y * e12y
+Var w2e12 As Double = w2x * e12x + w2y * e12y
+Var d12_1 As Double = w2e12
+Var d12_2 As Double = -w1e12
+
+# Edge13
+Var e13x As Double = w3x - w1x
+Var e13y As Double = w3y - w1y
+Var w1e13 As Double = w1x * e13x + w1y * e13y
+Var w3e13 As Double = w3x * e13x + w3y * e13y
+Var d13_1 As Double = w3e13
+Var d13_2 As Double = -w1e13
+
+# Edge23
+Var e23x As Double = w3x - w2x
+Var e23y As Double = w3y - w2y
+Var w2e23 As Double = w2x * e23x + w2y * e23y
+Var w3e23 As Double = w3x * e23x + w3y * e23y
+Var d23_1 As Double = w3e23
+Var d23_2 As Double = -w2e23
+
+# Triangle123
+Var n123 As Double = e12x * e13y - e12y * e13x
+
+Var d123_1 As Double = n123 * (w2x * w3y - w2y * w3x)
+Var d123_2 As Double = n123 * (w3x * w1y - w3y * w1x)
+Var d123_3 As Double = n123 * (w1x * w2y - w1y * w2x)
+
+# w1 region
+If d12_2 <= 0.0 And d13_2 <= 0.0 Then
+simplex.V1.A = 1.0
+simplex.Count = 1
+direction.Set(-w1x, -w1y)
+Return
+End If
+
+# e12 region
+If d12_1 > 0.0 And d12_2 > 0.0 And d123_3 <= 0.0 Then
+Var invD12 As Double = 1.0 / (d12_1 + d12_2)
+simplex.V1.A = d12_1 * invD12
+simplex.V2.A = d12_2 * invD12
+simplex.Count = 2
+Var wx As Double = w1x + w2x
+Var wy As Double = w1y + w2y
+Var c As Double = wx * e12y - wy * e12x
+direction.Set(-c * e12y, c * e12x)
+Return
+End If
+
+# e13 region
+If d13_1 > 0.0 And d13_2 > 0.0 And d123_2 <= 0.0 Then
+Var invD13 As Double = 1.0 / (d13_1 + d13_2)
+simplex.V1.A = d13_1 * invD13
+simplex.V3.A = d13_2 * invD13
+simplex.Count = 2
+simplex.V2.SetFrom(simplex.V3)
+Var wx As Double = w1x + w3x
+Var wy As Double = w1y + w3y
+Var c As Double = wx * e13y - wy * e13x
+direction.Set(-c * e13y, c * e13x)
+Return
+End If
+
+# w2 region
+If d12_1 <= 0.0 And d23_2 <= 0.0 Then
+simplex.V2.A = 1.0
+simplex.Count = 1
+simplex.V1.SetFrom(simplex.V2)
+direction.Set(-w2x, -w2y)
+Return
+End If
+
+# w3 region
+If d13_1 <= 0.0 And d23_1 <= 0.0 Then
+simplex.V3.A = 1.0
+simplex.Count = 1
+simplex.V1.SetFrom(simplex.V3)
+direction.Set(-w3x, -w3y)
+Return
+End If
+
+# e23 region
+If d23_1 > 0.0 And d23_2 > 0.0 And d123_1 <= 0.0 Then
+Var invD23 As Double = 1.0 / (d23_1 + d23_2)
+simplex.V2.A = d23_1 * invD23
+simplex.V3.A = d23_2 * invD23
+simplex.Count = 2
+simplex.V1.SetFrom(simplex.V3)
+Var wx As Double = w2x + w3x
+Var wy As Double = w2y + w3y
+Var c As Double = wx * e23y - wy * e23x
+direction.Set(-c * e23y, c * e23x)
+Return
+End If
+
+# Must be inside triangle123.
+Var invD123 As Double = 1.0 / (d123_1 + d123_2 + d123_3)
+simplex.V1.A = d123_1 * invD123
+simplex.V2.A = d123_2 * invD123
+simplex.V3.A = d123_3 * invD123
+simplex.Count = 3
+
+# No search direction: the origin is contained.
+direction.Set(0.0, 0.0)
+End Sub
+
+## Finds the index of the support point furthest along the direction,
+## ported from upstream b2FindSupport.
+Shared Function FindSupport(proxy As ShapeProxy, dirX As Double, dirY As Double) As Integer
+Var bestIndex As Integer = 0
+Var bestValue As Double = proxy.Points[0].X * dirX + proxy.Points[0].Y * dirY
+For i As Integer = 1 To proxy.Count - 1
+Var value As Double = proxy.Points[i].X * dirX + proxy.Points[i].Y * dirY
+If value > bestValue Then
+bestIndex = i
+bestValue = value
+End If
+Next i
+Return bestIndex
+End Function
+
+
+## Writes the overlap output when the origin is contained by the simplex.
+Shared Sub WriteOverlapOutput(input As DistanceInput, out As DistanceOutput, simplex As Simplex)
+Var scratch As DistanceScratch = out.Scratch()
+Distance.ComputeWitnessPoints(simplex, scratch.WitnessA, scratch.WitnessB)
+Distance.TransformInto(out.PointA, input.TransformA, scratch.WitnessA)
+Distance.TransformInto(out.PointB, input.TransformA, scratch.WitnessB)
+End Sub
+
+## Determines whether the tentative support point repeats an earlier simplex
+## vertex, which signals convergence.
+Shared Function IsDuplicateSupport(saveCount As Integer, indexA As Integer, indexB As Integer, saveA0 As Integer, saveA1 As Integer, saveA2 As Integer, saveB0 As Integer, saveB1 As Integer, saveB2 As Integer) As Boolean
+If saveCount > 0 And indexA = saveA0 And indexB = saveB0 Then
+Return True
+End If
+If saveCount > 1 And indexA = saveA1 And indexB = saveB1 Then
+Return True
+End If
+If saveCount > 2 And indexA = saveA2 And indexB = saveB2 Then
+Return True
+End If
+Return False
+End Function
+
+## Writes the miss-path distance output, caches the simplex, and applies
+## proxy radii when requested.
+Shared Sub WriteDistanceOutput(input As DistanceInput, out As DistanceOutput, cache As SimplexCache, simplex As Simplex, qa As Double, sa As Double, nonUnitNormalX As Double, nonUnitNormalY As Double, iteration As Integer)
+Var scratch As DistanceScratch = out.Scratch()
+Var invLen As Double = 0.0
+Var nLen As Double = Maths.Sqrt(nonUnitNormalX * nonUnitNormalX + nonUnitNormalY * nonUnitNormalY)
+If nLen > 0.0 Then
+invLen = 1.0 / nLen
+End If
+Var nx As Double = nonUnitNormalX * invLen
+Var ny As Double = nonUnitNormalY * invLen
+out.Normal.Set(qa * nx - sa * ny, sa * nx + qa * ny)
+
+Distance.ComputeWitnessPoints(simplex, scratch.WitnessA, scratch.WitnessB)
+Var laX As Double = scratch.WitnessA.X
+Var laY As Double = scratch.WitnessA.Y
+Var lbX As Double = scratch.WitnessB.X
+Var lbY As Double = scratch.WitnessB.Y
+Var ddx As Double = lbX - laX
+Var ddy As Double = lbY - laY
+out.Distance = Maths.Sqrt(ddx * ddx + ddy * ddy)
+out.PointA.Set(qa * laX - sa * laY + input.TransformA.P.X, sa * laX + qa * laY + input.TransformA.P.Y)
+out.PointB.Set(qa * lbX - sa * lbY + input.TransformA.P.X, sa * lbX + qa * lbY + input.TransformA.P.Y)
+out.Iterations = iteration
+out.SimplexCount = 0
+
+# Cache the simplex.
+Distance.MakeSimplexCache(cache, simplex)
+
+# Apply radii if requested.
+If input.UseRadii And out.Distance > 0.1 * PhysicsConstants.LINEAR_SLOP Then
+Var radiusA As Double = input.ProxyA.Radius
+Var radiusB As Double = input.ProxyB.Radius
+Var reduced As Double = out.Distance - radiusA - radiusB
+If reduced < 0.0 Then
+reduced = 0.0
+End If
+out.Distance = reduced
+
+# Keep closest points on the perimeter even if overlapped so the points
+# move smoothly.
+out.PointA.Set(out.PointA.X + radiusA * nx, out.PointA.Y + radiusA * ny)
+out.PointB.Set(out.PointB.X - radiusB * nx, out.PointB.Y - radiusB * ny)
+End If
+End Sub
+
+## Normalises the direction given as components into the caller-owned out
+## vector and returns its length. A zero direction leaves out unchanged and
+## returns zero.
+Shared Function NormalizeTo(x As Double, y As Double, out As Vector2) As Double
+Var length As Double = Maths.Sqrt(x * x + y * y)
+If length > 0.0 Then
+out.Set(x / length, y / length)
+Return length
+End If
+out.Set(0.0, 0.0)
+Return 0.0
+End Function
+
+## Transforms a local point into the caller-owned out vector using the
+## transform's rotation components and translation.
+Shared Sub TransformInto(out As Vector2, t As Transform, local As Vector2)
+out.Set(t.Q.C * local.X - t.Q.S * local.Y + t.P.X, t.Q.S * local.X + t.Q.C * local.Y + t.P.Y)
+End Sub
+
+## Clamps the value to the zero-to-one range, mirroring upstream
+## b2ClampFloat in SegmentDistance.
+Shared Function Clamp01(value As Double) As Double
+If value < 0.0 Then
+Return 0.0
+End If
+If value > 1.0 Then
+Return 1.0
+End If
+Return value
+End Function
+End Class

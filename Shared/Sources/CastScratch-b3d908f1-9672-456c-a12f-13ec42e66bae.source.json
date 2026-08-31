@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "CastScratch",
+  "Id": "b3d908f1-9672-456c-a12f-13ec42e66bae",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "CastScratch-b3d908f1-9672-456c-a12f-13ec42e66bae.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

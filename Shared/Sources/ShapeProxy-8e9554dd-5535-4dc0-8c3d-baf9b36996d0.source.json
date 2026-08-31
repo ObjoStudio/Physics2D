@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ShapeProxy",
+  "Id": "8e9554dd-5535-4dc0-8c3d-baf9b36996d0",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "ShapeProxy-8e9554dd-5535-4dc0-8c3d-baf9b36996d0.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

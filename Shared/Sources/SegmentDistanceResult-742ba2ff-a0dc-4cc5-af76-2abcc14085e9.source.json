@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "SegmentDistanceResult",
+  "Id": "742ba2ff-a0dc-4cc5-af76-2abcc14085e9",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "SegmentDistanceResult-742ba2ff-a0dc-4cc5-af76-2abcc14085e9.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

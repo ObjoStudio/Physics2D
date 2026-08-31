@@ -1,0 +1,29 @@
+# Engine-internal reusable workspace for the warm time-of-impact path.
+# Owned by a TOIOutput and created lazily. Not part of the public engine
+# surface.
+Class TOIScratch
+## Distance input reused across outer iterations. Its proxies alias the TOI
+## input's proxies and its transforms alias the scratch transforms.
+Property DistanceInput As DistanceInput
+## Distance output reused across outer iterations.
+Property DistanceOutput As DistanceOutput
+## Warm start cache reused across outer iterations and calls. Cleared at
+## the start of every computation.
+Property Cache As SimplexCache
+## Transform A evaluated at the current sweep time.
+Property TransformA As Transform
+## Transform B evaluated at the current sweep time.
+Property TransformB As Transform
+## The separating axis function rebuilt per outer iteration.
+Property Separation As SeparationFunction
+
+## Creates the workspace with empty storage.
+Constructor()
+Me.DistanceInput = New DistanceInput
+Me.DistanceOutput = New DistanceOutput
+Me.Cache = New SimplexCache
+Me.TransformA = New Transform
+Me.TransformB = New Transform
+Me.Separation = New SeparationFunction
+End Constructor
+End Class

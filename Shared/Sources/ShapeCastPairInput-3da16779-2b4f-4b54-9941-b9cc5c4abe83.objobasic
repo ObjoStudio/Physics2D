@@ -1,0 +1,45 @@
+# Input for casting shape B against shape A along a translation, ported
+# from upstream b2ShapeCastPairInput in collision.h. Proxies and transforms
+# are owned copies made by Make.
+Class ShapeCastPairInput
+## The proxy for shape A.
+Property ProxyA As ShapeProxy
+## The proxy for shape B.
+Property ProxyB As ShapeProxy
+## The world transform for shape A.
+Property TransformA As Transform
+## The world transform for shape B.
+Property TransformB As Transform
+## The translation of shape B.
+Property TranslationB As Vector2
+## The fraction of the translation to consider, typically 1.
+Property MaxFraction As Double
+## Allows shapes with a radius to move slightly closer if already touching.
+Property CanEncroach As Boolean
+
+## Creates an empty input with identity transforms and full fraction.
+Constructor()
+Me.ProxyA = New ShapeProxy
+Me.ProxyB = New ShapeProxy
+Me.TransformA = New Transform
+Me.TransformB = New Transform
+Me.TranslationB = New Vector2(0.0, 0.0)
+Me.MaxFraction = 1.0
+Me.CanEncroach = False
+End Constructor
+
+## Builds the pair input from two point clouds, ported from upstream
+## b2MakeShapeCastPairInput. This is a deep copy.
+Shared Function Make(pointsA() As Vector2, countA As Integer, radiusA As Double, pointsB() As Vector2, countB As Integer, radiusB As Double, transformA As Transform, transformB As Transform, translationB As Vector2, maxFraction As Double) As ShapeCastPairInput
+Var input As New ShapeCastPairInput
+input.ProxyA = ShapeProxy.Make(pointsA, countA, radiusA)
+input.ProxyB = ShapeProxy.Make(pointsB, countB, radiusB)
+input.TransformA.P.Set(transformA.P.X, transformA.P.Y)
+input.TransformA.Q.SetComponents(transformA.Q.C, transformA.Q.S)
+input.TransformB.P.Set(transformB.P.X, transformB.P.Y)
+input.TransformB.Q.SetComponents(transformB.Q.C, transformB.Q.S)
+input.TranslationB.Set(translationB.X, translationB.Y)
+input.MaxFraction = maxFraction
+Return input
+End Function
+End Class

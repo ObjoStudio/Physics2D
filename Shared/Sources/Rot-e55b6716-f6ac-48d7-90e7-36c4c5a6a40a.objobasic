@@ -1,0 +1,202 @@
+# Cosine/sine rotation, ported from upstream b2Rot in math_functions.h and
+# math_functions.c. A rotation stores the cosine and sine of its angle so
+# rotating vectors costs no trigonometric calls.
+#
+# Vector2 is a reference type in Objo, so the To-forms of vector helpers fill
+# a caller-owned vector and return it, while the plain forms allocate a new
+# vector. Hot engine code reads the C and S components directly and writes
+# vector results with Set, mirroring the upstream scalar arithmetic.
+#
+# Rot.Make uses the deterministic ComputeCosSin approximation, matching
+# upstream b2MakeRot, so angles behave identically on every machine.
+Class Rot
+## The cosine of the rotation angle.
+Property C As Double
+## The sine of the rotation angle.
+Property S As Double
+
+## Creates the identity rotation.
+Constructor()
+Me.C = 1.0
+Me.S = 0.0
+End Constructor
+
+## Creates a rotation from explicit cosine and sine values.
+Constructor(c As Double, s As Double)
+Me.C = c
+Me.S = s
+End Constructor
+
+## Copies another rotation's components.
+Constructor(q As Rot)
+Me.C = q.C
+Me.S = q.S
+End Constructor
+
+## Sets both components in place and returns this rotation.
+Function SetComponents(c As Double, s As Double) As Rot
+Me.C = c
+Me.S = s
+Return Me
+End Function
+
+## Sets both components from another rotation in place and returns this
+## rotation.
+Function SetFrom(q As Rot) As Rot
+Me.C = q.C
+Me.S = q.S
+Return Me
+End Function
+
+## Returns a new identity rotation.
+Shared Function Identity() As Rot
+Return New Rot(1.0, 0.0)
+End Function
+
+## Builds a rotation from an angle in radians using the deterministic
+## cosine/sine approximation, matching upstream b2MakeRot.
+Shared Function Make(radians As Double) As Rot
+Var pair As CosSin = PhysicsMaths.ComputeCosSin(radians)
+Return New Rot(pair.Cos, pair.Sin)
+End Function
+
+## Multiplies two rotations q * r, ported from upstream b2MulRot.
+Shared Function Mul(q As Rot, r As Rot) As Rot
+Return New Rot(q.C * r.C - q.S * r.S, q.S * r.C + q.C * r.S)
+End Function
+
+## Transpose-multiplies two rotations qT * r, ported from upstream
+## b2InvMulRot. The result is the relative rotation from q to r.
+Shared Function InvMul(q As Rot, r As Rot) As Rot
+Return New Rot(q.C * r.C + q.S * r.S, q.C * r.S - q.S * r.C)
+End Function
+
+## Normalises the rotation to the unit circle, ported from upstream
+## b2NormalizeRot. A zero rotation normalises to zero components; treat the
+## result as invalid in that case.
+Shared Function Normalize(q As Rot) As Rot
+Var mag As Double = Maths.Sqrt(q.S * q.S + q.C * q.C)
+Var invMag As Double = 0.0
+If mag > 0.0 Then
+invMag = 1.0 / mag
+End If
+Return New Rot(q.C * invMag, q.S * invMag)
+End Function
+
+## Normalises the caller-owned out rotation to the unit circle and returns
+## out. The reused-output form for warm loops.
+Shared Function NormalizeTo(q As Rot, out As Rot) As Rot
+Var mag As Double = Maths.Sqrt(q.S * q.S + q.C * q.C)
+Var invMag As Double = 0.0
+If mag > 0.0 Then
+invMag = 1.0 / mag
+End If
+Return out.SetComponents(q.C * invMag, q.S * invMag)
+End Function
+
+## Integrates a rotation over a small angle step, ported from upstream
+## b2IntegrateRotation. Used by the solver to advance rotations; hot solver
+## code works on scalar components instead.
+Shared Function Integrate(q1 As Rot, deltaAngle As Double) As Rot
+Var c As Double = q1.C - deltaAngle * q1.S
+Var s As Double = q1.S + deltaAngle * q1.C
+Var mag As Double = Maths.Sqrt(s * s + c * c)
+Var invMag As Double = 0.0
+If mag > 0.0 Then
+invMag = 1.0 / mag
+End If
+Return New Rot(c * invMag, s * invMag)
+End Function
+
+## Normalised linear interpolation between two rotations, ported from
+## upstream b2NLerp.
+Shared Function NLerp(q1 As Rot, q2 As Rot, t As Double) As Rot
+Var omt As Double = 1.0 - t
+Var c As Double = omt * q1.C + t * q2.C
+Var s As Double = omt * q1.S + t * q2.S
+Var mag As Double = Maths.Sqrt(s * s + c * c)
+Var invMag As Double = 0.0
+If mag > 0.0 Then
+invMag = 1.0 / mag
+End If
+Return New Rot(c * invMag, s * invMag)
+End Function
+
+## Returns the rotation angle in radians in [-pi, pi], ported from upstream
+## b2Rot_GetAngle using the deterministic Atan2.
+Shared Function GetAngle(q As Rot) As Double
+Return PhysicsMaths.Atan2(q.S, q.C)
+End Function
+
+## Returns the rotation's x-axis as a new unit vector, ported from upstream
+## b2Rot_GetXAxis.
+Shared Function ToXAxis(q As Rot) As Vector2
+Return New Vector2(q.C, q.S)
+End Function
+
+## Returns the rotation's y-axis as a new unit vector, ported from upstream
+## b2Rot_GetYAxis.
+Shared Function ToYAxis(q As Rot) As Vector2
+Return New Vector2(-q.S, q.C)
+End Function
+
+## Returns the relative angle between b and a (rot_b * inv(rot_a)), ported
+## from upstream b2RelativeAngle.
+Shared Function RelativeAngle(b As Rot, a As Rot) As Double
+Var s As Double = b.S * a.C - b.C * a.S
+Var c As Double = b.C * a.C + b.S * a.S
+Return PhysicsMaths.Atan2(s, c)
+End Function
+
+## Computes the angular velocity needed to rotate from q1 to q2 over the
+## inverse time step invH, ported from upstream b2ComputeAngularVelocity.
+Shared Function ComputeAngularVelocity(q1 As Rot, q2 As Rot, invH As Double) As Double
+Return invH * (q2.S * q1.C - q2.C * q1.S)
+End Function
+
+## Returns True when the rotation magnitude stays within the upstream
+## normalisation tolerance, ported from b2IsNormalizedRot.
+Shared Function IsNormalized(q As Rot) As Boolean
+Var qq As Double = q.S * q.S + q.C * q.C
+Return 1.0 - 0.0006 < qq And qq < 1.0 + 0.0006
+End Function
+
+## Returns True when the rotation components are finite and normalised,
+## ported from upstream b2IsValidRotation.
+Shared Function IsValid(q As Rot) As Boolean
+If Not q.C.IsFinite() Or Not q.S.IsFinite() Then
+Return False
+End If
+Return Rot.IsNormalized(q)
+End Function
+
+## Computes the rotation between two unit vectors, ported from upstream
+## b2ComputeRotationBetweenUnitVectors. Both inputs must be unit length;
+## the result is normalised.
+Shared Function ComputeRotationBetweenUnitVectors(v1 As Vector2, v2 As Vector2) As Rot
+Return Rot.Normalize(New Rot(Vector2.Dot(v1, v2), Vector2.Cross(v1, v2)))
+End Function
+
+## Rotates a vector into a new vector, ported from upstream b2RotateVector.
+Shared Function RotateVector(q As Rot, v As Vector2) As Vector2
+Return New Vector2(q.C * v.X - q.S * v.Y, q.S * v.X + q.C * v.Y)
+End Function
+
+## Rotates a vector into the caller-owned out vector and returns out. The
+## reused-output form for warm loops; results match RotateVector exactly.
+Shared Function RotateVectorTo(q As Rot, v As Vector2, out As Vector2) As Vector2
+Return out.Set(q.C * v.X - q.S * v.Y, q.S * v.X + q.C * v.Y)
+End Function
+
+## Inverse-rotates a vector into a new vector, ported from upstream
+## b2InvRotateVector.
+Shared Function InvRotateVector(q As Rot, v As Vector2) As Vector2
+Return New Vector2(q.C * v.X + q.S * v.Y, -q.S * v.X + q.C * v.Y)
+End Function
+
+## Inverse-rotates a vector into the caller-owned out vector and returns
+## out. The reused-output form for warm loops.
+Shared Function InvRotateVectorTo(q As Rot, v As Vector2, out As Vector2) As Vector2
+Return out.Set(q.C * v.X + q.S * v.Y, -q.S * v.X + q.C * v.Y)
+End Function
+End Class

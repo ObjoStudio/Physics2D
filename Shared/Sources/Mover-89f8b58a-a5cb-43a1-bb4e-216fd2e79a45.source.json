@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Mover",
+  "Id": "89f8b58a-a5cb-43a1-bb4e-216fd2e79a45",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Mover-89f8b58a-a5cb-43a1-bb4e-216fd2e79a45.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}
