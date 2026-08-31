@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "CustomPreSolve",
+  "Id": "b38d9e4a-aa1b-42da-abc3-12ef38bd27da",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "CustomPreSolve.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

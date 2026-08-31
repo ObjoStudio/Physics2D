@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage7Workloads",
+  "Id": "270aae46-0fe2-44fa-ad25-b298490bcc8b",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage7Workloads-270aae46-0fe2-44fa-ad25-b298490bcc8b.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

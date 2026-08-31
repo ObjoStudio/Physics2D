@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "SceneTests",
+  "Id": "27801cb5-1406-4b48-947a-e994917832b7",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "SceneTests-27801cb5-1406-4b48-947a-e994917832b7.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

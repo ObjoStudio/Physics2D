@@ -59,6 +59,7 @@ runner.Add(New Stage5TreeChurnScenario())
 runner.Add(New Stage5TreeQueryScenario())
 runner.Add(New Stage5TreeRebuildScenario())
 runner.Add(New Stage5BroadPhasePairsScenario())
+runner.Add(New Stage7PyramidScenario())
 
 Var results() As BenchmarkResult = runner.RunAll()
 

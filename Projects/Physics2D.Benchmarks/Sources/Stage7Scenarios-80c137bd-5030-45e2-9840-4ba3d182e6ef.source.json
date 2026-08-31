@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage7Scenarios",
+  "Id": "80c137bd-5030-45e2-9840-4ba3d182e6ef",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage7Scenarios-80c137bd-5030-45e2-9840-4ba3d182e6ef.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

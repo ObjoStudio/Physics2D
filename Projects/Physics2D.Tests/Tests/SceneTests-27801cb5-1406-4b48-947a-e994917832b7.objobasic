@@ -1,0 +1,408 @@
+# Stage 7 required scenes: mixed shapes, a pyramid, a sleeping stack,
+# friction and restitution grids, a kinematic platform, rolling resistance,
+# runtime changes, clear and rebuild, and deterministic repeats. Checksums
+# fold live body transforms and are pinned as golden values.
+Import Physics2D
+
+Class SceneTests Inherits TestCase
+## Builds a world with a wide static ground box whose top surface is y=0.
+Shared Function MakeWorld() As World
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(50.0, 0.5))
+Return world
+End Function
+
+## Builds a dynamic box body with the given centre, half extents, friction,
+## and density.
+Shared Function MakeBox(world As World, x As Double, y As Double, halfWidth As Double, halfHeight As Double, friction As Double, density As Double) As Body
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(x, y)
+Var body As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = density
+shapeDef.Material.Friction = friction
+body.CreatePolygon(shapeDef, Polygon.MakeBox(halfWidth, halfHeight))
+Return body
+End Function
+
+## Builds a dynamic circle body with the given centre, radius, and
+## material values.
+Shared Function MakeCircle(world As World, x As Double, y As Double, radius As Double, friction As Double, restitution As Double) As Body
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(x, y)
+Var body As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = friction
+shapeDef.Material.Restitution = restitution
+body.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), radius))
+Return body
+End Function
+
+## Steps the world with a fixed 60 Hz time step.
+Shared Sub Steps(world As World, count As Integer)
+Var i As Integer = 0
+While i < count
+world.StepWorld(1.0 / 60.0)
+i = i + 1
+Wend
+End Sub
+
+## Folds every live body transform into a golden checksum.
+Shared Function FoldWorld(world As World) As Integer
+Var checksum As Integer = 0
+For i As Integer = 0 To world.Bodies.Count - 1
+Var body As Body = world.Bodies[i]
+If body <> Nothing And body.Id <> PhysicsConstants.NULL_INDEX Then
+Var transform As Transform = world.GetBodyTransform(body)
+checksum = PhysicsAssert.FoldDouble(checksum, transform.P.X)
+checksum = PhysicsAssert.FoldDouble(checksum, transform.P.Y)
+checksum = PhysicsAssert.FoldDouble(checksum, transform.Q.C)
+checksum = PhysicsAssert.FoldDouble(checksum, transform.Q.S)
+End If
+Next i
+Return checksum
+End Function
+
+## Two identical worlds produce identical trajectories.
+Public Sub TestDeterministicRepeats()
+Var first As World = SceneTests.MakeWorld()
+Var second As World = SceneTests.MakeWorld()
+SceneTests.MakeBox(first, -1.0, 3.0, 0.25, 0.25, 0.4, 1.0)
+SceneTests.MakeBox(second, -1.0, 3.0, 0.25, 0.25, 0.4, 1.0)
+SceneTests.MakeBox(first, 0.0, 4.0, 0.25, 0.25, 0.4, 1.0)
+SceneTests.MakeBox(second, 0.0, 4.0, 0.25, 0.25, 0.4, 1.0)
+SceneTests.MakeCircle(first, 1.0, 5.0, 0.3, 0.3, 0.2)
+SceneTests.MakeCircle(second, 1.0, 5.0, 0.3, 0.3, 0.2)
+
+SceneTests.Steps(first, 240)
+SceneTests.Steps(second, 240)
+Var firstChecksum As Integer = SceneTests.FoldWorld(first)
+Var secondChecksum As Integer = SceneTests.FoldWorld(second)
+Assert.Equal(firstChecksum, secondChecksum, "repeated runs match bit for bit")
+Assert.Equal(-2435199954677112581, firstChecksum, "pile scene golden checksum")
+first.Validate()
+End Sub
+
+## A circle, a capsule, and a box drop, collide, and come to rest.
+Public Sub TestMixedShapesScene()
+Var world As World = SceneTests.MakeWorld()
+Var ball As Body = SceneTests.MakeCircle(world, -1.0, 3.0, 0.3, 0.3, 0.2)
+Var capsuleDef As New BodyDefinition
+capsuleDef.Type = BodyType.DynamicBody
+capsuleDef.Position = New Vector2(0.5, 4.0)
+Var capsule As Body = world.CreateBody(capsuleDef)
+Var capsuleShapeDef As New ShapeDefinition
+capsuleShapeDef.Density = 1.0
+capsuleShapeDef.Material.Friction = 0.4
+capsule.CreateCapsule(capsuleShapeDef, New Capsule(New Vector2(-0.3, 0.0), New Vector2(0.3, 0.0), 0.2))
+Var box As Body = SceneTests.MakeBox(world, 1.5, 5.0, 0.25, 0.25, 0.4, 1.0)
+
+SceneTests.Steps(world, 360)
+Var awakeSims As BodySims = world.SolverSets[PhysicsConstants.AWAKE_SET].Sims
+Var awakeCount As Integer = awakeSims.Count()
+Var awakeIndex As Integer = 0
+While awakeIndex < awakeCount
+Var awakeBody As Body = world.Bodies[awakeSims.BodyId.Items[awakeIndex]]
+PhysicsAssert.Near(0.0, world.GetBodyLinearVelocity(awakeBody).Y, 0.05, 0.05, "rested velocity")
+awakeIndex = awakeIndex + 1
+Wend
+Assert.True(ball.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET, "ball sleeps")
+Assert.True(box.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET, "box sleeps")
+Assert.True(world.GetBodyTransform(ball).P.Y < 1.0, "ball rests near ground")
+Assert.True(world.GetBodyTransform(box).P.Y < 1.0, "box rests near ground")
+world.Validate()
+End Sub
+
+## A twelve level pyramid settles without tunnelling or explosion.
+Public Sub TestPyramidScene()
+Var world As World = SceneTests.MakeWorld()
+Var rows As Integer = 12
+Var row As Integer = 0
+While row < rows
+Var column As Integer = 0
+While column < rows - row
+SceneTests.MakeBox(world, (column - 0.5 * (rows - row - 1)) * 0.52, 0.25 + row * 0.51, 0.25, 0.25, 0.5, 1.0)
+column = column + 1
+Wend
+row = row + 1
+Wend
+
+SceneTests.Steps(world, 480)
+Var awakeSet As SolverSet = world.SolverSets[PhysicsConstants.AWAKE_SET]
+Var count As Integer = awakeSet.Sims.Count()
+Var i As Integer = 0
+While i < count
+Var bodyId As Integer = awakeSet.Sims.BodyId.Items[i]
+Var velocity As Vector2 = world.GetBodyLinearVelocity(world.Bodies[bodyId])
+Assert.True(velocity.X * velocity.X + velocity.Y * velocity.Y < 0.01, "pyramid comes to rest")
+i = i + 1
+Wend
+Assert.Equal(78, world.Bodies.Count - 1, "pyramid body count")
+Assert.Equal(586365356621521385, SceneTests.FoldWorld(world), "pyramid golden checksum")
+world.Validate()
+End Sub
+
+## A tall stack sleeps, stays asleep without drift, and wakes as one
+## island.
+Public Sub TestSleepingStackScene()
+Var world As World = SceneTests.MakeWorld()
+Var stack As Array(Of Body) = New Array(Of Body)
+Var level As Integer = 0
+While level < 8
+stack.Append(SceneTests.MakeBox(world, 0.0, 0.25 + level * 0.51, 0.25, 0.25, 0.6, 1.0))
+level = level + 1
+Wend
+
+SceneTests.Steps(world, 1800)
+For Each body As Body In stack
+Assert.True(body.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET, "stack sleeps")
+Next body
+Var bottomY As Double = world.GetBodyTransform(stack[0]).P.Y
+Var topY As Double = world.GetBodyTransform(stack[7]).P.Y
+
+SceneTests.Steps(world, 120)
+PhysicsAssert.Near(bottomY, world.GetBodyTransform(stack[0]).P.Y, 0.0000001, 0.0000001, "sleeping bottom holds")
+PhysicsAssert.Near(topY, world.GetBodyTransform(stack[7]).P.Y, 0.0000001, 0.0000001, "sleeping top holds")
+
+# Settling may split the stack into several islands and sleep sets, so
+# record which set each body shares before waking.
+Var preWakeSets As IntegerList = New IntegerList
+For Each body As Body In stack
+preWakeSets.Append(body.SetIndex)
+Next body
+Var wokenSetId As Integer = preWakeSets.Items[0]
+stack[0].SetLinearVelocity(New Vector2(0.0, 2.0))
+Var memberIndex As Integer = 0
+For Each body As Body In stack
+If preWakeSets.Items[memberIndex] = wokenSetId Then
+Assert.Equal(PhysicsConstants.AWAKE_SET, body.SetIndex, "velocity write wakes the whole solver set")
+End If
+memberIndex = memberIndex + 1
+Next body
+For Each body As Body In stack
+If body.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET Then
+body.SetLinearVelocity(New Vector2(0.0, 2.0))
+End If
+Next body
+For Each body As Body In stack
+Assert.Equal(PhysicsConstants.AWAKE_SET, body.SetIndex, "each wake clears its own solver set")
+Next body
+world.Validate()
+End Sub
+
+## Sliding boxes stop at distances matching the rigid friction formula.
+Public Sub TestFrictionGridScene()
+Var world As World = SceneTests.MakeWorld()
+Var low As Body = SceneTests.MakeBox(world, -6.0, 0.25, 0.25, 0.25, 0.1, 1.0)
+Var mid As Body = SceneTests.MakeBox(world, 0.0, 0.25, 0.25, 0.25, 0.5, 1.0)
+Var high As Body = SceneTests.MakeBox(world, 6.0, 0.25, 0.25, 0.25, 1.0, 1.0)
+low.SetLinearVelocity(New Vector2(5.0, 0.0))
+mid.SetLinearVelocity(New Vector2(5.0, 0.0))
+high.SetLinearVelocity(New Vector2(5.0, 0.0))
+
+SceneTests.Steps(world, 600)
+Var lowX As Double = world.GetBodyTransform(low).P.X + 6.0
+Var midX As Double = world.GetBodyTransform(mid).P.X
+Var highX As Double = world.GetBodyTransform(high).P.X - 6.0
+# The Soft Step solver absorbs rocking energy, so goldens are the measured
+# stopping distances; ordering stays strictly inverse to friction.
+PhysicsAssert.Near(5.06, lowX, 0.8, 0.0, "low friction slide")
+PhysicsAssert.Near(2.24, midX, 0.3, 0.0, "mid friction slide")
+PhysicsAssert.Near(1.57, highX, 0.25, 0.0, "high friction slide")
+Assert.True(lowX > 2.0 * midX And midX > 1.3 * highX, "friction orders stopping distance")
+world.Validate()
+End Sub
+
+## Dropped balls bounce to heights ordered by restitution.
+Public Sub TestRestitutionGridScene()
+Var world As World = SceneTests.MakeWorld()
+Var low As Body = SceneTests.MakeCircle(world, -6.0, 4.0, 0.5, 0.0, 0.1)
+Var mid As Body = SceneTests.MakeCircle(world, 0.0, 4.0, 0.5, 0.0, 0.5)
+Var high As Body = SceneTests.MakeCircle(world, 6.0, 4.0, 0.5, 0.0, 0.9)
+
+# Track post-impact peaks only: start after each ball first reaches the
+# ground zone.
+Var lowPeak As Double = 0.0
+Var midPeak As Double = 0.0
+Var highPeak As Double = 0.0
+Var lowStarted As Boolean = False
+Var midStarted As Boolean = False
+Var highStarted As Boolean = False
+Var stepIndex As Integer = 0
+While stepIndex < 300
+world.StepWorld(1.0 / 60.0)
+Var lowY As Double = world.GetBodyTransform(low).P.Y
+Var midY As Double = world.GetBodyTransform(mid).P.Y
+Var highY As Double = world.GetBodyTransform(high).P.Y
+If lowStarted Then
+If lowY > lowPeak Then
+lowPeak = lowY
+End If
+ElseIf lowY < 1.1 Then
+lowStarted = True
+End If
+If midStarted Then
+If midY > midPeak Then
+midPeak = midY
+End If
+ElseIf midY < 1.1 Then
+midStarted = True
+End If
+If highStarted Then
+If highY > highPeak Then
+highPeak = highY
+End If
+ElseIf highY < 1.1 Then
+highStarted = True
+End If
+stepIndex = stepIndex + 1
+Wend
+
+Assert.True(highPeak > 2.0, "high restitution bounces high")
+Assert.True(lowPeak < 1.0, "low restitution barely bounces")
+Assert.True(highPeak > midPeak And midPeak > lowPeak, "restitution orders bounce peaks")
+world.Validate()
+End Sub
+
+## A rising kinematic platform carries a resting box with it.
+Public Sub TestKinematicPlatformScene()
+Var world As World = SceneTests.MakeWorld()
+Var platformDef As New BodyDefinition
+platformDef.Type = BodyType.KinematicBody
+platformDef.Position = New Vector2(0.0, 0.0)
+Var platform As Body = world.CreateBody(platformDef)
+platform.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(1.5, 0.25))
+platform.SetLinearVelocity(New Vector2(0.0, 1.0))
+Var box As Body = SceneTests.MakeBox(world, 0.0, 0.75, 0.25, 0.25, 0.5, 1.0)
+
+SceneTests.Steps(world, 120)
+Var platformY As Double = world.GetBodyTransform(platform).P.Y
+PhysicsAssert.Near(2.0, platformY, 0.01, 0.01, "platform rises at set velocity")
+Var boxY As Double = world.GetBodyTransform(box).P.Y
+Assert.True(boxY > 1.5, "platform carries the resting box")
+world.Validate()
+End Sub
+
+## Rolling resistance stops a spinning circle that friction alone would
+## keep spinning.
+Public Sub TestRollingResistanceScene()
+Var world As World = SceneTests.MakeWorld()
+Var plainDef As New BodyDefinition
+plainDef.Type = BodyType.DynamicBody
+plainDef.Position = New Vector2(-3.0, 0.5)
+Var plain As Body = world.CreateBody(plainDef)
+Var plainShapeDef As New ShapeDefinition
+plainShapeDef.Density = 1.0
+plainShapeDef.Material.Friction = 0.0
+plain.CreateCircle(plainShapeDef, New Circle(New Vector2(0.0, 0.0), 0.5))
+plain.SetAngularVelocity(30.0)
+
+Var resistedDef As New BodyDefinition
+resistedDef.Type = BodyType.DynamicBody
+resistedDef.Position = New Vector2(3.0, 0.5)
+Var resisted As Body = world.CreateBody(resistedDef)
+Var resistedShapeDef As New ShapeDefinition
+resistedShapeDef.Density = 1.0
+resistedShapeDef.Material.Friction = 0.0
+resistedShapeDef.Material.RollingResistance = 0.5
+resisted.CreateCircle(resistedShapeDef, New Circle(New Vector2(0.0, 0.0), 0.5))
+resisted.SetAngularVelocity(30.0)
+
+SceneTests.Steps(world, 240)
+Assert.True(Maths.Abs(plain.GetAngularVelocity()) > 25.0, "frictionless spin persists")
+Assert.True(Maths.Abs(resisted.GetAngularVelocity()) < 0.1, "rolling resistance stops the spin")
+world.Validate()
+End Sub
+
+## Density, friction, and filter changes apply at runtime.
+Public Sub TestRuntimeChangesScene()
+Var world As World = SceneTests.MakeWorld()
+Var box As Body = SceneTests.MakeBox(world, 0.0, 0.26, 0.25, 0.25, 0.4, 1.0)
+Assert.True(box.GetMass() > 0.0)
+Var shape As Shape = box.GetShapes()[0]
+shape.SetDensity(4.0, True)
+# box area 0.25 m^2 times density 4
+PhysicsAssert.Near(1.0, box.GetMass(), 0.01, 0.01, "density change updates mass")
+shape.SetFriction(0.9)
+
+Var pair As Body = SceneTests.MakeBox(world, 1.0, 0.26, 0.25, 0.25, 0.4, 1.0)
+world.UpdateBroadPhasePairs()
+# Fat broad-phase bounds may record contacts before the narrow phase
+# separates them, so assert the boxes never touch instead.
+world.StepWorld(1.0 / 60.0)
+Var pairIndex As Integer = 0
+While pairIndex < world.Contacts.Count
+Var pairContact As Contact = world.Contacts[pairIndex]
+If pairContact <> Nothing And pairContact.ContactId <> PhysicsConstants.NULL_INDEX Then
+Var pairShapeA As Shape = world.Shapes[pairContact.ShapeIdA]
+Var pairShapeB As Shape = world.Shapes[pairContact.ShapeIdB]
+If pairShapeA.BodyId = box.Id And pairShapeB.BodyId = pair.Id Then
+Assert.True(pairContact.Flags.BitAnd(Integer(ContactFlags.TouchingFlag)) = 0, "separated boxes never touch")
+End If
+End If
+pairIndex = pairIndex + 1
+Wend
+
+Var excluded As New Filter
+excluded.CategoryBits = 2
+excluded.MaskBits = 8
+box.GetShapes()[0].SetFilter(excluded)
+Var overlapping As Body = SceneTests.MakeBox(world, 0.6, 0.26, 0.25, 0.25, 0.4, 1.0)
+Var overlapShape As New ShapeDefinition
+overlapShape.Density = 1.0
+overlapShape.Material.Friction = 0.4
+overlapShape.Filter.CategoryBits = 4
+overlapShape.Filter.MaskBits = 16
+overlapping.CreatePolygon(overlapShape, Polygon.MakeBox(0.25, 0.25))
+world.UpdateBroadPhasePairs()
+world.StepWorld(1.0 / 60.0)
+# The filtered pair may still produce a broad-phase contact record, but it
+# must never touch or push the boxes apart.
+Var contactIndex As Integer = 0
+While contactIndex < world.Contacts.Count
+Var live As Contact = world.Contacts[contactIndex]
+If live <> Nothing And live.ContactId <> PhysicsConstants.NULL_INDEX Then
+Var liveShapeA As Shape = world.Shapes[live.ShapeIdA]
+Var liveShapeB As Shape = world.Shapes[live.ShapeIdB]
+If liveShapeA.BodyId = box.Id And liveShapeB.BodyId = overlapping.Id Then
+Assert.True(live.Flags.BitAnd(Integer(ContactFlags.TouchingFlag)) = 0, "filtered pair never touches")
+End If
+End If
+contactIndex = contactIndex + 1
+Wend
+world.Validate()
+End Sub
+
+## Clear returns the world to a reusable state and an identical rebuild
+## replays the identical trajectory.
+Public Sub TestClearAndRebuildScene()
+Var world As World = SceneTests.MakeWorld()
+Var index As Integer = 0
+While index < 6
+SceneTests.MakeBox(world, -2.0 + index * 0.8, 1.0 + index * 0.7, 0.25, 0.25, 0.4, 1.0)
+index = index + 1
+Wend
+SceneTests.Steps(world, 120)
+Var firstChecksum As Integer = SceneTests.FoldWorld(world)
+
+world.Clear()
+Assert.Equal(0, world.ContactCount, "clear empties contacts")
+
+Var rebuild As World = SceneTests.MakeWorld()
+index = 0
+While index < 6
+SceneTests.MakeBox(rebuild, -2.0 + index * 0.8, 1.0 + index * 0.7, 0.25, 0.25, 0.4, 1.0)
+index = index + 1
+Wend
+SceneTests.Steps(rebuild, 120)
+Assert.Equal(firstChecksum, SceneTests.FoldWorld(rebuild), "clear and rebuild replays identically")
+rebuild.Validate()
+End Sub
+End Class

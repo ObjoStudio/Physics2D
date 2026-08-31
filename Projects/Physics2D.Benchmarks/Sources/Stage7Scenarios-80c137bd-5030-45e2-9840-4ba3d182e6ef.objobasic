@@ -1,0 +1,37 @@
+# Stage 7 benchmark scenarios wrapping the solver workloads.
+Import Physics2D
+
+Class Stage7PyramidScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As PyramidWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage7-pyramid-40"
+Me.Description = "Steps a 40-level box pyramid (820 bodies) through the full Stage 7 solver four times per iteration."
+Me.WarmupIterations = 3
+Me.MeasuredIterations = 8
+Me.mWorkload = New PyramidWorkload
+End Constructor
+
+## Describes the pyramid parameters.
+Override Function Parameters() As String
+Return "levels=40,boxes=820,steps=4,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class

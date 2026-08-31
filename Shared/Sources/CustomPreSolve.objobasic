@@ -1,0 +1,17 @@
+# Opt-in pre-solve manifold editing, ported from upstream b2PreSolveFcn in
+# types.h. The world consults this hook during the narrow phase for a
+# touching contact when either shape opted in with EnablePreSolveEvents;
+# leaving PreSolve as Nothing costs nothing.
+#
+# The hook runs while the world is locked and must not create, destroy, or
+# modify world objects. It may edit the live manifold, and returning False
+# disables the contact for this step by zeroing its point count.
+Class CustomPreSolve
+## Returns True to keep the contact, False to disable it for this step.
+Function PreSolve(shapeA As Shape, shapeB As Shape, manifold As Manifold) As Boolean
+Pragma Unused shapeA
+Pragma Unused shapeB
+Pragma Unused manifold
+Return True
+End Function
+End Class

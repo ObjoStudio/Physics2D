@@ -1,0 +1,93 @@
+# Stage 7 solver workloads.
+#
+# The pyramid workload drives the full step pipeline — broad-phase pairing,
+# narrow phase, island maintenance, and the Soft Step constraint solver —
+# over a 40-level box pyramid, the first full-solver performance baseline.
+# Each iteration steps the fixed scene and folds live body transforms into
+# a deterministic checksum.
+Import Physics2D
+
+Class PyramidWorkload
+## The stepped world.
+Property World As World
+## Bodies of the pyramid, bottom row first.
+Property Stack As Array(Of Body)
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Builds a fresh 40-level pyramid world.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 0.5))
+
+Me.Stack = New Array(Of Body)
+Me.Stack.Reserve(820)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.5
+Var rows As Integer = 40
+Var row As Integer = 0
+While row < rows
+Var column As Integer = 0
+While column < rows - row
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2((column - 0.5 * (rows - row - 1)) * 0.52, 0.25 + row * 0.51)
+Var body As Body = Me.World.CreateBody(def)
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Me.Stack.Append(body)
+column = column + 1
+Wend
+row = row + 1
+Wend
+Me.SubSteps = 1
+Me.World.UpdateBroadPhasePairs()
+End Sub
+
+## Steps the pyramid four times, then folds live transforms.
+Sub RunKernels()
+Var stepIndex As Integer = 0
+While stepIndex < 4
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+stepIndex = stepIndex + 1
+Wend
+Var checksum As Integer = 0
+Var count As Integer = Me.Stack.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Stack[i])
+checksum = Me.FoldDouble(checksum, transform.P.X)
+checksum = Me.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## Folds one Double into the checksum, matching the PhysicsAssert fold:
+## round to nine decimals, then FNV-1a over the little-end octets.
+Function FoldDouble(checksum As Integer, value As Double) As Integer
+Var scaled As Integer = Integer(Maths.Round(value * 1000000000.0))
+Var hash As Integer = checksum
+Var octetIndex As Integer = 0
+While octetIndex < 8
+Var octet As Integer = scaled.BitAnd(255)
+hash = hash.BitXor(octet)
+hash = hash * 1099511628211
+scaled = scaled.ShiftRight(8)
+octetIndex = octetIndex + 1
+Wend
+Return hash
+End Function
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class

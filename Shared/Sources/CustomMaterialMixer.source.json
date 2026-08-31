@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "CustomMaterialMixer",
+  "Id": "9f4a2b7c-1d3e-4f5a-8b6c-7d8e9f0a1b2c",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "CustomMaterialMixer.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -213,8 +213,8 @@ sims.InvMassA.Items[simIndex] = 0.0
 sims.InvIA.Items[simIndex] = 0.0
 sims.InvMassB.Items[simIndex] = 0.0
 sims.InvIB.Items[simIndex] = 0.0
-sims.Friction.Items[simIndex] = world.MixFriction(shapeA.Friction, shapeB.Friction)
-sims.Restitution.Items[simIndex] = world.MixRestitution(shapeA.Restitution, shapeB.Restitution)
+sims.Friction.Items[simIndex] = world.MixFrictionWithMaterials(shapeA.Friction, shapeA.UserMaterialId, shapeB.Friction, shapeB.UserMaterialId)
+sims.Restitution.Items[simIndex] = world.MixRestitutionWithMaterials(shapeA.Restitution, shapeA.UserMaterialId, shapeB.Restitution, shapeB.UserMaterialId)
 sims.RollingResistance.Items[simIndex] = 0.0
 sims.TangentSpeed.Items[simIndex] = 0.0
 sims.SimFlags.Items[simIndex] = 0
@@ -454,8 +454,8 @@ End If
 ContactMethods.ComputeManifoldTo(shapeA, transformA, shapeB, transformB, cache, manifold)
 
 # Keep the mixing values current in case the shapes were modified.
-sims.Friction.Items[simIndex] = world.MixFriction(shapeA.Friction, shapeB.Friction)
-sims.Restitution.Items[simIndex] = world.MixRestitution(shapeA.Restitution, shapeB.Restitution)
+sims.Friction.Items[simIndex] = world.MixFrictionWithMaterials(shapeA.Friction, shapeA.UserMaterialId, shapeB.Friction, shapeB.UserMaterialId)
+sims.Restitution.Items[simIndex] = world.MixRestitutionWithMaterials(shapeA.Restitution, shapeA.UserMaterialId, shapeB.Restitution, shapeB.UserMaterialId)
 If shapeA.RollingResistance > 0.0 Or shapeB.RollingResistance > 0.0 Then
 Var radiusA As Double = ContactMethods.GetShapeRadius(shapeA)
 Var radiusB As Double = ContactMethods.GetShapeRadius(shapeB)
@@ -472,6 +472,16 @@ sims.TangentSpeed.Items[simIndex] = shapeA.TangentSpeed + shapeB.TangentSpeed
 Var pointCount As Integer = manifold.PointCount
 Var touching As Boolean = pointCount > 0
 
+# Opt-in pre-solve editing runs while the world is locked; returning False
+# disables the contact for this step, ported from b2UpdateContact.
+If touching Then
+touching = ApplyPreSolve(world, shapeA, shapeB, manifold, sims.SimFlags.Items[simIndex])
+If touching = False Then
+manifold.PointCount = 0
+pointCount = 0
+End If
+End If
+
 # Speculative margins are a Stage 8 concern; without them a two-point
 # manifold with a too-positive separation collapses to its deeper point,
 # ported from the enableSpeculative guard.
@@ -485,11 +495,7 @@ End If
 pointCount = manifold.PointCount
 End If
 
-If touching And (shapeA.EnableHitEvents Or shapeB.EnableHitEvents) Then
-sims.SimFlags.Items[simIndex] = sims.SimFlags.Items[simIndex].BitOr(Integer(ContactFlags.SimEnableHitEvent))
-Else
-sims.SimFlags.Items[simIndex] = sims.SimFlags.Items[simIndex].BitAnd(Integer(ContactFlags.SimEnableHitEvent).BitNot())
-End If
+UpdateHitEventFlag(shapeA, shapeB, sims, simIndex)
 
 If pointCount > 0 Then
 manifold.RollingImpulse = 0.0
@@ -531,6 +537,29 @@ sims.SimFlags.Items[simIndex] = sims.SimFlags.Items[simIndex].BitAnd(Integer(Con
 End If
 
 Return touching
+End Function
+
+## Keeps the sim hit-event flag current against the shape opt-ins, ported
+## from the enableHitEvents block of b2UpdateContact.
+Private Shared Sub UpdateHitEventFlag(shapeA As Shape, shapeB As Shape, sims As ContactSims, simIndex As Integer)
+If shapeA.EnableHitEvents Or shapeB.EnableHitEvents Then
+sims.SimFlags.Items[simIndex] = sims.SimFlags.Items[simIndex].BitOr(Integer(ContactFlags.SimEnableHitEvent))
+Else
+sims.SimFlags.Items[simIndex] = sims.SimFlags.Items[simIndex].BitAnd(Integer(ContactFlags.SimEnableHitEvent).BitNot())
+End If
+End Sub
+
+## Applies the opt-in pre-solve hook to a touching contact, returning the
+## possibly-revoked touching state. Ported from the pre-solve guard in
+## b2UpdateContact.
+Private Shared Function ApplyPreSolve(world As World, shapeA As Shape, shapeB As Shape, manifold As Manifold, simFlags As Integer) As Boolean
+If world.PreSolve = Nothing Then
+Return True
+End If
+If simFlags.BitAnd(Integer(ContactFlags.SimEnablePreSolveEvents)) = 0 Then
+Return True
+End If
+Return world.PreSolve.PreSolve(shapeA, shapeB, manifold)
 End Function
 
 ## Shifts one manifold point's anchors from body-origin-relative to

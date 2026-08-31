@@ -111,6 +111,11 @@ Private Property mTransformScratch As Transform
 Private Property mVectorScratch As Vector2
 ## Scratch per-step solver values reused across steps.
 Private Property mStepScratch As StepContext
+## Opt-in pre-solve manifold editor consulted during the narrow phase.
+Property PreSolve As CustomPreSolve
+## Opt-in material mixer consulted when contacts compute friction and
+## restitution.
+Property MaterialMixer As CustomMaterialMixer
 ## Scratch bit set marking contacts whose touching state changed this step.
 Private Property mContactStateBits As BitSet
 ## Scratch bit set marking islands that still hold a body below the sleep
@@ -168,6 +173,8 @@ Me.ContactIdPool = New IdPool
 Me.Contacts = New Array(Of Contact)
 Me.ContactCount = 0
 Me.CustomFilter = Nothing
+Me.PreSolve = Nothing
+Me.MaterialMixer = Nothing
 Me.IslandIdPool = New IdPool
 Me.Islands = New Array(Of Island)
 Me.SplitIslandId = PhysicsConstants.NULL_INDEX
@@ -243,12 +250,30 @@ End Sub
 ## Mixed friction for a new contact, ported from the default friction
 ## callback. The mixer hook replaces this from the step stage.
 Function MixFriction(frictionA As Double, frictionB As Double) As Double
+Return Me.MixFrictionWithMaterials(frictionA, 0, frictionB, 0)
+End Function
+
+## Routes friction mixing through the opt-in mixer, ported from the
+## friction callback on the upstream world definition.
+Function MixFrictionWithMaterials(frictionA As Double, userMaterialIdA As Integer, frictionB As Double, userMaterialIdB As Integer) As Double
+If Me.MaterialMixer <> Nothing Then
+Return Me.MaterialMixer.MixFriction(frictionA, userMaterialIdA, frictionB, userMaterialIdB)
+End If
 Return Maths.Sqrt(frictionA * frictionB)
 End Function
 
 ## Mixed restitution for a new contact, ported from the default restitution
 ## callback.
 Function MixRestitution(restitutionA As Double, restitutionB As Double) As Double
+Return Me.MixRestitutionWithMaterials(restitutionA, 0, restitutionB, 0)
+End Function
+
+## Routes restitution mixing through the opt-in mixer, ported from the
+## restitution callback on the upstream world definition.
+Function MixRestitutionWithMaterials(restitutionA As Double, userMaterialIdA As Integer, restitutionB As Double, userMaterialIdB As Integer) As Double
+If Me.MaterialMixer <> Nothing Then
+Return Me.MaterialMixer.MixRestitution(restitutionA, userMaterialIdA, restitutionB, userMaterialIdB)
+End If
 If restitutionA > restitutionB Then
 Return restitutionA
 End If
@@ -1086,9 +1111,8 @@ End If
 If contact.SetIndex = PhysicsConstants.DISABLED_SET Then
 Continue While
 End If
+If contact.ColorIndex <> PhysicsConstants.NULL_INDEX Then
 # Touching contacts are moved separately with the island's contact list.
-Var owningSet As SolverSet = Me.SolverSets[contact.SetIndex]
-If owningSet.ContactSims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag)) <> 0 Then
 Continue While
 End If
 Var otherBodyId As Integer = contact.Edge1BodyId

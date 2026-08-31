@@ -540,6 +540,85 @@ Var bouncedY As Double = states.LVY.Items[cc.IndexB]
 Assert.True(bouncedY > 1.5, "restitution reflects most of the impact speed, got " + bouncedY.ToString())
 world.Validate()
 End Sub
+
+## The pre-solve hook runs for opted-in touching pairs and may disable the
+## contact for the step by returning False.
+Public Sub TestPreSolveHookDisablesContact()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+Var hook As New ZeroingPreSolve
+world.PreSolve = hook
+world.Bodies[1].GetShapes()[0].EnablePreSolveEvents = True
+world.StepWorld(1.0 / 60.0)
+Assert.True(hook.Calls > 0, "pre-solve hook ran for the touching pair")
+Var contact As Contact = ContactTests.OnlyContact(world)
+Var sims As ContactSims
+If contact.ColorIndex <> PhysicsConstants.NULL_INDEX Then
+sims = world.ConstraintGraph.Colors[contact.ColorIndex].ContactSims
+Else
+sims = world.SolverSets[contact.SetIndex].ContactSims
+End If
+Assert.Equal(0, sims.GetManifold(contact.LocalIndex).PointCount, "hook zeroed the manifold")
+Assert.True(contact.Flags.BitAnd(Integer(ContactFlags.TouchingFlag)) = 0, "hooked-off contact is not touching")
+world.StepWorld(1.0 / 60.0)
+world.Validate()
+End Sub
+
+## The pre-solve hook never runs unless a shape opted in.
+Public Sub TestPreSolveHookRequiresOptIn()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+Var hook As New ZeroingPreSolve
+world.PreSolve = hook
+world.Bodies[1].GetShapes()[0].EnablePreSolveEvents = False
+world.StepWorld(1.0 / 60.0)
+Assert.Equal(0, hook.Calls, "hook skipped without the shape opt-in")
+world.Validate()
+End Sub
+
+## The material mixer hook overrides the built-in friction and restitution
+## rules without disturbing pair creation.
+Public Sub TestMaterialMixerHookOverridesDefaults()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.MaterialMixer = New FixedMixer
+world.UpdateBroadPhasePairs()
+Assert.Equal(1, world.ContactCount, "mixer hook leaves pair creation intact")
+world.Validate()
+End Sub
+End Class
+
+## Pre-solve hook that disables the contact between two circle bodies.
+Class ZeroingPreSolve Inherits CustomPreSolve
+## Number of times the hook ran.
+Property Calls As Integer
+
+## Disables the contact for this step.
+Override Function PreSolve(shapeA As Shape, shapeB As Shape, manifold As Manifold) As Boolean
+Pragma Unused shapeA
+Pragma Unused shapeB
+Pragma Unused manifold
+Me.Calls = Me.Calls + 1
+Return False
+End Function
+End Class
+
+## Material mixer returning fixed values.
+Class FixedMixer Inherits CustomMaterialMixer
+## Returns a fixed friction.
+Override Function MixFriction(frictionA As Double, userMaterialIdA As Integer, frictionB As Double, userMaterialIdB As Integer) As Double
+Pragma Unused frictionA
+Pragma Unused frictionB
+Pragma Unused userMaterialIdA
+Pragma Unused userMaterialIdB
+Return 0.25
+End Function
+
+## Returns a fixed restitution.
+Override Function MixRestitution(restitutionA As Double, userMaterialIdA As Integer, restitutionB As Double, userMaterialIdB As Integer) As Double
+Pragma Unused restitutionA
+Pragma Unused restitutionB
+Pragma Unused userMaterialIdA
+Pragma Unused userMaterialIdB
+Return 0.75
+End Function
 End Class
 
 ## Custom filter hook that vetoes every pair and counts its calls.

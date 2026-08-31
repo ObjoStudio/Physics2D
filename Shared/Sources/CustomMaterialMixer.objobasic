@@ -1,0 +1,24 @@
+# Opt-in friction and restitution mixing, ported from the upstream friction
+# and restitution callbacks on the world definition. When the world's
+# MaterialMixer is Nothing the built-in square-root friction and maximum
+# restitution rules apply at no extra cost.
+#
+# The hook runs while the world is locked and must not mutate world objects.
+Class CustomMaterialMixer
+## Returns the mixed friction for a new contact pair.
+Function MixFriction(frictionA As Double, userMaterialIdA As Integer, frictionB As Double, userMaterialIdB As Integer) As Double
+Pragma Unused userMaterialIdA
+Pragma Unused userMaterialIdB
+Return Maths.Sqrt(frictionA * frictionB)
+End Function
+
+## Returns the mixed restitution for a new contact pair.
+Function MixRestitution(restitutionA As Double, userMaterialIdA As Integer, restitutionB As Double, userMaterialIdB As Integer) As Double
+Pragma Unused userMaterialIdA
+Pragma Unused userMaterialIdB
+If restitutionA > restitutionB Then
+Return restitutionA
+End If
+Return restitutionB
+End Function
+End Class
