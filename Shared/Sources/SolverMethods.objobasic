@@ -12,6 +12,7 @@ Var constraints As Array(Of ContactConstraint) = color.Constraints
 While constraints.Count < count
 constraints.Append(New ContactConstraint)
 Wend
+color.ConstraintCount = count
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
 For i As Integer = 0 To count - 1
 ContactSolver.PrepareContact(constraints[i], states, color.ContactSims, i, context.ContactSoftness, context.StaticSoftness, context.WarmStartScale)
@@ -24,7 +25,7 @@ Shared Sub WarmStartColorContacts(world As World, colorIndex As Integer)
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
 Var constraints As Array(Of ContactConstraint) = color.Constraints
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
-For i As Integer = 0 To constraints.Count - 1
+For i As Integer = 0 To color.ConstraintCount - 1
 ContactSolver.WarmStartContact(states, constraints[i])
 Next i
 End Sub
@@ -35,7 +36,7 @@ Shared Sub SolveColorContacts(world As World, context As StepContext, colorIndex
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
 Var constraints As Array(Of ContactConstraint) = color.Constraints
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
-For i As Integer = 0 To constraints.Count - 1
+For i As Integer = 0 To color.ConstraintCount - 1
 ContactSolver.SolveContact(states, constraints[i], context.InvH, -context.ContactSpeed, useBias)
 Next i
 End Sub
@@ -45,7 +46,7 @@ Shared Sub ApplyColorRestitution(world As World, context As StepContext, colorIn
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
 Var constraints As Array(Of ContactConstraint) = color.Constraints
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
-For i As Integer = 0 To constraints.Count - 1
+For i As Integer = 0 To color.ConstraintCount - 1
 ContactSolver.ApplyContactRestitution(states, constraints[i], context.RestitutionThreshold)
 Next i
 End Sub
@@ -55,7 +56,7 @@ End Sub
 Shared Sub StoreColorImpulses(world As World, colorIndex As Integer)
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
 Var constraints As Array(Of ContactConstraint) = color.Constraints
-For i As Integer = 0 To constraints.Count - 1
+For i As Integer = 0 To color.ConstraintCount - 1
 ContactSolver.StoreImpulses(constraints[i], color.ContactSims.GetManifold(i))
 Next i
 End Sub

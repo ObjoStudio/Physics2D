@@ -107,6 +107,9 @@ Private Property mMassScratch As MassData
 Private Property mExtentScratch As ShapeExtent
 ## Scratch transform reused by warm-path transform reads.
 Private Property mTransformScratch As Transform
+## Second scratch transform so the narrow phase reads two bodies without
+## allocating.
+Private Property mTransformScratchB As Transform
 ## Scratch vector reused by warm-path mass and extent updates.
 Private Property mVectorScratch As Vector2
 ## Scratch per-step solver values reused across steps.
@@ -193,6 +196,7 @@ Me.mRayCastContext = New WorldRayCastContext
 Me.mShapeCastContext = New WorldShapeCastContext
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
+Me.mTransformScratchB = New Transform
 Me.mStepScratch = New StepContext
 Me.mContactStateBits = New BitSet(256)
 Me.mAwakeIslandBits = New BitSet(64)
@@ -327,14 +331,8 @@ Var contactHertz As Double = Me.ContactHertz
 If contactHertz > 0.125 * context.InvH Then
 contactHertz = 0.125 * context.InvH
 End If
-Var contactSoftness As Softness = Softness.Make(contactHertz, Me.ContactDampingRatio, context.H)
-Var staticSoftness As Softness = Softness.Make(2.0 * contactHertz, Me.ContactDampingRatio, context.H)
-context.ContactSoftness.BiasRate = contactSoftness.BiasRate
-context.ContactSoftness.MassScale = contactSoftness.MassScale
-context.ContactSoftness.ImpulseScale = contactSoftness.ImpulseScale
-context.StaticSoftness.BiasRate = staticSoftness.BiasRate
-context.StaticSoftness.MassScale = staticSoftness.MassScale
-context.StaticSoftness.ImpulseScale = staticSoftness.ImpulseScale
+Softness.MakeTo(contactHertz, Me.ContactDampingRatio, context.H, context.ContactSoftness)
+Softness.MakeTo(2.0 * contactHertz, Me.ContactDampingRatio, context.H, context.StaticSoftness)
 context.ContactSpeed = Me.MaxContactPushSpeed / context.StaticSoftness.MassScale
 context.RestitutionThreshold = Me.RestitutionThreshold
 context.MaximumLinearVelocity = Me.MaximumLinearSpeed
@@ -425,8 +423,10 @@ sims.InvMassB.Items[contact.LocalIndex] = bodySimB.InvMass.Items[bodyB.LocalInde
 sims.InvIB.Items[contact.LocalIndex] = bodySimB.InvInertia.Items[bodyB.LocalIndex]
 
 Var wasTouching As Boolean = sims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag)) <> 0
-Var transformA As Transform = Me.GetBodyTransform(bodyA)
-Var transformB As Transform = Me.GetBodyTransform(bodyB)
+Me.GetBodyTransformTo(bodyA, Me.mTransformScratch)
+Me.GetBodyTransformTo(bodyB, Me.mTransformScratchB)
+Var transformA As Transform = Me.mTransformScratch
+Var transformB As Transform = Me.mTransformScratchB
 Var centerOffsetAX As Double = bodySimA.CenterX.Items[bodyA.LocalIndex] - bodySimA.PX.Items[bodyA.LocalIndex]
 Var centerOffsetAY As Double = bodySimA.CenterY.Items[bodyA.LocalIndex] - bodySimA.PY.Items[bodyA.LocalIndex]
 Var centerOffsetBX As Double = bodySimB.CenterX.Items[bodyB.LocalIndex] - bodySimB.PX.Items[bodyB.LocalIndex]

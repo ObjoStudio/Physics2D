@@ -280,7 +280,8 @@ rules shape the layout:
    world creation so per-island sleeping sets start at 3. Open chains attach
    segment *i* to material *i + 1* (the upstream leading-point rule). The
    world raises `RuntimeException` when locked instead of upstream's silent
-   early returns, and `StepWorld` refuses until Stage 7 delivers the solver.
+   early returns; `StepWorld` validates the time step, locks the world, and
+   drives the Stage 7 pipeline described below.
 4. **Queries own nothing the caller did not pass.** The four `Into` forms
    reset only the caller's hit list, fill `ShapeHit` façades owned by the
    list, and apply category filtering through the broad-phase trees. The
@@ -296,6 +297,47 @@ Measured allocation budgets (test-pinned): a warm shape creation allocates
 rebuilding eight one-shape bodies allocates 136 objects — exactly the eight
 façade groups — because tree, sim, proxy, and id-pool capacity all survive
 `Clear`.
+
+## Soft Step Solver (Stage 7)
+
+Stage 7 completes the simulation loop: `World.StepWorld` now runs pair
+discovery, the narrow phase, island maintenance, the Soft Step constraint
+solver, body finalisation, broad-phase refit, and island sleeping in
+upstream's exact stage order.
+
+1. **Contacts and islands.** Contacts live in per-set `ContactSims` stores;
+   touching contacts additionally occupy a constraint-graph colour row.
+   Island records link bodies, contacts, and their solver sets so sleeping
+   moves a whole island at once. `IslandMethods` ports linking, splitting
+   (DFS with `DfsVisitBody`), merging, and sleeping; `GraphMethods` ports
+   colour choice, insertion, and removal.
+2. **Constraint graph.** Twelve colours: 0-10 hold touching contacts whose
+   body sets stay disjoint (BitSet rows over body ids), colour 11 is the
+   serial overflow colour. Contacts carry `ColorIndex` plus their
+   set/local location; validation cross-checks both.
+3. **Solver kernels.** `ContactSolver` ports `b2PrepareContactsTask`,
+   warm start, the Soft Step velocity solve (bias, speculative separation,
+   mass scale, impulse scale), friction with conveyor-belt `TangentSpeed`,
+   rolling resistance against accumulated normal impulse, restitution, and
+   impulse storage. `Softness.Make` ports `b2MakeSoft`; `StepContext` is
+   world-owned scratch so warm steps allocate nothing.
+4. **Step pipeline.** `CollideStep` gathers colour and awake-set sims,
+   refreshes mass terms, recomputes manifolds, and collects touching-state
+   transitions in a contact-id BitSet consumed in ascending order.
+   `SolveStep` merges and splits islands, prepares colours then overflow,
+   and runs the substep loop (integrate velocities, warm start, bias solve,
+   integrate positions, relax), restitution, and impulse storage.
+   `FinalizeBodies` applies deltas, tracks sleep and split candidates,
+   updates shape AABBs; `RefitBroadPhase` enlarges grown proxies;
+   `SleepIslands` reverse-iterates awake islands into sleeping sets.
+5. **Hooks.** `CustomContactFilter`, `CustomPreSolve` (manifold editing, opt
+   in per shape via `EnablePreSolveEvents`), and `CustomMaterialMixer` run
+   only when assigned, matching upstream's zero-overhead disabled path.
+
+Determinism rests on ascending-id serial stages, the fixed colour order,
+and the deterministic `PhysicsMaths` routines. The `stage7-pyramid-40`
+benchmark (820 bodies, four 60 Hz steps per iteration) is the first
+full-solver baseline and doubles as a checksum-pinned regression.
 
 ## Deterministic Maths
 

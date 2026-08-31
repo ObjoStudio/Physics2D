@@ -10,6 +10,8 @@ Property BodySet As BitSet
 Property ContactSims As ContactSims
 ## Solver scratch constraints matching the sim rows one to one.
 Property Constraints As Array(Of ContactConstraint)
+## Number of live constraints in the scratch array this step.
+Property ConstraintCount As Integer
 
 ## Creates a colour with or without a body set, sized for the given body
 ## capacity. The bit set grows on demand afterwards.
@@ -21,6 +23,7 @@ Me.BodySet = Nothing
 End If
 Me.ContactSims = New ContactSims()
 Me.Constraints = New Array(Of ContactConstraint)
+Me.ConstraintCount = 0
 End Constructor
 
 ## Creates a free-record placeholder for sparse array capacity.
@@ -28,5 +31,6 @@ Constructor()
 Me.BodySet = Nothing
 Me.ContactSims = New ContactSims()
 Me.Constraints = New Array(Of ContactConstraint)
+Me.ConstraintCount = 0
 End Constructor
 End Class

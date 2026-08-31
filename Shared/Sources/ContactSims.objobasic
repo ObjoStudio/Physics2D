@@ -130,8 +130,12 @@ End Function
 ## the last one. After the call the moved row lives at `index`; read its
 ## ContactId there.
 Function RemoveSwap(index As Integer) As Integer
+If Me.ManifoldSlots.Items[index] <> PhysicsConstants.NULL_INDEX Then
 Me.FreeManifolds.Append(Me.ManifoldSlots.Items[index])
+End If
+If Me.CacheSlots.Items[index] <> PhysicsConstants.NULL_INDEX Then
 Me.FreeCaches.Append(Me.CacheSlots.Items[index])
+End If
 Var movedIndex As Integer = Me.ContactId.RemoveSwap(index)
 Me.ShapeIdA.RemoveSwap(index)
 Me.ShapeIdB.RemoveSwap(index)
@@ -152,9 +156,9 @@ Return movedIndex
 End Function
 
 ## Copies one row's scalars into another store's row and adopts the
-## source's pooled manifold and cache objects. Used only while contacts
-## migrate between solver sets; the source store is emptied or destroyed
-## immediately afterwards, so its pools shrink without bookkeeping.
+## source's pooled manifold and cache objects. The vacated source slots are
+## marked NULL so the following RemoveSwap does not recycle an object that
+## now belongs to the target store; the slot stays as a dead pool hole.
 Sub MoveRowTo(target As ContactSims, targetIndex As Integer, sourceIndex As Integer)
 target.ContactId.Items[targetIndex] = Me.ContactId.Items[sourceIndex]
 target.ShapeIdA.Items[targetIndex] = Me.ShapeIdA.Items[sourceIndex]
@@ -172,6 +176,8 @@ target.TangentSpeed.Items[targetIndex] = Me.TangentSpeed.Items[sourceIndex]
 target.SimFlags.Items[targetIndex] = Me.SimFlags.Items[sourceIndex]
 target.ManifoldPool[target.ManifoldSlots.Items[targetIndex]] = Me.ManifoldPool[Me.ManifoldSlots.Items[sourceIndex]]
 target.CachePool[target.CacheSlots.Items[targetIndex]] = Me.CachePool[Me.CacheSlots.Items[sourceIndex]]
+Me.ManifoldSlots.Items[sourceIndex] = PhysicsConstants.NULL_INDEX
+Me.CacheSlots.Items[sourceIndex] = PhysicsConstants.NULL_INDEX
 End Sub
 
 ## Empties the store while retaining all capacity, including the pooled

@@ -225,6 +225,24 @@ in the Objo checkout remains authoritative.
   `ParentModuleId`, `AvailableInDesigner`, `CodeFile`, `LayoutFile`, `Notes`,
   `InspectorBehaviour`); a minimal sidecar makes the tests compile but
   silently drop them from discovery.
+- A `##` doc comment attaches only to the declaration that immediately
+  follows it. A run of properties needs one `##` line per property, or every
+  property after the first is undocumented.
+- String concatenation is `+`. `&` does not parse as concatenation.
+- Calling a Private member of the same class through the class qualifier
+  (`ContactMethods.ApplyPreSolve(...)` inside `ContactMethods`) triggers a
+  false "never called" warning. Use the bare member name for self-calls.
+- `Count` is a property on some containers (`IntegerList`, `DoubleList`,
+  `Array`) and a method on others (`ContactSims`, `BodySims`). Check the
+  container before calling.
+- The `BitSet` constructor takes the bit capacity (`New BitSet(8)`);
+  `SetCountAndClear(count)` sizes and clears separately.
+- `For Each ... Next x` must repeat the same loop variable: `Next body` for
+  `For Each body As Body In ...`, and a plain `Next` when the count uses a
+  separate index.
+- Project-source sidecars (`Projects/*/Sources`, test `Tests/`) carry an
+  empty `ParentModule`; only `Shared/Sources` items name `Physics2D` as
+  their parent.
 
 Forge2D, JBox2D, and the older Xojo Physics project are secondary references
 only. Do not copy implementation code from them into Physics2D. A single pinned

@@ -54,6 +54,23 @@ i = i + 1
 Wend
 End Sub
 
+## Sums the speed of every awake dynamic body, for convergence probes.
+Shared Function SumAwakeSpeed(world As World) As Double
+Var total As Double = 0.0
+Var awakeSims As BodySims = world.SolverSets[PhysicsConstants.AWAKE_SET].Sims
+Var count As Integer = awakeSims.Count()
+Var i As Integer = 0
+While i < count
+Var body As Body = world.Bodies[awakeSims.BodyId.Items[i]]
+If body.Type = BodyType.DynamicBody Then
+Var v As Vector2 = world.GetBodyLinearVelocity(body)
+total = total + Maths.Sqrt(v.X * v.X + v.Y * v.Y)
+End If
+i = i + 1
+Wend
+Return total
+End Function
+
 ## Folds every live body transform into a golden checksum.
 Shared Function FoldWorld(world As World) As Integer
 Var checksum As Integer = 0
@@ -86,7 +103,7 @@ SceneTests.Steps(second, 240)
 Var firstChecksum As Integer = SceneTests.FoldWorld(first)
 Var secondChecksum As Integer = SceneTests.FoldWorld(second)
 Assert.Equal(firstChecksum, secondChecksum, "repeated runs match bit for bit")
-Assert.Equal(-2435199954677112581, firstChecksum, "pile scene golden checksum")
+Assert.Equal(-4440008632116778095, firstChecksum, "pile scene golden checksum")
 first.Validate()
 End Sub
 
@@ -145,7 +162,7 @@ Assert.True(velocity.X * velocity.X + velocity.Y * velocity.Y < 0.01, "pyramid c
 i = i + 1
 Wend
 Assert.Equal(78, world.Bodies.Count - 1, "pyramid body count")
-Assert.Equal(586365356621521385, SceneTests.FoldWorld(world), "pyramid golden checksum")
+Assert.Equal(6421569019990401853, SceneTests.FoldWorld(world), "pyramid golden checksum")
 world.Validate()
 End Sub
 

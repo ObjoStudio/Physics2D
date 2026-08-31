@@ -95,8 +95,20 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
 19. **Solver-set id pool.** Upstream `b2CreateWorld` allocates solver-set ids
     0-2 through the id pool; Physics2D mirrors this so the first per-island
     sleeping set starts at 3.
-20. **Step availability.** `World.StepWorld` refuses to run until Stage 7
-    delivers the solver; every other Stage 6 API is complete.
+20. **Step availability.** `World.StepWorld` arrived with the Stage 7
+    solver; every other Stage 6 API was already complete.
+21. **Serial solver stages.** Upstream fans each solver stage out through a
+    task scheduler and SIMD lanes; Physics2D runs the same stage order as
+    sequential loops over the graph colours, overflow colour first, with
+    `StepContext` and the colour constraint arrays reused across steps.
+22. **Per-step validation.** Upstream revalidates solver sets inside every
+    step; Physics2D validates through the explicit `World.Validate` API
+    (tests call it after steps) so release steps stay lean.
+23. **Hook signatures.** The pre-solve hook receives `Shape` façades and the
+    live `Manifold` instead of shape IDs; the material mixer receives user
+    material IDs alongside each value, matching the upstream callback
+    signature, and routes through `World.MixFrictionWithMaterials` /
+    `World.MixRestitutionWithMaterials`.
 
 ## Public Symbol Inventory
 
@@ -641,7 +653,7 @@ Upstream line counts are for orientation only.
 | `src/dynamic_tree.c` | `DynamicTree` | 5 |
 | `src/broad_phase.[ch]` | `BroadPhase` | 5 |
 | `src/body.[ch]`, `src/shape.[ch]` | body/shape stores and façades | 6 |
-| `src/world.[ch]`, `src/types.c` | `World` façade and world core | 6 |
+| `src/world.[ch]`, `src/types.c` | `World` façade and world core (the solving half of `world.c` lands with Stage 7) | 6/7 |
 | `src/contact.[ch]`, `src/contact_solver.c` | contact store and contact solver | 7 |
 | `src/island.[ch]`, `src/solver_set.[ch]`, `src/solver.[ch]` | islands, solver sets, Soft Step solver | 7 |
 | `src/constraint_graph.[ch]` | constraint graph colours | 7 |

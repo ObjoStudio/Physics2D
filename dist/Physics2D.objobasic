@@ -32,7 +32,7 @@
 # Input: ContactConstraint.objobasic 035f5e6d9b00737fb1e0d05aed0821441452bf5ae04bd2018caa8b7648a1e517
 # Input: ContactFlags.objobasic 60d159f6cf6e942332b1ff941019e78a96e3c4aab637f56f8f431ad2651221d1
 # Input: ContactMethods.objobasic 41e532f37943b507fcbe779da64b92a4091303f10d31412ea2ca87f8e099c8cb
-# Input: ContactSims.objobasic 658177aa51544031f33cdac5cb05f35d3971ea62e276c42fe218cc0d1de3f13f
+# Input: ContactSims.objobasic e2bce217a2d08ad5fdf8886b14b636f5b49d2c7bfe46822cfeb3ea81b9462d7e
 # Input: ContactSolver.objobasic 7656cbea54cb438fef2d8fe60975cd85169aa0ca25068de19dc260c3745670a1
 # Input: CosSin-5c078a22-97ea-4e99-99f1-aeb228b29070.objobasic 336ba8c66991bb2a6b9e11d51e21d0ec630188fedb577d2613eb7dee28dae4ca
 # Input: CustomContactFilter.objobasic 22c6ed2347f3634c8076604defb9dbe63b7a72da3510b15ea32a6c91a46d43e5
@@ -46,7 +46,7 @@
 # Input: DynamicTree-55542eb0-42a0-4347-b11f-3b7e2e8c53c6.objobasic 7951306a5b478cd7110a9f0cca40ecf103261109f36bee9896a4fe7fbf5d805e
 # Input: Filter.objobasic 455187bd46728c62c4c2784de321128dacf43ccf7964a1352b88c042796bac78
 # Input: GenerationalPool-a7eb56c1-ce86-4368-ae3c-458ea741dd55.objobasic 124a545390769606488fb8c6855cbaba9cc135170e8f24120127ef1a60b22d9e
-# Input: GraphColor.objobasic 0d4fe31ece9ffe64e68147cc66decab1bb477c0ef391ef8d72df7c38e58db93b
+# Input: GraphColor.objobasic 05adefe9fa164a43893cdc651df583728aa6b3ef193e964002bf4f69637000c4
 # Input: GraphMethods.objobasic a9882981d3d1779304974a6b097ff68d338a1f8c52dfe53c0e23374875ab897f
 # Input: Hull-46e523c2-f9cc-462f-91b6-53ab922cc560.objobasic 74d15ddd59dc1af0c1ea3a82efe06f46b9a4cb16e001340460c2e1bb12b14f26
 # Input: IdPool-fbf7c609-ee86-443b-8d23-078728df5ac9.objobasic 626645c06f0424bccaa91f2354eb2c1e8c952ca239b17686b7bfbe1631e11c27
@@ -84,8 +84,8 @@
 # Input: Simplex-d5d2812f-9dda-4d3c-ba39-d99bd1d38cf6.objobasic 63f26925c0eb3e6ca586f1706bdd70ae889bf10072d437a1459a128a15da827e
 # Input: SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic 82bc4694e90f396c176e50cbe8196ea7c809da4842781d5f9750137a1d087314
 # Input: SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic 7c911da9871051f8580713a107d379e349bdc89cf9f9f0e9968f07c29e2f19da
-# Input: Softness.objobasic 9cccefa08bba8e28e948d3186b4bd9c6c13f4a81c9dcd56739576eb60237b9fc
-# Input: SolverMethods.objobasic db2f20c888c6718fd17d432f8d023526a1368326f6a80c536547ec2d55d2919d
+# Input: Softness.objobasic 06211852d8bbb70e4c5f5479756606be96bb2667bd617c4f635f76a661e47d4a
+# Input: SolverMethods.objobasic b211a0cc05a398e237aa12f8a911af3626e3654ffee4fbe3abd62d5ce5251514
 # Input: SolverSet.objobasic 1d2b42169e753b0f4170547856e8e70e2fe1627878b28a60f941ccc978df8418
 # Input: StepContext.objobasic 3b77b2f83a53e499777a6fcdf70a07f484ad058fcabd8de9d5569c0460c0496b
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
@@ -102,7 +102,7 @@
 # Input: TreeScratch-3add8e75-acc6-4f27-996e-372dc4d98372.objobasic 35e077b5cec3caafcc6d334013421d7a9612c3ba18ecf97875019b87ac2f9f55
 # Input: TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic 2abd4a4ca724ab02daa1a476dd447403aea4c5d80a507691f770ed20469a832b
 # Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
-# Input: World.objobasic dda8228e6a2ff3cf874b8225a20ce0a0cd972a8e66b7cd303208d68828a6a160
+# Input: World.objobasic d3e9ca6d494555842afce75c9376bfac82d3cc4edf977209af792f42fede92c9
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
 # Input: WorldOverlapContext.objobasic d6427a128c7da4c7c28607ce9ce2938ee735594398b6d8bddeaffa2f0f678585
@@ -110,7 +110,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): c0421d90b22ba815fddd9db5e685a77a45d7951bc953af71fb1971ca13983434
+# Source content checksum (SHA-256): c795ee42941edde08af45f841c586b9c2f9de227df1305c3890a6af3be9ff6b8
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -6068,8 +6068,12 @@ End Function
 ## the last one. After the call the moved row lives at `index`; read its
 ## ContactId there.
 Function RemoveSwap(index As Integer) As Integer
+If Me.ManifoldSlots.Items[index] <> PhysicsConstants.NULL_INDEX Then
 Me.FreeManifolds.Append(Me.ManifoldSlots.Items[index])
+End If
+If Me.CacheSlots.Items[index] <> PhysicsConstants.NULL_INDEX Then
 Me.FreeCaches.Append(Me.CacheSlots.Items[index])
+End If
 Var movedIndex As Integer = Me.ContactId.RemoveSwap(index)
 Me.ShapeIdA.RemoveSwap(index)
 Me.ShapeIdB.RemoveSwap(index)
@@ -6090,9 +6094,9 @@ Return movedIndex
 End Function
 
 ## Copies one row's scalars into another store's row and adopts the
-## source's pooled manifold and cache objects. Used only while contacts
-## migrate between solver sets; the source store is emptied or destroyed
-## immediately afterwards, so its pools shrink without bookkeeping.
+## source's pooled manifold and cache objects. The vacated source slots are
+## marked NULL so the following RemoveSwap does not recycle an object that
+## now belongs to the target store; the slot stays as a dead pool hole.
 Sub MoveRowTo(target As ContactSims, targetIndex As Integer, sourceIndex As Integer)
 target.ContactId.Items[targetIndex] = Me.ContactId.Items[sourceIndex]
 target.ShapeIdA.Items[targetIndex] = Me.ShapeIdA.Items[sourceIndex]
@@ -6110,6 +6114,8 @@ target.TangentSpeed.Items[targetIndex] = Me.TangentSpeed.Items[sourceIndex]
 target.SimFlags.Items[targetIndex] = Me.SimFlags.Items[sourceIndex]
 target.ManifoldPool[target.ManifoldSlots.Items[targetIndex]] = Me.ManifoldPool[Me.ManifoldSlots.Items[sourceIndex]]
 target.CachePool[target.CacheSlots.Items[targetIndex]] = Me.CachePool[Me.CacheSlots.Items[sourceIndex]]
+Me.ManifoldSlots.Items[sourceIndex] = PhysicsConstants.NULL_INDEX
+Me.CacheSlots.Items[sourceIndex] = PhysicsConstants.NULL_INDEX
 End Sub
 
 ## Empties the store while retaining all capacity, including the pooled
@@ -9342,6 +9348,8 @@ Property BodySet As BitSet
 Property ContactSims As ContactSims
 ## Solver scratch constraints matching the sim rows one to one.
 Property Constraints As Array(Of ContactConstraint)
+## Number of live constraints in the scratch array this step.
+Property ConstraintCount As Integer
 
 ## Creates a colour with or without a body set, sized for the given body
 ## capacity. The bit set grows on demand afterwards.
@@ -9353,6 +9361,7 @@ Me.BodySet = Nothing
 End If
 Me.ContactSims = New ContactSims()
 Me.Constraints = New Array(Of ContactConstraint)
+Me.ConstraintCount = 0
 End Constructor
 
 ## Creates a free-record placeholder for sparse array capacity.
@@ -9360,6 +9369,7 @@ Constructor()
 Me.BodySet = Nothing
 Me.ContactSims = New ContactSims()
 Me.Constraints = New Array(Of ContactConstraint)
+Me.ConstraintCount = 0
 End Constructor
 End Class
 
@@ -13572,14 +13582,26 @@ End Constructor
 ## Builds softness from spring frequency and damping ratio over substep h,
 ## ported from b2MakeSoft. Mass scale and impulse scale always sum to one.
 Shared Function Make(hertz As Double, zeta As Double, h As Double) As Softness
+Return Softness.MakeTo(hertz, zeta, h, New Softness)
+End Function
+
+## Writes softness from spring frequency and damping ratio over substep h
+## into a caller-owned record, for allocation-free step setup.
+Shared Function MakeTo(hertz As Double, zeta As Double, h As Double, out As Softness) As Softness
 If hertz = 0.0 Then
-Return New Softness(0.0, 0.0, 0.0)
+out.BiasRate = 0.0
+out.MassScale = 0.0
+out.ImpulseScale = 0.0
+Return out
 End If
 Var omega As Double = 6.283185307179586 * hertz
 Var a1 As Double = 2.0 * zeta + h * omega
 Var a2 As Double = h * omega * a1
 Var a3 As Double = 1.0 / (1.0 + a2)
-Return New Softness(omega / a1, a2 * a3, a3)
+out.BiasRate = omega / a1
+out.MassScale = a2 * a3
+out.ImpulseScale = a3
+Return out
 End Function
 End Class
 
@@ -13597,6 +13619,7 @@ Var constraints As Array(Of ContactConstraint) = color.Constraints
 While constraints.Count < count
 constraints.Append(New ContactConstraint)
 Wend
+color.ConstraintCount = count
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
 For i As Integer = 0 To count - 1
 ContactSolver.PrepareContact(constraints[i], states, color.ContactSims, i, context.ContactSoftness, context.StaticSoftness, context.WarmStartScale)
@@ -13609,7 +13632,7 @@ Shared Sub WarmStartColorContacts(world As World, colorIndex As Integer)
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
 Var constraints As Array(Of ContactConstraint) = color.Constraints
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
-For i As Integer = 0 To constraints.Count - 1
+For i As Integer = 0 To color.ConstraintCount - 1
 ContactSolver.WarmStartContact(states, constraints[i])
 Next i
 End Sub
@@ -13620,7 +13643,7 @@ Shared Sub SolveColorContacts(world As World, context As StepContext, colorIndex
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
 Var constraints As Array(Of ContactConstraint) = color.Constraints
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
-For i As Integer = 0 To constraints.Count - 1
+For i As Integer = 0 To color.ConstraintCount - 1
 ContactSolver.SolveContact(states, constraints[i], context.InvH, -context.ContactSpeed, useBias)
 Next i
 End Sub
@@ -13630,7 +13653,7 @@ Shared Sub ApplyColorRestitution(world As World, context As StepContext, colorIn
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
 Var constraints As Array(Of ContactConstraint) = color.Constraints
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
-For i As Integer = 0 To constraints.Count - 1
+For i As Integer = 0 To color.ConstraintCount - 1
 ContactSolver.ApplyContactRestitution(states, constraints[i], context.RestitutionThreshold)
 Next i
 End Sub
@@ -13640,7 +13663,7 @@ End Sub
 Shared Sub StoreColorImpulses(world As World, colorIndex As Integer)
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
 Var constraints As Array(Of ContactConstraint) = color.Constraints
-For i As Integer = 0 To constraints.Count - 1
+For i As Integer = 0 To color.ConstraintCount - 1
 ContactSolver.StoreImpulses(constraints[i], color.ContactSims.GetManifold(i))
 Next i
 End Sub
@@ -14644,6 +14667,9 @@ Private Property mMassScratch As MassData
 Private Property mExtentScratch As ShapeExtent
 ## Scratch transform reused by warm-path transform reads.
 Private Property mTransformScratch As Transform
+## Second scratch transform so the narrow phase reads two bodies without
+## allocating.
+Private Property mTransformScratchB As Transform
 ## Scratch vector reused by warm-path mass and extent updates.
 Private Property mVectorScratch As Vector2
 ## Scratch per-step solver values reused across steps.
@@ -14730,6 +14756,7 @@ Me.mRayCastContext = New WorldRayCastContext
 Me.mShapeCastContext = New WorldShapeCastContext
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
+Me.mTransformScratchB = New Transform
 Me.mStepScratch = New StepContext
 Me.mContactStateBits = New BitSet(256)
 Me.mAwakeIslandBits = New BitSet(64)
@@ -14864,14 +14891,8 @@ Var contactHertz As Double = Me.ContactHertz
 If contactHertz > 0.125 * context.InvH Then
 contactHertz = 0.125 * context.InvH
 End If
-Var contactSoftness As Softness = Softness.Make(contactHertz, Me.ContactDampingRatio, context.H)
-Var staticSoftness As Softness = Softness.Make(2.0 * contactHertz, Me.ContactDampingRatio, context.H)
-context.ContactSoftness.BiasRate = contactSoftness.BiasRate
-context.ContactSoftness.MassScale = contactSoftness.MassScale
-context.ContactSoftness.ImpulseScale = contactSoftness.ImpulseScale
-context.StaticSoftness.BiasRate = staticSoftness.BiasRate
-context.StaticSoftness.MassScale = staticSoftness.MassScale
-context.StaticSoftness.ImpulseScale = staticSoftness.ImpulseScale
+Softness.MakeTo(contactHertz, Me.ContactDampingRatio, context.H, context.ContactSoftness)
+Softness.MakeTo(2.0 * contactHertz, Me.ContactDampingRatio, context.H, context.StaticSoftness)
 context.ContactSpeed = Me.MaxContactPushSpeed / context.StaticSoftness.MassScale
 context.RestitutionThreshold = Me.RestitutionThreshold
 context.MaximumLinearVelocity = Me.MaximumLinearSpeed
@@ -14962,8 +14983,10 @@ sims.InvMassB.Items[contact.LocalIndex] = bodySimB.InvMass.Items[bodyB.LocalInde
 sims.InvIB.Items[contact.LocalIndex] = bodySimB.InvInertia.Items[bodyB.LocalIndex]
 
 Var wasTouching As Boolean = sims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag)) <> 0
-Var transformA As Transform = Me.GetBodyTransform(bodyA)
-Var transformB As Transform = Me.GetBodyTransform(bodyB)
+Me.GetBodyTransformTo(bodyA, Me.mTransformScratch)
+Me.GetBodyTransformTo(bodyB, Me.mTransformScratchB)
+Var transformA As Transform = Me.mTransformScratch
+Var transformB As Transform = Me.mTransformScratchB
 Var centerOffsetAX As Double = bodySimA.CenterX.Items[bodyA.LocalIndex] - bodySimA.PX.Items[bodyA.LocalIndex]
 Var centerOffsetAY As Double = bodySimA.CenterY.Items[bodyA.LocalIndex] - bodySimA.PY.Items[bodyA.LocalIndex]
 Var centerOffsetBX As Double = bodySimB.CenterX.Items[bodyB.LocalIndex] - bodySimB.PX.Items[bodyB.LocalIndex]

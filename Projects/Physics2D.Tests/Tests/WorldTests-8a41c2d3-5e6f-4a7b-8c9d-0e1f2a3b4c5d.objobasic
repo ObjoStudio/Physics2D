@@ -348,6 +348,88 @@ PhysicsAssert.Near(5.0, states.LVY.Items[ball.LocalIndex], 0.001, 0.001, "wake v
 world.Validate()
 End Sub
 
+## A warmed step with sleeping stacks allocates no objects.
+Public Sub TestWarmStepAllocatesNothing()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(30.0, 0.5))
+Var level As Integer = 0
+While level < 6
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(level * 0.8 - 2.0, 0.5 + level * 0.6)
+Var body As Body = world.CreateBody(def)
+body.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(0.25, 0.25))
+level = level + 1
+Wend
+
+# Warm every reusable buffer: contacts settle, bodies sleep, colours fill.
+Var warmIndex As Integer = 0
+While warmIndex < 600
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+
+Var before As Integer = System.AllocationCount
+Var stepIndex As Integer = 0
+While stepIndex < 60
+world.StepWorld(1.0 / 60.0)
+stepIndex = stepIndex + 1
+Wend
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warm steps allocate nothing")
+world.Validate()
+End Sub
+
+## Warm starting converges faster than a cold solver on the same stack.
+Public Sub TestWarmStartingImprovesConvergence()
+Var warm As New World
+warm.Gravity = New Vector2(0.0, -10.0)
+Var cold As New World
+cold.Gravity = New Vector2(0.0, -10.0)
+cold.WarmStartingEnabled = False
+
+Var groundIndex As Integer = 0
+While groundIndex < 2
+Var which As World = warm
+If groundIndex = 1 Then
+which = cold
+End If
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = which.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(30.0, 0.5))
+Var level As Integer = 0
+While level < 6
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(0.0, 0.5 + level * 0.52)
+Var body As Body = which.CreateBody(def)
+body.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(0.25, 0.25))
+level = level + 1
+Wend
+groundIndex = groundIndex + 1
+Wend
+
+# Measure residual motion during the settling window.
+Var warmMotion As Double = 0.0
+Var coldMotion As Double = 0.0
+Var stepIndex As Integer = 0
+While stepIndex < 60
+warm.StepWorld(1.0 / 60.0)
+cold.StepWorld(1.0 / 60.0)
+warmMotion = warmMotion + SceneTests.SumAwakeSpeed(warm)
+coldMotion = coldMotion + SceneTests.SumAwakeSpeed(cold)
+stepIndex = stepIndex + 1
+Wend
+Assert.True(coldMotion > warmMotion, "warm starting reduces residual motion: cold " + coldMotion.ToString() + " warm " + warmMotion.ToString())
+warm.Validate()
+cold.Validate()
+End Sub
+
 ## Confirms a zero time step leaves the world untouched and unlocked.
 Public Sub TestStepWorldZeroTimeStepIsNoOp()
 Var world As New World
