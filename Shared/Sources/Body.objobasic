@@ -30,6 +30,12 @@ Property HeadChainId As Integer
 Property HeadContactKey As Integer
 ## Number of contacts attached to this body.
 Property ContactCount As Integer
+## Island this body belongs to. NULL_INDEX for static and disabled bodies.
+Property IslandId As Integer
+## Doubly linked island list: previous body.
+Property IslandPrev As Integer
+## Doubly linked island list: next body.
+Property IslandNext As Integer
 ## Total mass from shapes (kilograms). Overridden by SetMassData.
 Property Mass As Double
 ## Rotational inertia about the centre of mass. Overridden by SetMassData.
@@ -68,6 +74,9 @@ Me.ShapeCount = 0
 Me.HeadChainId = PhysicsConstants.NULL_INDEX
 Me.HeadContactKey = PhysicsConstants.NULL_INDEX
 Me.ContactCount = 0
+Me.IslandId = PhysicsConstants.NULL_INDEX
+Me.IslandPrev = PhysicsConstants.NULL_INDEX
+Me.IslandNext = PhysicsConstants.NULL_INDEX
 Me.Mass = 0.0
 Me.Inertia = 0.0
 Me.SleepThreshold = 0.0

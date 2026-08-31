@@ -64,6 +64,12 @@ Property ContactCount As Integer
 ## phase applies only the built-in shape and body rules and the hook adds
 ## no overhead.
 Property CustomFilter As CustomContactFilter
+## Island slot pool.
+Property IslandIdPool As IdPool
+## Sparse island record store indexed by island slot.
+Property Islands As Array(Of Island)
+## Island selected for splitting during the step. NULL_INDEX when none.
+Property SplitIslandId As Integer
 ## Solver sets. Index 0 static, 1 disabled, 2 awake, 3+ sleeping.
 Property SolverSets As Array(Of SolverSet)
 ## Body slot pool.
@@ -150,6 +156,9 @@ Me.ContactIdPool = New IdPool
 Me.Contacts = New Array(Of Contact)
 Me.ContactCount = 0
 Me.CustomFilter = Nothing
+Me.IslandIdPool = New IdPool
+Me.Islands = New Array(Of Island)
+Me.SplitIslandId = PhysicsConstants.NULL_INDEX
 Me.Bodies = New Array(Of Body)
 Me.Shapes = New Array(Of Shape)
 Me.Chains = New Array(Of Chain)
@@ -347,6 +356,9 @@ body.ShapeCount = 0
 body.HeadChainId = PhysicsConstants.NULL_INDEX
 body.HeadContactKey = PhysicsConstants.NULL_INDEX
 body.ContactCount = 0
+body.IslandId = PhysicsConstants.NULL_INDEX
+body.IslandPrev = PhysicsConstants.NULL_INDEX
+body.IslandNext = PhysicsConstants.NULL_INDEX
 body.Mass = 0.0
 body.Inertia = 0.0
 body.SleepThreshold = def.SleepThreshold
@@ -357,6 +369,9 @@ body.FixedRotation = def.FixedRotation
 body.IsSpeedCapped = False
 body.IsMarked = False
 body.UserData = def.UserData
+If setId >= PhysicsConstants.AWAKE_SET Then
+IslandMethods.CreateIslandForBody(Me, setId, body)
+End If
 Me.SetBodyName(body, def.Name)
 Return body
 End Function
@@ -424,6 +439,9 @@ chain.Id = PhysicsConstants.NULL_INDEX
 chain.BodyId = PhysicsConstants.NULL_INDEX
 Wend
 
+# Remove the body from its island, destroying the island when empty.
+IslandMethods.RemoveBodyFromIsland(Me, body)
+
 # Remove the sim record from the owning solver set.
 Var solverSet As SolverSet = Me.SolverSets[body.SetIndex]
 Var localIndex As Integer = body.LocalIndex
@@ -488,22 +506,232 @@ body.LocalIndex = targetIndex
 End Sub
 
 ## Wakes a sleeping solver set into the awake set, ported from
-## b2WakeSolverSet without contact, joint, and island work, which arrive
-## with Stage 7.
+## b2WakeSolverSet. Non-touching contacts move from the disabled set into
+## the awake set, sleeping contacts and islands migrate wholesale, and the
+## emptied sleeping set is destroyed. Joint and constraint-graph work
+## arrives with Stages 9 and the step.
 Sub WakeSolverSet(setIndex As Integer)
 If setIndex < 3 Then
 Throw New RuntimeException("WakeSolverSet requires a sleeping set")
 End If
 Var solverSet As SolverSet = Me.SolverSets[setIndex]
 Var awakeSet As SolverSet = Me.SolverSets[2]
+Var disabledSet As SolverSet = Me.SolverSets[1]
 While solverSet.Sims.Count() > 0
 Var bodyId As Integer = solverSet.Sims.BodyId.Items[0]
 Var body As Body = Me.Bodies[bodyId]
 Me.TransferBody(awakeSet, solverSet, body)
 body.SleepTime = 0.0
+
+# Move the body's non-touching contacts from the disabled set into the
+# awake set, ported from the wake path.
+Var contactKey As Integer = body.HeadContactKey
+While contactKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = contactKey.ShiftRight(1)
+Var edgeIndex As Integer = contactKey.BitAnd(1)
+Var contact As Contact = Me.Contacts[contactId]
+If edgeIndex = 0 Then
+contactKey = contact.Edge0NextKey
+Else
+contactKey = contact.Edge1NextKey
+End If
+If contact.SetIndex = PhysicsConstants.DISABLED_SET Then
+Var localIndex As Integer = contact.LocalIndex
+contact.SetIndex = PhysicsConstants.AWAKE_SET
+contact.LocalIndex = awakeSet.ContactSims.Count()
+awakeSet.ContactSims.Add()
+disabledSet.ContactSims.MoveRowTo(awakeSet.ContactSims, contact.LocalIndex, localIndex)
+Var movedLocalIndex As Integer = disabledSet.ContactSims.RemoveSwap(localIndex)
+If movedLocalIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = disabledSet.ContactSims.ContactId.Items[localIndex]
+Me.Contacts[movedContactId].LocalIndex = localIndex
+End If
+End If
 Wend
+Wend
+
+# Migrate the sleeping contacts into the awake set. The constraint graph
+# will move touching contacts into colours once the step lands.
+Var contactCount As Integer = solverSet.ContactSims.Count()
+For i As Integer = 0 To contactCount - 1
+Var contactId As Integer = solverSet.ContactSims.ContactId.Items[i]
+Var contact As Contact = Me.Contacts[contactId]
+Var localIndex As Integer = contact.LocalIndex
+contact.SetIndex = PhysicsConstants.AWAKE_SET
+contact.LocalIndex = awakeSet.ContactSims.Count()
+awakeSet.ContactSims.Add()
+solverSet.ContactSims.MoveRowTo(awakeSet.ContactSims, contact.LocalIndex, localIndex)
+Next i
+
+# Migrate the islands.
+Var islandCount As Integer = solverSet.IslandIds.Count
+For j As Integer = 0 To islandCount - 1
+Var islandId As Integer = solverSet.IslandIds.Items[j]
+Var island As Island = Me.Islands[islandId]
+island.SetIndex = PhysicsConstants.AWAKE_SET
+island.LocalIndex = awakeSet.IslandIds.Count
+awakeSet.IslandIds.Append(islandId)
+Next j
+
 Me.DestroySolverSet(setIndex)
 End Sub
+
+## Puts an awake island to sleep, ported from b2TrySleepIsland. Creates a
+## sleeping solver set, moves the island's bodies, contacts, and island
+## record into it, and relocates non-touching contacts to the disabled set.
+Sub TrySleepIsland(islandId As Integer)
+Var island As Island = Me.Islands[islandId]
+If island.SetIndex <> PhysicsConstants.AWAKE_SET Then
+Throw New RuntimeException("TrySleepIsland requires an awake island")
+End If
+If island.ConstraintRemoveCount > 0 Then
+Return
+End If
+
+Var sleepSetId As Integer = Me.AllocSleepingSet()
+Var sleepSet As SolverSet = Me.SolverSets[sleepSetId]
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+Var disabledSet As SolverSet = Me.SolverSets[PhysicsConstants.DISABLED_SET]
+
+# Move the island's bodies and their non-touching contacts.
+Var bodyId As Integer = island.HeadBody
+While bodyId <> PhysicsConstants.NULL_INDEX
+Var body As Body = Me.Bodies[bodyId]
+Var awakeBodyIndex As Integer = body.LocalIndex
+Var sleepBodyIndex As Integer = sleepSet.Sims.Count()
+sleepSet.Sims.Add()
+sleepSet.Sims.CopyRecordTo(sleepBodyIndex, awakeSet.Sims, awakeBodyIndex)
+Var movedIndex As Integer = awakeSet.Sims.RemoveSwap(awakeBodyIndex)
+If movedIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedId As Integer = awakeSet.Sims.BodyId.Items[awakeBodyIndex]
+Me.Bodies[movedId].LocalIndex = awakeBodyIndex
+End If
+awakeSet.States.RemoveSwap(awakeBodyIndex)
+body.SetIndex = sleepSetId
+body.LocalIndex = sleepBodyIndex
+
+Var contactKey As Integer = body.HeadContactKey
+While contactKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = contactKey.ShiftRight(1)
+Var edgeIndex As Integer = contactKey.BitAnd(1)
+Var contact As Contact = Me.Contacts[contactId]
+If edgeIndex = 0 Then
+contactKey = contact.Edge0NextKey
+Else
+contactKey = contact.Edge1NextKey
+End If
+If contact.SetIndex = PhysicsConstants.DISABLED_SET Then
+Continue While
+End If
+# Touching contacts are moved separately with the island's contact list.
+# The constraint graph will track them through colour indices once the
+# step lands; until then the sim touching flag is authoritative.
+Var owningSet As SolverSet = Me.SolverSets[contact.SetIndex]
+If owningSet.ContactSims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag)) <> 0 Then
+Continue While
+End If
+Var otherBodyId As Integer = contact.Edge1BodyId
+If edgeIndex = 1 Then
+otherBodyId = contact.Edge0BodyId
+End If
+If Me.Bodies[otherBodyId].SetIndex = PhysicsConstants.AWAKE_SET Then
+Continue While
+End If
+
+Var localIndex As Integer = contact.LocalIndex
+contact.SetIndex = PhysicsConstants.DISABLED_SET
+contact.LocalIndex = disabledSet.ContactSims.Count()
+disabledSet.ContactSims.Add()
+awakeSet.ContactSims.MoveRowTo(disabledSet.ContactSims, contact.LocalIndex, localIndex)
+Var movedLocalIndex As Integer = awakeSet.ContactSims.RemoveSwap(localIndex)
+If movedLocalIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = awakeSet.ContactSims.ContactId.Items[localIndex]
+Me.Contacts[movedContactId].LocalIndex = localIndex
+End If
+Wend
+
+bodyId = body.IslandNext
+Wend
+
+# Move the island's touching contacts.
+Var contactId As Integer = island.HeadContact
+While contactId <> PhysicsConstants.NULL_INDEX
+Var contact As Contact = Me.Contacts[contactId]
+Var localIndex As Integer = contact.LocalIndex
+Var sleepContactIndex As Integer = sleepSet.ContactSims.Count()
+sleepSet.ContactSims.Add()
+awakeSet.ContactSims.MoveRowTo(sleepSet.ContactSims, sleepContactIndex, localIndex)
+Var movedLocalIndex As Integer = awakeSet.ContactSims.RemoveSwap(localIndex)
+If movedLocalIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = awakeSet.ContactSims.ContactId.Items[localIndex]
+Me.Contacts[movedContactId].LocalIndex = localIndex
+End If
+contact.SetIndex = sleepSetId
+contact.ColorIndex = PhysicsConstants.NULL_INDEX
+contact.LocalIndex = sleepContactIndex
+contactId = contact.IslandNext
+Wend
+
+# Move the island record.
+Var islandIndex As Integer = island.LocalIndex
+sleepSet.IslandIds.Append(islandId)
+Var movedIslandIndex As Integer = awakeSet.IslandIds.RemoveSwap(islandIndex)
+If movedIslandIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedIslandId As Integer = awakeSet.IslandIds.Items[islandIndex]
+Me.Islands[movedIslandId].LocalIndex = islandIndex
+End If
+island.SetIndex = sleepSetId
+island.LocalIndex = 0
+End Sub
+
+## Merges sleeping set two into sleeping set one and destroys set two,
+## ported from b2MergeSolverSets. The smaller set migrates.
+Sub MergeSolverSets(setId1 As Integer, setId2 As Integer)
+If setId1 < PhysicsConstants.FIRST_SLEEPING_SET Or setId2 < PhysicsConstants.FIRST_SLEEPING_SET Then
+Throw New RuntimeException("MergeSolverSets requires sleeping sets")
+End If
+If Me.SolverSets[setId1].Sims.Count() < Me.SolverSets[setId2].Sims.Count() Then
+Var tempId As Integer = setId1
+setId1 = setId2
+setId2 = tempId
+End If
+Var targetSet As SolverSet = Me.SolverSets[setId1]
+Var sourceSet As SolverSet = Me.SolverSets[setId2]
+
+Var bodyCount As Integer = sourceSet.Sims.Count()
+For i As Integer = 0 To bodyCount - 1
+Var bodyId As Integer = sourceSet.Sims.BodyId.Items[i]
+Var body As Body = Me.Bodies[bodyId]
+body.SetIndex = setId1
+body.LocalIndex = targetSet.Sims.Count()
+targetSet.Sims.Add()
+targetSet.Sims.CopyRecordTo(body.LocalIndex, sourceSet.Sims, i)
+Next i
+
+Var contactCount As Integer = sourceSet.ContactSims.Count()
+For c As Integer = 0 To contactCount - 1
+Var contactId As Integer = sourceSet.ContactSims.ContactId.Items[c]
+Var contact As Contact = Me.Contacts[contactId]
+contact.SetIndex = setId1
+contact.LocalIndex = targetSet.ContactSims.Count()
+targetSet.ContactSims.Add()
+sourceSet.ContactSims.MoveRowTo(targetSet.ContactSims, contact.LocalIndex, c)
+Next c
+
+Var islandCount As Integer = sourceSet.IslandIds.Count
+For s As Integer = 0 To islandCount - 1
+Var islandId As Integer = sourceSet.IslandIds.Items[s]
+Var island As Island = Me.Islands[islandId]
+island.SetIndex = setId1
+island.LocalIndex = targetSet.IslandIds.Count
+targetSet.IslandIds.Append(islandId)
+Next s
+
+Me.DestroySolverSet(setId2)
+End Sub
+
+## Frees a sleeping solver set that no longer holds bodies, ported from
+## b2DestroySolverSet.
 
 ## Wakes the body when it sleeps, ported from b2WakeBody. Returns True when
 ## a set was woken.
@@ -942,6 +1170,9 @@ Var shape As Shape = Me.Shapes[shapeId]
 shapeId = shape.NextShapeId
 Me.CreateShapeProxy(shape, body.Type, xf, True)
 Wend
+If setId <> 0 Then
+IslandMethods.CreateIslandForBody(Me, setId, body)
+End If
 End Sub
 
 ## Disables a live body, ported from b2Body_Disable.
@@ -951,12 +1182,20 @@ Me.ValidateBody(body)
 If body.SetIndex = 1 Then
 Return
 End If
+
+# Destroy attached contacts and wake their other bodies.
+ContactMethods.DestroyBodyContacts(Me, body, True)
+
 Var shapeId As Integer = body.HeadShapeId
 While shapeId <> PhysicsConstants.NULL_INDEX
 Var shape As Shape = Me.Shapes[shapeId]
 shapeId = shape.NextShapeId
 Me.DestroyShapeProxy(shape)
 Wend
+
+# Disabled bodies do not belong to an island.
+IslandMethods.RemoveBodyFromIsland(Me, body)
+
 Me.TransferBody(Me.SolverSets[1], Me.SolverSets[body.SetIndex], body)
 End Sub
 
@@ -976,8 +1215,8 @@ End If
 Me.UpdateBodyMassData(body)
 End Sub
 
-## Changes the body type, ported from b2Body_SetType. Contacts, joints, and
-## islands arrive in Stages 7 and 9; proxy recreation covers all cases.
+## Changes the body type, ported from b2Body_SetType. Joint handling
+## arrives with Stage 9.
 Sub SetBodyType(body As Body, bodyType As BodyType)
 Me.CheckNotLocked()
 Me.ValidateBody(body)
@@ -994,9 +1233,11 @@ Me.WakeBody(body)
 body.Type = bodyType
 If originalType = BodyType.StaticBody Then
 Me.TransferBody(Me.SolverSets[2], Me.SolverSets[0], body)
+IslandMethods.CreateIslandForBody(Me, PhysicsConstants.AWAKE_SET, body)
 Me.RecreateShapeProxies(body, bodyType)
 ElseIf bodyType = BodyType.StaticBody Then
 Me.TransferBody(Me.SolverSets[0], Me.SolverSets[2], body)
+IslandMethods.RemoveBodyFromIsland(Me, body)
 Me.GetBodySim(body).IsFast.Items[body.LocalIndex] = 0
 Me.RecreateShapeProxies(body, BodyType.StaticBody)
 Else
@@ -2277,6 +2518,7 @@ If shapeCount <> Me.ShapeIdPool.IdCount() Then
 Throw New RuntimeException("World live shape count does not match pool")
 End If
 Me.ValidateContacts()
+Me.ValidateIslands()
 End Sub
 
 ## Validates contact bookkeeping, ported from the contact checks of
@@ -2314,6 +2556,35 @@ Throw New RuntimeException("Pair set keys do not match contact count")
 End If
 End Sub
 
+## Validates island bookkeeping across the world, ported from the island
+## checks of b2ValidateSolverSets.
+Sub ValidateIslands()
+Var liveIslandCount As Integer = 0
+For i As Integer = 0 To Me.Islands.Count - 1
+Var island As Island = Me.Islands[i]
+If island <> Nothing And island.IslandId <> PhysicsConstants.NULL_INDEX Then
+liveIslandCount = liveIslandCount + 1
+If island.IslandId <> i Then
+Throw New RuntimeException("World island slot does not match island id")
+End If
+IslandMethods.ValidateIsland(Me, i)
+End If
+Next i
+If liveIslandCount <> Me.IslandIdPool.IdCount() Then
+Throw New RuntimeException("World live island count does not match pool")
+End If
+Var listedIslandCount As Integer = 0
+For s As Integer = 0 To Me.SolverSets.Count - 1
+Var solverSet As SolverSet = Me.SolverSets[s]
+If solverSet <> Nothing Then
+listedIslandCount = listedIslandCount + solverSet.IslandIds.Count
+End If
+Next s
+If listedIslandCount <> liveIslandCount Then
+Throw New RuntimeException("Solver set island lists do not match island count")
+End If
+End Sub
+
 ## Returns the world to a reusable empty state: every body, shape, and chain
 ## is destroyed, pools reset, and broad-phase storage cleared while
 ## retaining capacity, ported from the destruction cascade of
@@ -2343,6 +2614,8 @@ Me.ShapeIdPool.Clear()
 Me.ChainIdPool.Clear()
 Me.SolverSetIdPool.Clear()
 Me.ContactIdPool.Clear()
+Me.IslandIdPool.Clear()
+Me.SplitIslandId = PhysicsConstants.NULL_INDEX
 Me.BodyGenerations.Clear()
 Me.ShapeGenerations.Clear()
 Me.ChainGenerations.Clear()

@@ -244,6 +244,144 @@ PhysicsAssert.Near(0.5, world.MixFriction(0.25, 1.0), 1e-12, 1e-12, "friction mi
 PhysicsAssert.Near(0.75, world.MixRestitution(0.75, 0.2), 1e-12, 1e-12, "restitution takes the maximum")
 PhysicsAssert.Near(0.2, world.MixRestitution(0.1, 0.2), 1e-12, 1e-12, "restitution takes the maximum other way")
 End Sub
+
+Public Sub TestAwakeBodiesGetIslands()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Assert.Equal(1, world.SolverSets[PhysicsConstants.AWAKE_SET].IslandIds.Count, "one island for the dynamic body")
+Assert.True(world.Bodies[1].IslandId <> PhysicsConstants.NULL_INDEX, "dynamic body owns an island")
+Assert.Equal(PhysicsConstants.NULL_INDEX, world.Bodies[0].IslandId, "static bodies stay islandless")
+Var island As Island = world.Islands[world.Bodies[1].IslandId]
+Assert.Equal(1, island.BodyCount)
+Assert.Equal(0, island.ContactCount)
+Assert.Equal(PhysicsConstants.AWAKE_SET, island.SetIndex)
+world.Validate()
+End Sub
+
+Public Sub TestDisableAndEnableManageIslands()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+Var body As Body = world.Bodies[1]
+Var islandId As Integer = body.IslandId
+Assert.True(islandId <> PhysicsConstants.NULL_INDEX)
+body.Disable()
+Assert.Equal(PhysicsConstants.NULL_INDEX, body.IslandId, "disabled bodies leave their island")
+Assert.Equal(0, world.IslandIdPool.IdCount(), "empty island is destroyed")
+body.Enable()
+Assert.True(body.IslandId <> PhysicsConstants.NULL_INDEX, "enabled bodies get a fresh island")
+Assert.Equal(PhysicsConstants.AWAKE_SET, world.Islands[body.IslandId].SetIndex)
+world.Validate()
+End Sub
+
+Public Sub TestSetBodyTypeIslandTransitions()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+Var body As Body = world.Bodies[1]
+Assert.True(body.IslandId <> PhysicsConstants.NULL_INDEX)
+body.SetType(BodyType.StaticBody)
+Assert.Equal(PhysicsConstants.NULL_INDEX, body.IslandId, "static bodies leave their island")
+Assert.Equal(0, world.IslandIdPool.IdCount())
+body.SetType(BodyType.DynamicBody)
+Assert.True(body.IslandId <> PhysicsConstants.NULL_INDEX, "dynamic bodies regain an island")
+Assert.Equal(PhysicsConstants.AWAKE_SET, world.Islands[body.IslandId].SetIndex)
+world.Validate()
+End Sub
+
+Public Sub TestDestroyBodyDestroysItsIsland()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Var body As Body = world.Bodies[1]
+Assert.True(body.IslandId <> PhysicsConstants.NULL_INDEX)
+body.Destroy()
+Assert.Equal(0, world.IslandIdPool.IdCount(), "destroying the last body destroys the island")
+world.Validate()
+End Sub
+
+Public Sub TestTrySleepIslandMovesBodiesContactsAndIsland()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Var body As Body = world.Bodies[1]
+Var islandId As Integer = body.IslandId
+world.TrySleepIsland(islandId)
+Var sleepSetId As Integer = body.SetIndex
+Assert.True(sleepSetId >= PhysicsConstants.FIRST_SLEEPING_SET, "body moved into a sleeping set")
+Assert.Equal(sleepSetId, world.Islands[islandId].SetIndex)
+Assert.Equal(1, world.SolverSets[sleepSetId].IslandIds.Count)
+Assert.Equal(0, world.SolverSets[PhysicsConstants.AWAKE_SET].IslandIds.Count)
+Var contact As Contact = world.Contacts[0]
+Assert.Equal(PhysicsConstants.DISABLED_SET, contact.SetIndex, "non-touching contact moved to the disabled set")
+world.Validate()
+End Sub
+
+Public Sub TestWakeSolverSetRestoresAwakeState()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Var body As Body = world.Bodies[1]
+Var islandId As Integer = body.IslandId
+world.TrySleepIsland(islandId)
+Var sleepSetId As Integer = body.SetIndex
+world.WakeSolverSet(sleepSetId)
+Assert.Equal(PhysicsConstants.AWAKE_SET, body.SetIndex)
+Assert.Equal(PhysicsConstants.AWAKE_SET, world.Islands[body.IslandId].SetIndex)
+Assert.Equal(1, world.SolverSets[PhysicsConstants.AWAKE_SET].IslandIds.Count)
+Assert.Equal(PhysicsConstants.AWAKE_SET, world.Contacts[0].SetIndex, "contact returned to the awake set")
+Assert.Equal(3, world.SolverSetIdPool.IdCount(), "the sleeping set was destroyed")
+world.Validate()
+End Sub
+
+Public Sub TestLinkUnlinkAndSplitIsland()
+Var world As New World
+Var defA As New BodyDefinition
+defA.Type = BodyType.DynamicBody
+defA.Position = New Vector2(0.0, 0.0)
+Var bodyA As Body = world.CreateBody(defA)
+bodyA.CreateCircle(New ShapeDefinition, New Circle(New Vector2(0.0, 0.0), 0.5))
+Var defB As New BodyDefinition
+defB.Type = BodyType.DynamicBody
+defB.Position = New Vector2(0.4, 0.0)
+Var bodyB As Body = world.CreateBody(defB)
+bodyB.CreateCircle(New ShapeDefinition, New Circle(New Vector2(0.0, 0.0), 0.5))
+world.UpdateBroadPhasePairs()
+Assert.Equal(1, world.ContactCount)
+Var contact As Contact = world.Contacts[0]
+
+# Simulate the step marking the contact as touching, then link it.
+contact.Flags = contact.Flags.BitOr(Integer(ContactFlags.TouchingFlag))
+IslandMethods.LinkContact(world, contact)
+Assert.True(bodyA.IslandId <> PhysicsConstants.NULL_INDEX)
+Assert.True(bodyB.IslandId <> PhysicsConstants.NULL_INDEX)
+Var mergedIslandId As Integer = bodyA.IslandId
+Assert.Equal(mergedIslandId, world.Islands[bodyB.IslandId].ParentIsland, "link unions the islands under one root")
+Assert.Equal(1, world.Islands[mergedIslandId].ContactCount)
+world.Validate()
+
+# Merge awake islands collapses the union-find tree.
+IslandMethods.MergeAwakeIslands(world)
+Assert.Equal(1, world.SolverSets[PhysicsConstants.AWAKE_SET].IslandIds.Count)
+Assert.Equal(mergedIslandId, bodyB.IslandId, "merged bodies share the root island")
+Assert.Equal(2, world.Islands[mergedIslandId].BodyCount)
+Assert.Equal(PhysicsConstants.NULL_INDEX, world.Islands[mergedIslandId].ParentIsland)
+world.Validate()
+
+# Unlink on separation increments the split counter; splitting rebuilds
+# one island per connected component.
+IslandMethods.UnlinkContact(world, contact)
+Assert.Equal(1, world.Islands[mergedIslandId].ConstraintRemoveCount)
+contact.Flags = contact.Flags.BitAnd(Integer(ContactFlags.TouchingFlag).BitNot())
+IslandMethods.SplitIsland(world, mergedIslandId)
+Assert.Equal(2, world.SolverSets[PhysicsConstants.AWAKE_SET].IslandIds.Count, "separated bodies split into two islands")
+Assert.True(bodyA.IslandId <> bodyB.IslandId, "bodies hold distinct islands")
+world.Validate()
+End Sub
+
+Public Sub TestClearResetsIslands()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Assert.Equal(1, world.SolverSets[PhysicsConstants.AWAKE_SET].IslandIds.Count)
+world.Clear()
+Assert.Equal(0, world.IslandIdPool.IdCount())
+Assert.Equal(0, world.SolverSets[PhysicsConstants.AWAKE_SET].IslandIds.Count)
+Assert.Equal(PhysicsConstants.NULL_INDEX, world.SplitIslandId)
+world.Validate()
+End Sub
 End Class
 
 ## Custom filter hook that vetoes every pair and counts its calls.

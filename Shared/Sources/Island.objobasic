@@ -1,0 +1,57 @@
+# Persistent island record, ported from upstream b2Island in island.h. An
+# island is a connected component of awake or sleeping bodies joined by
+# touching contacts and joints. Islands use union-find parent links while
+# awake, and each solver set stores the island ids that live inside it.
+#
+# Joint lists exist from the start so Stage 9 slots in without reshaping the
+# record; they stay empty until joints land.
+Class Island
+## Index of the solver set that owns this island. NULL_INDEX when free.
+Property SetIndex As Integer
+## Island index within its solver set. NULL_INDEX when free.
+Property LocalIndex As Integer
+## This island's own slot index.
+Property IslandId As Integer
+## Head of the doubly linked body list.
+Property HeadBody As Integer
+## Tail of the doubly linked body list.
+Property TailBody As Integer
+## Number of bodies in the island.
+Property BodyCount As Integer
+## Head of the doubly linked touching-contact list.
+Property HeadContact As Integer
+## Tail of the doubly linked touching-contact list.
+Property TailContact As Integer
+## Number of contacts in the island.
+Property ContactCount As Integer
+## Head of the doubly linked joint list. Empty until Stage 9.
+Property HeadJoint As Integer
+## Tail of the doubly linked joint list. Empty until Stage 9.
+Property TailJoint As Integer
+## Number of joints in the island. Zero until Stage 9.
+Property JointCount As Integer
+## Union-find parent island id. NULL_INDEX for roots.
+Property ParentIsland As Integer
+## Number of contacts or joints removed from this island since the last
+## split; a nonzero value marks the island as a split candidate.
+Property ConstraintRemoveCount As Integer
+
+## Creates a free-record placeholder. Only the world may construct live
+## islands; the zero-argument form exists for sparse array capacity.
+Constructor()
+Me.SetIndex = PhysicsConstants.NULL_INDEX
+Me.LocalIndex = PhysicsConstants.NULL_INDEX
+Me.IslandId = PhysicsConstants.NULL_INDEX
+Me.HeadBody = PhysicsConstants.NULL_INDEX
+Me.TailBody = PhysicsConstants.NULL_INDEX
+Me.BodyCount = 0
+Me.HeadContact = PhysicsConstants.NULL_INDEX
+Me.TailContact = PhysicsConstants.NULL_INDEX
+Me.ContactCount = 0
+Me.HeadJoint = PhysicsConstants.NULL_INDEX
+Me.TailJoint = PhysicsConstants.NULL_INDEX
+Me.JointCount = 0
+Me.ParentIsland = PhysicsConstants.NULL_INDEX
+Me.ConstraintRemoveCount = 0
+End Constructor
+End Class

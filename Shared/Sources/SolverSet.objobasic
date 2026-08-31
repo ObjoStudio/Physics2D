@@ -14,6 +14,8 @@ Property Sims As BodySims
 Property States As BodyStates
 ## Dense contact state owned by this set.
 Property ContactSims As ContactSims
+## Ids of the islands that live in this set.
+Property IslandIds As IntegerList
 
 ## Creates a solver set. hasStates selects whether velocity state is stored.
 Constructor(setIndex As Integer, hasStates As Boolean)
@@ -25,6 +27,7 @@ Else
 Me.States = Nothing
 End If
 Me.ContactSims = New ContactSims()
+Me.IslandIds = New IntegerList()
 End Constructor
 
 ## Returns the storage to its initial empty state. Capacity is retained so a
@@ -35,5 +38,6 @@ If Me.States <> Nothing Then
 Me.States.ClearAll()
 End If
 Me.ContactSims.ClearAll()
+Me.IslandIds.Clear()
 End Sub
 End Class

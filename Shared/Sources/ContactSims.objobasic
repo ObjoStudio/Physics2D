@@ -151,6 +151,29 @@ Me.CacheSlots.RemoveSwap(index)
 Return movedIndex
 End Function
 
+## Copies one row's scalars into another store's row and adopts the
+## source's pooled manifold and cache objects. Used only while contacts
+## migrate between solver sets; the source store is emptied or destroyed
+## immediately afterwards, so its pools shrink without bookkeeping.
+Sub MoveRowTo(target As ContactSims, targetIndex As Integer, sourceIndex As Integer)
+target.ContactId.Items[targetIndex] = Me.ContactId.Items[sourceIndex]
+target.ShapeIdA.Items[targetIndex] = Me.ShapeIdA.Items[sourceIndex]
+target.ShapeIdB.Items[targetIndex] = Me.ShapeIdB.Items[sourceIndex]
+target.BodySimIndexA.Items[targetIndex] = Me.BodySimIndexA.Items[sourceIndex]
+target.BodySimIndexB.Items[targetIndex] = Me.BodySimIndexB.Items[sourceIndex]
+target.InvMassA.Items[targetIndex] = Me.InvMassA.Items[sourceIndex]
+target.InvIA.Items[targetIndex] = Me.InvIA.Items[sourceIndex]
+target.InvMassB.Items[targetIndex] = Me.InvMassB.Items[sourceIndex]
+target.InvIB.Items[targetIndex] = Me.InvIB.Items[sourceIndex]
+target.Friction.Items[targetIndex] = Me.Friction.Items[sourceIndex]
+target.Restitution.Items[targetIndex] = Me.Restitution.Items[sourceIndex]
+target.RollingResistance.Items[targetIndex] = Me.RollingResistance.Items[sourceIndex]
+target.TangentSpeed.Items[targetIndex] = Me.TangentSpeed.Items[sourceIndex]
+target.SimFlags.Items[targetIndex] = Me.SimFlags.Items[sourceIndex]
+target.ManifoldPool[target.ManifoldSlots.Items[targetIndex]] = Me.ManifoldPool[Me.ManifoldSlots.Items[sourceIndex]]
+target.CachePool[target.CacheSlots.Items[targetIndex]] = Me.CachePool[Me.CacheSlots.Items[sourceIndex]]
+End Sub
+
 ## Empties the store while retaining all capacity, including the pooled
 ## manifold and cache objects.
 Sub ClearAll()

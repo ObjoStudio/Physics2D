@@ -6,7 +6,7 @@
 #
 # Input: AABB-375d053c-9aba-487b-b381-874abcd7b5a7.objobasic 995130c81ff8bd6fe0acda99e69614d9e7297e08b19ad3d1a673c89e81bae8a9
 # Input: BitSet-32ba5db1-d4a3-41d8-978f-6020100c45db.objobasic 1625c50d37848f57f6d82ee58302562750774ebbebf4243d84ea610e95d630d7
-# Input: Body.objobasic 7b8659b525866ab813423f4ec96232e42c3e56d613d98d970e710aec56daa475
+# Input: Body.objobasic 076af2a29f0dc0bb9cb5006eeda542e1ade36dedeea8c1902b51c399b3171c24
 # Input: BodyDefinition.objobasic 6d4099185528eb5fcb4aae0e582e9fd583b979cc95f784781bba3883efcfe9ff
 # Input: BodySims.objobasic 4bc5987447d5544cffad98498671ff642f43b305211a37b9eda321462abe8962
 # Input: BodyStates.objobasic 34ecdd2493c9d76ce09a4fd975cbfa86af0ffbb5eb1de0eb66b9017bce409282
@@ -29,8 +29,8 @@
 # Input: CollisionPlane-87587224-1cce-4221-b2d0-13ab146f8bba.objobasic 99450fa2618357839a2a8063d65a204b67671eb11df303ff92c77b5b569de308
 # Input: Contact.objobasic 6c9dabeb3bdf783032ea2cc01ddae72f73f7a9b02bf727fa47bcfc8cdae20ab2
 # Input: ContactFlags.objobasic 60d159f6cf6e942332b1ff941019e78a96e3c4aab637f56f8f431ad2651221d1
-# Input: ContactMethods.objobasic 39a35354c2f47d8221ccf31d987b5f476a174450d0c2668434974376d2b9ed19
-# Input: ContactSims.objobasic 53c0189167cc5b83a302cd4d344db78bd64780b5188abb8bb4481a65a0ed1f64
+# Input: ContactMethods.objobasic 569afc3968e81192e08819f84777c2a875515b107db023e7444d36b17aa9ed1b
+# Input: ContactSims.objobasic 658177aa51544031f33cdac5cb05f35d3971ea62e276c42fe218cc0d1de3f13f
 # Input: CosSin-5c078a22-97ea-4e99-99f1-aeb228b29070.objobasic 336ba8c66991bb2a6b9e11d51e21d0ec630188fedb577d2613eb7dee28dae4ca
 # Input: CustomContactFilter.objobasic 22c6ed2347f3634c8076604defb9dbe63b7a72da3510b15ea32a6c91a46d43e5
 # Input: Distance-a8dae15a-4200-4d94-9eb8-1be720713a74.objobasic a68e792cc70ec0be7ca6799ef96a784df491ac5eb3f86a02be7d2ff8ddb13dc3
@@ -44,6 +44,8 @@
 # Input: Hull-46e523c2-f9cc-462f-91b6-53ab922cc560.objobasic 74d15ddd59dc1af0c1ea3a82efe06f46b9a4cb16e001340460c2e1bb12b14f26
 # Input: IdPool-fbf7c609-ee86-443b-8d23-078728df5ac9.objobasic 626645c06f0424bccaa91f2354eb2c1e8c952ca239b17686b7bfbe1631e11c27
 # Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
+# Input: Island.objobasic 44f9b035b888e2dbbec81e2c88390bd8081257a3f57a52efc6fffdddabb10fa4
+# Input: IslandMethods.objobasic 46190fa35190f01e3eb228bc6f5fc192b3faeac2811d4ee0537e4bcb148ab4e7
 # Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic f1dd7429b3e77d27bab8cb1ce9d1eab04ed7936ca8c1671227a254cd7f3f8135
 # Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic 0f1a0f5ad2c3f9cc8bc9c281f29f9d30655c3bfbe86a3ef7ef7d41e58ba0b164
 # Input: MassData-cd26f83f-962d-4695-aa00-893f86fd1099.objobasic 954cf89f8f01ac0ba9e4d378506536bbb64de2e1630351bf9373731366488987
@@ -75,7 +77,7 @@
 # Input: Simplex-d5d2812f-9dda-4d3c-ba39-d99bd1d38cf6.objobasic 63f26925c0eb3e6ca586f1706bdd70ae889bf10072d437a1459a128a15da827e
 # Input: SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic 82bc4694e90f396c176e50cbe8196ea7c809da4842781d5f9750137a1d087314
 # Input: SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic 7c911da9871051f8580713a107d379e349bdc89cf9f9f0e9968f07c29e2f19da
-# Input: SolverSet.objobasic ff8edb99ecd4f6da6c3b2cba2bc3ced04e3073c3975f9f92b6c8e45ad22c37a6
+# Input: SolverSet.objobasic 1d2b42169e753b0f4170547856e8e70e2fe1627878b28a60f941ccc978df8418
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
 # Input: Sweep-cb00a2fd-6231-417e-b9c8-c8b9600f8a60.objobasic 63ddb320289daea999ff29f84fefccd8f3153869b145930b3c49163fbdbb8578
 # Input: TOIInput-ed2377a5-cd3e-456e-97c1-3b960def0f54.objobasic cdc342dace66bf807f8463117512baf9e8a506b2befd05aa00aec3e30c369753
@@ -90,7 +92,7 @@
 # Input: TreeScratch-3add8e75-acc6-4f27-996e-372dc4d98372.objobasic 35e077b5cec3caafcc6d334013421d7a9612c3ba18ecf97875019b87ac2f9f55
 # Input: TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic 2abd4a4ca724ab02daa1a476dd447403aea4c5d80a507691f770ed20469a832b
 # Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
-# Input: World.objobasic 516c345e788d45cd7e3ba670d0a214a35956069fff36513c815730801065acf3
+# Input: World.objobasic 8e92c05fa646b9b999e3fbe05c2179033e792817ca82bec0f8dcc1e9c48f608f
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
 # Input: WorldOverlapContext.objobasic d6427a128c7da4c7c28607ce9ce2938ee735594398b6d8bddeaffa2f0f678585
@@ -98,7 +100,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 4a7108cad209b47f0cdc77224debb360f375a551ff494ed1de0b183fd3c2f7d9
+# Source content checksum (SHA-256): b5810a5e5ad863870deacc0e044c95d72c1f0ad2be3a5c591f28d6601641e83d
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -573,6 +575,12 @@ Property HeadChainId As Integer
 Property HeadContactKey As Integer
 ## Number of contacts attached to this body.
 Property ContactCount As Integer
+## Island this body belongs to. NULL_INDEX for static and disabled bodies.
+Property IslandId As Integer
+## Doubly linked island list: previous body.
+Property IslandPrev As Integer
+## Doubly linked island list: next body.
+Property IslandNext As Integer
 ## Total mass from shapes (kilograms). Overridden by SetMassData.
 Property Mass As Double
 ## Rotational inertia about the centre of mass. Overridden by SetMassData.
@@ -611,6 +619,9 @@ Me.ShapeCount = 0
 Me.HeadChainId = PhysicsConstants.NULL_INDEX
 Me.HeadContactKey = PhysicsConstants.NULL_INDEX
 Me.ContactCount = 0
+Me.IslandId = PhysicsConstants.NULL_INDEX
+Me.IslandPrev = PhysicsConstants.NULL_INDEX
+Me.IslandNext = PhysicsConstants.NULL_INDEX
 Me.Mass = 0.0
 Me.Inertia = 0.0
 Me.SleepThreshold = 0.0
@@ -5465,6 +5476,11 @@ Var bodyB As Body = world.Bodies[bodyIdB]
 UnlinkContactEdge(world, contact, 0)
 UnlinkContactEdge(world, contact, 1)
 
+# Remove the contact from its island when it was linked.
+If contact.IslandId <> PhysicsConstants.NULL_INDEX Then
+IslandMethods.UnlinkContact(world, contact)
+End If
+
 # Remove the sim record from the set that owns it.
 Var contactSet As SolverSet = world.SolverSets[contact.SetIndex]
 Var movedIndex As Integer = contactSet.ContactSims.RemoveSwap(contact.LocalIndex)
@@ -5865,6 +5881,29 @@ Me.ManifoldSlots.RemoveSwap(index)
 Me.CacheSlots.RemoveSwap(index)
 Return movedIndex
 End Function
+
+## Copies one row's scalars into another store's row and adopts the
+## source's pooled manifold and cache objects. Used only while contacts
+## migrate between solver sets; the source store is emptied or destroyed
+## immediately afterwards, so its pools shrink without bookkeeping.
+Sub MoveRowTo(target As ContactSims, targetIndex As Integer, sourceIndex As Integer)
+target.ContactId.Items[targetIndex] = Me.ContactId.Items[sourceIndex]
+target.ShapeIdA.Items[targetIndex] = Me.ShapeIdA.Items[sourceIndex]
+target.ShapeIdB.Items[targetIndex] = Me.ShapeIdB.Items[sourceIndex]
+target.BodySimIndexA.Items[targetIndex] = Me.BodySimIndexA.Items[sourceIndex]
+target.BodySimIndexB.Items[targetIndex] = Me.BodySimIndexB.Items[sourceIndex]
+target.InvMassA.Items[targetIndex] = Me.InvMassA.Items[sourceIndex]
+target.InvIA.Items[targetIndex] = Me.InvIA.Items[sourceIndex]
+target.InvMassB.Items[targetIndex] = Me.InvMassB.Items[sourceIndex]
+target.InvIB.Items[targetIndex] = Me.InvIB.Items[sourceIndex]
+target.Friction.Items[targetIndex] = Me.Friction.Items[sourceIndex]
+target.Restitution.Items[targetIndex] = Me.Restitution.Items[sourceIndex]
+target.RollingResistance.Items[targetIndex] = Me.RollingResistance.Items[sourceIndex]
+target.TangentSpeed.Items[targetIndex] = Me.TangentSpeed.Items[sourceIndex]
+target.SimFlags.Items[targetIndex] = Me.SimFlags.Items[sourceIndex]
+target.ManifoldPool[target.ManifoldSlots.Items[targetIndex]] = Me.ManifoldPool[Me.ManifoldSlots.Items[sourceIndex]]
+target.CachePool[target.CacheSlots.Items[targetIndex]] = Me.CachePool[Me.CacheSlots.Items[sourceIndex]]
+End Sub
 
 ## Empties the store while retaining all capacity, including the pooled
 ## manifold and cache objects.
@@ -9112,6 +9151,523 @@ Return Me.Items.Count + (Me.Items.Count \ 2)
 End Function
 End Class
 
+# Persistent island record, ported from upstream b2Island in island.h. An
+# island is a connected component of awake or sleeping bodies joined by
+# touching contacts and joints. Islands use union-find parent links while
+# awake, and each solver set stores the island ids that live inside it.
+#
+# Joint lists exist from the start so Stage 9 slots in without reshaping the
+# record; they stay empty until joints land.
+Class Island
+## Index of the solver set that owns this island. NULL_INDEX when free.
+Property SetIndex As Integer
+## Island index within its solver set. NULL_INDEX when free.
+Property LocalIndex As Integer
+## This island's own slot index.
+Property IslandId As Integer
+## Head of the doubly linked body list.
+Property HeadBody As Integer
+## Tail of the doubly linked body list.
+Property TailBody As Integer
+## Number of bodies in the island.
+Property BodyCount As Integer
+## Head of the doubly linked touching-contact list.
+Property HeadContact As Integer
+## Tail of the doubly linked touching-contact list.
+Property TailContact As Integer
+## Number of contacts in the island.
+Property ContactCount As Integer
+## Head of the doubly linked joint list. Empty until Stage 9.
+Property HeadJoint As Integer
+## Tail of the doubly linked joint list. Empty until Stage 9.
+Property TailJoint As Integer
+## Number of joints in the island. Zero until Stage 9.
+Property JointCount As Integer
+## Union-find parent island id. NULL_INDEX for roots.
+Property ParentIsland As Integer
+## Number of contacts or joints removed from this island since the last
+## split; a nonzero value marks the island as a split candidate.
+Property ConstraintRemoveCount As Integer
+
+## Creates a free-record placeholder. Only the world may construct live
+## islands; the zero-argument form exists for sparse array capacity.
+Constructor()
+Me.SetIndex = PhysicsConstants.NULL_INDEX
+Me.LocalIndex = PhysicsConstants.NULL_INDEX
+Me.IslandId = PhysicsConstants.NULL_INDEX
+Me.HeadBody = PhysicsConstants.NULL_INDEX
+Me.TailBody = PhysicsConstants.NULL_INDEX
+Me.BodyCount = 0
+Me.HeadContact = PhysicsConstants.NULL_INDEX
+Me.TailContact = PhysicsConstants.NULL_INDEX
+Me.ContactCount = 0
+Me.HeadJoint = PhysicsConstants.NULL_INDEX
+Me.TailJoint = PhysicsConstants.NULL_INDEX
+Me.JointCount = 0
+Me.ParentIsland = PhysicsConstants.NULL_INDEX
+Me.ConstraintRemoveCount = 0
+End Constructor
+End Class
+
+# Island graph maintenance, ported from upstream island.c. Islands link
+# touching contacts into connected components using union-find with path
+# compression; awake islands merge eagerly, sleeping islands merge when
+# their solver set wakes. Island splitting by depth-first search runs after
+# constraint removal. Joint linking arrives with Stage 9; the record's
+# joint lists stay empty until then.
+Class IslandMethods
+## Creates an island in the given solver set, ported from b2CreateIsland.
+Shared Function CreateIsland(world As World, setIndex As Integer) As Island
+If setIndex <> PhysicsConstants.AWAKE_SET And setIndex < PhysicsConstants.FIRST_SLEEPING_SET Then
+Throw New InvalidArgumentException("Islands require the awake or a sleeping set")
+End If
+Var islandId As Integer = world.IslandIdPool.AllocId()
+If islandId = world.Islands.Count Then
+world.Islands.Append(New Island)
+End If
+Var contactSet As SolverSet = world.SolverSets[setIndex]
+Var island As Island = world.Islands[islandId]
+island.SetIndex = setIndex
+island.LocalIndex = contactSet.IslandIds.Count
+island.IslandId = islandId
+island.HeadBody = PhysicsConstants.NULL_INDEX
+island.TailBody = PhysicsConstants.NULL_INDEX
+island.BodyCount = 0
+island.HeadContact = PhysicsConstants.NULL_INDEX
+island.TailContact = PhysicsConstants.NULL_INDEX
+island.ContactCount = 0
+island.HeadJoint = PhysicsConstants.NULL_INDEX
+island.TailJoint = PhysicsConstants.NULL_INDEX
+island.JointCount = 0
+island.ParentIsland = PhysicsConstants.NULL_INDEX
+island.ConstraintRemoveCount = 0
+contactSet.IslandIds.Append(islandId)
+Return island
+End Function
+
+## Destroys an empty island, ported from b2DestroyIsland. The island must
+## already be empty.
+Shared Sub DestroyIsland(world As World, islandId As Integer)
+If world.SplitIslandId = islandId Then
+world.SplitIslandId = PhysicsConstants.NULL_INDEX
+End If
+Var island As Island = world.Islands[islandId]
+Var contactSet As SolverSet = world.SolverSets[island.SetIndex]
+Var movedIndex As Integer = contactSet.IslandIds.RemoveSwap(island.LocalIndex)
+If movedIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedIslandId As Integer = contactSet.IslandIds.Items[island.LocalIndex]
+world.Islands[movedIslandId].LocalIndex = island.LocalIndex
+End If
+island.IslandId = PhysicsConstants.NULL_INDEX
+island.SetIndex = PhysicsConstants.NULL_INDEX
+island.LocalIndex = PhysicsConstants.NULL_INDEX
+world.IslandIdPool.FreeId(islandId)
+End Sub
+
+## Creates a single-body island, ported from b2CreateIslandForBody in
+## body.c. The body must not already belong to an island.
+Shared Sub CreateIslandForBody(world As World, setIndex As Integer, body As Body)
+If body.IslandId <> PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Body already belongs to an island")
+End If
+If setIndex = PhysicsConstants.DISABLED_SET Or setIndex = PhysicsConstants.STATIC_SET Then
+Throw New InvalidArgumentException("Islands require the awake or a sleeping set")
+End If
+Var island As Island = IslandMethods.CreateIsland(world, setIndex)
+body.IslandId = island.IslandId
+island.HeadBody = body.Id
+island.TailBody = body.Id
+island.BodyCount = 1
+End Sub
+
+## Removes a body from its island, destroying the island when it becomes
+## empty, ported from b2RemoveBodyFromIsland in body.c.
+Shared Sub RemoveBodyFromIsland(world As World, body As Body)
+If body.IslandId = PhysicsConstants.NULL_INDEX Then
+Return
+End If
+Var islandId As Integer = body.IslandId
+Var island As Island = world.Islands[islandId]
+If body.IslandPrev <> PhysicsConstants.NULL_INDEX Then
+world.Bodies[body.IslandPrev].IslandNext = body.IslandNext
+End If
+If body.IslandNext <> PhysicsConstants.NULL_INDEX Then
+world.Bodies[body.IslandNext].IslandPrev = body.IslandPrev
+End If
+island.BodyCount = island.BodyCount - 1
+If island.HeadBody = body.Id Then
+island.HeadBody = body.IslandNext
+If island.HeadBody = PhysicsConstants.NULL_INDEX Then
+If island.TailBody <> body.Id Or island.BodyCount <> 0 Or island.ContactCount <> 0 Or island.JointCount <> 0 Then
+Throw New RuntimeException("Island bookkeeping disagrees while removing a body")
+End If
+IslandMethods.DestroyIsland(world, island.IslandId)
+End If
+ElseIf island.TailBody = body.Id Then
+island.TailBody = body.IslandPrev
+End If
+body.IslandId = PhysicsConstants.NULL_INDEX
+body.IslandPrev = PhysicsConstants.NULL_INDEX
+body.IslandNext = PhysicsConstants.NULL_INDEX
+End Sub
+
+## Appends a touching contact to an island's contact list, ported from
+## b2AddContactToIsland.
+Private Shared Sub AddContactToIsland(world As World, islandId As Integer, contact As Contact)
+If contact.IslandId <> PhysicsConstants.NULL_INDEX Or contact.IslandPrev <> PhysicsConstants.NULL_INDEX Or contact.IslandNext <> PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Contact already belongs to an island")
+End If
+Var island As Island = world.Islands[islandId]
+If island.HeadContact <> PhysicsConstants.NULL_INDEX Then
+contact.IslandNext = island.HeadContact
+world.Contacts[island.HeadContact].IslandPrev = contact.ContactId
+End If
+island.HeadContact = contact.ContactId
+If island.TailContact = PhysicsConstants.NULL_INDEX Then
+island.TailContact = island.HeadContact
+End If
+island.ContactCount = island.ContactCount + 1
+contact.IslandId = islandId
+End Sub
+
+## Links a touching contact into the island graph, ported from b2LinkContact.
+## Wakes a sleeping body whose counterpart is awake, then unions the two
+## bodies' islands with path compression.
+Shared Sub LinkContact(world As World, contact As Contact)
+If contact.Flags.BitAnd(Integer(ContactFlags.TouchingFlag)) = 0 Then
+Throw New RuntimeException("LinkContact requires a touching contact")
+End If
+Var bodyIdA As Integer = contact.Edge0BodyId
+Var bodyIdB As Integer = contact.Edge1BodyId
+Var bodyA As Body = world.Bodies[bodyIdA]
+Var bodyB As Body = world.Bodies[bodyIdB]
+
+If bodyA.SetIndex = PhysicsConstants.DISABLED_SET Or bodyB.SetIndex = PhysicsConstants.DISABLED_SET Then
+Throw New RuntimeException("Disabled bodies cannot join an island")
+End If
+If bodyA.SetIndex = PhysicsConstants.STATIC_SET And bodyB.SetIndex = PhysicsConstants.STATIC_SET Then
+Throw New RuntimeException("Static bodies cannot join an island")
+End If
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET And bodyB.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET Then
+world.WakeSolverSet(bodyB.SetIndex)
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET And bodyA.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET Then
+world.WakeSolverSet(bodyA.SetIndex)
+End If
+
+Var islandIdA As Integer = bodyA.IslandId
+Var islandIdB As Integer = bodyB.IslandId
+If islandIdA = PhysicsConstants.NULL_INDEX And islandIdB = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("LinkContact requires a body with an island")
+End If
+
+If islandIdA = islandIdB Then
+AddContactToIsland(world, islandIdA, contact)
+Return
+End If
+
+Var rootIdA As Integer = FindRootIsland(world, islandIdA)
+Var rootIdB As Integer = FindRootIsland(world, islandIdB)
+
+If rootIdA <> rootIdB And rootIdA <> PhysicsConstants.NULL_INDEX And rootIdB <> PhysicsConstants.NULL_INDEX Then
+world.Islands[rootIdB].ParentIsland = rootIdA
+End If
+
+If rootIdA <> PhysicsConstants.NULL_INDEX Then
+AddContactToIsland(world, rootIdA, contact)
+Else
+AddContactToIsland(world, rootIdB, contact)
+End If
+End Sub
+
+## Returns the union-find root island id with path compression, or
+## NULL_INDEX when the island id is NULL.
+Private Shared Function FindRootIsland(world As World, islandId As Integer) As Integer
+If islandId = PhysicsConstants.NULL_INDEX Then
+Return PhysicsConstants.NULL_INDEX
+End If
+Var island As Island = world.Islands[islandId]
+While island.ParentIsland <> PhysicsConstants.NULL_INDEX
+Var parent As Island = world.Islands[island.ParentIsland]
+If parent.ParentIsland <> PhysicsConstants.NULL_INDEX Then
+island.ParentIsland = parent.ParentIsland
+End If
+island = parent
+Wend
+Return island.IslandId
+End Function
+
+## Unlinks a contact from its island when it stops touching or is
+## destroyed, ported from b2UnlinkContact.
+Shared Sub UnlinkContact(world As World, contact As Contact)
+If contact.IslandId = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("UnlinkContact requires a linked contact")
+End If
+Var islandId As Integer = contact.IslandId
+Var island As Island = world.Islands[islandId]
+If contact.IslandPrev <> PhysicsConstants.NULL_INDEX Then
+world.Contacts[contact.IslandPrev].IslandNext = contact.IslandNext
+End If
+If contact.IslandNext <> PhysicsConstants.NULL_INDEX Then
+world.Contacts[contact.IslandNext].IslandPrev = contact.IslandPrev
+End If
+If island.HeadContact = contact.ContactId Then
+island.HeadContact = contact.IslandNext
+End If
+If island.TailContact = contact.ContactId Then
+island.TailContact = contact.IslandPrev
+End If
+island.ContactCount = island.ContactCount - 1
+island.ConstraintRemoveCount = island.ConstraintRemoveCount + 1
+contact.IslandId = PhysicsConstants.NULL_INDEX
+contact.IslandPrev = PhysicsConstants.NULL_INDEX
+contact.IslandNext = PhysicsConstants.NULL_INDEX
+End Sub
+
+## Merges one child island into its union-find root, ported from
+## b2MergeIsland. The child must be awake.
+Private Shared Sub MergeIsland(world As World, islandId As Integer)
+Var island As Island = world.Islands[islandId]
+If island.ParentIsland = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("MergeIsland requires a child island")
+End If
+Var rootId As Integer = island.ParentIsland
+Var rootIsland As Island = world.Islands[rootId]
+
+Var bodyId As Integer = island.HeadBody
+While bodyId <> PhysicsConstants.NULL_INDEX
+Var body As Body = world.Bodies[bodyId]
+body.IslandId = rootId
+bodyId = body.IslandNext
+Wend
+
+Var contactId As Integer = island.HeadContact
+While contactId <> PhysicsConstants.NULL_INDEX
+Var contact As Contact = world.Contacts[contactId]
+contact.IslandId = rootId
+contactId = contact.IslandNext
+Wend
+
+world.Bodies[rootIsland.TailBody].IslandNext = island.HeadBody
+world.Bodies[island.HeadBody].IslandPrev = rootIsland.TailBody
+rootIsland.TailBody = island.TailBody
+rootIsland.BodyCount = rootIsland.BodyCount + island.BodyCount
+
+If rootIsland.HeadContact = PhysicsConstants.NULL_INDEX Then
+rootIsland.HeadContact = island.HeadContact
+rootIsland.TailContact = island.TailContact
+rootIsland.ContactCount = island.ContactCount
+ElseIf island.HeadContact <> PhysicsConstants.NULL_INDEX Then
+world.Contacts[rootIsland.TailContact].IslandNext = island.HeadContact
+world.Contacts[island.HeadContact].IslandPrev = rootIsland.TailContact
+rootIsland.TailContact = island.TailContact
+rootIsland.ContactCount = rootIsland.ContactCount + island.ContactCount
+End If
+
+rootIsland.ConstraintRemoveCount = rootIsland.ConstraintRemoveCount + island.ConstraintRemoveCount
+End Sub
+
+## Merges every awake island that has a parent into its root, ported from
+## b2MergeAwakeIslands. Runs whenever joint creation merges islands and at
+## the start of each step.
+Shared Sub MergeAwakeIslands(world As World)
+Var awakeSet As SolverSet = world.SolverSets[PhysicsConstants.AWAKE_SET]
+Var awakeIslandCount As Integer = awakeSet.IslandIds.Count
+
+Var i As Integer = 0
+While i < awakeIslandCount
+Var islandId As Integer = awakeSet.IslandIds.Items[i]
+Var island As Island = world.Islands[islandId]
+Var rootId As Integer = FindRootIsland(world, islandId)
+If rootId <> islandId Then
+island.ParentIsland = rootId
+End If
+i = i + 1
+Wend
+
+i = awakeIslandCount - 1
+While i >= 0
+Var islandId As Integer = awakeSet.IslandIds.Items[i]
+Var island As Island = world.Islands[islandId]
+If island.ParentIsland <> PhysicsConstants.NULL_INDEX Then
+MergeIsland(world, islandId)
+IslandMethods.DestroyIsland(world, islandId)
+End If
+i = i - 1
+Wend
+End Sub
+
+## Splits an awake island whose contacts or joints were removed, ported
+## from b2SplitIsland. Each depth-first component becomes a fresh island.
+Shared Sub SplitIsland(world As World, baseId As Integer)
+Var baseIsland As Island = world.Islands[baseId]
+If baseIsland.SetIndex <> PhysicsConstants.AWAKE_SET Then
+Return
+End If
+If baseIsland.ConstraintRemoveCount = 0 Then
+Return
+End If
+
+Var bodyCount As Integer = baseIsland.BodyCount
+Var bodyIds As New Array(Of Integer)
+Var nextBody As Integer = baseIsland.HeadBody
+While nextBody <> PhysicsConstants.NULL_INDEX
+bodyIds.Append(nextBody)
+world.Bodies[nextBody].IsMarked = False
+nextBody = world.Bodies[nextBody].IslandNext
+Wend
+If bodyIds.Count <> bodyCount Then
+Throw New RuntimeException("Island body count disagrees with its list")
+End If
+
+Var nextContactId As Integer = baseIsland.HeadContact
+While nextContactId <> PhysicsConstants.NULL_INDEX
+Var contact As Contact = world.Contacts[nextContactId]
+contact.IsMarked = False
+nextContactId = contact.IslandNext
+Wend
+
+IslandMethods.DestroyIsland(world, baseId)
+
+Var i As Integer = 0
+While i < bodyCount
+Var seedIndex As Integer = bodyIds[i]
+Var seed As Body = world.Bodies[seedIndex]
+If seed.IsMarked = False Then
+Var island As Island = IslandMethods.CreateIsland(world, PhysicsConstants.AWAKE_SET)
+Var islandId As Integer = island.IslandId
+Var stack As New Array(Of Integer)
+stack.Append(seedIndex)
+seed.IsMarked = True
+
+While stack.Count > 0
+Var bodyId As Integer = stack.Pop()
+DfsVisitBody(world, island, islandId, bodyId, stack)
+Wend
+End If
+i = i + 1
+Wend
+End Sub
+
+## Adds one body to a freshly split island and pushes its touching
+## neighbours, ported from the depth-first search body of b2SplitIsland.
+Private Shared Sub DfsVisitBody(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As Array(Of Integer))
+Var body As Body = world.Bodies[bodyId]
+body.IslandId = islandId
+If island.TailBody <> PhysicsConstants.NULL_INDEX Then
+world.Bodies[island.TailBody].IslandNext = bodyId
+End If
+body.IslandPrev = island.TailBody
+body.IslandNext = PhysicsConstants.NULL_INDEX
+island.TailBody = bodyId
+If island.HeadBody = PhysicsConstants.NULL_INDEX Then
+island.HeadBody = bodyId
+End If
+island.BodyCount = island.BodyCount + 1
+
+Var contactKey As Integer = body.HeadContactKey
+While contactKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = contactKey.ShiftRight(1)
+Var edgeIndex As Integer = contactKey.BitAnd(1)
+Var contact As Contact = world.Contacts[contactId]
+If edgeIndex = 0 Then
+contactKey = contact.Edge0NextKey
+Else
+contactKey = contact.Edge1NextKey
+End If
+If contact.IsMarked Then
+Continue While
+End If
+If contact.Flags.BitAnd(Integer(ContactFlags.TouchingFlag)) = 0 Then
+Continue While
+End If
+contact.IsMarked = True
+Var otherBodyId As Integer = contact.Edge1BodyId
+If edgeIndex = 1 Then
+otherBodyId = contact.Edge0BodyId
+End If
+Var otherBody As Body = world.Bodies[otherBodyId]
+If otherBody.IsMarked = False And otherBody.SetIndex <> PhysicsConstants.STATIC_SET Then
+stack.Append(otherBodyId)
+otherBody.IsMarked = True
+End If
+
+contact.IslandId = islandId
+If island.TailContact <> PhysicsConstants.NULL_INDEX Then
+world.Contacts[island.TailContact].IslandNext = contactId
+End If
+contact.IslandPrev = island.TailContact
+contact.IslandNext = PhysicsConstants.NULL_INDEX
+island.TailContact = contactId
+If island.HeadContact = PhysicsConstants.NULL_INDEX Then
+island.HeadContact = contactId
+End If
+island.ContactCount = island.ContactCount + 1
+Wend
+End Sub
+
+## Validates one island's linked lists and cross-references, ported from
+## b2ValidateIsland.
+Shared Sub ValidateIsland(world As World, islandId As Integer)
+Var island As Island = world.Islands[islandId]
+If island.IslandId <> islandId Then
+Throw New RuntimeException("Island slot does not match island id")
+End If
+If island.SetIndex = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Live island has no solver set")
+End If
+If island.HeadBody = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Island must hold at least one body")
+End If
+If island.BodyCount <= 0 Then
+Throw New RuntimeException("Island body count must be positive")
+End If
+Var count As Integer = 0
+Var bodyId As Integer = island.HeadBody
+While bodyId <> PhysicsConstants.NULL_INDEX
+Var body As Body = world.Bodies[bodyId]
+If body.IslandId <> islandId Then
+Throw New RuntimeException("Body island back reference disagrees")
+End If
+If body.SetIndex <> island.SetIndex Then
+Throw New RuntimeException("Body solver set disagrees with island")
+End If
+count = count + 1
+If count = island.BodyCount And bodyId <> island.TailBody Then
+Throw New RuntimeException("Island tail body disagrees with traversal")
+End If
+bodyId = body.IslandNext
+Wend
+If count <> island.BodyCount Then
+Throw New RuntimeException("Island body count disagrees with traversal")
+End If
+
+count = 0
+Var contactId As Integer = island.HeadContact
+While contactId <> PhysicsConstants.NULL_INDEX
+Var contact As Contact = world.Contacts[contactId]
+If contact.SetIndex <> island.SetIndex Then
+Throw New RuntimeException("Contact solver set disagrees with island")
+End If
+If contact.IslandId <> islandId Then
+Throw New RuntimeException("Contact island back reference disagrees")
+End If
+count = count + 1
+If count = island.ContactCount And contactId <> island.TailContact Then
+Throw New RuntimeException("Island tail contact disagrees with traversal")
+End If
+contactId = contact.IslandNext
+Wend
+If count <> island.ContactCount Then
+Throw New RuntimeException("Island contact count disagrees with traversal")
+End If
+If count = 0 And (island.TailContact <> PhysicsConstants.NULL_INDEX Or island.ContactCount <> 0) Then
+Throw New RuntimeException("Empty island must hold no contacts")
+End If
+End Sub
+End Class
+
 # A contact manifold describing the contact points between colliding
 # shapes, ported from upstream b2Manifold in collision.h. Box2D uses
 # speculative collision so some contact points may be separated.
@@ -12061,6 +12617,8 @@ Property Sims As BodySims
 Property States As BodyStates
 ## Dense contact state owned by this set.
 Property ContactSims As ContactSims
+## Ids of the islands that live in this set.
+Property IslandIds As IntegerList
 
 ## Creates a solver set. hasStates selects whether velocity state is stored.
 Constructor(setIndex As Integer, hasStates As Boolean)
@@ -12072,6 +12630,7 @@ Else
 Me.States = Nothing
 End If
 Me.ContactSims = New ContactSims()
+Me.IslandIds = New IntegerList()
 End Constructor
 
 ## Returns the storage to its initial empty state. Capacity is retained so a
@@ -12082,6 +12641,7 @@ If Me.States <> Nothing Then
 Me.States.ClearAll()
 End If
 Me.ContactSims.ClearAll()
+Me.IslandIds.Clear()
 End Sub
 End Class
 
@@ -12880,6 +13440,12 @@ Property ContactCount As Integer
 ## phase applies only the built-in shape and body rules and the hook adds
 ## no overhead.
 Property CustomFilter As CustomContactFilter
+## Island slot pool.
+Property IslandIdPool As IdPool
+## Sparse island record store indexed by island slot.
+Property Islands As Array(Of Island)
+## Island selected for splitting during the step. NULL_INDEX when none.
+Property SplitIslandId As Integer
 ## Solver sets. Index 0 static, 1 disabled, 2 awake, 3+ sleeping.
 Property SolverSets As Array(Of SolverSet)
 ## Body slot pool.
@@ -12966,6 +13532,9 @@ Me.ContactIdPool = New IdPool
 Me.Contacts = New Array(Of Contact)
 Me.ContactCount = 0
 Me.CustomFilter = Nothing
+Me.IslandIdPool = New IdPool
+Me.Islands = New Array(Of Island)
+Me.SplitIslandId = PhysicsConstants.NULL_INDEX
 Me.Bodies = New Array(Of Body)
 Me.Shapes = New Array(Of Shape)
 Me.Chains = New Array(Of Chain)
@@ -13163,6 +13732,9 @@ body.ShapeCount = 0
 body.HeadChainId = PhysicsConstants.NULL_INDEX
 body.HeadContactKey = PhysicsConstants.NULL_INDEX
 body.ContactCount = 0
+body.IslandId = PhysicsConstants.NULL_INDEX
+body.IslandPrev = PhysicsConstants.NULL_INDEX
+body.IslandNext = PhysicsConstants.NULL_INDEX
 body.Mass = 0.0
 body.Inertia = 0.0
 body.SleepThreshold = def.SleepThreshold
@@ -13173,6 +13745,9 @@ body.FixedRotation = def.FixedRotation
 body.IsSpeedCapped = False
 body.IsMarked = False
 body.UserData = def.UserData
+If setId >= PhysicsConstants.AWAKE_SET Then
+IslandMethods.CreateIslandForBody(Me, setId, body)
+End If
 Me.SetBodyName(body, def.Name)
 Return body
 End Function
@@ -13240,6 +13815,9 @@ chain.Id = PhysicsConstants.NULL_INDEX
 chain.BodyId = PhysicsConstants.NULL_INDEX
 Wend
 
+# Remove the body from its island, destroying the island when empty.
+IslandMethods.RemoveBodyFromIsland(Me, body)
+
 # Remove the sim record from the owning solver set.
 Var solverSet As SolverSet = Me.SolverSets[body.SetIndex]
 Var localIndex As Integer = body.LocalIndex
@@ -13304,22 +13882,232 @@ body.LocalIndex = targetIndex
 End Sub
 
 ## Wakes a sleeping solver set into the awake set, ported from
-## b2WakeSolverSet without contact, joint, and island work, which arrive
-## with Stage 7.
+## b2WakeSolverSet. Non-touching contacts move from the disabled set into
+## the awake set, sleeping contacts and islands migrate wholesale, and the
+## emptied sleeping set is destroyed. Joint and constraint-graph work
+## arrives with Stages 9 and the step.
 Sub WakeSolverSet(setIndex As Integer)
 If setIndex < 3 Then
 Throw New RuntimeException("WakeSolverSet requires a sleeping set")
 End If
 Var solverSet As SolverSet = Me.SolverSets[setIndex]
 Var awakeSet As SolverSet = Me.SolverSets[2]
+Var disabledSet As SolverSet = Me.SolverSets[1]
 While solverSet.Sims.Count() > 0
 Var bodyId As Integer = solverSet.Sims.BodyId.Items[0]
 Var body As Body = Me.Bodies[bodyId]
 Me.TransferBody(awakeSet, solverSet, body)
 body.SleepTime = 0.0
+
+# Move the body's non-touching contacts from the disabled set into the
+# awake set, ported from the wake path.
+Var contactKey As Integer = body.HeadContactKey
+While contactKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = contactKey.ShiftRight(1)
+Var edgeIndex As Integer = contactKey.BitAnd(1)
+Var contact As Contact = Me.Contacts[contactId]
+If edgeIndex = 0 Then
+contactKey = contact.Edge0NextKey
+Else
+contactKey = contact.Edge1NextKey
+End If
+If contact.SetIndex = PhysicsConstants.DISABLED_SET Then
+Var localIndex As Integer = contact.LocalIndex
+contact.SetIndex = PhysicsConstants.AWAKE_SET
+contact.LocalIndex = awakeSet.ContactSims.Count()
+awakeSet.ContactSims.Add()
+disabledSet.ContactSims.MoveRowTo(awakeSet.ContactSims, contact.LocalIndex, localIndex)
+Var movedLocalIndex As Integer = disabledSet.ContactSims.RemoveSwap(localIndex)
+If movedLocalIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = disabledSet.ContactSims.ContactId.Items[localIndex]
+Me.Contacts[movedContactId].LocalIndex = localIndex
+End If
+End If
 Wend
+Wend
+
+# Migrate the sleeping contacts into the awake set. The constraint graph
+# will move touching contacts into colours once the step lands.
+Var contactCount As Integer = solverSet.ContactSims.Count()
+For i As Integer = 0 To contactCount - 1
+Var contactId As Integer = solverSet.ContactSims.ContactId.Items[i]
+Var contact As Contact = Me.Contacts[contactId]
+Var localIndex As Integer = contact.LocalIndex
+contact.SetIndex = PhysicsConstants.AWAKE_SET
+contact.LocalIndex = awakeSet.ContactSims.Count()
+awakeSet.ContactSims.Add()
+solverSet.ContactSims.MoveRowTo(awakeSet.ContactSims, contact.LocalIndex, localIndex)
+Next i
+
+# Migrate the islands.
+Var islandCount As Integer = solverSet.IslandIds.Count
+For j As Integer = 0 To islandCount - 1
+Var islandId As Integer = solverSet.IslandIds.Items[j]
+Var island As Island = Me.Islands[islandId]
+island.SetIndex = PhysicsConstants.AWAKE_SET
+island.LocalIndex = awakeSet.IslandIds.Count
+awakeSet.IslandIds.Append(islandId)
+Next j
+
 Me.DestroySolverSet(setIndex)
 End Sub
+
+## Puts an awake island to sleep, ported from b2TrySleepIsland. Creates a
+## sleeping solver set, moves the island's bodies, contacts, and island
+## record into it, and relocates non-touching contacts to the disabled set.
+Sub TrySleepIsland(islandId As Integer)
+Var island As Island = Me.Islands[islandId]
+If island.SetIndex <> PhysicsConstants.AWAKE_SET Then
+Throw New RuntimeException("TrySleepIsland requires an awake island")
+End If
+If island.ConstraintRemoveCount > 0 Then
+Return
+End If
+
+Var sleepSetId As Integer = Me.AllocSleepingSet()
+Var sleepSet As SolverSet = Me.SolverSets[sleepSetId]
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+Var disabledSet As SolverSet = Me.SolverSets[PhysicsConstants.DISABLED_SET]
+
+# Move the island's bodies and their non-touching contacts.
+Var bodyId As Integer = island.HeadBody
+While bodyId <> PhysicsConstants.NULL_INDEX
+Var body As Body = Me.Bodies[bodyId]
+Var awakeBodyIndex As Integer = body.LocalIndex
+Var sleepBodyIndex As Integer = sleepSet.Sims.Count()
+sleepSet.Sims.Add()
+sleepSet.Sims.CopyRecordTo(sleepBodyIndex, awakeSet.Sims, awakeBodyIndex)
+Var movedIndex As Integer = awakeSet.Sims.RemoveSwap(awakeBodyIndex)
+If movedIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedId As Integer = awakeSet.Sims.BodyId.Items[awakeBodyIndex]
+Me.Bodies[movedId].LocalIndex = awakeBodyIndex
+End If
+awakeSet.States.RemoveSwap(awakeBodyIndex)
+body.SetIndex = sleepSetId
+body.LocalIndex = sleepBodyIndex
+
+Var contactKey As Integer = body.HeadContactKey
+While contactKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = contactKey.ShiftRight(1)
+Var edgeIndex As Integer = contactKey.BitAnd(1)
+Var contact As Contact = Me.Contacts[contactId]
+If edgeIndex = 0 Then
+contactKey = contact.Edge0NextKey
+Else
+contactKey = contact.Edge1NextKey
+End If
+If contact.SetIndex = PhysicsConstants.DISABLED_SET Then
+Continue While
+End If
+# Touching contacts are moved separately with the island's contact list.
+# The constraint graph will track them through colour indices once the
+# step lands; until then the sim touching flag is authoritative.
+Var owningSet As SolverSet = Me.SolverSets[contact.SetIndex]
+If owningSet.ContactSims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag)) <> 0 Then
+Continue While
+End If
+Var otherBodyId As Integer = contact.Edge1BodyId
+If edgeIndex = 1 Then
+otherBodyId = contact.Edge0BodyId
+End If
+If Me.Bodies[otherBodyId].SetIndex = PhysicsConstants.AWAKE_SET Then
+Continue While
+End If
+
+Var localIndex As Integer = contact.LocalIndex
+contact.SetIndex = PhysicsConstants.DISABLED_SET
+contact.LocalIndex = disabledSet.ContactSims.Count()
+disabledSet.ContactSims.Add()
+awakeSet.ContactSims.MoveRowTo(disabledSet.ContactSims, contact.LocalIndex, localIndex)
+Var movedLocalIndex As Integer = awakeSet.ContactSims.RemoveSwap(localIndex)
+If movedLocalIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = awakeSet.ContactSims.ContactId.Items[localIndex]
+Me.Contacts[movedContactId].LocalIndex = localIndex
+End If
+Wend
+
+bodyId = body.IslandNext
+Wend
+
+# Move the island's touching contacts.
+Var contactId As Integer = island.HeadContact
+While contactId <> PhysicsConstants.NULL_INDEX
+Var contact As Contact = Me.Contacts[contactId]
+Var localIndex As Integer = contact.LocalIndex
+Var sleepContactIndex As Integer = sleepSet.ContactSims.Count()
+sleepSet.ContactSims.Add()
+awakeSet.ContactSims.MoveRowTo(sleepSet.ContactSims, sleepContactIndex, localIndex)
+Var movedLocalIndex As Integer = awakeSet.ContactSims.RemoveSwap(localIndex)
+If movedLocalIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = awakeSet.ContactSims.ContactId.Items[localIndex]
+Me.Contacts[movedContactId].LocalIndex = localIndex
+End If
+contact.SetIndex = sleepSetId
+contact.ColorIndex = PhysicsConstants.NULL_INDEX
+contact.LocalIndex = sleepContactIndex
+contactId = contact.IslandNext
+Wend
+
+# Move the island record.
+Var islandIndex As Integer = island.LocalIndex
+sleepSet.IslandIds.Append(islandId)
+Var movedIslandIndex As Integer = awakeSet.IslandIds.RemoveSwap(islandIndex)
+If movedIslandIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedIslandId As Integer = awakeSet.IslandIds.Items[islandIndex]
+Me.Islands[movedIslandId].LocalIndex = islandIndex
+End If
+island.SetIndex = sleepSetId
+island.LocalIndex = 0
+End Sub
+
+## Merges sleeping set two into sleeping set one and destroys set two,
+## ported from b2MergeSolverSets. The smaller set migrates.
+Sub MergeSolverSets(setId1 As Integer, setId2 As Integer)
+If setId1 < PhysicsConstants.FIRST_SLEEPING_SET Or setId2 < PhysicsConstants.FIRST_SLEEPING_SET Then
+Throw New RuntimeException("MergeSolverSets requires sleeping sets")
+End If
+If Me.SolverSets[setId1].Sims.Count() < Me.SolverSets[setId2].Sims.Count() Then
+Var tempId As Integer = setId1
+setId1 = setId2
+setId2 = tempId
+End If
+Var targetSet As SolverSet = Me.SolverSets[setId1]
+Var sourceSet As SolverSet = Me.SolverSets[setId2]
+
+Var bodyCount As Integer = sourceSet.Sims.Count()
+For i As Integer = 0 To bodyCount - 1
+Var bodyId As Integer = sourceSet.Sims.BodyId.Items[i]
+Var body As Body = Me.Bodies[bodyId]
+body.SetIndex = setId1
+body.LocalIndex = targetSet.Sims.Count()
+targetSet.Sims.Add()
+targetSet.Sims.CopyRecordTo(body.LocalIndex, sourceSet.Sims, i)
+Next i
+
+Var contactCount As Integer = sourceSet.ContactSims.Count()
+For c As Integer = 0 To contactCount - 1
+Var contactId As Integer = sourceSet.ContactSims.ContactId.Items[c]
+Var contact As Contact = Me.Contacts[contactId]
+contact.SetIndex = setId1
+contact.LocalIndex = targetSet.ContactSims.Count()
+targetSet.ContactSims.Add()
+sourceSet.ContactSims.MoveRowTo(targetSet.ContactSims, contact.LocalIndex, c)
+Next c
+
+Var islandCount As Integer = sourceSet.IslandIds.Count
+For s As Integer = 0 To islandCount - 1
+Var islandId As Integer = sourceSet.IslandIds.Items[s]
+Var island As Island = Me.Islands[islandId]
+island.SetIndex = setId1
+island.LocalIndex = targetSet.IslandIds.Count
+targetSet.IslandIds.Append(islandId)
+Next s
+
+Me.DestroySolverSet(setId2)
+End Sub
+
+## Frees a sleeping solver set that no longer holds bodies, ported from
+## b2DestroySolverSet.
 
 ## Wakes the body when it sleeps, ported from b2WakeBody. Returns True when
 ## a set was woken.
@@ -13758,6 +14546,9 @@ Var shape As Shape = Me.Shapes[shapeId]
 shapeId = shape.NextShapeId
 Me.CreateShapeProxy(shape, body.Type, xf, True)
 Wend
+If setId <> 0 Then
+IslandMethods.CreateIslandForBody(Me, setId, body)
+End If
 End Sub
 
 ## Disables a live body, ported from b2Body_Disable.
@@ -13767,12 +14558,20 @@ Me.ValidateBody(body)
 If body.SetIndex = 1 Then
 Return
 End If
+
+# Destroy attached contacts and wake their other bodies.
+ContactMethods.DestroyBodyContacts(Me, body, True)
+
 Var shapeId As Integer = body.HeadShapeId
 While shapeId <> PhysicsConstants.NULL_INDEX
 Var shape As Shape = Me.Shapes[shapeId]
 shapeId = shape.NextShapeId
 Me.DestroyShapeProxy(shape)
 Wend
+
+# Disabled bodies do not belong to an island.
+IslandMethods.RemoveBodyFromIsland(Me, body)
+
 Me.TransferBody(Me.SolverSets[1], Me.SolverSets[body.SetIndex], body)
 End Sub
 
@@ -13792,8 +14591,8 @@ End If
 Me.UpdateBodyMassData(body)
 End Sub
 
-## Changes the body type, ported from b2Body_SetType. Contacts, joints, and
-## islands arrive in Stages 7 and 9; proxy recreation covers all cases.
+## Changes the body type, ported from b2Body_SetType. Joint handling
+## arrives with Stage 9.
 Sub SetBodyType(body As Body, bodyType As BodyType)
 Me.CheckNotLocked()
 Me.ValidateBody(body)
@@ -13810,9 +14609,11 @@ Me.WakeBody(body)
 body.Type = bodyType
 If originalType = BodyType.StaticBody Then
 Me.TransferBody(Me.SolverSets[2], Me.SolverSets[0], body)
+IslandMethods.CreateIslandForBody(Me, PhysicsConstants.AWAKE_SET, body)
 Me.RecreateShapeProxies(body, bodyType)
 ElseIf bodyType = BodyType.StaticBody Then
 Me.TransferBody(Me.SolverSets[0], Me.SolverSets[2], body)
+IslandMethods.RemoveBodyFromIsland(Me, body)
 Me.GetBodySim(body).IsFast.Items[body.LocalIndex] = 0
 Me.RecreateShapeProxies(body, BodyType.StaticBody)
 Else
@@ -15093,6 +15894,7 @@ If shapeCount <> Me.ShapeIdPool.IdCount() Then
 Throw New RuntimeException("World live shape count does not match pool")
 End If
 Me.ValidateContacts()
+Me.ValidateIslands()
 End Sub
 
 ## Validates contact bookkeeping, ported from the contact checks of
@@ -15130,6 +15932,35 @@ Throw New RuntimeException("Pair set keys do not match contact count")
 End If
 End Sub
 
+## Validates island bookkeeping across the world, ported from the island
+## checks of b2ValidateSolverSets.
+Sub ValidateIslands()
+Var liveIslandCount As Integer = 0
+For i As Integer = 0 To Me.Islands.Count - 1
+Var island As Island = Me.Islands[i]
+If island <> Nothing And island.IslandId <> PhysicsConstants.NULL_INDEX Then
+liveIslandCount = liveIslandCount + 1
+If island.IslandId <> i Then
+Throw New RuntimeException("World island slot does not match island id")
+End If
+IslandMethods.ValidateIsland(Me, i)
+End If
+Next i
+If liveIslandCount <> Me.IslandIdPool.IdCount() Then
+Throw New RuntimeException("World live island count does not match pool")
+End If
+Var listedIslandCount As Integer = 0
+For s As Integer = 0 To Me.SolverSets.Count - 1
+Var solverSet As SolverSet = Me.SolverSets[s]
+If solverSet <> Nothing Then
+listedIslandCount = listedIslandCount + solverSet.IslandIds.Count
+End If
+Next s
+If listedIslandCount <> liveIslandCount Then
+Throw New RuntimeException("Solver set island lists do not match island count")
+End If
+End Sub
+
 ## Returns the world to a reusable empty state: every body, shape, and chain
 ## is destroyed, pools reset, and broad-phase storage cleared while
 ## retaining capacity, ported from the destruction cascade of
@@ -15159,6 +15990,8 @@ Me.ShapeIdPool.Clear()
 Me.ChainIdPool.Clear()
 Me.SolverSetIdPool.Clear()
 Me.ContactIdPool.Clear()
+Me.IslandIdPool.Clear()
+Me.SplitIslandId = PhysicsConstants.NULL_INDEX
 Me.BodyGenerations.Clear()
 Me.ShapeGenerations.Clear()
 Me.ChainGenerations.Clear()

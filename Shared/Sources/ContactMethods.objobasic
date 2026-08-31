@@ -292,6 +292,11 @@ Var bodyB As Body = world.Bodies[bodyIdB]
 UnlinkContactEdge(world, contact, 0)
 UnlinkContactEdge(world, contact, 1)
 
+# Remove the contact from its island when it was linked.
+If contact.IslandId <> PhysicsConstants.NULL_INDEX Then
+IslandMethods.UnlinkContact(world, contact)
+End If
+
 # Remove the sim record from the set that owns it.
 Var contactSet As SolverSet = world.SolverSets[contact.SetIndex]
 Var movedIndex As Integer = contactSet.ContactSims.RemoveSwap(contact.LocalIndex)
