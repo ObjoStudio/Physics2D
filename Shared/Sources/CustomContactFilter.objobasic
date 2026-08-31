@@ -1,0 +1,14 @@
+# Opt-in custom contact filter, ported from upstream b2CustomFilterFcn in
+# types.h. The world applies the built-in shape and body rules first and
+# consults this hook last, so leaving CustomFilter as Nothing costs nothing.
+#
+# Return True to let the pair collide, False to suppress the contact. The
+# hook runs during broad-phase pair discovery and must not mutate the world.
+Class CustomContactFilter
+## Returns True when the two shapes may collide.
+Function ShouldCollide(shapeA As Shape, shapeB As Shape) As Boolean
+Pragma Unused shapeA
+Pragma Unused shapeB
+Return True
+End Function
+End Class

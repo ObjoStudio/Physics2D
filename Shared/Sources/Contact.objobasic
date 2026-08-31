@@ -1,0 +1,75 @@
+# Cold contact record, ported from upstream b2Contact in contact.h. The
+# record is the persistent identity used for pair lookup, body-edge
+# bookkeeping, island connectivity, and solver-set membership. The heavy
+# per-step data (manifold, mixing values, inverse masses) lives in the
+# ContactSims store of whichever solver set owns the contact.
+#
+# A contact is destroyed when broad-phase proxies stop overlapping, a body
+# or shape is destroyed, a body is disabled or changes type, or contact
+# filtering is modified.
+Class Contact
+## Slot index of the owning solver set. NULL_INDEX when free.
+Property SetIndex As Integer
+## Constraint-graph colour index. NULL_INDEX for non-touching or sleeping
+## contacts and for free slots.
+Property ColorIndex As Integer
+## Contact index within the owning set or graph colour. NULL_INDEX when
+## free.
+Property LocalIndex As Integer
+## Body slot of edge zero.
+Property Edge0BodyId As Integer
+## Doubly linked list key of the previous contact on edge zero's body.
+Property Edge0PrevKey As Integer
+## Doubly linked list key of the next contact on edge zero's body.
+Property Edge0NextKey As Integer
+## Body slot of edge one.
+Property Edge1BodyId As Integer
+## Doubly linked list key of the previous contact on edge one's body.
+Property Edge1PrevKey As Integer
+## Doubly linked list key of the next contact on edge one's body.
+Property Edge1NextKey As Integer
+## Shape slot of the first shape.
+Property ShapeIdA As Integer
+## Shape slot of the second shape.
+Property ShapeIdB As Integer
+## Island linked list: previous contact in the island. NULL_INDEX when the
+## contact is not touching or not linked.
+Property IslandPrev As Integer
+## Island linked list: next contact in the island.
+Property IslandNext As Integer
+## Island slot this contact belongs to when touching. NULL_INDEX otherwise.
+Property IslandId As Integer
+## This contact's own slot index, kept alongside the record like upstream.
+Property ContactId As Integer
+## Cold b2ContactFlags bits.
+Property Flags As Integer
+## Scratch mark used by island traversal.
+Property IsMarked As Boolean
+
+## Creates a free-record placeholder. Only the world may construct live
+## contacts; the zero-argument form exists for sparse array capacity.
+Constructor()
+Me.SetIndex = PhysicsConstants.NULL_INDEX
+Me.ColorIndex = PhysicsConstants.NULL_INDEX
+Me.LocalIndex = PhysicsConstants.NULL_INDEX
+Me.Edge0BodyId = PhysicsConstants.NULL_INDEX
+Me.Edge0PrevKey = PhysicsConstants.NULL_INDEX
+Me.Edge0NextKey = PhysicsConstants.NULL_INDEX
+Me.Edge1BodyId = PhysicsConstants.NULL_INDEX
+Me.Edge1PrevKey = PhysicsConstants.NULL_INDEX
+Me.Edge1NextKey = PhysicsConstants.NULL_INDEX
+Me.ShapeIdA = PhysicsConstants.NULL_INDEX
+Me.ShapeIdB = PhysicsConstants.NULL_INDEX
+Me.IslandPrev = PhysicsConstants.NULL_INDEX
+Me.IslandNext = PhysicsConstants.NULL_INDEX
+Me.IslandId = PhysicsConstants.NULL_INDEX
+Me.ContactId = PhysicsConstants.NULL_INDEX
+Me.Flags = 0
+Me.IsMarked = False
+End Constructor
+
+## Returns True when this record still addresses a live contact.
+Function IsValid() As Boolean
+Return Me.ContactId <> PhysicsConstants.NULL_INDEX
+End Function
+End Class

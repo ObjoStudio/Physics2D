@@ -25,6 +25,11 @@ Property HeadShapeId As Integer
 Property ShapeCount As Integer
 ## Head of the doubly linked chain list.
 Property HeadChainId As Integer
+## Head of the doubly linked contact list as a contact edge key:
+## (contactId << 1) | edgeIndex.
+Property HeadContactKey As Integer
+## Number of contacts attached to this body.
+Property ContactCount As Integer
 ## Total mass from shapes (kilograms). Overridden by SetMassData.
 Property Mass As Double
 ## Rotational inertia about the centre of mass. Overridden by SetMassData.
@@ -61,6 +66,8 @@ Me.LocalIndex = PhysicsConstants.NULL_INDEX
 Me.HeadShapeId = PhysicsConstants.NULL_INDEX
 Me.ShapeCount = 0
 Me.HeadChainId = PhysicsConstants.NULL_INDEX
+Me.HeadContactKey = PhysicsConstants.NULL_INDEX
+Me.ContactCount = 0
 Me.Mass = 0.0
 Me.Inertia = 0.0
 Me.SleepThreshold = 0.0

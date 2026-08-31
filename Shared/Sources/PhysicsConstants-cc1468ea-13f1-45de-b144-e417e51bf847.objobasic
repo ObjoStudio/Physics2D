@@ -13,6 +13,18 @@ Class PhysicsConstants
 ## Sentinel slot index meaning "no slot". Never confuse it with slot 0.
 Public Const NULL_INDEX As Integer = -1
 
+## Solver set indices, ported from the b2_*Set constants in core.h.
+Public Const STATIC_SET As Integer = 0
+
+## Solver set index of the disabled set.
+Public Const DISABLED_SET As Integer = 1
+
+## Solver set index of the awake set.
+Public Const AWAKE_SET As Integer = 2
+
+## First per-island sleeping solver set index.
+Public Const FIRST_SLEEPING_SET As Integer = 3
+
 ## Sentinel generation that can never validate. Issued generations start at 1.
 Public Const INVALID_GENERATION As Integer = 0
 

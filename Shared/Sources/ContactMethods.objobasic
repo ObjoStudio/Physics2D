@@ -1,0 +1,541 @@
+# Contact lifecycle, ported from upstream contact.c. This module owns the
+# manifold dispatch table (as a Select Case over the shape-type pair), the
+# contact creation and destruction rules, contact-edge linking, and the
+# narrow-phase manifold update with warm-start impulse matching.
+#
+# Upstream stores the dispatch as a function-pointer table registered at
+# startup; the port uses one deterministic Select Case so no runtime
+# registration order can change results. The transposed-pair rule matches
+# upstream b2AddType: the pair whose first argument matches the registered
+# primary order is used verbatim, the transposed pair flips its arguments.
+Class ContactMethods
+## Computes the contact manifold for a shape pair, choosing the registered
+## primary argument order. The cache is only used by chain-segment pairs.
+Shared Function ComputeManifoldTo(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Var typeA As ShapeType = shapeA.Type
+# Upstream primary orders: circle-circle, capsule-circle, capsule-capsule,
+# polygon-circle, polygon-capsule, polygon-polygon, segment-circle,
+# segment-capsule, segment-polygon, chainSegment-circle,
+# chainSegment-capsule, chainSegment-polygon. Segment-segment and
+# chain-segment pairs have no registered manifold.
+If typeA = ShapeType.CircleShape Then
+Return ContactMethods.ManifoldCircleA(shapeA, transformA, shapeB, transformB, cache, out)
+ElseIf typeA = ShapeType.CapsuleShape Then
+Return ContactMethods.ManifoldCapsuleA(shapeA, transformA, shapeB, transformB, cache, out)
+ElseIf typeA = ShapeType.SegmentShape Then
+Return ContactMethods.ManifoldSegmentA(shapeA, transformA, shapeB, transformB, out)
+ElseIf typeA = ShapeType.PolygonShape Then
+Return ContactMethods.ManifoldPolygonA(shapeA, transformA, shapeB, transformB, cache, out)
+ElseIf typeA = ShapeType.ChainSegmentShape Then
+Return ContactMethods.ManifoldChainSegmentA(shapeA, transformA, shapeB, transformB, cache, out)
+End If
+out.Reset()
+Return out
+End Function
+
+## Manifold dispatch when shape A is a circle.
+Shared Function ManifoldCircleA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Pragma Unused cache
+Var typeB As ShapeType = shapeB.Type
+If typeB = ShapeType.CircleShape Then
+Return Collide.CollideCirclesTo(shapeA.Circle, transformA, shapeB.Circle, transformB, out)
+ElseIf typeB = ShapeType.CapsuleShape Then
+Return Collide.CollideCapsuleAndCircleTo(shapeB.Capsule, transformB, shapeA.Circle, transformA, out)
+ElseIf typeB = ShapeType.SegmentShape Then
+Return Collide.CollideSegmentAndCircleTo(shapeB.Segment, transformB, shapeA.Circle, transformA, out)
+ElseIf typeB = ShapeType.PolygonShape Then
+Return Collide.CollidePolygonAndCircleTo(shapeB.Polygon, transformB, shapeA.Circle, transformA, out)
+ElseIf typeB = ShapeType.ChainSegmentShape Then
+Return Collide.CollideChainSegmentAndCircleTo(shapeB.ChainSegment, transformB, shapeA.Circle, transformA, out)
+End If
+out.Reset()
+Return out
+End Function
+
+## Manifold dispatch when shape A is a capsule.
+Shared Function ManifoldCapsuleA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Var typeB As ShapeType = shapeB.Type
+If typeB = ShapeType.CircleShape Then
+Return Collide.CollideCapsuleAndCircleTo(shapeA.Capsule, transformA, shapeB.Circle, transformB, out)
+ElseIf typeB = ShapeType.CapsuleShape Then
+Return Collide.CollideCapsulesTo(shapeA.Capsule, transformA, shapeB.Capsule, transformB, out)
+ElseIf typeB = ShapeType.SegmentShape Then
+Return Collide.CollideSegmentAndCapsuleTo(shapeB.Segment, transformB, shapeA.Capsule, transformA, out)
+ElseIf typeB = ShapeType.PolygonShape Then
+Return Collide.CollidePolygonAndCapsuleTo(shapeB.Polygon, transformB, shapeA.Capsule, transformA, out)
+ElseIf typeB = ShapeType.ChainSegmentShape Then
+Return Collide.CollideChainSegmentAndCapsuleTo(shapeB.ChainSegment, transformB, shapeA.Capsule, transformA, cache, out)
+End If
+out.Reset()
+Return out
+End Function
+
+## Manifold dispatch when shape A is a segment.
+Shared Function ManifoldSegmentA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, out As Manifold) As Manifold
+Var typeB As ShapeType = shapeB.Type
+If typeB = ShapeType.CircleShape Then
+Return Collide.CollideSegmentAndCircleTo(shapeA.Segment, transformA, shapeB.Circle, transformB, out)
+ElseIf typeB = ShapeType.CapsuleShape Then
+Return Collide.CollideSegmentAndCapsuleTo(shapeA.Segment, transformA, shapeB.Capsule, transformB, out)
+ElseIf typeB = ShapeType.PolygonShape Then
+Return Collide.CollideSegmentAndPolygonTo(shapeA.Segment, transformA, shapeB.Polygon, transformB, out)
+End If
+out.Reset()
+Return out
+End Function
+
+## Manifold dispatch when shape A is a polygon.
+Shared Function ManifoldPolygonA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Var typeB As ShapeType = shapeB.Type
+If typeB = ShapeType.CircleShape Then
+Return Collide.CollidePolygonAndCircleTo(shapeA.Polygon, transformA, shapeB.Circle, transformB, out)
+ElseIf typeB = ShapeType.CapsuleShape Then
+Return Collide.CollidePolygonAndCapsuleTo(shapeA.Polygon, transformA, shapeB.Capsule, transformB, out)
+ElseIf typeB = ShapeType.SegmentShape Then
+Return Collide.CollideSegmentAndPolygonTo(shapeB.Segment, transformB, shapeA.Polygon, transformA, out)
+ElseIf typeB = ShapeType.PolygonShape Then
+Return Collide.CollidePolygonsTo(shapeA.Polygon, transformA, shapeB.Polygon, transformB, out)
+ElseIf typeB = ShapeType.ChainSegmentShape Then
+Return Collide.CollideChainSegmentAndPolygonTo(shapeB.ChainSegment, transformB, shapeA.Polygon, transformA, cache, out)
+End If
+out.Reset()
+Return out
+End Function
+
+## Manifold dispatch when shape A is a chain segment.
+Shared Function ManifoldChainSegmentA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Var typeB As ShapeType = shapeB.Type
+If typeB = ShapeType.CircleShape Then
+Return Collide.CollideChainSegmentAndCircleTo(shapeA.ChainSegment, transformA, shapeB.Circle, transformB, out)
+ElseIf typeB = ShapeType.CapsuleShape Then
+Return Collide.CollideChainSegmentAndCapsuleTo(shapeA.ChainSegment, transformA, shapeB.Capsule, transformB, cache, out)
+ElseIf typeB = ShapeType.PolygonShape Then
+Return Collide.CollideChainSegmentAndPolygonTo(shapeA.ChainSegment, transformA, shapeB.Polygon, transformB, cache, out)
+End If
+out.Reset()
+Return out
+End Function
+
+## Returns True when the registered manifold pair exists. Segment-segment,
+## segment-chain-segment, and chain-segment pairs never collide.
+Shared Function HasManifold(typeA As ShapeType, typeB As ShapeType) As Boolean
+If typeA = ShapeType.SegmentShape And typeB = ShapeType.SegmentShape Then
+Return False
+End If
+If typeA = ShapeType.ChainSegmentShape And typeB = ShapeType.SegmentShape Then
+Return False
+End If
+If typeA = ShapeType.SegmentShape And typeB = ShapeType.ChainSegmentShape Then
+Return False
+End If
+If typeA = ShapeType.ChainSegmentShape And typeB = ShapeType.ChainSegmentShape Then
+Return False
+End If
+Return True
+End Function
+
+## Returns True when the two shape filters may collide, ported from
+## b2ShouldShapesCollide in shape.h.
+Shared Function ShouldShapesCollide(filterA As Filter, filterB As Filter) As Boolean
+If filterA.GroupIndex = filterB.GroupIndex And filterA.GroupIndex <> 0 Then
+Return filterA.GroupIndex > 0
+End If
+Return (filterA.MaskBits.BitAnd(filterB.CategoryBits) <> 0) And (filterA.CategoryBits.BitAnd(filterB.MaskBits) <> 0)
+End Function
+
+## Creates a contact for two overlapping broad-phase proxies, ported from
+## b2CreateContact. The caller has already applied shape and body filtering.
+## When either body is awake the contact lives in the awake set; otherwise
+## it lives in the disabled set until an island links it.
+Shared Function CreateContact(world As World, shapeA As Shape, shapeB As Shape) As Contact
+Var typeA As ShapeType = shapeA.Type
+Var typeB As ShapeType = shapeB.Type
+If Not ContactMethods.HasManifold(typeA, typeB) Then
+Return Nothing
+End If
+If Not ContactMethods.IsPrimaryPair(typeA, typeB) Then
+Return ContactMethods.CreateContact(world, shapeB, shapeA)
+End If
+
+Var bodyA As Body = world.Bodies[shapeA.BodyId]
+Var bodyB As Body = world.Bodies[shapeB.BodyId]
+If bodyA.SetIndex = PhysicsConstants.DISABLED_SET Or bodyB.SetIndex = PhysicsConstants.DISABLED_SET Then
+Return Nothing
+End If
+If bodyA.SetIndex = PhysicsConstants.STATIC_SET And bodyB.SetIndex = PhysicsConstants.STATIC_SET Then
+Return Nothing
+End If
+
+Var setIndex As Integer = PhysicsConstants.DISABLED_SET
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Or bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+setIndex = PhysicsConstants.AWAKE_SET
+End If
+Var contactSet As SolverSet = world.SolverSets[setIndex]
+
+Var contactId As Integer = world.ContactIdPool.AllocId()
+If contactId = world.Contacts.Count Then
+world.Contacts.Append(New Contact)
+Else
+world.Contacts[contactId] = New Contact
+End If
+Var contact As Contact = world.Contacts[contactId]
+
+contact.ContactId = contactId
+contact.SetIndex = setIndex
+contact.ColorIndex = PhysicsConstants.NULL_INDEX
+contact.IslandId = PhysicsConstants.NULL_INDEX
+contact.IslandPrev = PhysicsConstants.NULL_INDEX
+contact.IslandNext = PhysicsConstants.NULL_INDEX
+contact.ShapeIdA = shapeA.Id
+contact.ShapeIdB = shapeB.Id
+contact.IsMarked = False
+contact.Flags = 0
+
+If shapeA.EnableContactEvents Or shapeB.EnableContactEvents Then
+contact.Flags = contact.Flags.BitOr(Integer(ContactFlags.EnableContactEvents))
+End If
+
+LinkContactEdge(world, contact, 0, shapeA.BodyId)
+LinkContactEdge(world, contact, 1, shapeB.BodyId)
+
+Var pairKey As Integer = PairKeySet.PairKey(shapeA.Id, shapeB.Id)
+world.BroadPhase.PairSet.Add(pairKey)
+
+Var simIndex As Integer = contactSet.ContactSims.Add()
+contact.LocalIndex = simIndex
+Var sims As ContactSims = contactSet.ContactSims
+sims.ContactId.Items[simIndex] = contactId
+sims.ShapeIdA.Items[simIndex] = shapeA.Id
+sims.ShapeIdB.Items[simIndex] = shapeB.Id
+sims.BodySimIndexA.Items[simIndex] = PhysicsConstants.NULL_INDEX
+sims.BodySimIndexB.Items[simIndex] = PhysicsConstants.NULL_INDEX
+sims.InvMassA.Items[simIndex] = 0.0
+sims.InvIA.Items[simIndex] = 0.0
+sims.InvMassB.Items[simIndex] = 0.0
+sims.InvIB.Items[simIndex] = 0.0
+sims.Friction.Items[simIndex] = world.MixFriction(shapeA.Friction, shapeB.Friction)
+sims.Restitution.Items[simIndex] = world.MixRestitution(shapeA.Restitution, shapeB.Restitution)
+sims.RollingResistance.Items[simIndex] = 0.0
+sims.TangentSpeed.Items[simIndex] = 0.0
+sims.SimFlags.Items[simIndex] = 0
+
+If shapeA.EnablePreSolveEvents Or shapeB.EnablePreSolveEvents Then
+sims.SimFlags.Items[simIndex] = sims.SimFlags.Items[simIndex].BitOr(Integer(ContactFlags.SimEnablePreSolveEvents))
+End If
+
+world.ContactCount = world.ContactCount + 1
+Return contact
+End Function
+
+## Returns True when the type pair is the registered primary order, ported
+## from the b2AddType registrations in contact.c.
+Shared Function IsPrimaryPair(typeA As ShapeType, typeB As ShapeType) As Boolean
+If typeA = typeB Then
+Return True
+End If
+If typeA = ShapeType.CapsuleShape And typeB = ShapeType.CircleShape Then
+Return True
+End If
+If typeA = ShapeType.PolygonShape And (typeB = ShapeType.CircleShape Or typeB = ShapeType.CapsuleShape) Then
+Return True
+End If
+If typeA = ShapeType.SegmentShape And (typeB = ShapeType.CircleShape Or typeB = ShapeType.CapsuleShape Or typeB = ShapeType.PolygonShape) Then
+Return True
+End If
+If typeA = ShapeType.ChainSegmentShape And (typeB = ShapeType.CircleShape Or typeB = ShapeType.CapsuleShape Or typeB = ShapeType.PolygonShape) Then
+Return True
+End If
+Return False
+End Function
+
+## Links one contact edge into its body's doubly linked contact list,
+## ported from the edge connection block of b2CreateContact.
+Private Shared Sub LinkContactEdge(world As World, contact As Contact, edgeIndex As Integer, bodyId As Integer)
+Var body As Body = world.Bodies[bodyId]
+If edgeIndex = 0 Then
+contact.Edge0BodyId = bodyId
+contact.Edge0PrevKey = PhysicsConstants.NULL_INDEX
+contact.Edge0NextKey = body.HeadContactKey
+Else
+contact.Edge1BodyId = bodyId
+contact.Edge1PrevKey = PhysicsConstants.NULL_INDEX
+contact.Edge1NextKey = body.HeadContactKey
+End If
+
+Var edgeKey As Integer = (contact.ContactId * 2) + edgeIndex
+If body.HeadContactKey <> PhysicsConstants.NULL_INDEX Then
+Var headContact As Contact = world.Contacts[body.HeadContactKey / 2]
+If body.HeadContactKey Mod 2 = 0 Then
+headContact.Edge0PrevKey = edgeKey
+Else
+headContact.Edge1PrevKey = edgeKey
+End If
+End If
+body.HeadContactKey = edgeKey
+body.ContactCount = body.ContactCount + 1
+End Sub
+
+## Destroys a contact, ported from b2DestroyContact. The island-unlink and
+## constraint-graph removal branches arrive with their owning slices; both
+## are unreachable until islands and the step exist.
+Shared Sub DestroyContact(world As World, contact As Contact, wakeBodies As Boolean)
+Var contactId As Integer = contact.ContactId
+Var pairKey As Integer = PairKeySet.PairKey(contact.ShapeIdA, contact.ShapeIdB)
+world.BroadPhase.PairSet.Remove(pairKey)
+
+Var touching As Boolean = contact.Flags.BitAnd(Integer(ContactFlags.TouchingFlag)) <> 0
+Var bodyIdA As Integer = contact.Edge0BodyId
+Var bodyIdB As Integer = contact.Edge1BodyId
+Var bodyA As Body = world.Bodies[bodyIdA]
+Var bodyB As Body = world.Bodies[bodyIdB]
+
+UnlinkContactEdge(world, contact, 0)
+UnlinkContactEdge(world, contact, 1)
+
+# Remove the sim record from the set that owns it.
+Var contactSet As SolverSet = world.SolverSets[contact.SetIndex]
+Var movedIndex As Integer = contactSet.ContactSims.RemoveSwap(contact.LocalIndex)
+If movedIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = contactSet.ContactSims.ContactId.Items[contact.LocalIndex]
+world.Contacts[movedContactId].LocalIndex = contact.LocalIndex
+End If
+
+contact.ContactId = PhysicsConstants.NULL_INDEX
+contact.SetIndex = PhysicsConstants.NULL_INDEX
+contact.ColorIndex = PhysicsConstants.NULL_INDEX
+contact.LocalIndex = PhysicsConstants.NULL_INDEX
+
+world.ContactIdPool.FreeId(contactId)
+world.ContactCount = world.ContactCount - 1
+
+If wakeBodies And touching Then
+world.WakeBody(bodyA)
+world.WakeBody(bodyB)
+End If
+End Sub
+
+## Removes one contact edge from its body's doubly linked contact list,
+## ported from the edge removal block of b2DestroyContact.
+Private Shared Sub UnlinkContactEdge(world As World, contact As Contact, edgeIndex As Integer)
+Var prevKey As Integer = PhysicsConstants.NULL_INDEX
+Var nextKey As Integer = PhysicsConstants.NULL_INDEX
+If edgeIndex = 0 Then
+prevKey = contact.Edge0PrevKey
+nextKey = contact.Edge0NextKey
+Else
+prevKey = contact.Edge1PrevKey
+nextKey = contact.Edge1NextKey
+End If
+
+If prevKey <> PhysicsConstants.NULL_INDEX Then
+Var prevContact As Contact = world.Contacts[prevKey / 2]
+If prevKey Mod 2 = 0 Then
+prevContact.Edge0NextKey = nextKey
+Else
+prevContact.Edge1NextKey = nextKey
+End If
+End If
+
+If nextKey <> PhysicsConstants.NULL_INDEX Then
+Var nextContact As Contact = world.Contacts[nextKey / 2]
+If nextKey Mod 2 = 0 Then
+nextContact.Edge0PrevKey = prevKey
+Else
+nextContact.Edge1PrevKey = prevKey
+End If
+End If
+
+Var edgeKey As Integer = (contact.ContactId * 2) + edgeIndex
+Var body As Body = world.Bodies[contact.Edge0BodyId]
+If edgeIndex = 1 Then
+body = world.Bodies[contact.Edge1BodyId]
+End If
+If body.HeadContactKey = edgeKey Then
+body.HeadContactKey = nextKey
+End If
+body.ContactCount = body.ContactCount - 1
+End Sub
+
+## Destroys every contact attached to a body, ported from
+## b2DestroyBodyContacts in body.c.
+Shared Sub DestroyBodyContacts(world As World, body As Body, wakeBodies As Boolean)
+Var edgeKey As Integer = body.HeadContactKey
+While edgeKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = edgeKey.ShiftRight(1)
+Var edgeIndex As Integer = edgeKey.BitAnd(1)
+Var contact As Contact = world.Contacts[contactId]
+If edgeIndex = 0 Then
+edgeKey = contact.Edge0NextKey
+Else
+edgeKey = contact.Edge1NextKey
+End If
+ContactMethods.DestroyContact(world, contact, wakeBodies)
+Wend
+End Sub
+
+## Destroys every contact that references the given shape, ported from the
+## contact sweep of b2DestroyShapeInternal in shape.c.
+Shared Sub DestroyShapeContacts(world As World, body As Body, shapeId As Integer, wakeBodies As Boolean)
+Var edgeKey As Integer = body.HeadContactKey
+While edgeKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = edgeKey.ShiftRight(1)
+Var edgeIndex As Integer = edgeKey.BitAnd(1)
+Var contact As Contact = world.Contacts[contactId]
+If edgeIndex = 0 Then
+edgeKey = contact.Edge0NextKey
+Else
+edgeKey = contact.Edge1NextKey
+End If
+If contact.ShapeIdA = shapeId Or contact.ShapeIdB = shapeId Then
+ContactMethods.DestroyContact(world, contact, wakeBodies)
+End If
+Wend
+End Sub
+
+## Returns the shape's collision radius, ported from b2GetShapeRadius in
+## shape.h. Segments and chain segments have zero radius.
+Shared Function GetShapeRadius(shape As Shape) As Double
+If shape.Type = ShapeType.CapsuleShape Then
+Return shape.Capsule.Radius
+ElseIf shape.Type = ShapeType.CircleShape Then
+Return shape.Circle.Radius
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Return shape.Polygon.Radius
+End If
+Return 0.0
+End Function
+
+## Returns the contact sim row owning the contact: the solver set's dense
+## store for non-touching and sleeping contacts.
+Shared Function GetContactSet(world As World, contact As Contact) As SolverSet
+Return world.SolverSets[contact.SetIndex]
+End Function
+
+## Updates the contact manifold and touching status, ported from
+## b2UpdateContact. The manifold is written in place into the set's reusable
+## manifold object; anchors shift to centre-of-mass-relative form and
+## persisted points inherit the old impulses for warm starting. Returns the
+## new touching state.
+Shared Function UpdateContact(world As World, contact As Contact, shapeA As Shape, transformA As Transform, centerOffsetAX As Double, centerOffsetAY As Double, shapeB As Shape, transformB As Transform, centerOffsetBX As Double, centerOffsetBY As Double) As Boolean
+Var contactSet As SolverSet = world.SolverSets[contact.SetIndex]
+Var simIndex As Integer = contact.LocalIndex
+Var sims As ContactSims = contactSet.ContactSims
+Var manifold As Manifold = sims.GetManifold(simIndex)
+Var cache As SimplexCache = sims.GetCache(simIndex)
+
+# Keep the old manifold for impulse matching, then recompute in place.
+Var oldPointCount As Integer = manifold.PointCount
+Var oldId1 As Integer = manifold.Point1.Id
+Var oldNormalImpulse1 As Double = manifold.Point1.NormalImpulse
+Var oldTangentImpulse1 As Double = manifold.Point1.TangentImpulse
+Var oldId2 As Integer = 0
+Var oldNormalImpulse2 As Double = 0.0
+Var oldTangentImpulse2 As Double = 0.0
+If oldPointCount = 2 Then
+oldId2 = manifold.Point2.Id
+oldNormalImpulse2 = manifold.Point2.NormalImpulse
+oldTangentImpulse2 = manifold.Point2.TangentImpulse
+End If
+
+ContactMethods.ComputeManifoldTo(shapeA, transformA, shapeB, transformB, cache, manifold)
+
+# Keep the mixing values current in case the shapes were modified.
+sims.Friction.Items[simIndex] = world.MixFriction(shapeA.Friction, shapeB.Friction)
+sims.Restitution.Items[simIndex] = world.MixRestitution(shapeA.Restitution, shapeB.Restitution)
+If shapeA.RollingResistance > 0.0 Or shapeB.RollingResistance > 0.0 Then
+Var radiusA As Double = ContactMethods.GetShapeRadius(shapeA)
+Var radiusB As Double = ContactMethods.GetShapeRadius(shapeB)
+Var maxRadius As Double = radiusA
+If radiusB > maxRadius Then
+maxRadius = radiusB
+End If
+sims.RollingResistance.Items[simIndex] = Maths.Max(shapeA.RollingResistance, shapeB.RollingResistance) * maxRadius
+Else
+sims.RollingResistance.Items[simIndex] = 0.0
+End If
+sims.TangentSpeed.Items[simIndex] = shapeA.TangentSpeed + shapeB.TangentSpeed
+
+Var pointCount As Integer = manifold.PointCount
+Var touching As Boolean = pointCount > 0
+
+# Speculative margins are a Stage 8 concern; without them a two-point
+# manifold with a too-positive separation collapses to its deeper point,
+# ported from the enableSpeculative guard.
+If world.SpeculativeEnabled = False And pointCount = 2 Then
+If manifold.Point1.Separation > 1.5 * PhysicsConstants.LINEAR_SLOP Then
+CopyManifoldPoint(manifold.Point2, manifold.Point1)
+manifold.PointCount = 1
+ElseIf manifold.Point2.Separation > 1.5 * PhysicsConstants.LINEAR_SLOP Then
+manifold.PointCount = 1
+End If
+pointCount = manifold.PointCount
+End If
+
+If touching And (shapeA.EnableHitEvents Or shapeB.EnableHitEvents) Then
+sims.SimFlags.Items[simIndex] = sims.SimFlags.Items[simIndex].BitOr(Integer(ContactFlags.SimEnableHitEvent))
+Else
+sims.SimFlags.Items[simIndex] = sims.SimFlags.Items[simIndex].BitAnd(Integer(ContactFlags.SimEnableHitEvent).BitNot())
+End If
+
+If pointCount > 0 Then
+manifold.RollingImpulse = 0.0
+End If
+
+# Match old contact ids to new contact ids and copy the stored impulses to
+# warm start the solver, ported from the persistence loop.
+If pointCount > 0 Then
+ShiftAnchor(manifold.Point1, centerOffsetAX, centerOffsetAY, centerOffsetBX, centerOffsetBY)
+manifold.Point1.NormalImpulse = 0.0
+manifold.Point1.TangentImpulse = 0.0
+manifold.Point1.TotalNormalImpulse = 0.0
+manifold.Point1.NormalVelocity = 0.0
+manifold.Point1.Persisted = False
+If oldPointCount > 0 And manifold.Point1.Id = oldId1 Then
+manifold.Point1.NormalImpulse = oldNormalImpulse1
+manifold.Point1.TangentImpulse = oldTangentImpulse1
+manifold.Point1.Persisted = True
+End If
+End If
+If pointCount = 2 Then
+ShiftAnchor(manifold.Point2, centerOffsetAX, centerOffsetAY, centerOffsetBX, centerOffsetBY)
+manifold.Point2.NormalImpulse = 0.0
+manifold.Point2.TangentImpulse = 0.0
+manifold.Point2.TotalNormalImpulse = 0.0
+manifold.Point2.NormalVelocity = 0.0
+manifold.Point2.Persisted = False
+If oldPointCount = 2 And manifold.Point2.Id = oldId2 Then
+manifold.Point2.NormalImpulse = oldNormalImpulse2
+manifold.Point2.TangentImpulse = oldTangentImpulse2
+manifold.Point2.Persisted = True
+End If
+End If
+
+If touching Then
+sims.SimFlags.Items[simIndex] = sims.SimFlags.Items[simIndex].BitOr(Integer(ContactFlags.SimTouchingFlag))
+Else
+sims.SimFlags.Items[simIndex] = sims.SimFlags.Items[simIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag).BitNot())
+End If
+
+Return touching
+End Function
+
+## Shifts one manifold point's anchors from body-origin-relative to
+## centre-of-mass-relative form, ported from the anchor adjustment in
+## b2UpdateContact.
+Private Shared Sub ShiftAnchor(point As ManifoldPoint, offsetAX As Double, offsetAY As Double, offsetBX As Double, offsetBY As Double)
+point.AnchorA.X = point.AnchorA.X - offsetAX
+point.AnchorA.Y = point.AnchorA.Y - offsetAY
+point.AnchorB.X = point.AnchorB.X - offsetBX
+point.AnchorB.Y = point.AnchorB.Y - offsetBY
+End Sub
+
+## Copies the solver-relevant fields from one manifold point to another in
+## place, ported from the point-collapse branch of b2UpdateContact.
+Private Shared Sub CopyManifoldPoint(source As ManifoldPoint, target As ManifoldPoint)
+target.AnchorA.Set(source.AnchorA.X, source.AnchorA.Y)
+target.AnchorB.Set(source.AnchorB.X, source.AnchorB.Y)
+target.Point.Set(source.Point.X, source.Point.Y)
+target.Separation = source.Separation
+target.Id = source.Id
+End Sub
+End Class

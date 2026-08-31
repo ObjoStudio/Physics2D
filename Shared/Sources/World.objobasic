@@ -11,7 +11,7 @@
 #
 # Contact, joint, island, and stepping machinery arrives from Stage 7; the
 # world reports itself as unlocked until then and World.Step throws.
-Class World
+Class World Inherits BroadPhasePairSink
 ## Gravity vector (metres per second squared).
 Property Gravity As Vector2
 ## Restitution velocities below this threshold are zeroed (metres per second).
@@ -54,6 +54,16 @@ Property BodyGenerations As IntegerList
 Property ShapeGenerations As IntegerList
 ## Per-slot generation counters for chain slots.
 Property ChainGenerations As IntegerList
+## Contact slot pool.
+Property ContactIdPool As IdPool
+## Sparse contact record store indexed by contact slot.
+Property Contacts As Array(Of Contact)
+## Number of live contacts.
+Property ContactCount As Integer
+## Optional custom contact filter. When Nothing (the default) the broad
+## phase applies only the built-in shape and body rules and the hook adds
+## no overhead.
+Property CustomFilter As CustomContactFilter
 ## Solver sets. Index 0 static, 1 disabled, 2 awake, 3+ sleeping.
 Property SolverSets As Array(Of SolverSet)
 ## Body slot pool.
@@ -136,6 +146,10 @@ Me.SolverSetIdPool = New IdPool
 Me.BodyGenerations = New IntegerList
 Me.ShapeGenerations = New IntegerList
 Me.ChainGenerations = New IntegerList
+Me.ContactIdPool = New IdPool
+Me.Contacts = New Array(Of Contact)
+Me.ContactCount = 0
+Me.CustomFilter = Nothing
 Me.Bodies = New Array(Of Body)
 Me.Shapes = New Array(Of Shape)
 Me.Chains = New Array(Of Chain)
@@ -164,6 +178,56 @@ If Me.Locked Then
 Throw New RuntimeException("World is locked during Step")
 End If
 End Sub
+
+## Broad-phase sink hook, ported from the record-time filtering of upstream
+## b2PairQueryCallback. Returns True when the two shapes may collide. Same
+## body pairs pass, sensor pairs pass because sensors are handled by their
+## own stage, and the built-in shape filter plus the opt-in custom filter
+## decide the rest. Joint filtering arrives with Stage 9.
+Override Function ShouldCollide(shapeIndexA As Integer, shapeIndexB As Integer) As Boolean
+If shapeIndexA = shapeIndexB Then
+Return True
+End If
+Var shapeA As Shape = Me.Shapes[shapeIndexA]
+Var shapeB As Shape = Me.Shapes[shapeIndexB]
+If Not ContactMethods.ShouldShapesCollide(shapeA.Filter, shapeB.Filter) Then
+Return False
+End If
+If Me.CustomFilter <> Nothing Then
+Return Me.CustomFilter.ShouldCollide(shapeA, shapeB)
+End If
+Return True
+End Function
+
+## Broad-phase sink hook, ported from the deterministic contact-creation
+## loop of upstream b2UpdateBroadPhasePairs. Duplicate suppression and
+## ordering are the broad phase's responsibility.
+Override Sub AcceptPair(shapeIndexA As Integer, shapeIndexB As Integer)
+ContactMethods.CreateContact(Me, Me.Shapes[shapeIndexA], Me.Shapes[shapeIndexB])
+End Sub
+
+## Discovers broad-phase pairs and creates contacts for every moved proxy,
+## ported from b2UpdateBroadPhasePairs. The step calls this first; it is
+## exposed so tests and future non-step callers can run pair discovery
+## directly.
+Sub UpdateBroadPhasePairs()
+Me.BroadPhase.UpdatePairs(Me)
+End Sub
+
+## Mixed friction for a new contact, ported from the default friction
+## callback. The mixer hook replaces this from the step stage.
+Function MixFriction(frictionA As Double, frictionB As Double) As Double
+Return Maths.Sqrt(frictionA * frictionB)
+End Function
+
+## Mixed restitution for a new contact, ported from the default restitution
+## callback.
+Function MixRestitution(restitutionA As Double, restitutionB As Double) As Double
+If restitutionA > restitutionB Then
+Return restitutionA
+End If
+Return restitutionB
+End Function
 
 ## Throws when a definition argument is missing.
 Sub CheckDefinition(def As Object, name As String)
@@ -281,6 +345,8 @@ body.LocalIndex = localIndex
 body.HeadShapeId = PhysicsConstants.NULL_INDEX
 body.ShapeCount = 0
 body.HeadChainId = PhysicsConstants.NULL_INDEX
+body.HeadContactKey = PhysicsConstants.NULL_INDEX
+body.ContactCount = 0
 body.Mass = 0.0
 body.Inertia = 0.0
 body.SleepThreshold = def.SleepThreshold
@@ -325,6 +391,9 @@ End Function
 Sub DestroyBody(body As Body)
 Me.CheckNotLocked()
 Me.ValidateBody(body)
+
+# Destroy attached contacts first, ported from b2DestroyBodyInternal.
+ContactMethods.DestroyBodyContacts(Me, body, True)
 
 # Destroy attached shapes and their proxies.
 Var shapeId As Integer = body.HeadShapeId
@@ -1611,6 +1680,10 @@ body.ShapeCount = body.ShapeCount - 1
 
 Me.DestroyShapeProxy(shape)
 
+# Destroy any contacts associated with the shape, ported from
+# b2DestroyShapeInternal.
+ContactMethods.DestroyShapeContacts(Me, body, shape.Id, True)
+
 Me.ShapeIdPool.FreeId(shape.Id)
 shape.Live = False
 Me.ShapeGenerations.Items[shape.Id] = Me.ShapeGenerations.Items[shape.Id] + 1
@@ -2172,6 +2245,7 @@ Sub Validate()
 Me.BodyIdPool.Validate()
 Me.ShapeIdPool.Validate()
 Me.ChainIdPool.Validate()
+Me.ContactIdPool.Validate()
 Me.BroadPhase.Validate()
 Var bodyCount As Integer = 0
 For i As Integer = 0 To Me.Bodies.Count - 1
@@ -2201,6 +2275,42 @@ End If
 Next j
 If shapeCount <> Me.ShapeIdPool.IdCount() Then
 Throw New RuntimeException("World live shape count does not match pool")
+End If
+Me.ValidateContacts()
+End Sub
+
+## Validates contact bookkeeping, ported from the contact checks of
+## b2ValidateSolverSets.
+Sub ValidateContacts()
+If Me.ContactCount <> Me.ContactIdPool.IdCount() Then
+Throw New RuntimeException("World live contact count does not match pool")
+End If
+For c As Integer = 0 To Me.Contacts.Count - 1
+Var contact As Contact = Me.Contacts[c]
+If contact <> Nothing And contact.ContactId <> PhysicsConstants.NULL_INDEX Then
+If contact.ContactId <> c Then
+Throw New RuntimeException("World contact slot does not match contact id")
+End If
+If contact.SetIndex <> PhysicsConstants.NULL_INDEX Then
+Var contactSet As SolverSet = Me.SolverSets[contact.SetIndex]
+If contactSet.ContactSims.ContactId.Items[contact.LocalIndex] <> c Then
+Throw New RuntimeException("Contact sim and contact record disagree on location")
+End If
+End If
+End If
+Next c
+Var contactTotal As Integer = 0
+For s As Integer = 0 To Me.SolverSets.Count - 1
+Var contactSet As SolverSet = Me.SolverSets[s]
+If contactSet <> Nothing Then
+contactTotal = contactTotal + contactSet.ContactSims.Count()
+End If
+Next s
+If contactTotal <> Me.ContactCount Then
+Throw New RuntimeException("Solver set contact sims do not match contact count")
+End If
+If Me.BroadPhase.PairSet.Count <> Me.ContactCount Then
+Throw New RuntimeException("Pair set keys do not match contact count")
 End If
 End Sub
 
@@ -2232,6 +2342,7 @@ Me.BodyIdPool.Clear()
 Me.ShapeIdPool.Clear()
 Me.ChainIdPool.Clear()
 Me.SolverSetIdPool.Clear()
+Me.ContactIdPool.Clear()
 Me.BodyGenerations.Clear()
 Me.ShapeGenerations.Clear()
 Me.ChainGenerations.Clear()

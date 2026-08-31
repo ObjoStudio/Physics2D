@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "CustomContactFilter",
+  "Id": "2c185901-f6a8-47e0-a33d-068cad34e350",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "CustomContactFilter.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,261 @@
+# Stage 7 contact lifecycle tests: pair-sink creation, filtering rules,
+# edge bookkeeping, destruction cascades, and the narrow-phase manifold
+# update with warm-start impulse matching.
+Class ContactTests Inherits TestCase
+## Builds a two-circle world: an awake dynamic body at (x, y) with radius
+## r, plus a static ground body at (-100, -100) that never interferes.
+Shared Function MakeContactWorld(circleX As Double, circleY As Double, radius As Double) As World
+Var world As New World
+Var staticDef As New BodyDefinition
+Var ground As Body = world.CreateBody(staticDef)
+Var groundCircle As New Circle(New Vector2(0.0, -0.6), 0.5)
+ground.CreateCircle(New ShapeDefinition, groundCircle)
+Var dynamicDef As New BodyDefinition
+dynamicDef.Type = BodyType.DynamicBody
+dynamicDef.Position = New Vector2(circleX, circleY)
+Var dynamicBody As Body = world.CreateBody(dynamicDef)
+Var circle As New Circle(New Vector2(0.0, 0.0), radius)
+dynamicBody.CreateCircle(New ShapeDefinition, circle)
+Return world
+End Function
+
+## Returns the only contact record of the world, failing when the count
+## differs.
+Shared Function OnlyContact(world As World) As Contact
+Assert.Equal(1, world.ContactCount, "expected exactly one contact")
+Return world.Contacts[0]
+End Function
+
+Public Sub TestOverlappingCirclesCreateContact()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Var contact As Contact = ContactTests.OnlyContact(world)
+Assert.Equal(PhysicsConstants.AWAKE_SET, contact.SetIndex, "both bodies awake")
+Assert.Equal(0, contact.Flags, "contacts start non-touching; the step sets touching")
+Assert.Equal(1, world.BroadPhase.PairSet.Count)
+Assert.Equal(1, world.Bodies[0].ContactCount)
+Assert.Equal(1, world.Bodies[1].ContactCount)
+Assert.Equal(1, world.SolverSets[PhysicsConstants.AWAKE_SET].ContactSims.Count())
+world.Validate()
+End Sub
+
+Public Sub TestSeparatedShapesCreateNoContact()
+Var world As World = ContactTests.MakeContactWorld(5.0, 5.0, 0.5)
+world.UpdateBroadPhasePairs()
+Assert.Equal(0, world.ContactCount)
+Assert.Equal(0, world.BroadPhase.PairSet.Count)
+world.Validate()
+End Sub
+
+Public Sub TestContactIsIdempotentAcrossPairUpdates()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+world.UpdateBroadPhasePairs()
+world.UpdateBroadPhasePairs()
+Assert.Equal(1, world.ContactCount, "pair set suppresses duplicates")
+world.Validate()
+End Sub
+
+Public Sub TestFilterRulesSuppressContacts()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+Var dynamicShape As Shape = world.Bodies[1].GetShapes()[0]
+Var groundShape As Shape = world.Bodies[0].GetShapes()[0]
+
+# Same positive group collides even with disjoint masks.
+dynamicShape.Filter.GroupIndex = 7
+groundShape.Filter.GroupIndex = 7
+dynamicShape.Filter.CategoryBits = 2
+dynamicShape.Filter.MaskBits = 4
+groundShape.Filter.CategoryBits = 4
+groundShape.Filter.MaskBits = 2
+world.UpdateBroadPhasePairs()
+Assert.Equal(1, world.ContactCount, "same positive group overrides masks")
+
+# Same negative group never collides.
+world.Clear()
+Var world2 As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+Var dynamicShape2 As Shape = world2.Bodies[1].GetShapes()[0]
+Var groundShape2 As Shape = world2.Bodies[0].GetShapes()[0]
+dynamicShape2.Filter.GroupIndex = -3
+groundShape2.Filter.GroupIndex = -3
+world2.UpdateBroadPhasePairs()
+Assert.Equal(0, world2.ContactCount, "same negative group never collides")
+
+# Different non-zero groups fall back to the category and mask rules.
+Var world3 As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+Var dynamicShape3 As Shape = world3.Bodies[1].GetShapes()[0]
+Var groundShape3 As Shape = world3.Bodies[1].GetShapes()[0]
+dynamicShape3.Filter.GroupIndex = 7
+groundShape3.Filter.GroupIndex = 9
+world3.UpdateBroadPhasePairs()
+Assert.Equal(1, world3.ContactCount, "default category and mask collide")
+world3.Validate()
+End Sub
+
+Public Sub TestCustomFilterSuppressesContacts()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+Var block As New BlockingFilter
+world.CustomFilter = block
+world.UpdateBroadPhasePairs()
+Assert.Equal(0, world.ContactCount, "custom filter veto blocks the pair")
+Assert.Equal(1, block.Calls, "the hook runs once per candidate")
+world.CustomFilter = Nothing
+# Pair discovery is move-driven: move the body far enough to exceed the
+# fat-AABB margins so the proxy re-enters the move buffer.
+Var dynamicBody As Body = world.Bodies[1]
+dynamicBody.SetTransform(New Vector2(0.3, 0.0), New Rot(1.0, 0.0))
+world.UpdateBroadPhasePairs()
+Assert.Equal(1, world.ContactCount, "clearing the hook restores contact creation")
+world.Validate()
+End Sub
+
+Public Sub TestUnregisteredPairsCreateNoContact()
+# Two segments never collide with each other.
+Var world As New World
+Var staticDef As New BodyDefinition
+Var bodyA As Body = world.CreateBody(staticDef)
+Var segDef As New ShapeDefinition
+Var segA As New Segment(New Vector2(-1.0, 0.0), New Vector2(1.0, 0.0))
+Var segB As New Segment(New Vector2(-1.0, 0.1), New Vector2(1.0, 0.1))
+bodyA.CreateSegment(segDef, segA)
+bodyA.CreateSegment(segDef, segB)
+world.UpdateBroadPhasePairs()
+Assert.Equal(0, world.ContactCount, "segment-segment has no registered manifold")
+world.Validate()
+End Sub
+
+Public Sub TestPrimaryPairOrdering()
+# A circle touching a capsule: the capsule is shape A of the contact
+# because the capsule-circle pair is the registered primary order.
+Var world As New World
+Var staticDef As New BodyDefinition
+Var ground As Body = world.CreateBody(staticDef)
+Var capsule As New Capsule(New Vector2(-0.5, 0.0), New Vector2(0.5, 0.0), 0.25)
+Var capsuleShape As Shape = ground.CreateCapsule(New ShapeDefinition, capsule)
+Var dynamicDef As New BodyDefinition
+dynamicDef.Type = BodyType.DynamicBody
+dynamicDef.Position = New Vector2(0.0, 0.4)
+Var dynamicBody As Body = world.CreateBody(dynamicDef)
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.25)
+Var circleShape As Shape = dynamicBody.CreateCircle(New ShapeDefinition, circle)
+world.UpdateBroadPhasePairs()
+Var contact As Contact = ContactTests.OnlyContact(world)
+Assert.Equal(capsuleShape.Id, contact.ShapeIdA, "capsule is the primary shape A")
+Assert.Equal(circleShape.Id, contact.ShapeIdB, "circle is the primary shape B")
+world.Validate()
+End Sub
+
+Public Sub TestDestroyBodyCascadesContacts()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Assert.Equal(1, world.ContactCount)
+world.Bodies[1].Destroy()
+Assert.Equal(0, world.ContactCount, "destroying a body destroys its contacts")
+Assert.Equal(0, world.Bodies[0].ContactCount)
+Assert.Equal(0, world.BroadPhase.PairSet.Count)
+world.Validate()
+
+# Destroying the remaining body also works.
+world.Bodies[0].Destroy()
+Assert.Equal(0, world.ContactCount)
+world.Validate()
+End Sub
+
+Public Sub TestDestroyShapeCascadesContacts()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Assert.Equal(1, world.ContactCount)
+Var dynamicShape As Shape = world.Bodies[1].GetShapes()[0]
+world.DestroyShape(dynamicShape, True)
+Assert.Equal(0, world.ContactCount, "destroying a shape destroys its contacts")
+Assert.Equal(0, world.Bodies[1].ContactCount)
+Assert.Equal(0, world.Bodies[0].ContactCount)
+Assert.Equal(0, world.BroadPhase.PairSet.Count)
+world.Validate()
+End Sub
+
+Public Sub TestClearRemovesContactsAndRetainsCapacity()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Var awakeSet As SolverSet = world.SolverSets[PhysicsConstants.AWAKE_SET]
+Assert.Equal(1, world.ContactCount)
+world.Clear()
+Assert.Equal(0, world.ContactCount)
+Assert.Equal(0, world.BroadPhase.PairSet.Count)
+Assert.Equal(0, awakeSet.ContactSims.Count())
+Assert.True(awakeSet.ContactSims.ManifoldPool.Count > 0, "manifold pool survives Clear")
+world.Validate()
+End Sub
+
+Public Sub TestUpdateContactComputesManifold()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Var contact As Contact = ContactTests.OnlyContact(world)
+Var shapeA As Shape = world.Shapes[contact.ShapeIdA]
+Var shapeB As Shape = world.Shapes[contact.ShapeIdB]
+Var transformA As Transform = world.GetBodyTransformById(shapeA.BodyId)
+Var transformB As Transform = world.GetBodyTransformById(shapeB.BodyId)
+Var touching As Boolean = ContactMethods.UpdateContact(world, contact, shapeA, transformA, 0.0, 0.0, shapeB, transformB, 0.0, 0.0)
+Assert.True(touching, "overlapping circles touch")
+Var contactSet As SolverSet = world.SolverSets[contact.SetIndex]
+Var manifold As Manifold = contactSet.ContactSims.GetManifold(contact.LocalIndex)
+Assert.Equal(1, manifold.PointCount)
+Var expectedNormalY As Double = 1.0
+If contact.ShapeIdA = 1 Then
+expectedNormalY = -1.0
+End If
+PhysicsAssert.Near(expectedNormalY, manifold.Normal.Y, 1e-12, 1e-12, "circle-circle normal points from A to B")
+Assert.True((contactSet.ContactSims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag))) <> 0, "sim touching flag set")
+Assert.Equal(0, contact.Flags, "cold flags stay at zero")
+End Sub
+
+Public Sub TestUpdateContactPersistsImpulses()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Var contact As Contact = ContactTests.OnlyContact(world)
+Var shapeA As Shape = world.Shapes[contact.ShapeIdA]
+Var shapeB As Shape = world.Shapes[contact.ShapeIdB]
+Var transformA As Transform = world.GetBodyTransformById(shapeA.BodyId)
+Var transformB As Transform = world.GetBodyTransformById(shapeB.BodyId)
+ContactMethods.UpdateContact(world, contact, shapeA, transformA, 0.0, 0.0, shapeB, transformB, 0.0, 0.0)
+Var contactSet As SolverSet = world.SolverSets[contact.SetIndex]
+Var manifold As Manifold = contactSet.ContactSims.GetManifold(contact.LocalIndex)
+manifold.Point1.NormalImpulse = 1.25
+manifold.Point1.TangentImpulse = 0.5
+
+# Same transform: the point id matches and the impulses carry over.
+ContactMethods.UpdateContact(world, contact, shapeA, transformA, 0.0, 0.0, shapeB, transformB, 0.0, 0.0)
+Assert.Equal(1, manifold.PointCount)
+Assert.True(manifold.Point1.Persisted, "matched point persists")
+PhysicsAssert.Near(1.25, manifold.Point1.NormalImpulse, 1e-12, 1e-12, "normal impulse warm start")
+PhysicsAssert.Near(0.5, manifold.Point1.TangentImpulse, 1e-12, 1e-12, "tangent impulse warm start")
+
+# Separated shapes: no touching, no persistence.
+Var movedTransform As New Transform
+movedTransform.P = New Vector2(10.0, 10.0)
+Var touching As Boolean = ContactMethods.UpdateContact(world, contact, shapeA, transformA, 0.0, 0.0, shapeB, movedTransform, 0.0, 0.0)
+Assert.False(touching, "separated shapes do not touch")
+Assert.Equal(0, manifold.PointCount)
+End Sub
+
+Public Sub TestMixingRules()
+Var world As New World
+PhysicsAssert.Near(0.5, world.MixFriction(0.25, 1.0), 1e-12, 1e-12, "friction mixes geometrically")
+PhysicsAssert.Near(0.75, world.MixRestitution(0.75, 0.2), 1e-12, 1e-12, "restitution takes the maximum")
+PhysicsAssert.Near(0.2, world.MixRestitution(0.1, 0.2), 1e-12, 1e-12, "restitution takes the maximum other way")
+End Sub
+End Class
+
+## Custom filter hook that vetoes every pair and counts its calls.
+Class BlockingFilter Inherits CustomContactFilter
+## Number of times the hook ran.
+Property Calls As Integer
+
+## Vetoes the pair.
+Override Function ShouldCollide(shapeA As Shape, shapeB As Shape) As Boolean
+Pragma Unused shapeA
+Pragma Unused shapeB
+Me.Calls = Me.Calls + 1
+Return False
+End Function
+End Class

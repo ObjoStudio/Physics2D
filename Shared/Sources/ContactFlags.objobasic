@@ -1,0 +1,18 @@
+# Contact flags, ported from upstream b2ContactFlags and b2ContactSimFlags
+# in contact.h. The sim flags are shifted above the cold flags so a contact
+# can carry both sets in one integer without confusion.
+#
+# Cold flags live on the Contact record and survive solver-set transfers;
+# sim flags live on the per-set contact sim and are recomputed by the narrow
+# phase every step. The numeric values match upstream bit positions.
+Enum ContactFlags
+TouchingFlag = 1
+HitEventFlag = 2
+EnableContactEvents = 4
+SimTouchingFlag = 65536
+SimDisjoint = 131072
+SimStartedTouching = 262144
+SimStoppedTouching = 524288
+SimEnableHitEvent = 1048576
+SimEnablePreSolveEvents = 2097152
+End Enum
