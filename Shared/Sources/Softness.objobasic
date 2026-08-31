@@ -22,4 +22,17 @@ Me.BiasRate = biasRate
 Me.MassScale = massScale
 Me.ImpulseScale = impulseScale
 End Constructor
+
+## Builds softness from spring frequency and damping ratio over substep h,
+## ported from b2MakeSoft. Mass scale and impulse scale always sum to one.
+Shared Function Make(hertz As Double, zeta As Double, h As Double) As Softness
+If hertz = 0.0 Then
+Return New Softness(0.0, 0.0, 0.0)
+End If
+Var omega As Double = 6.283185307179586 * hertz
+Var a1 As Double = 2.0 * zeta + h * omega
+Var a2 As Double = h * omega * a1
+Var a3 As Double = 1.0 / (1.0 + a2)
+Return New Softness(omega / a1, a2 * a3, a3)
+End Function
 End Class

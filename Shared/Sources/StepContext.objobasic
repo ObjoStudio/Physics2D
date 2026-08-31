@@ -1,0 +1,33 @@
+# Per-step solver values, ported from upstream b2StepContext in solver.h.
+# The world owns one scratch instance reused across steps so a warm step
+# allocates nothing; the SIMD lane bookkeeping collapses in this port.
+Class StepContext
+## Full time step in seconds.
+Property Dt As Double
+## 1 / Dt.
+Property InvDt As Double
+## Substep length in seconds, Dt / SubStepCount.
+Property H As Double
+## 1 / H.
+Property InvH As Double
+## Number of substeps, at least one.
+Property SubStepCount As Integer
+## Softness for dynamic-dynamic contacts.
+Property ContactSoftness As Softness
+## Stiffer softness for contacts with a static body.
+Property StaticSoftness As Softness
+## Bias velocity limit derived from MaxContactPushSpeed.
+Property ContactSpeed As Double
+## Restitution velocities below this threshold are zeroed.
+Property RestitutionThreshold As Double
+## Clamp for integrated linear velocity.
+Property MaximumLinearVelocity As Double
+## 1.0 when warm starting is enabled, otherwise 0.0.
+Property WarmStartScale As Double
+
+## Creates a scratch context with reusable softness records.
+Constructor()
+Me.ContactSoftness = New Softness
+Me.StaticSoftness = New Softness
+End Constructor
+End Class

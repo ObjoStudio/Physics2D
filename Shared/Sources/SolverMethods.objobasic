@@ -1,0 +1,144 @@
+# Constraint-solve pipeline loops, ported from the stage bodies of
+# solver.c. The task/block/SIMD machinery collapses to sequential loops
+# over the graph colours; the overflow colour runs first to match
+# upstream's serial overflow work.
+Class SolverMethods
+## Prepares one colour's contact constraints, growing the colour's scratch
+## constraint array to cover its sims, ported from b2PrepareContactsTask.
+Shared Sub PrepareColorContacts(world As World, context As StepContext, colorIndex As Integer)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var count As Integer = color.ContactSims.Count()
+Var constraints As Array(Of ContactConstraint) = color.Constraints
+While constraints.Count < count
+constraints.Append(New ContactConstraint)
+Wend
+Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
+For i As Integer = 0 To count - 1
+ContactSolver.PrepareContact(constraints[i], states, color.ContactSims, i, context.ContactSoftness, context.StaticSoftness, context.WarmStartScale)
+Next i
+End Sub
+
+## Applies stored impulses to the body states for one colour, ported from
+## b2WarmStartContactsTask.
+Shared Sub WarmStartColorContacts(world As World, colorIndex As Integer)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var constraints As Array(Of ContactConstraint) = color.Constraints
+Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
+For i As Integer = 0 To constraints.Count - 1
+ContactSolver.WarmStartContact(states, constraints[i])
+Next i
+End Sub
+
+## Runs one velocity iteration over one colour, ported from
+## b2SolveContactsTask. useBias enables the soft-step bias term.
+Shared Sub SolveColorContacts(world As World, context As StepContext, colorIndex As Integer, useBias As Boolean)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var constraints As Array(Of ContactConstraint) = color.Constraints
+Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
+For i As Integer = 0 To constraints.Count - 1
+ContactSolver.SolveContact(states, constraints[i], context.InvH, -context.ContactSpeed, useBias)
+Next i
+End Sub
+
+## Applies restitution over one colour, ported from b2ApplyRestitutionTask.
+Shared Sub ApplyColorRestitution(world As World, context As StepContext, colorIndex As Integer)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var constraints As Array(Of ContactConstraint) = color.Constraints
+Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
+For i As Integer = 0 To constraints.Count - 1
+ContactSolver.ApplyContactRestitution(states, constraints[i], context.RestitutionThreshold)
+Next i
+End Sub
+
+## Copies accumulated impulses back into each colour's manifolds, ported
+## from b2StoreImpulsesTask.
+Shared Sub StoreColorImpulses(world As World, colorIndex As Integer)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var constraints As Array(Of ContactConstraint) = color.Constraints
+For i As Integer = 0 To constraints.Count - 1
+ContactSolver.StoreImpulses(constraints[i], color.ContactSims.GetManifold(i))
+Next i
+End Sub
+
+## Integrates gravity, forces, and damping into the awake body states,
+## ported from b2IntegrateVelocitiesTask.
+Shared Sub IntegrateVelocities(world As World, context As StepContext)
+Var awakeSet As SolverSet = world.SolverSets[PhysicsConstants.AWAKE_SET]
+Var sims As BodySims = awakeSet.Sims
+Var states As BodyStates = awakeSet.States
+Var count As Integer = sims.Count()
+Var h As Double = context.H
+Var gravityX As Double = world.Gravity.X
+Var gravityY As Double = world.Gravity.Y
+Var maxLinearSpeed As Double = context.MaximumLinearVelocity
+Var maxAngularSpeed As Double = PhysicsConstants.MAX_ROTATION * context.InvDt
+Var maxLinearSpeedSquared As Double = maxLinearSpeed * maxLinearSpeed
+Var maxAngularSpeedSquared As Double = maxAngularSpeed * maxAngularSpeed
+
+For i As Integer = 0 To count - 1
+Var vX As Double = states.LVX.Items[i]
+Var vY As Double = states.LVY.Items[i]
+Var w As Double = states.AngularVelocity.Items[i]
+
+# Damping uses the Padé approximation of exponential decay.
+Var linearDamping As Double = 1.0 / (1.0 + h * sims.LinearDamping.Items[i])
+Var angularDamping As Double = 1.0 / (1.0 + h * sims.AngularDamping.Items[i])
+
+# Gravity scale is zero for kinematic bodies via invMass.
+Var gravityScale As Double = 0.0
+If sims.InvMass.Items[i] > 0.0 Then
+gravityScale = sims.GravityScale.Items[i]
+End If
+
+Var linearDeltaX As Double = h * sims.InvMass.Items[i] * sims.ForceX.Items[i] + h * gravityScale * gravityX
+Var linearDeltaY As Double = h * sims.InvMass.Items[i] * sims.ForceY.Items[i] + h * gravityScale * gravityY
+Var angularDelta As Double = h * sims.InvInertia.Items[i] * sims.Torque.Items[i]
+
+vX = linearDeltaX + linearDamping * vX
+vY = linearDeltaY + linearDamping * vY
+w = angularDelta + angularDamping * w
+
+If vX * vX + vY * vY > maxLinearSpeedSquared Then
+Var ratio As Double = maxLinearSpeed / Maths.Sqrt(vX * vX + vY * vY)
+vX = ratio * vX
+vY = ratio * vY
+sims.IsSpeedCapped.Items[i] = 1
+End If
+
+If w * w > maxAngularSpeedSquared And sims.AllowFastRotation.Items[i] = 0 Then
+Var angularRatio As Double = maxAngularSpeed / Maths.Abs(w)
+w = angularRatio * w
+sims.IsSpeedCapped.Items[i] = 1
+End If
+
+states.LVX.Items[i] = vX
+states.LVY.Items[i] = vY
+states.AngularVelocity.Items[i] = w
+Next i
+End Sub
+
+## Integrates the body states forward one substep, ported from
+## b2IntegratePositionsTask. Delta position and rotation accumulate until
+## body finalization.
+Shared Sub IntegratePositions(world As World, context As StepContext)
+Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
+Var count As Integer = states.LVX.Count
+Var h As Double = context.H
+For i As Integer = 0 To count - 1
+Var deltaAngle As Double = h * states.AngularVelocity.Items[i]
+Var c As Double = states.DRC.Items[i]
+Var s As Double = states.DRS.Items[i]
+Var nc As Double = c - deltaAngle * s
+Var ns As Double = s + deltaAngle * c
+Var mag As Double = Maths.Sqrt(ns * ns + nc * nc)
+Var invMag As Double = 0.0
+If mag > 0.0 Then
+invMag = 1.0 / mag
+End If
+states.DRC.Items[i] = nc * invMag
+states.DRS.Items[i] = ns * invMag
+states.DPX.Items[i] = states.DPX.Items[i] + h * states.LVX.Items[i]
+states.DPY.Items[i] = states.DPY.Items[i] + h * states.LVY.Items[i]
+Next i
+End Sub
+End Class

@@ -317,4 +317,49 @@ chain.Destroy()
 Assert.False(chain.IsValid())
 world.Validate()
 End Sub
+
+## Steps a falling circle until it lands on a static ground circle, then
+## confirms it settles, sleeps, and wakes on a velocity write.
+Public Sub TestStepWorldRestsAndSleepsFallingCircle()
+Var world As New World
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreateCircle(New ShapeDefinition, New Circle(New Vector2(0.0, 0.0), 0.5))
+Var dynamicDef As New BodyDefinition
+dynamicDef.Type = BodyType.DynamicBody
+dynamicDef.Position = New Vector2(0.0, 3.0)
+Var ball As Body = world.CreateBody(dynamicDef)
+ball.CreateCircle(New ShapeDefinition, New Circle(New Vector2(0.0, 0.0), 0.5))
+
+Var stepIndex As Integer = 0
+While stepIndex < 120
+world.StepWorld(1.0 / 60.0)
+stepIndex = stepIndex + 1
+Wend
+
+Assert.True(ball.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET, "resting circle sleeps")
+PhysicsAssert.Near(1.0, world.GetBodyTransform(ball).P.Y, 0.02, 0.02, "rest height")
+PhysicsAssert.Near(0.0, world.GetBodyLinearVelocity(ball).Y, 0.001, 0.001, "rest velocity")
+
+ball.SetLinearVelocity(New Vector2(0.0, 5.0))
+Assert.Equal(PhysicsConstants.AWAKE_SET, ball.SetIndex, "velocity write wakes the body")
+Var states As BodyStates = world.GetBodyState(ball)
+PhysicsAssert.Near(5.0, states.LVY.Items[ball.LocalIndex], 0.001, 0.001, "wake velocity")
+world.Validate()
+End Sub
+
+## Confirms a zero time step leaves the world untouched and unlocked.
+Public Sub TestStepWorldZeroTimeStepIsNoOp()
+Var world As New World
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(1.0, 2.0)
+Var body As Body = world.CreateBody(def)
+body.CreateCircle(New ShapeDefinition, New Circle(New Vector2(0.0, 0.0), 0.5))
+world.StepWorld(0.0)
+Assert.False(world.Locked, "zero step unlocks the world")
+PhysicsAssert.Near(2.0, world.GetBodyTransform(body).P.Y, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "zero step keeps position")
+Assert.Equal(PhysicsConstants.AWAKE_SET, body.SetIndex, "zero step keeps body awake")
+world.Validate()
+End Sub
 End Class

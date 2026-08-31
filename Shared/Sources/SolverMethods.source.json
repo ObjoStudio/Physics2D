@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "SolverMethods",
+  "Id": "05859204-137f-49bf-8791-afb56196f0a2",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "SolverMethods.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

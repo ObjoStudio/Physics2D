@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "StepContext",
+  "Id": "d2e93a2a-b4dc-402e-9089-bad45cc63a07",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "StepContext.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -56,10 +56,13 @@ Var staticB As Boolean = bodyB.SetIndex = PhysicsConstants.STATIC_SET
 Var colorIndex As Integer = ChooseContactColor(graph, bodyIdA, bodyIdB, staticA, staticB)
 Var color As GraphColor = graph.Colors[colorIndex]
 
-# Move the sim row from the awake set's store into the colour.
+# Move the sim row from the source store into the colour. Graph contacts
+# always live in the awake set, which also covers waking contacts that
+# arrive from a sleeping set.
 Var sourceSet As SolverSet = world.SolverSets[contact.SetIndex]
 Var sourceIndex As Integer = contact.LocalIndex
 contact.ColorIndex = colorIndex
+contact.SetIndex = PhysicsConstants.AWAKE_SET
 contact.LocalIndex = color.ContactSims.Count()
 color.ContactSims.Add()
 sourceSet.ContactSims.MoveRowTo(color.ContactSims, contact.LocalIndex, sourceIndex)

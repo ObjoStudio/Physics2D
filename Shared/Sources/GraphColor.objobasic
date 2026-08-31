@@ -8,6 +8,8 @@ Class GraphColor
 Property BodySet As BitSet
 ## Touching contact sims assigned to this colour.
 Property ContactSims As ContactSims
+## Solver scratch constraints matching the sim rows one to one.
+Property Constraints As Array(Of ContactConstraint)
 
 ## Creates a colour with or without a body set, sized for the given body
 ## capacity. The bit set grows on demand afterwards.
@@ -18,11 +20,13 @@ Else
 Me.BodySet = Nothing
 End If
 Me.ContactSims = New ContactSims()
+Me.Constraints = New Array(Of ContactConstraint)
 End Constructor
 
 ## Creates a free-record placeholder for sparse array capacity.
 Constructor()
 Me.BodySet = Nothing
 Me.ContactSims = New ContactSims()
+Me.Constraints = New Array(Of ContactConstraint)
 End Constructor
 End Class

@@ -109,6 +109,16 @@ Private Property mExtentScratch As ShapeExtent
 Private Property mTransformScratch As Transform
 ## Scratch vector reused by warm-path mass and extent updates.
 Private Property mVectorScratch As Vector2
+## Scratch per-step solver values reused across steps.
+Private Property mStepScratch As StepContext
+## Scratch bit set marking contacts whose touching state changed this step.
+Private Property mContactStateBits As BitSet
+## Scratch bit set marking islands that still hold a body below the sleep
+## threshold.
+Private Property mAwakeIslandBits As BitSet
+## Scratch bit set marking awake body sims whose shapes enlarged their
+## AABBs this step.
+Private Property mEnlargedBodyBits As BitSet
 
 ## Creates a world with default settings, matching b2CreateWorld with
 ## b2DefaultWorldDef.
@@ -176,6 +186,10 @@ Me.mRayCastContext = New WorldRayCastContext
 Me.mShapeCastContext = New WorldShapeCastContext
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
+Me.mStepScratch = New StepContext
+Me.mContactStateBits = New BitSet(256)
+Me.mAwakeIslandBits = New BitSet(64)
+Me.mEnlargedBodyBits = New BitSet(64)
 Me.mMassScratch = New MassData
 Me.mExtentScratch = New ShapeExtent
 Me.mTransformScratch = New Transform
@@ -248,19 +262,447 @@ Throw New InvalidArgumentException(name + " must not be Nothing")
 End If
 End Sub
 
-## Advances the simulation. The solver arrives in Stage 7; until then Step
-## refuses to run.
+## Advances the simulation by one time step, ported from b2World_Step.
+## Runs pair discovery, the narrow phase, island maintenance, and the
+## Soft Step constraint solver, then finalises bodies and applies sleep.
+## The world stays locked for the duration.
 Sub StepWorld(timeStep As Double)
-Pragma Unused timeStep
-Throw New RuntimeException("World.StepWorld requires the Stage 7 solver")
+Me.StepWorld(timeStep, 1)
 End Sub
 
-## Advances the simulation with explicit substepping. The solver arrives in
-## Stage 7; until then Step refuses to run.
+## Advances the simulation with explicit substepping, ported from
+## b2World_Step. Substep counts below one are clamped to one.
 Sub StepWorld(timeStep As Double, subStepCount As Integer)
-Pragma Unused timeStep
-Pragma Unused subStepCount
-Throw New RuntimeException("World.StepWorld requires the Stage 7 solver")
+Me.CheckNotLocked()
+If timeStep.IsFinite() = False Or timeStep < 0.0 Then
+Throw New InvalidArgumentException("StepWorld requires a finite non-negative time step")
+End If
+If timeStep = 0.0 Then
+# Upstream swaps the end-event buffers here; events arrive in Stage 8.
+Return
+End If
+
+Me.Locked = True
+
+# Discover new contacts from moved proxies.
+Me.UpdateBroadPhasePairs()
+
+Var context As StepContext = Me.mStepScratch
+context.Dt = timeStep
+context.SubStepCount = subStepCount
+If context.SubStepCount < 1 Then
+context.SubStepCount = 1
+End If
+context.InvDt = 1.0 / timeStep
+context.H = timeStep / context.SubStepCount
+context.InvH = context.SubStepCount * context.InvDt
+
+# Hertz values get reduced for large time steps.
+Var contactHertz As Double = Me.ContactHertz
+If contactHertz > 0.125 * context.InvH Then
+contactHertz = 0.125 * context.InvH
+End If
+Var contactSoftness As Softness = Softness.Make(contactHertz, Me.ContactDampingRatio, context.H)
+Var staticSoftness As Softness = Softness.Make(2.0 * contactHertz, Me.ContactDampingRatio, context.H)
+context.ContactSoftness.BiasRate = contactSoftness.BiasRate
+context.ContactSoftness.MassScale = contactSoftness.MassScale
+context.ContactSoftness.ImpulseScale = contactSoftness.ImpulseScale
+context.StaticSoftness.BiasRate = staticSoftness.BiasRate
+context.StaticSoftness.MassScale = staticSoftness.MassScale
+context.StaticSoftness.ImpulseScale = staticSoftness.ImpulseScale
+context.ContactSpeed = Me.MaxContactPushSpeed / context.StaticSoftness.MassScale
+context.RestitutionThreshold = Me.RestitutionThreshold
+context.MaximumLinearVelocity = Me.MaximumLinearSpeed
+If Me.WarmStartingEnabled Then
+context.WarmStartScale = 1.0
+Else
+context.WarmStartScale = 0.0
+End If
+
+Me.CollideStep(context)
+Me.SolveStep(context)
+
+Me.Locked = False
+End Sub
+
+## Runs the narrow phase over every graph and awake contact, ported from
+## b2Collide. Refreshes mass terms, recomputes manifolds, and collects the
+## touching-state transitions for the serial update loop.
+Private Sub CollideStep(context As StepContext)
+Pragma Unused context
+Var graph As ConstraintGraph = Me.ConstraintGraph
+
+# Gather contact ids: colours first, then the awake set's non-touching
+# store, matching upstream's gather order.
+Me.mContactStateBits.SetCountAndClear(Me.ContactIdPool.IdCount() + 8)
+Var colorIndex As Integer = 0
+While colorIndex < PhysicsConstants.GRAPH_COLOUR_COUNT
+Var color As GraphColor = graph.Colors[colorIndex]
+Var simCount As Integer = color.ContactSims.Count()
+Var i As Integer = 0
+While i < simCount
+Me.CollideOneContact(color.ContactSims.ContactId.Items[i], color.ContactSims)
+i = i + 1
+Wend
+colorIndex = colorIndex + 1
+Wend
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+Var awakeContactCount As Integer = awakeSet.ContactSims.Count()
+Var j As Integer = 0
+While j < awakeContactCount
+Me.CollideOneContact(awakeSet.ContactSims.ContactId.Items[j], awakeSet.ContactSims)
+j = j + 1
+Wend
+
+# Serial contact state changes, ported from the contact_state zone. The
+# bit set yields contact ids in ascending order for determinism.
+Var bitCount As Integer = Me.mContactStateBits.WordCount * 64
+Var contactId As Integer = 0
+While contactId < bitCount
+If Me.mContactStateBits.GetBit(contactId) Then
+Me.ApplyContactStateChange(Me.Contacts[contactId])
+End If
+contactId = contactId + 1
+Wend
+End Sub
+
+## Updates one contact during the narrow phase, ported from the body of
+## b2CollideTask.
+Private Sub CollideOneContact(contactId As Integer, sims As ContactSims)
+Var contact As Contact = Me.Contacts[contactId]
+Var shapeA As Shape = Me.Shapes[contact.ShapeIdA]
+Var shapeB As Shape = Me.Shapes[contact.ShapeIdB]
+
+If AABB.Overlaps(shapeA.FatAABB, shapeB.FatAABB) = False Then
+sims.SimFlags.Items[contact.LocalIndex] = sims.SimFlags.Items[contact.LocalIndex].BitOr(Integer(ContactFlags.SimDisjoint))
+sims.SimFlags.Items[contact.LocalIndex] = sims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag).BitNot())
+Me.mContactStateBits.SetBit(contactId)
+Return
+End If
+
+Var bodyA As Body = Me.Bodies[shapeA.BodyId]
+Var bodyB As Body = Me.Bodies[shapeB.BodyId]
+Var bodySimA As BodySims = Me.GetBodySim(bodyA)
+Var bodySimB As BodySims = Me.GetBodySim(bodyB)
+
+# Refresh mass terms so the solver reads current values.
+sims.BodySimIndexA.Items[contact.LocalIndex] = PhysicsConstants.NULL_INDEX
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.BodySimIndexA.Items[contact.LocalIndex] = bodyA.LocalIndex
+End If
+sims.InvMassA.Items[contact.LocalIndex] = bodySimA.InvMass.Items[bodyA.LocalIndex]
+sims.InvIA.Items[contact.LocalIndex] = bodySimA.InvInertia.Items[bodyA.LocalIndex]
+sims.BodySimIndexB.Items[contact.LocalIndex] = PhysicsConstants.NULL_INDEX
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.BodySimIndexB.Items[contact.LocalIndex] = bodyB.LocalIndex
+End If
+sims.InvMassB.Items[contact.LocalIndex] = bodySimB.InvMass.Items[bodyB.LocalIndex]
+sims.InvIB.Items[contact.LocalIndex] = bodySimB.InvInertia.Items[bodyB.LocalIndex]
+
+Var wasTouching As Boolean = sims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag)) <> 0
+Var transformA As Transform = Me.GetBodyTransform(bodyA)
+Var transformB As Transform = Me.GetBodyTransform(bodyB)
+Var centerOffsetAX As Double = bodySimA.CenterX.Items[bodyA.LocalIndex] - bodySimA.PX.Items[bodyA.LocalIndex]
+Var centerOffsetAY As Double = bodySimA.CenterY.Items[bodyA.LocalIndex] - bodySimA.PY.Items[bodyA.LocalIndex]
+Var centerOffsetBX As Double = bodySimB.CenterX.Items[bodyB.LocalIndex] - bodySimB.PX.Items[bodyB.LocalIndex]
+Var centerOffsetBY As Double = bodySimB.CenterY.Items[bodyB.LocalIndex] - bodySimB.PY.Items[bodyB.LocalIndex]
+
+Var touching As Boolean = ContactMethods.UpdateContact(Me, contact, shapeA, transformA, centerOffsetAX, centerOffsetAY, shapeB, transformB, centerOffsetBX, centerOffsetBY)
+
+If touching And wasTouching = False Then
+sims.SimFlags.Items[contact.LocalIndex] = sims.SimFlags.Items[contact.LocalIndex].BitOr(Integer(ContactFlags.SimStartedTouching))
+Me.mContactStateBits.SetBit(contactId)
+ElseIf touching = False And wasTouching Then
+sims.SimFlags.Items[contact.LocalIndex] = sims.SimFlags.Items[contact.LocalIndex].BitOr(Integer(ContactFlags.SimStoppedTouching))
+Me.mContactStateBits.SetBit(contactId)
+End If
+End Sub
+
+## Applies one collected touching-state transition, ported from the
+## contact_state serial loop of b2Collide.
+Private Sub ApplyContactStateChange(contact As Contact)
+Var sims As ContactSims
+If contact.ColorIndex <> PhysicsConstants.NULL_INDEX Then
+sims = Me.ConstraintGraph.Colors[contact.ColorIndex].ContactSims
+Else
+sims = Me.SolverSets[contact.SetIndex].ContactSims
+End If
+Var simFlags As Integer = sims.SimFlags.Items[contact.LocalIndex]
+
+If simFlags.BitAnd(Integer(ContactFlags.SimDisjoint)) <> 0 Then
+sims.SimFlags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimDisjoint).BitNot())
+ContactMethods.DestroyContact(Me, contact, False)
+Return
+End If
+
+If simFlags.BitAnd(Integer(ContactFlags.SimStartedTouching)) <> 0 Then
+sims.SimFlags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimStartedTouching).BitNot())
+contact.Flags = contact.Flags.BitOr(Integer(ContactFlags.TouchingFlag))
+IslandMethods.LinkContact(Me, contact)
+GraphMethods.AddContactToGraph(Me, contact)
+Return
+End If
+
+If simFlags.BitAnd(Integer(ContactFlags.SimStoppedTouching)) <> 0 Then
+sims.SimFlags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimStoppedTouching).BitNot())
+contact.Flags = contact.Flags.BitAnd(Integer(ContactFlags.TouchingFlag).BitNot())
+IslandMethods.UnlinkContact(Me, contact)
+GraphMethods.MoveContactOutOfGraph(Me, contact)
+Return
+End If
+End Sub
+
+## Runs the constraint solve, body finalization, broad-phase refit, and
+## island sleeping, ported from b2Solve.
+Private Sub SolveStep(context As StepContext)
+IslandMethods.MergeAwakeIslands(Me)
+
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+If awakeSet.Sims.Count() = 0 Then
+Return
+End If
+
+# Split a pending island. This invalidates island records, so re-read the
+# awake set afterwards.
+If Me.SplitIslandId <> PhysicsConstants.NULL_INDEX Then
+IslandMethods.SplitIsland(Me, Me.SplitIslandId)
+Me.SplitIslandId = PhysicsConstants.NULL_INDEX
+awakeSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+End If
+
+# Prepare contact constraints: colours first, then the overflow colour.
+Var colorIndex As Integer = 0
+While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
+SolverMethods.PrepareColorContacts(Me, context, colorIndex)
+colorIndex = colorIndex + 1
+Wend
+SolverMethods.PrepareColorContacts(Me, context, PhysicsConstants.GRAPH_OVERFLOW_INDEX)
+
+Var subStepCount As Integer = context.SubStepCount
+Var subStep As Integer = 0
+While subStep < subStepCount
+SolverMethods.IntegrateVelocities(Me, context)
+
+# Warm start: overflow first, then colours.
+SolverMethods.WarmStartColorContacts(Me, PhysicsConstants.GRAPH_OVERFLOW_INDEX)
+colorIndex = 0
+While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
+SolverMethods.WarmStartColorContacts(Me, colorIndex)
+colorIndex = colorIndex + 1
+Wend
+
+# Solve with bias: overflow first, then colours.
+colorIndex = 0
+While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
+SolverMethods.SolveColorContacts(Me, context, colorIndex, True)
+colorIndex = colorIndex + 1
+Wend
+
+SolverMethods.IntegratePositions(Me, context)
+
+# Relax without bias: overflow first, then colours.
+colorIndex = 0
+While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
+SolverMethods.SolveColorContacts(Me, context, colorIndex, False)
+colorIndex = colorIndex + 1
+Wend
+
+subStep = subStep + 1
+Wend
+
+# Restitution: overflow first, then colours.
+SolverMethods.ApplyColorRestitution(Me, context, PhysicsConstants.GRAPH_OVERFLOW_INDEX)
+colorIndex = 0
+While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
+SolverMethods.ApplyColorRestitution(Me, context, colorIndex)
+colorIndex = colorIndex + 1
+Wend
+
+# Store impulses: overflow first, then colours.
+SolverMethods.StoreColorImpulses(Me, PhysicsConstants.GRAPH_OVERFLOW_INDEX)
+colorIndex = 0
+While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
+SolverMethods.StoreColorImpulses(Me, colorIndex)
+colorIndex = colorIndex + 1
+Wend
+
+Me.FinalizeBodies(context)
+Me.RefitBroadPhase()
+
+# Island sleeping must run last because sleeping invalidates the enlarged
+# body bits.
+If Me.EnableSleeping Then
+Me.SleepIslands()
+End If
+End Sub
+
+## Applies solver results to awake bodies: transforms, sleep accounting,
+## island wake bits, and shape AABBs, ported from b2FinalizeBodiesTask.
+Private Sub FinalizeBodies(context As StepContext)
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+Var sims As BodySims = awakeSet.Sims
+Var states As BodyStates = awakeSet.States
+Var count As Integer = sims.Count()
+
+Me.mAwakeIslandBits.SetCountAndClear(awakeSet.IslandIds.Count + 8)
+Me.mEnlargedBodyBits.SetCountAndClear(count + 8)
+Var splitIslandId As Integer = PhysicsConstants.NULL_INDEX
+Var splitSleepTime As Double = 0.0
+
+Var dt As Double = context.Dt
+Var invDt As Double = context.InvDt
+Var speculativeDistance As Double = PhysicsConstants.SPECULATIVE_DISTANCE
+Var aabbMargin As Double = PhysicsConstants.AABB_MARGIN
+
+Var simIndex As Integer = 0
+While simIndex < count
+Var centerX As Double = sims.CenterX.Items[simIndex] + states.DPX.Items[simIndex]
+Var centerY As Double = sims.CenterY.Items[simIndex] + states.DPY.Items[simIndex]
+
+Var qc As Double = sims.QC.Items[simIndex]
+Var qs As Double = sims.QS.Items[simIndex]
+Var drc As Double = states.DRC.Items[simIndex]
+Var drs As Double = states.DRS.Items[simIndex]
+Var nqc As Double = drc * qc - drs * qs
+Var nqs As Double = drs * qc + drc * qs
+Var rotMag As Double = Maths.Sqrt(nqs * nqs + nqc * nqc)
+Var invRotMag As Double = 0.0
+If rotMag > 0.0 Then
+invRotMag = 1.0 / rotMag
+End If
+qc = nqc * invRotMag
+qs = nqs * invRotMag
+sims.QC.Items[simIndex] = qc
+sims.QS.Items[simIndex] = qs
+
+Var vX As Double = states.LVX.Items[simIndex]
+Var vY As Double = states.LVY.Items[simIndex]
+Var w As Double = states.AngularVelocity.Items[simIndex]
+Var maxExtent As Double = sims.MaxExtent.Items[simIndex]
+Var maxVelocity As Double = Maths.Sqrt(vX * vX + vY * vY) + Maths.Abs(w) * maxExtent
+
+Var deltaX As Double = states.DPX.Items[simIndex]
+Var deltaY As Double = states.DPY.Items[simIndex]
+Var maxDeltaPosition As Double = Maths.Sqrt(deltaX * deltaX + deltaY * deltaY) + Maths.Abs(drs) * maxExtent
+Var sleepVelocity As Double = maxVelocity
+If 0.5 * invDt * maxDeltaPosition > sleepVelocity Then
+sleepVelocity = 0.5 * invDt * maxDeltaPosition
+End If
+
+# Reset state deltas.
+states.DPX.Items[simIndex] = 0.0
+states.DPY.Items[simIndex] = 0.0
+states.DRC.Items[simIndex] = 1.0
+states.DRS.Items[simIndex] = 0.0
+
+Var lcx As Double = sims.LCX.Items[simIndex]
+Var lcy As Double = sims.LCY.Items[simIndex]
+Var px As Double = centerX - (qc * lcx - qs * lcy)
+Var py As Double = centerY - (qs * lcx + qc * lcy)
+sims.CenterX.Items[simIndex] = centerX
+sims.CenterY.Items[simIndex] = centerY
+sims.PX.Items[simIndex] = px
+sims.PY.Items[simIndex] = py
+
+Var body As Body = Me.Bodies[sims.BodyId.Items[simIndex]]
+body.IsSpeedCapped = sims.IsSpeedCapped.Items[simIndex] <> 0
+sims.IsSpeedCapped.Items[simIndex] = 0
+sims.IsFast.Items[simIndex] = 0
+
+# Reset applied forces.
+sims.ForceX.Items[simIndex] = 0.0
+sims.ForceY.Items[simIndex] = 0.0
+sims.Torque.Items[simIndex] = 0.0
+
+# Continuous collision arrives in Stage 8; every body is safe to advance.
+sims.C0X.Items[simIndex] = centerX
+sims.C0Y.Items[simIndex] = centerY
+sims.R0C.Items[simIndex] = qc
+sims.R0S.Items[simIndex] = qs
+
+If Me.EnableSleeping = False Or body.EnableSleep = False Or sleepVelocity > body.SleepThreshold Then
+body.SleepTime = 0.0
+Else
+body.SleepTime = body.SleepTime + dt
+End If
+
+# Any single body in an island can keep it awake.
+Var islandId As Integer = body.IslandId
+If islandId <> PhysicsConstants.NULL_INDEX Then
+Var island As Island = Me.Islands[islandId]
+If body.SleepTime < PhysicsConstants.TIME_TO_SLEEP Then
+Me.mAwakeIslandBits.SetBit(island.LocalIndex)
+ElseIf island.ConstraintRemoveCount > 0 And body.SleepTime > splitSleepTime Then
+splitIslandId = islandId
+splitSleepTime = body.SleepTime
+End If
+End If
+
+# Update shape AABBs.
+Me.mTransformScratch.P.Set(px, py)
+Me.mTransformScratch.Q.SetComponents(qc, qs)
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+Var box As AABB = Me.ComputeShapeAABB(shape, Me.mTransformScratch)
+box.LowerBound.Set(box.LowerBound.X - speculativeDistance, box.LowerBound.Y - speculativeDistance)
+box.UpperBound.Set(box.UpperBound.X + speculativeDistance, box.UpperBound.Y + speculativeDistance)
+shape.AABB = box
+
+If AABB.Contains(shape.FatAABB, box) = False Then
+shape.FatAABB = New AABB(New Vector2(box.LowerBound.X - aabbMargin, box.LowerBound.Y - aabbMargin), New Vector2(box.UpperBound.X + aabbMargin, box.UpperBound.Y + aabbMargin))
+shape.EnlargedAABB = True
+Me.mEnlargedBodyBits.SetBit(simIndex)
+End If
+
+shapeId = shape.NextShapeId
+Wend
+
+simIndex = simIndex + 1
+Wend
+
+If splitIslandId <> PhysicsConstants.NULL_INDEX Then
+Me.SplitIslandId = splitIslandId
+End If
+End Sub
+
+## Enlarges broad-phase proxies for shapes whose AABBs outgrew their fat
+## bounds, ported from the refit stage of b2Solve.
+Private Sub RefitBroadPhase()
+Var wordCount As Integer = Me.mEnlargedBodyBits.WordCount * 64
+Var simIndex As Integer = 0
+While simIndex < wordCount
+If Me.mEnlargedBodyBits.GetBit(simIndex) Then
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+Var body As Body = Me.Bodies[awakeSet.Sims.BodyId.Items[simIndex]]
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+If shape.EnlargedAABB Then
+Me.BroadPhase.EnlargeProxy(shape.ProxyKey, shape.FatAABB)
+shape.EnlargedAABB = False
+End If
+shapeId = shape.NextShapeId
+Wend
+End If
+simIndex = simIndex + 1
+Wend
+End Sub
+
+## Moves islands whose bodies all exceeded the sleep threshold to sleeping
+## solver sets, ported from the island-sleep stage of b2Solve.
+Private Sub SleepIslands()
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+Var count As Integer = awakeSet.IslandIds.Count
+
+# Reverse order because sleeping removes islands from this store.
+Var islandIndex As Integer = count - 1
+While islandIndex >= 0
+If Me.mAwakeIslandBits.GetBit(islandIndex) = False Then
+Me.TrySleepIsland(awakeSet.IslandIds.Items[islandIndex])
+End If
+islandIndex = islandIndex - 1
+Wend
 End Sub
 
 # ------------------------------------------------------------------
