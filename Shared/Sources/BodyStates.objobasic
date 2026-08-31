@@ -1,0 +1,83 @@
+# Dense per-body velocity state for one solver set, ported from upstream
+# b2BodyState in body.h. Only the awake set stores body states: sleeping and
+# static bodies carry no velocity state. Decision 0004 selects parallel
+# scalar arrays, so every field is one list indexed by the owning body's
+# local index within the set.
+Class BodyStates
+## Linear velocity of the centre of mass, x component.
+Property LVX As DoubleList
+## Linear velocity of the centre of mass, y component.
+Property LVY As DoubleList
+## Angular velocity in radians per second.
+Property AngularVelocity As DoubleList
+## Solver flags, ported from upstream b2BodyState flags. Meaningless until
+## the Soft Step solver lands in Stage 7.
+Property Flags As IntegerList
+## Substep position correction, x component.
+Property DPX As DoubleList
+## Substep position correction, y component.
+Property DPY As DoubleList
+## Substep rotation correction, cosine component.
+Property DRC As DoubleList
+## Substep rotation correction, sine component.
+Property DRS As DoubleList
+
+## Creates empty state storage with the upstream initial reserve of 16.
+Constructor()
+Me.LVX = New DoubleList(16)
+Me.LVY = New DoubleList(16)
+Me.AngularVelocity = New DoubleList(16)
+Me.Flags = New IntegerList(16)
+Me.DPX = New DoubleList(16)
+Me.DPY = New DoubleList(16)
+Me.DRC = New DoubleList(16)
+Me.DRS = New DoubleList(16)
+End Constructor
+
+## Number of states stored in this set.
+Function Count() As Integer
+Return Me.Flags.Count
+End Function
+
+## Appends an identity state, ported from upstream b2_identityBodyState, and
+## returns its local index.
+Function Add() As Integer
+Me.LVX.Append(0.0)
+Me.LVY.Append(0.0)
+Me.AngularVelocity.Append(0.0)
+Me.Flags.Append(0)
+Me.DPX.Append(0.0)
+Me.DPY.Append(0.0)
+Me.DRC.Append(1.0)
+Me.DRS.Append(0.0)
+Return Me.Flags.Count - 1
+End Function
+
+## Returns the storage to its initial empty state. Capacity is retained so a
+## warmed world rebuilds without allocation.
+Sub ClearAll()
+Me.LVX.Clear()
+Me.LVY.Clear()
+Me.AngularVelocity.Clear()
+Me.Flags.Clear()
+Me.DPX.Clear()
+Me.DPY.Clear()
+Me.DRC.Clear()
+Me.DRS.Clear()
+End Sub
+
+## Removes the state at index by swapping in the last state. Returns the
+## local index the displaced state moved from, or the null sentinel when the
+## removed state was already last.
+Function RemoveSwap(index As Integer) As Integer
+Me.LVX.RemoveSwap(index)
+Me.LVY.RemoveSwap(index)
+Me.AngularVelocity.RemoveSwap(index)
+Var movedIndex As Integer = Me.Flags.RemoveSwap(index)
+Me.DPX.RemoveSwap(index)
+Me.DPY.RemoveSwap(index)
+Me.DRC.RemoveSwap(index)
+Me.DRS.RemoveSwap(index)
+Return movedIndex
+End Function
+End Class

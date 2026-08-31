@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ShapeType",
+  "Id": "4926fc2d-0a72-489d-9d5d-40abd6368c5b",
+  "Kind": "Enum",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "ShapeType.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,8 @@
+# Client callback receiving the hits of a world ray cast or shape cast,
+# ported from upstream b2CastResultFcn in box2d.h. Return the new clipping
+# fraction in the range zero to one to continue with a reduced ray, zero to
+# stop immediately, or the null-fraction sentinel minus one to skip the hit.
+Abstract Class WorldCastCallback
+## Called for every hit shape in traversal order.
+Abstract Function VisitShape(shape As Shape, point As Vector2, normal As Vector2, fraction As Double) As Double
+End Class

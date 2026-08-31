@@ -308,6 +308,24 @@ Me.Trees[Integer(BodyType.DynamicBody)].Validate()
 Me.Trees[Integer(BodyType.KinematicBody)].Validate()
 End Sub
 
+## Returns the broad phase to a freshly created state, retaining every list
+## and tree capacity so a warmed world rebuilds without allocation. Used by
+## World.Clear.
+Sub Clear()
+For i As Integer = 0 To 2
+Me.Trees[i].Destroy()
+Next i
+Me.MoveSet.Clear()
+Me.MoveArray.Clear()
+Me.PairSet.Clear()
+Me.mPairShapeIndexA.Clear()
+Me.mPairShapeIndexB.Clear()
+Me.mPairNext.Clear()
+Me.mPairCount = 0
+Me.PairCount = 0
+Me.mResultHeads.Clear()
+End Sub
+
 ## Checks that no node in any tree carries the enlarged flag, mirroring
 ## upstream b2ValidateNoEnlarged. Only meaningful after a full rebuild of
 ## every tree.

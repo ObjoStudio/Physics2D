@@ -1,0 +1,8 @@
+# Client callback receiving the shapes of a world overlap query, ported from
+# upstream b2OverlapResultFcn in box2d.h. Return True to continue traversal
+# or False to stop it early.
+Abstract Class WorldOverlapCallback
+## Called for every overlapping shape. Returning True continues the query;
+## False terminates it with the stats gathered so far.
+Abstract Function VisitShape(shape As Shape) As Boolean
+End Class

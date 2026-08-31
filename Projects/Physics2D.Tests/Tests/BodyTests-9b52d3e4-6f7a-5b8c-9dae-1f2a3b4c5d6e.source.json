@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "BodyTests",
+  "Id": "d2953b19-ac60-4362-9e2a-bffb024af4c7",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "BodyTests-9b52d3e4-6f7a-5b8c-9dae-1f2a3b4c5d6e.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

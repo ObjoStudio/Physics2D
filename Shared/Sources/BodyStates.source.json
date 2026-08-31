@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "BodyStates",
+  "Id": "d0c58a45-489b-48b5-ad5d-38a3db4020bc",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "BodyStates.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

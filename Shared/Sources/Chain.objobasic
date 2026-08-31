@@ -1,0 +1,165 @@
+# Chain façade, ported from upstream b2ChainShape in shape.h plus the
+# b2Chain_* API family in box2d.h. A chain owns its segment shapes: creating
+# a chain creates one chain-segment shape per solid segment, and destroying
+# the chain destroys those shapes. Materials are stored per point the same
+# way upstream stores the material array.
+#
+# Creation goes through World.CreateChain; destruction through Chain.Destroy
+# or the owning body/world cascade.
+Class Chain
+## Owning world. Set at creation and never changed.
+Property Owner As World
+## Slot index of this chain in the world chain store.
+Property Id As Integer
+## Generation counter, incremented when the slot is freed and reused.
+Property Generation As Integer
+## Whether this chain is live. Stale façades keep the object but flip this.
+Property Live As Boolean
+## Slot index of the owning body.
+Property BodyId As Integer
+## Previous chain in the body's doubly linked chain list.
+Property PrevChainId As Integer
+## Next chain in the body's doubly linked chain list.
+Property NextChainId As Integer
+## Number of solid segments, one per stored shape index.
+Property SegmentCount As Integer
+## Number of materials: one for the whole chain or one per point.
+Property MaterialCount As Integer
+## Surface materials, copied at creation.
+Property Materials As Array(Of SurfaceMaterial)
+## Slot index of the segment shape for each solid segment, in order.
+Property ShapeIndices As IntegerList
+## Whether the chain wraps back to the first point.
+Property IsLoop As Boolean
+## Collision filter copied to every segment shape.
+Property Filter As Filter
+## User data copied to every segment shape.
+Property UserData As Integer
+
+## Creates an empty, unbound chain. Only the world may construct live
+## chains; the zero-argument form exists for sparse array capacity.
+Constructor()
+Me.Owner = Nothing
+Me.Id = PhysicsConstants.NULL_INDEX
+Me.Generation = PhysicsConstants.INVALID_GENERATION
+Me.Live = False
+Me.BodyId = PhysicsConstants.NULL_INDEX
+Me.PrevChainId = PhysicsConstants.NULL_INDEX
+Me.NextChainId = PhysicsConstants.NULL_INDEX
+Me.SegmentCount = 0
+Me.MaterialCount = 0
+Me.Materials = New Array(Of SurfaceMaterial)
+Me.ShapeIndices = New IntegerList(16)
+Me.IsLoop = False
+Me.Filter = New Filter()
+Me.UserData = 0
+End Constructor
+
+## Returns True when this façade still addresses a live chain.
+Function IsValid() As Boolean
+If Me.Owner = Nothing Or Not Me.Live Then
+Return False
+End If
+Return Me.Owner.Chains[Me.Id] = Me
+End Function
+
+## Throws a descriptive exception when this façade is stale.
+Sub Validate()
+If Not Me.IsValid() Then
+Throw New RuntimeException("Chain façade is no longer valid")
+End If
+End Sub
+
+## Returns the owning world façade.
+Function GetWorld() As World
+Me.Validate()
+Return Me.Owner
+End Function
+
+## Returns the owning body façade.
+Function GetBody() As Body
+Me.Validate()
+Return Me.Owner.Bodies[Me.BodyId]
+End Function
+
+## The number of solid segments.
+Function GetSegmentCount() As Integer
+Me.Validate()
+Return Me.SegmentCount
+End Function
+
+## Returns the segment shape façades in a fresh array. Allocating
+## convenience for cold paths.
+Function GetSegments() As Array(Of Shape)
+Me.Validate()
+Var results As New Array(Of Shape)
+For i As Integer = 0 To Me.SegmentCount - 1
+results.Append(Me.Owner.Shapes[Me.ShapeIndices.Items[i]])
+Next i
+Return results
+End Function
+
+## The chain friction.
+Function GetFriction() As Double
+Me.Validate()
+Return Me.Materials[0].Friction
+End Function
+
+## Sets the friction of every material in the chain and its segment shapes,
+## ported from b2Chain_SetFriction.
+Sub SetFriction(friction As Double)
+Me.Validate()
+For i As Integer = 0 To Me.MaterialCount - 1
+Me.Materials[i].Friction = friction
+Next i
+For j As Integer = 0 To Me.SegmentCount - 1
+Me.Owner.Shapes[Me.ShapeIndices.Items[j]].Friction = friction
+Next j
+End Sub
+
+## The chain restitution.
+Function GetRestitution() As Double
+Me.Validate()
+Return Me.Materials[0].Restitution
+End Function
+
+## Sets the restitution of every material in the chain and its segment
+## shapes, ported from b2Chain_SetRestitution.
+Sub SetRestitution(restitution As Double)
+Me.Validate()
+For i As Integer = 0 To Me.MaterialCount - 1
+Me.Materials[i].Restitution = restitution
+Next i
+For j As Integer = 0 To Me.SegmentCount - 1
+Me.Owner.Shapes[Me.ShapeIndices.Items[j]].Restitution = restitution
+Next j
+End Sub
+
+## The user material identifier of the first material, matching upstream
+## b2Chain_GetMaterial which reads material zero.
+Function GetMaterial() As Integer
+Me.Validate()
+Return Me.Materials[0].UserMaterialId
+End Function
+
+## Sets the user material identifier on every material and segment shape,
+## ported from b2Chain_SetMaterial.
+Sub SetMaterial(material As Integer)
+Me.Validate()
+For i As Integer = 0 To Me.MaterialCount - 1
+Me.Materials[i].UserMaterialId = material
+Next i
+For j As Integer = 0 To Me.SegmentCount - 1
+Me.Owner.Shapes[Me.ShapeIndices.Items[j]].UserMaterialId = material
+Next j
+End Sub
+
+## Destroys the chain and every segment shape, ported from b2DestroyChain.
+## Idempotent on already-destroyed façades.
+Sub Destroy()
+If Not Me.IsValid() Then
+Return
+End If
+Me.Owner.DestroyChain(Me)
+End Sub
+End Class

@@ -1,0 +1,10 @@
+# Kind of geometry stored in a shape, ported from upstream b2ShapeType in
+# types.h. The numeric values match upstream so diagnostics and test fixtures
+# can be compared directly.
+Enum ShapeType
+CapsuleShape
+CircleShape
+PolygonShape
+SegmentShape
+ChainSegmentShape
+End Enum

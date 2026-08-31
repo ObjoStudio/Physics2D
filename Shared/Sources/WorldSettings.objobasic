@@ -1,0 +1,50 @@
+# World definition passed to the settings constructor, ported from upstream
+# b2WorldDef in types.h. Solver-related tuning becomes relevant from Stage 7;
+# it is stored now so later stages do not have to extend this class.
+Class WorldSettings
+## Gravity vector (metres per second squared). Defaults to zero by minus ten.
+Property Gravity As Vector2
+## Restitution velocities below this threshold are zeroed (metres per second).
+Property RestitutionThreshold As Double
+## Relative velocity above which hit events are emitted (metres per second).
+Property HitEventThreshold As Double
+## Maximum contact push-out velocity (metres per second).
+Property MaxContactPushSpeed As Double
+## Contact stiffness in hertz.
+Property ContactHertz As Double
+## Contact damping ratio.
+Property ContactDampingRatio As Double
+## Maximum linear velocity of any body (metres per second).
+Property MaximumLinearSpeed As Double
+## Whether bodies may sleep.
+Property EnableSleep As Boolean
+## Whether continuous collision detection is enabled for fast bodies.
+Property EnableContinuous As Boolean
+
+## Creates the default world settings, matching upstream b2DefaultWorldDef.
+Constructor()
+Me.Gravity = New Vector2(0.0, -10.0)
+Me.RestitutionThreshold = 1.0
+Me.HitEventThreshold = 1.0
+Me.MaxContactPushSpeed = 3.0
+Me.ContactHertz = 30.0
+Me.ContactDampingRatio = 10.0
+Me.MaximumLinearSpeed = 400.0
+Me.EnableSleep = True
+Me.EnableContinuous = True
+End Constructor
+
+## Copies another settings object.
+Constructor(other As WorldSettings)
+Me.Gravity = New Vector2(other.Gravity.X, other.Gravity.Y)
+Me.RestitutionThreshold = other.RestitutionThreshold
+Me.HitEventThreshold = other.HitEventThreshold
+Me.MaxContactPushSpeed = other.MaxContactPushSpeed
+Me.ContactHertz = other.ContactHertz
+Me.ContactDampingRatio = other.ContactDampingRatio
+Me.MaximumLinearSpeed = other.MaximumLinearSpeed
+Me.EnableSleep = other.EnableSleep
+Me.EnableContinuous = other.EnableContinuous
+End Constructor
+
+End Class

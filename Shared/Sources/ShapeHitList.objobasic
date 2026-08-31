@@ -1,0 +1,48 @@
+# Growable, caller-owned hit list for the Into forms of the world queries.
+# Clear resets the count but keeps every ShapeHit record, so a warmed list
+# refilled by repeated queries allocates nothing.
+Class ShapeHitList
+## Number of valid hits in Items.
+Property Count As Integer
+## Hit storage. Only the first Count records are valid.
+Property Hits As Array(Of ShapeHit)
+
+## Creates an empty hit list.
+Constructor()
+Me.Count = 0
+Me.Hits = New Array(Of ShapeHit)
+End Constructor
+
+## Resets the count to zero, retaining records and capacity for reuse.
+Sub Clear()
+Me.Count = 0
+End Sub
+
+## Pre-allocates storage for at least capacity records.
+Sub Reserve(capacity As Integer)
+While Me.Hits.Count < capacity
+Me.Hits.Append(New ShapeHit)
+Wend
+End Sub
+
+## Returns the record at index, growing storage when the list is being
+## filled beyond its previous high-water mark.
+Function Item(index As Integer) As ShapeHit
+While index >= Me.Hits.Count
+Me.Hits.Append(New ShapeHit)
+Wend
+Return Me.Hits[index]
+End Function
+
+## Appends a hit for the given shape and returns the reused record with its
+## point, normal, and fraction cleared.
+Function AddHit(shape As Shape) As ShapeHit
+Var hit As ShapeHit = Me.Item(Me.Count)
+hit.Shape = shape
+hit.Point.Set(0.0, 0.0)
+hit.Normal.Set(0.0, 0.0)
+hit.Fraction = 0.0
+Me.Count = Me.Count + 1
+Return hit
+End Function
+End Class

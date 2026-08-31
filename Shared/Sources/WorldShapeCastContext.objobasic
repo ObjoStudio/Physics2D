@@ -1,0 +1,57 @@
+# Engine-internal tree shape cast adapter for world shape casts, ported from
+# upstream WorldRayCastContext and ShapeCastCallback in world.c. One instance
+# is owned by the World and reused across queries. Modes: caller callback and
+# hit collection for the Into form.
+Class WorldShapeCastContext Inherits TreeShapeCastCallback
+## The world driving the query.
+Property Owner As World
+## Query filter applied to candidate shapes.
+Property Filter As QueryFilter
+## Caller callback for the callback form. Nothing otherwise.
+Property UserCallback As WorldCastCallback
+## Caller hit list for the Into form. Nothing otherwise.
+Property Hits As ShapeHitList
+## Running minimum fraction carried across trees.
+Property Fraction As Double
+
+## Creates an unbound context; the world fills the fields per query.
+Constructor()
+Me.Owner = Nothing
+Me.Filter = New QueryFilter()
+Me.UserCallback = Nothing
+Me.Hits = Nothing
+Me.Fraction = 1.0
+End Constructor
+
+## Tree leaf visit: filter, shape cast, then dispatch by mode. Returns the
+## new clipping fraction, matching the upstream callback protocol.
+Function VisitLeaf(input As ShapeCastInput, proxyId As Integer, userData As Integer) As Double
+Pragma Unused proxyId
+Var shape As Shape = Me.Owner.Shapes[userData]
+If Not shape.Live Then
+Return input.MaxFraction
+End If
+If Not QueryFilter.ShouldCollide(shape.Filter, Me.Filter) Then
+Return input.MaxFraction
+End If
+
+Var output As CastOutput = Me.Owner.ShapeCastShape(input, shape)
+If Not output.Hit Then
+Return input.MaxFraction
+End If
+
+If Me.UserCallback <> Nothing Then
+Var fraction As Double = Me.UserCallback.VisitShape(shape, output.Point, output.Normal, output.Fraction)
+If fraction >= 0.0 And fraction <= 1.0 Then
+Me.Fraction = fraction
+End If
+Return fraction
+End If
+
+Var hit As ShapeHit = Me.Hits.AddHit(shape)
+hit.Point.Set(output.Point.X, output.Point.Y)
+hit.Normal.Set(output.Normal.X, output.Normal.Y)
+hit.Fraction = output.Fraction
+Return input.MaxFraction
+End Function
+End Class

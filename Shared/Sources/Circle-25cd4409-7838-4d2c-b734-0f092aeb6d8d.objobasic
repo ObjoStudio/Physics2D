@@ -31,20 +31,32 @@ End Constructor
 ## Computes the mass data of the circle, ported from upstream
 ## b2ComputeCircleMass. Inertia is about the local origin.
 Function ComputeMass(density As Double) As MassData
-Var rr As Double = Me.Radius * Me.Radius
 Var data As New MassData
-data.Mass = density * PhysicsConstants.PI * rr
-data.Center.Set(Me.Center.X, Me.Center.Y)
-data.RotationalInertia = data.Mass * (0.5 * rr + (Me.Center.X * Me.Center.X + Me.Center.Y * Me.Center.Y))
-Return data
+Return Me.ComputeMassTo(density, data)
+End Function
+
+## Caller-owned output form of ComputeMass for warm paths.
+Function ComputeMassTo(density As Double, out As MassData) As MassData
+Var rr As Double = Me.Radius * Me.Radius
+out.Mass = density * PhysicsConstants.PI * rr
+out.Center.Set(Me.Center.X, Me.Center.Y)
+out.RotationalInertia = out.Mass * (0.5 * rr + (Me.Center.X * Me.Center.X + Me.Center.Y * Me.Center.Y))
+Return out
 End Function
 
 ## Computes the world-space AABB of the transformed circle, ported from
 ## upstream b2ComputeCircleAABB.
 Function ComputeAABB(transform As Transform) As AABB
+Return Me.ComputeAABBTo(transform, New AABB)
+End Function
+
+## Caller-owned output form of ComputeAABB for warm paths.
+Function ComputeAABBTo(transform As Transform, out As AABB) As AABB
 Var px As Double = transform.Q.C * Me.Center.X - transform.Q.S * Me.Center.Y + transform.P.X
 Var py As Double = transform.Q.S * Me.Center.X + transform.Q.C * Me.Center.Y + transform.P.Y
-Return New AABB(New Vector2(px - Me.Radius, py - Me.Radius), New Vector2(px + Me.Radius, py + Me.Radius))
+out.LowerBound.Set(px - Me.Radius, py - Me.Radius)
+out.UpperBound.Set(px + Me.Radius, py + Me.Radius)
+Return out
 End Function
 
 ## Determines whether the point lies within the circle, ported from upstream

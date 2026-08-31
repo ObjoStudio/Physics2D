@@ -1,0 +1,241 @@
+# Dense per-body simulation state for one solver set, ported from upstream
+# b2BodySim in body.h. Decision 0004 selects parallel scalar arrays for body
+# state, so every field is one list indexed by the owning body's local index.
+# Flags are stored as separate 0/1 lists for clarity; none of these fields
+# hold object references, so set transfers copy scalars only.
+Class BodySims
+## World position of the body origin, x component.
+Property PX As DoubleList
+## World position of the body origin, y component.
+Property PY As DoubleList
+## Body rotation, cosine component.
+Property QC As DoubleList
+## Body rotation, sine component.
+Property QS As DoubleList
+## World centre of mass, x component.
+Property CenterX As DoubleList
+## World centre of mass, y component.
+Property CenterY As DoubleList
+## Rotation at the start of the step, cosine component.
+Property R0C As DoubleList
+## Rotation at the start of the step, sine component.
+Property R0S As DoubleList
+## Centre of mass at the start of the step, x component.
+Property C0X As DoubleList
+## Centre of mass at the start of the step, y component.
+Property C0Y As DoubleList
+## Local centre of mass relative to the body origin, x component.
+Property LCX As DoubleList
+## Local centre of mass relative to the body origin, y component.
+Property LCY As DoubleList
+## Accumulated force, x component.
+Property ForceX As DoubleList
+## Accumulated force, y component.
+Property ForceY As DoubleList
+## Accumulated torque.
+Property Torque As DoubleList
+## Inverse mass. Zero for static and kinematic bodies.
+Property InvMass As DoubleList
+## Inverse rotational inertia about the centre of mass.
+Property InvInertia As DoubleList
+## Minimum shape extent relative to the local centre of mass.
+Property MinExtent As DoubleList
+## Maximum shape extent relative to the local centre of mass.
+Property MaxExtent As DoubleList
+## Linear damping (kg per second).
+Property LinearDamping As DoubleList
+## Angular damping (kg per second).
+Property AngularDamping As DoubleList
+## Gravity scale.
+Property GravityScale As DoubleList
+## Index of the owning body in the world body store.
+Property BodyId As IntegerList
+## Whether the body is treated as a bullet for continuous collision.
+Property IsBullet As IntegerList
+## Whether the body moved fast enough to require continuous collision.
+Property IsFast As IntegerList
+## Whether the speed cap engaged in the last step.
+Property IsSpeedCapped As IntegerList
+## Whether fast rotation may exceed the rotation cap in a step.
+Property AllowFastRotation As IntegerList
+## Whether an AABB was enlarged by a shape change and needs proxy attention.
+Property EnlargeAABB As IntegerList
+
+## Creates empty sim storage with the upstream initial reserve of 16 bodies.
+Constructor()
+Me.PX = New DoubleList(16)
+Me.PY = New DoubleList(16)
+Me.QC = New DoubleList(16)
+Me.QS = New DoubleList(16)
+Me.CenterX = New DoubleList(16)
+Me.CenterY = New DoubleList(16)
+Me.R0C = New DoubleList(16)
+Me.R0S = New DoubleList(16)
+Me.C0X = New DoubleList(16)
+Me.C0Y = New DoubleList(16)
+Me.LCX = New DoubleList(16)
+Me.LCY = New DoubleList(16)
+Me.ForceX = New DoubleList(16)
+Me.ForceY = New DoubleList(16)
+Me.Torque = New DoubleList(16)
+Me.InvMass = New DoubleList(16)
+Me.InvInertia = New DoubleList(16)
+Me.MinExtent = New DoubleList(16)
+Me.MaxExtent = New DoubleList(16)
+Me.LinearDamping = New DoubleList(16)
+Me.AngularDamping = New DoubleList(16)
+Me.GravityScale = New DoubleList(16)
+Me.BodyId = New IntegerList(16)
+Me.IsBullet = New IntegerList(16)
+Me.IsFast = New IntegerList(16)
+Me.IsSpeedCapped = New IntegerList(16)
+Me.AllowFastRotation = New IntegerList(16)
+Me.EnlargeAABB = New IntegerList(16)
+End Constructor
+
+## Number of bodies stored in this set.
+Function Count() As Integer
+Return Me.BodyId.Count
+End Function
+
+## Appends a zeroed sim record and returns its local index. The caller fills
+## position, rotation, extents, damping, gravity scale, and body identity.
+Function Add() As Integer
+Me.PX.Append(0.0)
+Me.PY.Append(0.0)
+Me.QC.Append(1.0)
+Me.QS.Append(0.0)
+Me.CenterX.Append(0.0)
+Me.CenterY.Append(0.0)
+Me.R0C.Append(1.0)
+Me.R0S.Append(0.0)
+Me.C0X.Append(0.0)
+Me.C0Y.Append(0.0)
+Me.LCX.Append(0.0)
+Me.LCY.Append(0.0)
+Me.ForceX.Append(0.0)
+Me.ForceY.Append(0.0)
+Me.Torque.Append(0.0)
+Me.InvMass.Append(0.0)
+Me.InvInertia.Append(0.0)
+Me.MinExtent.Append(0.0)
+Me.MaxExtent.Append(0.0)
+Me.LinearDamping.Append(0.0)
+Me.AngularDamping.Append(0.0)
+Me.GravityScale.Append(1.0)
+Me.BodyId.Append(PhysicsConstants.NULL_INDEX)
+Me.IsBullet.Append(0)
+Me.IsFast.Append(0)
+Me.IsSpeedCapped.Append(0)
+Me.AllowFastRotation.Append(0)
+Me.EnlargeAABB.Append(0)
+Return Me.BodyId.Count - 1
+End Function
+
+## Removes the record at index by swapping in the last record. Returns the
+## local index the displaced record moved from, or the null sentinel when the
+## removed record was already last.
+Function RemoveSwap(index As Integer) As Integer
+Me.PX.RemoveSwap(index)
+Me.PY.RemoveSwap(index)
+Me.QC.RemoveSwap(index)
+Me.QS.RemoveSwap(index)
+Me.CenterX.RemoveSwap(index)
+Me.CenterY.RemoveSwap(index)
+Me.R0C.RemoveSwap(index)
+Me.R0S.RemoveSwap(index)
+Me.C0X.RemoveSwap(index)
+Me.C0Y.RemoveSwap(index)
+Me.LCX.RemoveSwap(index)
+Me.LCY.RemoveSwap(index)
+Me.ForceX.RemoveSwap(index)
+Me.ForceY.RemoveSwap(index)
+Me.Torque.RemoveSwap(index)
+Me.InvMass.RemoveSwap(index)
+Me.InvInertia.RemoveSwap(index)
+Me.MinExtent.RemoveSwap(index)
+Me.MaxExtent.RemoveSwap(index)
+Me.LinearDamping.RemoveSwap(index)
+Me.AngularDamping.RemoveSwap(index)
+Me.GravityScale.RemoveSwap(index)
+Var movedIndex As Integer = Me.BodyId.RemoveSwap(index)
+Me.IsBullet.RemoveSwap(index)
+Me.IsFast.RemoveSwap(index)
+Me.IsSpeedCapped.RemoveSwap(index)
+Me.AllowFastRotation.RemoveSwap(index)
+Me.EnlargeAABB.RemoveSwap(index)
+Return movedIndex
+End Function
+
+## Returns the body index stored at localIndex.
+Function BodyIdAt(localIndex As Integer) As Integer
+Return Me.BodyId.Items[localIndex]
+End Function
+
+## Copies every field of the record at sourceIndex onto the record at
+## targetIndex. Both indices are in this storage. Ported from the memcpy in
+## upstream b2TransferBody, used here for set-to-set moves.
+Sub CopyRecordTo(targetIndex As Integer, source As BodySims, sourceIndex As Integer)
+Me.PX.Items[targetIndex] = source.PX.Items[sourceIndex]
+Me.PY.Items[targetIndex] = source.PY.Items[sourceIndex]
+Me.QC.Items[targetIndex] = source.QC.Items[sourceIndex]
+Me.QS.Items[targetIndex] = source.QS.Items[sourceIndex]
+Me.CenterX.Items[targetIndex] = source.CenterX.Items[sourceIndex]
+Me.CenterY.Items[targetIndex] = source.CenterY.Items[sourceIndex]
+Me.R0C.Items[targetIndex] = source.R0C.Items[sourceIndex]
+Me.R0S.Items[targetIndex] = source.R0S.Items[sourceIndex]
+Me.C0X.Items[targetIndex] = source.C0X.Items[sourceIndex]
+Me.C0Y.Items[targetIndex] = source.C0Y.Items[sourceIndex]
+Me.LCX.Items[targetIndex] = source.LCX.Items[sourceIndex]
+Me.LCY.Items[targetIndex] = source.LCY.Items[sourceIndex]
+Me.ForceX.Items[targetIndex] = source.ForceX.Items[sourceIndex]
+Me.ForceY.Items[targetIndex] = source.ForceY.Items[sourceIndex]
+Me.Torque.Items[targetIndex] = source.Torque.Items[sourceIndex]
+Me.InvMass.Items[targetIndex] = source.InvMass.Items[sourceIndex]
+Me.InvInertia.Items[targetIndex] = source.InvInertia.Items[sourceIndex]
+Me.MinExtent.Items[targetIndex] = source.MinExtent.Items[sourceIndex]
+Me.MaxExtent.Items[targetIndex] = source.MaxExtent.Items[sourceIndex]
+Me.LinearDamping.Items[targetIndex] = source.LinearDamping.Items[sourceIndex]
+Me.AngularDamping.Items[targetIndex] = source.AngularDamping.Items[sourceIndex]
+Me.GravityScale.Items[targetIndex] = source.GravityScale.Items[sourceIndex]
+Me.BodyId.Items[targetIndex] = source.BodyId.Items[sourceIndex]
+Me.IsBullet.Items[targetIndex] = source.IsBullet.Items[sourceIndex]
+Me.IsFast.Items[targetIndex] = source.IsFast.Items[sourceIndex]
+Me.IsSpeedCapped.Items[targetIndex] = source.IsSpeedCapped.Items[sourceIndex]
+Me.AllowFastRotation.Items[targetIndex] = source.AllowFastRotation.Items[sourceIndex]
+Me.EnlargeAABB.Items[targetIndex] = source.EnlargeAABB.Items[sourceIndex]
+End Sub
+
+## Returns the storage to its initial empty state. Capacity is retained so a
+## warmed world rebuilds without allocation.
+Sub ClearAll()
+Me.PX.Clear()
+Me.PY.Clear()
+Me.QC.Clear()
+Me.QS.Clear()
+Me.CenterX.Clear()
+Me.CenterY.Clear()
+Me.R0C.Clear()
+Me.R0S.Clear()
+Me.C0X.Clear()
+Me.C0Y.Clear()
+Me.LCX.Clear()
+Me.LCY.Clear()
+Me.ForceX.Clear()
+Me.ForceY.Clear()
+Me.Torque.Clear()
+Me.InvMass.Clear()
+Me.InvInertia.Clear()
+Me.MinExtent.Clear()
+Me.MaxExtent.Clear()
+Me.LinearDamping.Clear()
+Me.AngularDamping.Clear()
+Me.GravityScale.Clear()
+Me.BodyId.Clear()
+Me.IsBullet.Clear()
+Me.IsFast.Clear()
+Me.IsSpeedCapped.Clear()
+Me.AllowFastRotation.Clear()
+Me.EnlargeAABB.Clear()
+End Sub
+End Class

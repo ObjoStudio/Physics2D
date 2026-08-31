@@ -41,10 +41,17 @@ End Constructor
 ## Computes the world-space AABB of the transformed segment, ported from
 ## upstream b2ComputeSegmentAABB.
 Function ComputeAABB(transform As Transform) As AABB
+Return Me.ComputeAABBTo(transform, New AABB)
+End Function
+
+## Caller-owned output form of ComputeAABB for warm paths.
+Function ComputeAABBTo(transform As Transform, out As AABB) As AABB
 Var v1x As Double = transform.Q.C * Me.Point1.X - transform.Q.S * Me.Point1.Y + transform.P.X
 Var v1y As Double = transform.Q.S * Me.Point1.X + transform.Q.C * Me.Point1.Y + transform.P.Y
 Var v2x As Double = transform.Q.C * Me.Point2.X - transform.Q.S * Me.Point2.Y + transform.P.X
 Var v2y As Double = transform.Q.S * Me.Point2.X + transform.Q.C * Me.Point2.Y + transform.P.Y
-Return New AABB(New Vector2(Maths.Min(v1x, v2x), Maths.Min(v1y, v2y)), New Vector2(Maths.Max(v1x, v2x), Maths.Max(v1y, v2y)))
+out.LowerBound.Set(Maths.Min(v1x, v2x), Maths.Min(v1y, v2y))
+out.UpperBound.Set(Maths.Max(v1x, v2x), Maths.Max(v1y, v2y))
+Return out
 End Function
 End Class

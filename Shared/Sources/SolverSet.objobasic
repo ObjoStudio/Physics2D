@@ -1,0 +1,33 @@
+# Solver set, ported from upstream b2SolverSet in solver_set.h. Sets 0, 1,
+# and 2 are the static, disabled, and awake sets; indices of 3 and above are
+# per-island sleeping sets. Stage 6 stores bodies and body states only; the
+# contact, joint, and island sim arrays arrive with their owning stages.
+Class SolverSet
+## Index of this set in the world's solver set array.
+Property SetIndex As Integer
+## Dense body simulation state owned by this set.
+Property Sims As BodySims
+## Dense body velocity state owned by this set. Nothing for sets that never
+## store states; in Stage 6 that is every set except the awake set.
+Property States As BodyStates
+
+## Creates a solver set. hasStates selects whether velocity state is stored.
+Constructor(setIndex As Integer, hasStates As Boolean)
+Me.SetIndex = setIndex
+Me.Sims = New BodySims()
+If hasStates Then
+Me.States = New BodyStates()
+Else
+Me.States = Nothing
+End If
+End Constructor
+
+## Returns the storage to its initial empty state. Capacity is retained so a
+## warmed world rebuilds without allocation.
+Sub ClearAll()
+Me.Sims.ClearAll()
+If Me.States <> Nothing Then
+Me.States.ClearAll()
+End If
+End Sub
+End Class

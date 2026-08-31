@@ -27,4 +27,12 @@ Me.Ghost1 = New Vector2(ghost1.X, ghost1.Y)
 Me.Ghost2 = New Vector2(ghost2.X, ghost2.Y)
 Me.ChainId = chainId
 End Constructor
+
+## Copies another chain segment.
+Constructor(other As ChainSegment)
+Me.Segment = New Segment(other.Segment.Point1.X, other.Segment.Point1.Y, other.Segment.Point2.X, other.Segment.Point2.Y)
+Me.Ghost1 = New Vector2(other.Ghost1.X, other.Ghost1.Y)
+Me.Ghost2 = New Vector2(other.Ghost2.X, other.Ghost2.Y)
+Me.ChainId = other.ChainId
+End Constructor
 End Class

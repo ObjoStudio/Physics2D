@@ -1,0 +1,2246 @@
+# World façade, ported from upstream b2World in world.h plus the world and
+# lifecycle API family in box2d.h. This is the first usable, non-solving
+# public world API: bodies, shapes, chains, mass maintenance, proxy
+# synchronisation, transforms, and overlap/ray/shape-cast queries.
+#
+# Storage follows upstream: bodies live in solver sets (static, disabled,
+# awake, and per-body sleeping sets in Stage 6), with dense BodySim and
+# BodyState records in parallel scalar arrays per decision 0004. Body,
+# Shape, and Chain are sparse façade arrays; destruction frees the slot and
+# bumps the generation, so stale façades fail IsValid and raise on use.
+#
+# Contact, joint, island, and stepping machinery arrives from Stage 7; the
+# world reports itself as unlocked until then and World.Step throws.
+Class World
+## Gravity vector (metres per second squared).
+Property Gravity As Vector2
+## Restitution velocities below this threshold are zeroed (metres per second).
+Property RestitutionThreshold As Double
+## Relative velocity above which hit events are emitted (metres per second).
+Property HitEventThreshold As Double
+## Maximum contact push-out velocity (metres per second).
+Property MaxContactPushSpeed As Double
+## Contact stiffness in hertz.
+Property ContactHertz As Double
+## Contact damping ratio.
+Property ContactDampingRatio As Double
+## Maximum linear velocity of any body (metres per second).
+Property MaximumLinearSpeed As Double
+## Whether bodies may sleep.
+Property EnableSleeping As Boolean
+## Whether continuous collision detection is enabled.
+Property ContinuousEnabled As Boolean
+## Whether warm starting is enabled. Solver-relevant from Stage 7.
+Property WarmStartingEnabled As Boolean
+## Whether speculative contact margins are enabled. Solver-relevant from
+## Stage 7.
+Property SpeculativeEnabled As Boolean
+## Whether the world refuses mutation, set during Step from Stage 7.
+Property Locked As Boolean
+## User data owned by the application.
+Property UserData As Integer
+## The broad phase owning the three proxy trees.
+Property BroadPhase As BroadPhase
+## Sparse body façade store indexed by body slot.
+Property Bodies As Array(Of Body)
+## Sparse shape façade store indexed by shape slot.
+Property Shapes As Array(Of Shape)
+## Sparse chain façade store indexed by chain slot.
+Property Chains As Array(Of Chain)
+## Per-slot generation counters, bumped when a slot is freed so that reused
+## slots never reuse a generation.
+Property BodyGenerations As IntegerList
+## Per-slot generation counters for shape slots.
+Property ShapeGenerations As IntegerList
+## Per-slot generation counters for chain slots.
+Property ChainGenerations As IntegerList
+## Solver sets. Index 0 static, 1 disabled, 2 awake, 3+ sleeping.
+Property SolverSets As Array(Of SolverSet)
+## Body slot pool.
+Property BodyIdPool As IdPool
+## Shape slot pool.
+Property ShapeIdPool As IdPool
+## Chain slot pool.
+Property ChainIdPool As IdPool
+## Solver-set slot pool for sleeping sets.
+Property SolverSetIdPool As IdPool
+
+## Reused overlap query adapter.
+Private Property mOverlapContext As WorldOverlapContext
+## Reused ray cast query adapter.
+Private Property mRayCastContext As WorldRayCastContext
+## Reused shape cast query adapter.
+Private Property mShapeCastContext As WorldShapeCastContext
+## Reused local ray cast input for shape casts.
+Private Property mLocalRayInput As RayCastInput
+## Reused local shape cast input for shape casts.
+Private Property mLocalCastInput As ShapeCastInput
+## Reused local proxy for shape casts.
+Private Property mLocalProxy As ShapeProxy
+## Reused scratch point for local space conversions.
+Private Property mLocalPoint As Vector2
+
+# Warm-path scratch records owned by the world. Reused across body and
+# shape creation so a warm rebuild after World.Clear allocates only the
+# recreated Body and Shape facade objects and their owned state.
+## Scratch mass record reused by warm-path mass updates.
+Private Property mMassScratch As MassData
+## Scratch extent record reused by warm-path extent updates.
+Private Property mExtentScratch As ShapeExtent
+## Scratch transform reused by warm-path transform reads.
+Private Property mTransformScratch As Transform
+## Scratch vector reused by warm-path mass and extent updates.
+Private Property mVectorScratch As Vector2
+
+## Creates a world with default settings, matching b2CreateWorld with
+## b2DefaultWorldDef.
+Constructor()
+Me.InitCommon(New WorldSettings)
+End Constructor
+
+## Creates a world from explicit settings, matching b2CreateWorld with a
+## definition.
+Constructor(settings As WorldSettings)
+Me.InitCommon(settings)
+End Constructor
+
+## Creates a world with a custom gravity and otherwise default settings.
+## A shared factory rather than a second one-argument constructor because
+## the virtual machine dispatches same-arity constructors by arity alone.
+Shared Function WithGravity(gravityValue As Vector2) As World
+Var settings As New WorldSettings
+settings.Gravity = New Vector2(gravityValue.X, gravityValue.Y)
+Return New World(settings)
+End Function
+
+## Shared constructor implementation, ported from b2CreateWorld.
+Private Sub InitCommon(settings As WorldSettings)
+Me.Gravity = New Vector2(settings.Gravity.X, settings.Gravity.Y)
+Me.RestitutionThreshold = settings.RestitutionThreshold
+Me.HitEventThreshold = settings.HitEventThreshold
+Me.MaxContactPushSpeed = settings.MaxContactPushSpeed
+Me.ContactHertz = settings.ContactHertz
+Me.ContactDampingRatio = settings.ContactDampingRatio
+Me.MaximumLinearSpeed = settings.MaximumLinearSpeed
+Me.EnableSleeping = settings.EnableSleep
+Me.ContinuousEnabled = settings.EnableContinuous
+Me.WarmStartingEnabled = True
+Me.SpeculativeEnabled = True
+Me.Locked = False
+Me.UserData = 0
+Me.BroadPhase = New BroadPhase
+Me.BodyIdPool = New IdPool
+Me.ShapeIdPool = New IdPool
+Me.ChainIdPool = New IdPool
+Me.SolverSetIdPool = New IdPool
+Me.BodyGenerations = New IntegerList
+Me.ShapeGenerations = New IntegerList
+Me.ChainGenerations = New IntegerList
+Me.Bodies = New Array(Of Body)
+Me.Shapes = New Array(Of Shape)
+Me.Chains = New Array(Of Chain)
+Me.SolverSets = New Array(Of SolverSet)
+# Upstream allocates sets zero to two from the solver-set id pool at world
+# creation so per-island sleeping sets start at three.
+Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), False))
+Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), False))
+Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), True))
+Me.mOverlapContext = New WorldOverlapContext
+Me.mRayCastContext = New WorldRayCastContext
+Me.mShapeCastContext = New WorldShapeCastContext
+Me.mLocalRayInput = New RayCastInput
+Me.mLocalCastInput = New ShapeCastInput
+Me.mMassScratch = New MassData
+Me.mExtentScratch = New ShapeExtent
+Me.mTransformScratch = New Transform
+Me.mVectorScratch = New Vector2
+Me.mLocalProxy = New ShapeProxy
+Me.mLocalPoint = New Vector2
+End Sub
+
+## Throws when the world refuses mutation.
+Sub CheckNotLocked()
+If Me.Locked Then
+Throw New RuntimeException("World is locked during Step")
+End If
+End Sub
+
+## Throws when a definition argument is missing.
+Sub CheckDefinition(def As Object, name As String)
+If def = Nothing Then
+Throw New InvalidArgumentException(name + " must not be Nothing")
+End If
+End Sub
+
+## Advances the simulation. The solver arrives in Stage 7; until then Step
+## refuses to run.
+Sub StepWorld(timeStep As Double)
+Pragma Unused timeStep
+Throw New RuntimeException("World.StepWorld requires the Stage 7 solver")
+End Sub
+
+## Advances the simulation with explicit substepping. The solver arrives in
+## Stage 7; until then Step refuses to run.
+Sub StepWorld(timeStep As Double, subStepCount As Integer)
+Pragma Unused timeStep
+Pragma Unused subStepCount
+Throw New RuntimeException("World.StepWorld requires the Stage 7 solver")
+End Sub
+
+# ------------------------------------------------------------------
+# Body lifecycle
+# ------------------------------------------------------------------
+
+## Creates a body, ported from b2CreateBody. Throws when the world is
+## locked or the definition is missing or invalid.
+Function CreateBody(def As BodyDefinition) As Body
+Me.CheckDefinition(def, "BodyDefinition")
+Me.CheckNotLocked()
+If Not def.Position.X.IsFinite() Or Not def.Position.Y.IsFinite() Then
+Throw New InvalidArgumentException("BodyDefinition position must be finite")
+End If
+If Not def.LinearVelocity.X.IsFinite() Or Not def.LinearVelocity.Y.IsFinite() Then
+Throw New InvalidArgumentException("BodyDefinition linear velocity must be finite")
+End If
+If Not def.AngularVelocity.IsFinite() Or Not def.LinearDamping.IsFinite() Or def.LinearDamping < 0.0 Then
+Throw New InvalidArgumentException("BodyDefinition angular velocity and damping must be valid")
+End If
+If Not def.GravityScale.IsFinite() Or Not def.SleepThreshold.IsFinite() Or def.SleepThreshold < 0.0 Then
+Throw New InvalidArgumentException("BodyDefinition gravity scale and sleep threshold must be valid")
+End If
+If Not Rot.IsValid(def.Rotation) Then
+Throw New InvalidArgumentException("BodyDefinition rotation must be a valid unit rotation")
+End If
+
+Var isAwake As Boolean = (def.IsAwake Or Not def.EnableSleep) And def.IsEnabled
+
+# Determine the solver set.
+Var setId As Integer = 0
+If Not def.IsEnabled Then
+setId = 1
+ElseIf def.Type = BodyType.StaticBody Then
+setId = 0
+ElseIf isAwake Then
+setId = 2
+Else
+setId = Me.AllocSleepingSet()
+End If
+
+Var bodyId As Integer = Me.BodyIdPool.AllocId()
+If bodyId = Me.Bodies.Count Then
+Me.Bodies.Append(New Body)
+Else
+Me.Bodies[bodyId] = New Body
+End If
+Var body As Body = Me.Bodies[bodyId]
+
+Var solverSet As SolverSet = Me.SolverSets[setId]
+Var localIndex As Integer = solverSet.Sims.Add()
+solverSet.Sims.PX.Items[localIndex] = def.Position.X
+solverSet.Sims.PY.Items[localIndex] = def.Position.Y
+solverSet.Sims.QC.Items[localIndex] = def.Rotation.C
+solverSet.Sims.QS.Items[localIndex] = def.Rotation.S
+solverSet.Sims.CenterX.Items[localIndex] = def.Position.X
+solverSet.Sims.CenterY.Items[localIndex] = def.Position.Y
+solverSet.Sims.R0C.Items[localIndex] = def.Rotation.C
+solverSet.Sims.R0S.Items[localIndex] = def.Rotation.S
+solverSet.Sims.C0X.Items[localIndex] = def.Position.X
+solverSet.Sims.C0Y.Items[localIndex] = def.Position.Y
+solverSet.Sims.MinExtent.Items[localIndex] = PhysicsConstants.POSITION_LIMIT
+solverSet.Sims.MaxExtent.Items[localIndex] = 0.0
+solverSet.Sims.LinearDamping.Items[localIndex] = def.LinearDamping
+solverSet.Sims.AngularDamping.Items[localIndex] = def.AngularDamping
+solverSet.Sims.GravityScale.Items[localIndex] = def.GravityScale
+solverSet.Sims.BodyId.Items[localIndex] = bodyId
+solverSet.Sims.IsBullet.Items[localIndex] = 0
+If def.IsBullet Then
+solverSet.Sims.IsBullet.Items[localIndex] = 1
+End If
+solverSet.Sims.AllowFastRotation.Items[localIndex] = 0
+If def.AllowFastRotation Then
+solverSet.Sims.AllowFastRotation.Items[localIndex] = 1
+End If
+
+If setId = 2 Then
+Var stateIndex As Integer = solverSet.States.Add()
+solverSet.States.LVX.Items[stateIndex] = def.LinearVelocity.X
+solverSet.States.LVY.Items[stateIndex] = def.LinearVelocity.Y
+solverSet.States.AngularVelocity.Items[stateIndex] = def.AngularVelocity
+End If
+
+body.Owner = Me
+body.Id = bodyId
+If bodyId = Me.BodyGenerations.Count Then
+Me.BodyGenerations.Append(0)
+End If
+body.Generation = Me.BodyGenerations.Items[bodyId] + 1
+Me.BodyGenerations.Items[bodyId] = body.Generation
+body.Live = True
+body.SetIndex = setId
+body.LocalIndex = localIndex
+body.HeadShapeId = PhysicsConstants.NULL_INDEX
+body.ShapeCount = 0
+body.HeadChainId = PhysicsConstants.NULL_INDEX
+body.Mass = 0.0
+body.Inertia = 0.0
+body.SleepThreshold = def.SleepThreshold
+body.SleepTime = 0.0
+body.Type = def.Type
+body.EnableSleep = def.EnableSleep
+body.FixedRotation = def.FixedRotation
+body.IsSpeedCapped = False
+body.IsMarked = False
+body.UserData = def.UserData
+Me.SetBodyName(body, def.Name)
+Return body
+End Function
+
+## Installs a body name with the upstream 31-character truncation.
+Private Sub SetBodyName(body As Body, name As String)
+If name = Nothing Then
+body.Name = ""
+Return
+End If
+If name.Length > 31 Then
+body.Name = name.Substring(0, 31)
+Return
+End If
+body.Name = name
+End Sub
+
+## Allocates a per-island sleeping solver set, ported from the sleeping set
+## creation inside b2CreateBody.
+Function AllocSleepingSet() As Integer
+Var setId As Integer = Me.SolverSetIdPool.AllocId()
+If setId = Me.SolverSets.Count Then
+Me.SolverSets.Append(New SolverSet(setId, False))
+Else
+Me.SolverSets[setId] = New SolverSet(setId, False)
+End If
+Return setId
+End Function
+
+## Destroys a body with its shapes and chains, ported from b2DestroyBody.
+## Called by Body.Destroy; throws when the world is locked.
+Sub DestroyBody(body As Body)
+Me.CheckNotLocked()
+Me.ValidateBody(body)
+
+# Destroy attached shapes and their proxies.
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+shapeId = shape.NextShapeId
+Me.DestroyShapeProxy(shape)
+Me.ShapeIdPool.FreeId(shape.Id)
+shape.Live = False
+Me.ShapeGenerations.Items[shape.Id] = Me.ShapeGenerations.Items[shape.Id] + 1
+shape.Generation = Me.ShapeGenerations.Items[shape.Id]
+Me.Shapes[shape.Id] = Nothing
+shape.Id = PhysicsConstants.NULL_INDEX
+shape.BodyId = PhysicsConstants.NULL_INDEX
+Wend
+
+# Destroy attached chains. Their segment shapes were destroyed above.
+Var chainId As Integer = body.HeadChainId
+While chainId <> PhysicsConstants.NULL_INDEX
+Var chain As Chain = Me.Chains[chainId]
+chainId = chain.NextChainId
+Me.ChainIdPool.FreeId(chain.Id)
+chain.Live = False
+Me.ChainGenerations.Items[chain.Id] = Me.ChainGenerations.Items[chain.Id] + 1
+chain.Generation = Me.ChainGenerations.Items[chain.Id]
+Me.Chains[chain.Id] = Nothing
+chain.Id = PhysicsConstants.NULL_INDEX
+chain.BodyId = PhysicsConstants.NULL_INDEX
+Wend
+
+# Remove the sim record from the owning solver set.
+Var solverSet As SolverSet = Me.SolverSets[body.SetIndex]
+Var localIndex As Integer = body.LocalIndex
+Var movedIndex As Integer = solverSet.Sims.RemoveSwap(localIndex)
+If movedIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedId As Integer = solverSet.Sims.BodyId.Items[localIndex]
+Me.Bodies[movedId].LocalIndex = localIndex
+End If
+If body.SetIndex = 2 Then
+Var stateMoved As Integer = solverSet.States.RemoveSwap(localIndex)
+If stateMoved <> movedIndex Then
+Throw New RuntimeException("Body state and sim removal disagree")
+End If
+ElseIf body.SetIndex >= 3 And solverSet.Sims.Count() = 0 Then
+Me.DestroySolverSet(body.SetIndex)
+End If
+
+Me.BodyIdPool.FreeId(body.Id)
+body.Live = False
+Me.BodyGenerations.Items[body.Id] = Me.BodyGenerations.Items[body.Id] + 1
+body.Generation = Me.BodyGenerations.Items[body.Id]
+Me.Bodies[body.Id] = Nothing
+body.SetIndex = PhysicsConstants.NULL_INDEX
+body.LocalIndex = PhysicsConstants.NULL_INDEX
+body.Id = PhysicsConstants.NULL_INDEX
+End Sub
+
+## Frees a sleeping solver set that no longer holds bodies, ported from
+## b2DestroySolverSet.
+Sub DestroySolverSet(setIndex As Integer)
+Var solverSet As SolverSet = Me.SolverSets[setIndex]
+Me.SolverSetIdPool.FreeId(setIndex)
+solverSet.SetIndex = PhysicsConstants.NULL_INDEX
+Me.SolverSets[setIndex] = Nothing
+End Sub
+
+## Moves a body between solver sets, ported from b2TransferBody. Only used
+## within the world.
+Sub TransferBody(targetSet As SolverSet, sourceSet As SolverSet, body As Body)
+If targetSet = sourceSet Then
+Throw New RuntimeException("TransferBody target and source must differ")
+End If
+Var sourceIndex As Integer = body.LocalIndex
+Var targetIndex As Integer = targetSet.Sims.Count()
+targetSet.Sims.Add()
+targetSet.Sims.CopyRecordTo(targetIndex, sourceSet.Sims, sourceIndex)
+
+Var movedIndex As Integer = sourceSet.Sims.RemoveSwap(sourceIndex)
+If movedIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedId As Integer = sourceSet.Sims.BodyId.Items[sourceIndex]
+Me.Bodies[movedId].LocalIndex = sourceIndex
+End If
+
+If sourceSet.SetIndex = 2 Then
+sourceSet.States.RemoveSwap(sourceIndex)
+ElseIf targetSet.SetIndex = 2 Then
+targetSet.States.Add()
+End If
+
+body.SetIndex = targetSet.SetIndex
+body.LocalIndex = targetIndex
+End Sub
+
+## Wakes a sleeping solver set into the awake set, ported from
+## b2WakeSolverSet without contact, joint, and island work, which arrive
+## with Stage 7.
+Sub WakeSolverSet(setIndex As Integer)
+If setIndex < 3 Then
+Throw New RuntimeException("WakeSolverSet requires a sleeping set")
+End If
+Var solverSet As SolverSet = Me.SolverSets[setIndex]
+Var awakeSet As SolverSet = Me.SolverSets[2]
+While solverSet.Sims.Count() > 0
+Var bodyId As Integer = solverSet.Sims.BodyId.Items[0]
+Var body As Body = Me.Bodies[bodyId]
+Me.TransferBody(awakeSet, solverSet, body)
+body.SleepTime = 0.0
+Wend
+Me.DestroySolverSet(setIndex)
+End Sub
+
+## Wakes the body when it sleeps, ported from b2WakeBody. Returns True when
+## a set was woken.
+Function WakeBody(body As Body) As Boolean
+If body.SetIndex >= 3 Then
+Me.WakeSolverSet(body.SetIndex)
+Return True
+End If
+Return False
+End Function
+
+## Throws when the body façade is stale.
+Sub ValidateBody(body As Body)
+If Not body.IsValid() Then
+Throw New RuntimeException("Body façade is no longer valid")
+End If
+End Sub
+
+# ------------------------------------------------------------------
+# Body accessors
+# ------------------------------------------------------------------
+
+## Returns the dense sim record of the owning solver set. Index the record
+## with body.LocalIndex.
+Function GetBodySim(body As Body) As BodySims
+Return Me.SolverSets[body.SetIndex].Sims
+End Function
+
+## Returns the dense state record of the owning solver set, or Nothing when
+## the body is not awake, ported from b2GetBodyState.
+Function GetBodyState(body As Body) As BodyStates
+Var solverSet As SolverSet = Me.SolverSets[body.SetIndex]
+Return solverSet.States
+End Function
+
+## Returns a copy of the body transform, ported from
+## b2GetBodyTransformQuick.
+Function GetBodyTransform(body As Body) As Transform
+Return Me.GetBodyTransformTo(body, New Transform)
+End Function
+
+## Writes the body transform into a caller-owned transform, for warm paths.
+Function GetBodyTransformTo(body As Body, out As Transform) As Transform
+Var sims As BodySims = Me.GetBodySim(body)
+out.P.Set(sims.PX.Items[body.LocalIndex], sims.PY.Items[body.LocalIndex])
+out.Q.SetComponents(sims.QC.Items[body.LocalIndex], sims.QS.Items[body.LocalIndex])
+Return out
+End Function
+
+## Returns a copy of the body transform by body slot, for query adapters.
+Function GetBodyTransformById(bodyId As Integer) As Transform
+Return Me.GetBodyTransform(Me.Bodies[bodyId])
+End Function
+
+## Returns the world transform for a shape's owning body, for query
+## adapters.
+Function GetShapeTransform(shape As Shape) As Transform
+Return Me.GetBodyTransform(Me.Bodies[shape.BodyId])
+End Function
+
+## The linear velocity of the centre of mass, ported from
+## b2Body_GetLinearVelocity.
+Function GetBodyLinearVelocity(body As Body) As Vector2
+Me.ValidateBody(body)
+Var states As BodyStates = Me.GetBodyState(body)
+If states = Nothing Then
+Return New Vector2(0.0, 0.0)
+End If
+Return New Vector2(states.LVX.Items[body.LocalIndex], states.LVY.Items[body.LocalIndex])
+End Function
+
+## Sets the linear velocity, waking the body for non-zero velocity, ported
+## from b2Body_SetLinearVelocity.
+Sub SetBodyLinearVelocity(body As Body, linearVelocity As Vector2)
+Me.ValidateBody(body)
+If body.Type = BodyType.StaticBody Then
+Return
+End If
+If linearVelocity.X * linearVelocity.X + linearVelocity.Y * linearVelocity.Y > 0.0 Then
+Me.WakeBody(body)
+End If
+Var states As BodyStates = Me.GetBodyState(body)
+If states = Nothing Then
+Return
+End If
+states.LVX.Items[body.LocalIndex] = linearVelocity.X
+states.LVY.Items[body.LocalIndex] = linearVelocity.Y
+End Sub
+
+## The angular velocity in radians per second, ported from
+## b2Body_GetAngularVelocity.
+Function GetBodyAngularVelocity(body As Body) As Double
+Me.ValidateBody(body)
+Var states As BodyStates = Me.GetBodyState(body)
+If states = Nothing Then
+Return 0.0
+End If
+Return states.AngularVelocity.Items[body.LocalIndex]
+End Function
+
+## Sets the angular velocity, waking the body for non-zero velocity, ported
+## from b2Body_SetAngularVelocity.
+Sub SetBodyAngularVelocity(body As Body, angularVelocity As Double)
+Me.ValidateBody(body)
+If body.Type = BodyType.StaticBody Then
+Return
+End If
+If angularVelocity * angularVelocity > 0.0 Then
+Me.WakeBody(body)
+End If
+Var states As BodyStates = Me.GetBodyState(body)
+If states = Nothing Then
+Return
+End If
+states.AngularVelocity.Items[body.LocalIndex] = angularVelocity
+End Sub
+
+## Drives the body towards the target transform over the given time step,
+## ported from b2Body_SetTargetTransform.
+Sub SetBodyTargetTransform(body As Body, target As Transform, timeStep As Double)
+Me.ValidateBody(body)
+If body.Type = BodyType.StaticBody Or timeStep <= 0.0 Then
+Return
+End If
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+Var center1X As Double = sims.CenterX.Items[li]
+Var center1Y As Double = sims.CenterY.Items[li]
+Var center2 As Vector2 = Transform.TransformPoint(target, New Vector2(sims.LCX.Items[li], sims.LCY.Items[li]))
+Var invTimeStep As Double = 1.0 / timeStep
+Var linearVelocity As Vector2 = New Vector2(invTimeStep * (center2.X - center1X), invTimeStep * (center2.Y - center1Y))
+Var angularVelocity As Double = 0.0
+If Not body.FixedRotation Then
+Var q1 As Rot = New Rot(sims.QS.Items[li], sims.QC.Items[li])
+angularVelocity = invTimeStep * Rot.RelativeAngle(target.Q, q1)
+End If
+Var speed As Double = Maths.Sqrt(linearVelocity.X * linearVelocity.X + linearVelocity.Y * linearVelocity.Y)
+Var maxVelocity As Double = speed + Maths.Abs(angularVelocity) * sims.MaxExtent.Items[li]
+If maxVelocity < body.SleepThreshold Then
+Return
+End If
+Me.WakeBody(body)
+Var states As BodyStates = Me.GetBodyState(body)
+If states = Nothing Then
+Return
+End If
+states.LVX.Items[body.LocalIndex] = linearVelocity.X
+states.LVY.Items[body.LocalIndex] = linearVelocity.Y
+states.AngularVelocity.Items[body.LocalIndex] = angularVelocity
+End Sub
+
+## Velocity of a point in the body frame, ported from
+## b2Body_GetLocalPointVelocity.
+Function GetBodyLocalPointVelocity(body As Body, localPoint As Vector2) As Vector2
+Me.ValidateBody(body)
+Var states As BodyStates = Me.GetBodyState(body)
+If states = Nothing Then
+Return New Vector2(0.0, 0.0)
+End If
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+Var dx As Double = localPoint.X - sims.LCX.Items[li]
+Var dy As Double = localPoint.Y - sims.LCY.Items[li]
+Var qc As Double = sims.QC.Items[li]
+Var qs As Double = sims.QS.Items[li]
+Var rx As Double = qc * dx - qs * dy
+Var ry As Double = qs * dx + qc * dy
+Var angularVelocity As Double = states.AngularVelocity.Items[li]
+Return New Vector2(states.LVX.Items[li] - angularVelocity * ry, states.LVY.Items[li] + angularVelocity * rx)
+End Function
+
+## Velocity of a world point attached to the body, ported from
+## b2Body_GetWorldPointVelocity.
+Function GetBodyWorldPointVelocity(body As Body, worldPoint As Vector2) As Vector2
+Me.ValidateBody(body)
+Var states As BodyStates = Me.GetBodyState(body)
+If states = Nothing Then
+Return New Vector2(0.0, 0.0)
+End If
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+Var rx As Double = worldPoint.X - sims.CenterX.Items[li]
+Var ry As Double = worldPoint.Y - sims.CenterY.Items[li]
+Var angularVelocity As Double = states.AngularVelocity.Items[li]
+Return New Vector2(states.LVX.Items[li] - angularVelocity * ry, states.LVY.Items[li] + angularVelocity * rx)
+End Function
+
+## Applies a force at a world point, ported from b2Body_ApplyForce.
+Sub ApplyBodyForce(body As Body, force As Vector2, point As Vector2, wake As Boolean)
+Me.ValidateBody(body)
+If wake And body.SetIndex >= 3 Then
+Me.WakeBody(body)
+End If
+If body.SetIndex <> 2 Then
+Return
+End If
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+sims.ForceX.Items[li] = sims.ForceX.Items[li] + force.X
+sims.ForceY.Items[li] = sims.ForceY.Items[li] + force.Y
+Var rx As Double = point.X - sims.CenterX.Items[li]
+Var ry As Double = point.Y - sims.CenterY.Items[li]
+sims.Torque.Items[li] = sims.Torque.Items[li] + rx * force.Y - ry * force.X
+End Sub
+
+## Applies a force at the centre of mass, ported from
+## b2Body_ApplyForceToCenter.
+Sub ApplyBodyForceToCenter(body As Body, force As Vector2, wake As Boolean)
+Me.ValidateBody(body)
+If wake And body.SetIndex >= 3 Then
+Me.WakeBody(body)
+End If
+If body.SetIndex <> 2 Then
+Return
+End If
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+sims.ForceX.Items[li] = sims.ForceX.Items[li] + force.X
+sims.ForceY.Items[li] = sims.ForceY.Items[li] + force.Y
+End Sub
+
+## Applies a torque, ported from b2Body_ApplyTorque.
+Sub ApplyBodyTorque(body As Body, torque As Double, wake As Boolean)
+Me.ValidateBody(body)
+If wake And body.SetIndex >= 3 Then
+Me.WakeBody(body)
+End If
+If body.SetIndex <> 2 Then
+Return
+End If
+Var sims As BodySims = Me.GetBodySim(body)
+sims.Torque.Items[body.LocalIndex] = sims.Torque.Items[body.LocalIndex] + torque
+End Sub
+
+## Applies an impulse at a world point, ported from b2Body_ApplyLinearImpulse.
+Sub ApplyBodyLinearImpulse(body As Body, impulse As Vector2, point As Vector2, wake As Boolean)
+Me.ValidateBody(body)
+If wake And body.SetIndex >= 3 Then
+Me.WakeBody(body)
+End If
+If body.SetIndex <> 2 Then
+Return
+End If
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+Var invMass As Double = sims.InvMass.Items[li]
+Var states As BodyStates = Me.GetBodyState(body)
+If states = Nothing Then
+Return
+End If
+states.LVX.Items[li] = states.LVX.Items[li] + invMass * impulse.X
+states.LVY.Items[li] = states.LVY.Items[li] + invMass * impulse.Y
+Var rx As Double = point.X - sims.CenterX.Items[li]
+Var ry As Double = point.Y - sims.CenterY.Items[li]
+Var angularImpulse As Double = rx * impulse.Y - ry * impulse.X
+states.AngularVelocity.Items[li] = states.AngularVelocity.Items[li] + sims.InvInertia.Items[li] * angularImpulse
+End Sub
+
+## Applies an impulse at the centre of mass, ported from
+## b2Body_ApplyLinearImpulseToCenter.
+Sub ApplyBodyLinearImpulseToCenter(body As Body, impulse As Vector2, wake As Boolean)
+Me.ValidateBody(body)
+If wake And body.SetIndex >= 3 Then
+Me.WakeBody(body)
+End If
+If body.SetIndex <> 2 Then
+Return
+End If
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+Var invMass As Double = sims.InvMass.Items[li]
+Var states As BodyStates = Me.GetBodyState(body)
+If states = Nothing Then
+Return
+End If
+states.LVX.Items[li] = states.LVX.Items[li] + invMass * impulse.X
+states.LVY.Items[li] = states.LVY.Items[li] + invMass * impulse.Y
+End Sub
+
+## Applies an angular impulse, ported from b2Body_ApplyAngularImpulse.
+Sub ApplyBodyAngularImpulse(body As Body, impulse As Double, wake As Boolean)
+Me.ValidateBody(body)
+If wake And body.SetIndex >= 3 Then
+Me.WakeBody(body)
+End If
+If body.SetIndex <> 2 Then
+Return
+End If
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+Var states As BodyStates = Me.GetBodyState(body)
+If states = Nothing Then
+Return
+End If
+states.AngularVelocity.Items[li] = states.AngularVelocity.Items[li] + sims.InvInertia.Items[li] * impulse
+End Sub
+
+## The local centre of mass relative to the body origin.
+Function GetBodyLocalCenterOfMass(body As Body) As Vector2
+Me.ValidateBody(body)
+Var sims As BodySims = Me.GetBodySim(body)
+Return New Vector2(sims.LCX.Items[body.LocalIndex], sims.LCY.Items[body.LocalIndex])
+End Function
+
+## The world centre of mass.
+Function GetBodyWorldCenterOfMass(body As Body) As Vector2
+Me.ValidateBody(body)
+Var sims As BodySims = Me.GetBodySim(body)
+Return New Vector2(sims.CenterX.Items[body.LocalIndex], sims.CenterY.Items[body.LocalIndex])
+End Function
+
+## The mass data of the body, ported from b2Body_GetMassData.
+Function GetBodyMassData(body As Body) As MassData
+Me.ValidateBody(body)
+Var sims As BodySims = Me.GetBodySim(body)
+Var data As New MassData
+data.Mass = body.Mass
+data.Center = New Vector2(sims.LCX.Items[body.LocalIndex], sims.LCY.Items[body.LocalIndex])
+data.RotationalInertia = body.Inertia
+Return data
+End Function
+
+## Overrides the mass data, ported from b2Body_SetMassData.
+Sub SetBodyMassData(body As Body, massData As MassData)
+Me.CheckDefinition(massData, "MassData")
+Me.CheckNotLocked()
+If Not massData.Mass.IsFinite() Or massData.Mass < 0.0 Then
+Throw New InvalidArgumentException("MassData mass must be finite and non-negative")
+End If
+If Not massData.RotationalInertia.IsFinite() Or massData.RotationalInertia < 0.0 Then
+Throw New InvalidArgumentException("MassData rotational inertia must be finite and non-negative")
+End If
+Me.ValidateBody(body)
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+body.Mass = massData.Mass
+body.Inertia = massData.RotationalInertia
+sims.LCX.Items[li] = massData.Center.X
+sims.LCY.Items[li] = massData.Center.Y
+Var center As Vector2 = Transform.TransformPoint(Me.GetBodyTransform(body), massData.Center)
+sims.CenterX.Items[li] = center.X
+sims.CenterY.Items[li] = center.Y
+sims.C0X.Items[li] = center.X
+sims.C0Y.Items[li] = center.Y
+If body.Mass > 0.0 Then
+sims.InvMass.Items[li] = 1.0 / body.Mass
+Else
+sims.InvMass.Items[li] = 0.0
+End If
+If body.Inertia > 0.0 Then
+sims.InvInertia.Items[li] = 1.0 / body.Inertia
+Else
+sims.InvInertia.Items[li] = 0.0
+End If
+End Sub
+
+## Linear damping in kilograms per second.
+Function GetBodyLinearDamping(body As Body) As Double
+Me.ValidateBody(body)
+Return Me.GetBodySim(body).LinearDamping.Items[body.LocalIndex]
+End Function
+
+## Sets linear damping in kilograms per second.
+Sub SetBodyLinearDamping(body As Body, linearDamping As Double)
+Me.CheckNotLocked()
+Me.ValidateBody(body)
+Me.GetBodySim(body).LinearDamping.Items[body.LocalIndex] = linearDamping
+End Sub
+
+## Angular damping in kilograms per second.
+Function GetBodyAngularDamping(body As Body) As Double
+Me.ValidateBody(body)
+Return Me.GetBodySim(body).AngularDamping.Items[body.LocalIndex]
+End Function
+
+## Sets angular damping in kilograms per second.
+Sub SetBodyAngularDamping(body As Body, angularDamping As Double)
+Me.CheckNotLocked()
+Me.ValidateBody(body)
+Me.GetBodySim(body).AngularDamping.Items[body.LocalIndex] = angularDamping
+End Sub
+
+## The gravity scale.
+Function GetBodyGravityScale(body As Body) As Double
+Me.ValidateBody(body)
+Return Me.GetBodySim(body).GravityScale.Items[body.LocalIndex]
+End Function
+
+## Sets the gravity scale.
+Sub SetBodyGravityScale(body As Body, gravityScale As Double)
+Me.CheckNotLocked()
+Me.ValidateBody(body)
+Me.GetBodySim(body).GravityScale.Items[body.LocalIndex] = gravityScale
+End Sub
+
+## Wakes or sleeps the body, ported from b2Body_SetAwake. Sleeping applies
+## to this body alone in Stage 6; island-wide sleeping arrives in Stage 7.
+Sub SetBodyAwake(body As Body, awake As Boolean)
+Me.CheckNotLocked()
+Me.ValidateBody(body)
+If awake And body.SetIndex >= 3 Then
+Me.WakeBody(body)
+ElseIf Not awake And body.SetIndex = 2 Then
+Var setId As Integer = Me.AllocSleepingSet()
+Me.TransferBody(Me.SolverSets[setId], Me.SolverSets[2], body)
+End If
+End Sub
+
+## Enables or disables sleeping for a body, waking it when disabled,
+## ported from b2Body_EnableSleep.
+Sub SetBodyEnableSleep(body As Body, enableSleep As Boolean)
+Me.CheckNotLocked()
+Me.ValidateBody(body)
+body.EnableSleep = enableSleep
+If Not enableSleep Then
+Me.WakeBody(body)
+End If
+End Sub
+
+## Enables a disabled body, ported from b2Body_Enable.
+Sub EnableBody(body As Body)
+Me.CheckNotLocked()
+Me.ValidateBody(body)
+If body.SetIndex <> 1 Then
+Return
+End If
+Var setId As Integer = 2
+If body.Type = BodyType.StaticBody Then
+setId = 0
+End If
+Me.TransferBody(Me.SolverSets[setId], Me.SolverSets[1], body)
+Var xf As Transform = Me.GetBodyTransform(body)
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+shapeId = shape.NextShapeId
+Me.CreateShapeProxy(shape, body.Type, xf, True)
+Wend
+End Sub
+
+## Disables a live body, ported from b2Body_Disable.
+Sub DisableBody(body As Body)
+Me.CheckNotLocked()
+Me.ValidateBody(body)
+If body.SetIndex = 1 Then
+Return
+End If
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+shapeId = shape.NextShapeId
+Me.DestroyShapeProxy(shape)
+Wend
+Me.TransferBody(Me.SolverSets[1], Me.SolverSets[body.SetIndex], body)
+End Sub
+
+## Locks or unlocks rotation and recomputes mass, ported from
+## b2Body_SetFixedRotation.
+Sub SetBodyFixedRotation(body As Body, flag As Boolean)
+Me.CheckNotLocked()
+Me.ValidateBody(body)
+If body.FixedRotation = flag Then
+Return
+End If
+body.FixedRotation = flag
+Var states As BodyStates = Me.GetBodyState(body)
+If states <> Nothing Then
+states.AngularVelocity.Items[body.LocalIndex] = 0.0
+End If
+Me.UpdateBodyMassData(body)
+End Sub
+
+## Changes the body type, ported from b2Body_SetType. Contacts, joints, and
+## islands arrive in Stages 7 and 9; proxy recreation covers all cases.
+Sub SetBodyType(body As Body, bodyType As BodyType)
+Me.CheckNotLocked()
+Me.ValidateBody(body)
+Var originalType As BodyType = body.Type
+If originalType = bodyType Then
+Return
+End If
+If body.SetIndex = 1 Then
+body.Type = bodyType
+Me.UpdateBodyMassData(body)
+Return
+End If
+Me.WakeBody(body)
+body.Type = bodyType
+If originalType = BodyType.StaticBody Then
+Me.TransferBody(Me.SolverSets[2], Me.SolverSets[0], body)
+Me.RecreateShapeProxies(body, bodyType)
+ElseIf bodyType = BodyType.StaticBody Then
+Me.TransferBody(Me.SolverSets[0], Me.SolverSets[2], body)
+Me.GetBodySim(body).IsFast.Items[body.LocalIndex] = 0
+Me.RecreateShapeProxies(body, BodyType.StaticBody)
+Else
+Me.RecreateShapeProxies(body, bodyType)
+End If
+Me.UpdateBodyMassData(body)
+End Sub
+
+## Destroys and recreates every shape proxy with the given proxy type.
+Private Sub RecreateShapeProxies(body As Body, proxyType As BodyType)
+Var xf As Transform = Me.GetBodyTransform(body)
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+shapeId = shape.NextShapeId
+Me.DestroyShapeProxy(shape)
+Me.CreateShapeProxy(shape, proxyType, xf, True)
+Wend
+End Sub
+
+## Teleports the body and refreshes shape proxies, ported from
+## b2Body_SetTransform.
+Sub SetBodyTransform(body As Body, position As Vector2, rotation As Rot)
+Me.ValidateBody(body)
+If Not position.X.IsFinite() Or Not position.Y.IsFinite() Then
+Throw New InvalidArgumentException("Body position must be finite")
+End If
+If Not Rot.IsValid(rotation) Then
+Throw New InvalidArgumentException("Body rotation must be a valid unit rotation")
+End If
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+sims.PX.Items[li] = position.X
+sims.PY.Items[li] = position.Y
+sims.QC.Items[li] = rotation.C
+sims.QS.Items[li] = rotation.S
+Var localCX As Double = sims.LCX.Items[li]
+Var localCY As Double = sims.LCY.Items[li]
+Var centerX As Double = rotation.C * localCX - rotation.S * localCY + position.X
+Var centerY As Double = rotation.S * localCX + rotation.C * localCY + position.Y
+sims.CenterX.Items[li] = centerX
+sims.CenterY.Items[li] = centerY
+sims.R0C.Items[li] = rotation.C
+sims.R0S.Items[li] = rotation.S
+sims.C0X.Items[li] = centerX
+sims.C0Y.Items[li] = centerY
+Me.SyncShapeProxies(body)
+End Sub
+
+## Recomputes shape bounds after a transform change and moves proxies whose
+## fat bounds no longer contain them, ported from the proxy update inside
+## b2Body_SetTransform.
+Private Sub SyncShapeProxies(body As Body)
+Me.GetBodyTransformTo(body, Me.mTransformScratch)
+Var xf As Transform = Me.mTransformScratch
+Var margin As Double = PhysicsConstants.AABB_MARGIN
+Var speculativeDistance As Double = PhysicsConstants.SPECULATIVE_DISTANCE
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+Me.ComputeShapeAABBTo(shape, xf, shape.AABB)
+Var lowerX As Double = shape.AABB.LowerBound.X - speculativeDistance
+Var lowerY As Double = shape.AABB.LowerBound.Y - speculativeDistance
+Var upperX As Double = shape.AABB.UpperBound.X + speculativeDistance
+Var upperY As Double = shape.AABB.UpperBound.Y + speculativeDistance
+shape.AABB.LowerBound.Set(lowerX, lowerY)
+shape.AABB.UpperBound.Set(upperX, upperY)
+If shape.FatAABB.LowerBound.X > lowerX Or shape.FatAABB.LowerBound.Y > lowerY Or shape.FatAABB.UpperBound.X < upperX Or shape.FatAABB.UpperBound.Y < upperY Then
+shape.FatAABB.LowerBound.Set(lowerX - margin, lowerY - margin)
+shape.FatAABB.UpperBound.Set(upperX + margin, upperY + margin)
+If shape.ProxyKey <> PhysicsConstants.NULL_INDEX Then
+Me.BroadPhase.MoveProxy(shape.ProxyKey, shape.FatAABB)
+End If
+End If
+shapeId = shape.NextShapeId
+Wend
+End Sub
+
+## Computes the union of attached shape bounds, ported from
+## b2Body_ComputeAABB. A body without shapes reports its origin point.
+Function ComputeBodyAABB(body As Body) As AABB
+Me.ValidateBody(body)
+If body.HeadShapeId = PhysicsConstants.NULL_INDEX Then
+Var xf As Transform = Me.GetBodyTransform(body)
+Var box As New AABB
+box.LowerBound.Set(xf.P.X, xf.P.Y)
+box.UpperBound.Set(xf.P.X, xf.P.Y)
+Return box
+End If
+Var shape As Shape = Me.Shapes[body.HeadShapeId]
+Var result As New AABB(shape.AABB)
+While shape.NextShapeId <> PhysicsConstants.NULL_INDEX
+	shape = Me.Shapes[shape.NextShapeId]
+		AABB.UnionTo(result, shape.AABB, result)
+	Wend
+	Return result
+End Function
+
+# ------------------------------------------------------------------
+# Shape lifecycle
+# ------------------------------------------------------------------
+
+## Shared shape creation, ported from b2CreateShapeInternal. The geometry
+## argument must match shapeType. Chain segments are created by CreateChain.
+Function CreateShapeInternal(body As Body, def As ShapeDefinition, shapeType As ShapeType, circle As Circle, capsule As Capsule, segment As Segment, polygon As Polygon, chainSegment As ChainSegment) As Shape
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "ShapeDefinition")
+If Not def.Density.IsFinite() Or def.Density < 0.0 Then
+Throw New InvalidArgumentException("ShapeDefinition density must be finite and non-negative")
+End If
+If Not def.Material.Friction.IsFinite() Or def.Material.Friction < 0.0 Then
+Throw New InvalidArgumentException("ShapeDefinition friction must be finite and non-negative")
+End If
+If Not def.Material.Restitution.IsFinite() Or def.Material.Restitution < 0.0 Then
+Throw New InvalidArgumentException("ShapeDefinition restitution must be finite and non-negative")
+End If
+
+Var shapeId As Integer = Me.ShapeIdPool.AllocId()
+If shapeId = Me.Shapes.Count Then
+Me.Shapes.Append(New Shape)
+Else
+Me.Shapes[shapeId] = New Shape
+End If
+Var shape As Shape = Me.Shapes[shapeId]
+
+shape.Owner = Me
+shape.Id = shapeId
+shape.Live = True
+shape.BodyId = body.Id
+shape.Type = shapeType
+shape.Density = def.Density
+shape.Friction = def.Material.Friction
+shape.Restitution = def.Material.Restitution
+shape.RollingResistance = def.Material.RollingResistance
+shape.TangentSpeed = def.Material.TangentSpeed
+shape.UserMaterialId = def.Material.UserMaterialId
+shape.CustomColor = def.Material.CustomColor
+shape.Filter = New Filter(def.Filter)
+shape.UserData = def.UserData
+shape.EnableSensorEvents = def.EnableSensorEvents
+shape.EnableContactEvents = def.EnableContactEvents
+shape.EnableHitEvents = def.EnableHitEvents
+shape.EnablePreSolveEvents = def.EnablePreSolveEvents
+shape.IsSensorFlag = def.IsSensor
+shape.ProxyKey = PhysicsConstants.NULL_INDEX
+shape.EnlargedAABB = False
+shape.Circle = circle
+shape.Capsule = capsule
+shape.Segment = segment
+shape.Polygon = polygon
+shape.ChainSegment = chainSegment
+Me.GetShapeCentroidTo(shape, shape.LocalCentroid)
+shape.RebuildDistanceProxy()
+If shapeId = Me.ShapeGenerations.Count Then
+Me.ShapeGenerations.Append(0)
+End If
+shape.Generation = Me.ShapeGenerations.Items[shapeId] + 1
+Me.ShapeGenerations.Items[shapeId] = shape.Generation
+
+If body.SetIndex <> 1 Then
+Me.GetBodyTransformTo(body, Me.mTransformScratch)
+Var xf As Transform = Me.mTransformScratch
+Var forcePairCreation As Boolean = def.InvokeContactCreation Or def.IsSensor
+Me.CreateShapeProxy(shape, body.Type, xf, forcePairCreation)
+End If
+
+# Attach to the body's doubly linked shape list.
+If body.HeadShapeId <> PhysicsConstants.NULL_INDEX Then
+Me.Shapes[body.HeadShapeId].PrevShapeId = shapeId
+End If
+shape.PrevShapeId = PhysicsConstants.NULL_INDEX
+shape.NextShapeId = body.HeadShapeId
+body.HeadShapeId = shapeId
+body.ShapeCount = body.ShapeCount + 1
+Return shape
+End Function
+
+## Creates a circle shape, ported from b2CreateCircleShape.
+Function CreateCircleShape(body As Body, def As ShapeDefinition, circle As Circle) As Shape
+Me.CheckDefinition(circle, "Circle")
+Var shape As Shape = Me.CreateShapeInternal(body, def, ShapeType.CircleShape, New Circle(circle), Nothing, Nothing, Nothing, Nothing)
+If def.UpdateBodyMass Then
+Me.UpdateBodyMassData(body)
+End If
+Return shape
+End Function
+
+## Creates a capsule shape, collapsing degenerate capsules to circles,
+## ported from b2CreateCapsuleShape.
+Function CreateCapsuleShape(body As Body, def As ShapeDefinition, capsule As Capsule) As Shape
+Me.CheckDefinition(capsule, "Capsule")
+Var dx As Double = capsule.Center2.X - capsule.Center1.X
+Var dy As Double = capsule.Center2.Y - capsule.Center1.Y
+If dx * dx + dy * dy <= PhysicsConstants.LINEAR_SLOP * PhysicsConstants.LINEAR_SLOP Then
+Var center As Vector2 = Vector2.Lerp(capsule.Center1, capsule.Center2, 0.5)
+Var degenerate As Shape = Me.CreateShapeInternal(body, def, ShapeType.CircleShape, New Circle(center, capsule.Radius), Nothing, Nothing, Nothing, Nothing)
+If def.UpdateBodyMass Then
+Me.UpdateBodyMassData(body)
+End If
+Return degenerate
+End If
+Var full As Shape = Me.CreateShapeInternal(body, def, ShapeType.CapsuleShape, Nothing, New Capsule(capsule), Nothing, Nothing, Nothing)
+If def.UpdateBodyMass Then
+Me.UpdateBodyMassData(body)
+End If
+Return full
+End Function
+
+## Creates a polygon shape, ported from b2CreatePolygonShape.
+Function CreatePolygonShape(body As Body, def As ShapeDefinition, polygon As Polygon) As Shape
+Me.CheckDefinition(polygon, "Polygon")
+If Not polygon.Radius.IsFinite() Or polygon.Radius < 0.0 Then
+Throw New InvalidArgumentException("Polygon radius must be finite and non-negative")
+End If
+Var shape As Shape = Me.CreateShapeInternal(body, def, ShapeType.PolygonShape, Nothing, Nothing, Nothing, polygon, Nothing)
+If def.UpdateBodyMass Then
+Me.UpdateBodyMassData(body)
+End If
+Return shape
+End Function
+
+## Creates a segment shape, rejecting degenerate segments, ported from
+## b2CreateSegmentShape.
+Function CreateSegmentShape(body As Body, def As ShapeDefinition, segment As Segment) As Shape
+Me.CheckDefinition(segment, "Segment")
+Var dx As Double = segment.Point2.X - segment.Point1.X
+Var dy As Double = segment.Point2.Y - segment.Point1.Y
+If dx * dx + dy * dy <= PhysicsConstants.LINEAR_SLOP * PhysicsConstants.LINEAR_SLOP Then
+Throw New InvalidArgumentException("Segment length must exceed the linear slop")
+End If
+Var shape As Shape = Me.CreateShapeInternal(body, def, ShapeType.SegmentShape, Nothing, Nothing, New Segment(segment), Nothing, Nothing)
+If def.UpdateBodyMass Then
+Me.UpdateBodyMassData(body)
+End If
+Return shape
+End Function
+
+## Replaces a shape's geometry with a circle and rebuilds the proxy, ported
+## from b2Shape_SetCircle.
+Sub SetShapeGeometryCircle(shape As Shape, circle As Circle)
+Me.ValidateShape(shape)
+Me.CheckDefinition(circle, "Circle")
+shape.Circle = New Circle(circle)
+shape.Capsule = Nothing
+shape.Segment = Nothing
+shape.Polygon = Nothing
+shape.ChainSegment = Nothing
+shape.Type = ShapeType.CircleShape
+shape.LocalCentroid = Me.GetShapeCentroid(shape)
+shape.RebuildDistanceProxy()
+Me.ResetShapeProxy(shape, True, True)
+End Sub
+
+## Replaces a shape's geometry with a capsule and rebuilds the proxy,
+## ported from b2Shape_SetCapsule.
+Sub SetShapeGeometryCapsule(shape As Shape, capsule As Capsule)
+Me.ValidateShape(shape)
+Me.CheckDefinition(capsule, "Capsule")
+shape.Circle = Nothing
+shape.Capsule = New Capsule(capsule)
+shape.Segment = Nothing
+shape.Polygon = Nothing
+shape.ChainSegment = Nothing
+shape.Type = ShapeType.CapsuleShape
+shape.LocalCentroid = Me.GetShapeCentroid(shape)
+shape.RebuildDistanceProxy()
+Me.ResetShapeProxy(shape, True, True)
+End Sub
+
+## Replaces a shape's geometry with a segment and rebuilds the proxy,
+## ported from b2Shape_SetSegment.
+Sub SetShapeGeometrySegment(shape As Shape, segment As Segment)
+Me.ValidateShape(shape)
+Me.CheckDefinition(segment, "Segment")
+shape.Circle = Nothing
+shape.Capsule = Nothing
+shape.Segment = New Segment(segment)
+shape.Polygon = Nothing
+shape.ChainSegment = Nothing
+shape.Type = ShapeType.SegmentShape
+shape.LocalCentroid = Me.GetShapeCentroid(shape)
+shape.RebuildDistanceProxy()
+Me.ResetShapeProxy(shape, True, True)
+End Sub
+
+## Replaces a shape's geometry with a polygon and rebuilds the proxy,
+## ported from b2Shape_SetPolygon.
+Sub SetShapeGeometryPolygon(shape As Shape, polygon As Polygon)
+Me.ValidateShape(shape)
+Me.CheckDefinition(polygon, "Polygon")
+shape.Circle = Nothing
+shape.Capsule = Nothing
+shape.Segment = Nothing
+shape.Polygon = polygon
+shape.ChainSegment = Nothing
+shape.Type = ShapeType.PolygonShape
+shape.LocalCentroid = Me.GetShapeCentroid(shape)
+shape.RebuildDistanceProxy()
+Me.ResetShapeProxy(shape, True, True)
+End Sub
+
+## Sets the shape density and optionally recomputes body mass, ported from
+## b2Shape_SetDensity.
+Sub SetShapeDensity(shape As Shape, density As Double, updateBodyMass As Boolean)
+Me.ValidateShape(shape)
+If Not density.IsFinite() Or density < 0.0 Then
+Throw New InvalidArgumentException("Shape density must be finite and non-negative")
+End If
+If density = shape.Density Then
+Return
+End If
+shape.Density = density
+If updateBodyMass Then
+Me.UpdateBodyMassData(Me.Bodies[shape.BodyId])
+End If
+End Sub
+
+## Replaces the shape filter and refreshes the broad-phase proxy, ported
+## from b2Shape_SetFilter.
+Sub SetShapeFilter(shape As Shape, filter As Filter)
+Me.ValidateShape(shape)
+Me.CheckDefinition(filter, "Filter")
+shape.Filter = New Filter(filter)
+Me.ResetShapeProxy(shape, True, True)
+End Sub
+
+## Recomputes shape bounds and refreshes the broad-phase proxy, ported from
+## b2ResetProxy. Contact destruction arrives in Stage 7.
+Sub ResetShapeProxy(shape As Shape, wakeBodies As Boolean, destroyProxy As Boolean)
+Pragma Unused wakeBodies
+Var body As Body = Me.Bodies[shape.BodyId]
+Me.GetBodyTransformTo(body, Me.mTransformScratch)
+Var xf As Transform = Me.mTransformScratch
+If shape.ProxyKey <> PhysicsConstants.NULL_INDEX Then
+Var proxyType As BodyType = body.Type
+Var treeType As Integer = shape.ProxyKey.BitAnd(3)
+If treeType = Integer(BodyType.StaticBody) Then
+proxyType = BodyType.StaticBody
+ElseIf treeType = Integer(BodyType.KinematicBody) Then
+proxyType = BodyType.KinematicBody
+End If
+Me.UpdateShapeAABBs(shape, xf, proxyType)
+If destroyProxy Then
+Me.BroadPhase.DestroyProxy(shape.ProxyKey)
+shape.ProxyKey = Me.BroadPhase.CreateProxy(proxyType, shape.FatAABB, shape.Filter.CategoryBits, shape.Id, True)
+Else
+Me.BroadPhase.MoveProxy(shape.ProxyKey, shape.FatAABB)
+End If
+Else
+Me.UpdateShapeAABBs(shape, xf, body.Type)
+End If
+End Sub
+
+## Creates the broad-phase proxy for a shape, ported from
+## b2CreateShapeProxy.
+Sub CreateShapeProxy(shape As Shape, proxyType As BodyType, xf As Transform, forcePairCreation As Boolean)
+If shape.ProxyKey <> PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Shape proxy already exists")
+End If
+Me.UpdateShapeAABBs(shape, xf, proxyType)
+shape.ProxyKey = Me.BroadPhase.CreateProxy(proxyType, shape.FatAABB, shape.Filter.CategoryBits, shape.Id, forcePairCreation)
+End Sub
+
+## Destroys the broad-phase proxy for a shape, ported from
+## b2DestroyShapeProxy.
+Sub DestroyShapeProxy(shape As Shape)
+If shape.ProxyKey <> PhysicsConstants.NULL_INDEX Then
+Me.BroadPhase.DestroyProxy(shape.ProxyKey)
+shape.ProxyKey = PhysicsConstants.NULL_INDEX
+End If
+End Sub
+
+## Computes the shape bounds with the speculative margin and stores the fat
+## bounds, ported from b2UpdateShapeAABBs.
+Sub UpdateShapeAABBs(shape As Shape, xf As Transform, proxyType As BodyType)
+Var speculativeDistance As Double = PhysicsConstants.SPECULATIVE_DISTANCE
+Var aabbMargin As Double = PhysicsConstants.AABB_MARGIN
+Me.ComputeShapeAABBTo(shape, xf, shape.AABB)
+Var lowerX As Double = shape.AABB.LowerBound.X - speculativeDistance
+Var lowerY As Double = shape.AABB.LowerBound.Y - speculativeDistance
+Var upperX As Double = shape.AABB.UpperBound.X + speculativeDistance
+Var upperY As Double = shape.AABB.UpperBound.Y + speculativeDistance
+shape.AABB.LowerBound.Set(lowerX, lowerY)
+shape.AABB.UpperBound.Set(upperX, upperY)
+Var margin As Double = aabbMargin
+If proxyType = BodyType.StaticBody Then
+margin = speculativeDistance
+End If
+shape.FatAABB.LowerBound.Set(lowerX - margin, lowerY - margin)
+shape.FatAABB.UpperBound.Set(upperX + margin, upperY + margin)
+End Sub
+
+## Computes the world bounds of a shape's geometry, ported from
+## b2ComputeShapeAABB.
+Function ComputeShapeAABB(shape As Shape, transform As Transform) As AABB
+Return Me.ComputeShapeAABBTo(shape, transform, New AABB)
+End Function
+
+## Writes the world bounds of a shape's geometry into a caller-owned AABB,
+## for warm paths.
+Function ComputeShapeAABBTo(shape As Shape, transform As Transform, out As AABB) As AABB
+If shape.Type = ShapeType.CapsuleShape Then
+Return shape.Capsule.ComputeAABBTo(transform, out)
+ElseIf shape.Type = ShapeType.CircleShape Then
+Return shape.Circle.ComputeAABBTo(transform, out)
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Return shape.Polygon.ComputeAABBTo(transform, out)
+ElseIf shape.Type = ShapeType.SegmentShape Then
+Return shape.Segment.ComputeAABBTo(transform, out)
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+Return shape.ChainSegment.Segment.ComputeAABBTo(transform, out)
+End If
+Throw New RuntimeException("Shape has unknown geometry type")
+End Function
+
+## Computes the local centroid of a shape's geometry, ported from
+## b2GetShapeCentroid.
+Function GetShapeCentroid(shape As Shape) As Vector2
+Return Me.GetShapeCentroidTo(shape, New Vector2(0.0, 0.0))
+End Function
+
+## Writes a shape's local centroid into a caller-owned vector, for warm
+## paths.
+Function GetShapeCentroidTo(shape As Shape, out As Vector2) As Vector2
+If shape.Type = ShapeType.CapsuleShape Then
+out.Set(0.5 * (shape.Capsule.Center1.X + shape.Capsule.Center2.X), 0.5 * (shape.Capsule.Center1.Y + shape.Capsule.Center2.Y))
+ElseIf shape.Type = ShapeType.CircleShape Then
+out.Set(shape.Circle.Center.X, shape.Circle.Center.Y)
+ElseIf shape.Type = ShapeType.PolygonShape Then
+out.Set(shape.Polygon.Centroid.X, shape.Polygon.Centroid.Y)
+ElseIf shape.Type = ShapeType.SegmentShape Then
+out.Set(0.5 * (shape.Segment.Point1.X + shape.Segment.Point2.X), 0.5 * (shape.Segment.Point1.Y + shape.Segment.Point2.Y))
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+out.Set(0.5 * (shape.ChainSegment.Segment.Point1.X + shape.ChainSegment.Segment.Point2.X), 0.5 * (shape.ChainSegment.Segment.Point1.Y + shape.ChainSegment.Segment.Point2.Y))
+Else
+out.Set(0.0, 0.0)
+End If
+Return out
+End Function
+
+## Computes the mass data of a shape's geometry at its density, ported from
+## b2ComputeShapeMass. Segments and chain segments report zero mass.
+Function ComputeShapeMass(shape As Shape) As MassData
+Return Me.ComputeShapeMassTo(shape, New MassData)
+End Function
+
+## Writes a shape's mass data at its density into a caller-owned record,
+## for warm paths. Segments and chain segments report zero mass.
+Function ComputeShapeMassTo(shape As Shape, out As MassData) As MassData
+Me.ValidateShape(shape)
+If shape.Type = ShapeType.CapsuleShape Then
+Return shape.Capsule.ComputeMassTo(shape.Density, out)
+ElseIf shape.Type = ShapeType.CircleShape Then
+Return shape.Circle.ComputeMassTo(shape.Density, out)
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Return shape.Polygon.ComputeMassTo(shape.Density, out)
+End If
+out.Mass = 0.0
+out.Center.Set(0.0, 0.0)
+out.RotationalInertia = 0.0
+Return out
+End Function
+
+## Computes the minimum and maximum shape extent relative to a local
+## centre, ported from b2ComputeShapeExtent. The result is written into the
+## caller-owned extent record.
+Sub ComputeShapeExtent(shape As Shape, localCenter As Vector2, extent As ShapeExtent)
+If shape.Type = ShapeType.CapsuleShape Then
+extent.MinExtent = shape.Capsule.Radius
+Var c1x As Double = shape.Capsule.Center1.X - localCenter.X
+Var c1y As Double = shape.Capsule.Center1.Y - localCenter.Y
+Var c2x As Double = shape.Capsule.Center2.X - localCenter.X
+Var c2y As Double = shape.Capsule.Center2.Y - localCenter.Y
+Var d1 As Double = c1x * c1x + c1y * c1y
+Var d2 As Double = c2x * c2x + c2y * c2y
+Var maxD As Double = d1
+If d2 > maxD Then
+maxD = d2
+End If
+extent.MaxExtent = Maths.Sqrt(maxD) + shape.Capsule.Radius
+ElseIf shape.Type = ShapeType.CircleShape Then
+extent.MinExtent = shape.Circle.Radius
+Var dx As Double = shape.Circle.Center.X - localCenter.X
+Var dy As Double = shape.Circle.Center.Y - localCenter.Y
+extent.MaxExtent = Maths.Sqrt(dx * dx + dy * dy) + shape.Circle.Radius
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Var minE As Double = PhysicsConstants.POSITION_LIMIT
+Var maxESqr As Double = 0.0
+For i As Integer = 0 To shape.Polygon.Count - 1
+Var vx As Double = shape.Polygon.Vertices[i].X
+Var vy As Double = shape.Polygon.Vertices[i].Y
+Var nx As Double = shape.Polygon.Normals[i].X
+Var ny As Double = shape.Polygon.Normals[i].Y
+Var planeOffset As Double = nx * (vx - shape.Polygon.Centroid.X) + ny * (vy - shape.Polygon.Centroid.Y)
+If planeOffset < minE Then
+minE = planeOffset
+End If
+Var ex As Double = vx - localCenter.X
+Var ey As Double = vy - localCenter.Y
+Var distanceSqr As Double = ex * ex + ey * ey
+If distanceSqr > maxESqr Then
+maxESqr = distanceSqr
+End If
+Next i
+extent.MinExtent = minE + shape.Polygon.Radius
+extent.MaxExtent = Maths.Sqrt(maxESqr) + shape.Polygon.Radius
+ElseIf shape.Type = ShapeType.SegmentShape Then
+extent.MinExtent = 0.0
+Var c1x As Double = shape.Segment.Point1.X - localCenter.X
+Var c1y As Double = shape.Segment.Point1.Y - localCenter.Y
+Var c2x As Double = shape.Segment.Point2.X - localCenter.X
+Var c2y As Double = shape.Segment.Point2.Y - localCenter.Y
+Var d1 As Double = c1x * c1x + c1y * c1y
+Var d2 As Double = c2x * c2x + c2y * c2y
+Var maxD As Double = d1
+If d2 > maxD Then
+maxD = d2
+End If
+extent.MaxExtent = Maths.Sqrt(maxD)
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+extent.MinExtent = 0.0
+Var s1x As Double = shape.ChainSegment.Segment.Point1.X - localCenter.X
+Var s1y As Double = shape.ChainSegment.Segment.Point1.Y - localCenter.Y
+Var s2x As Double = shape.ChainSegment.Segment.Point2.X - localCenter.X
+Var s2y As Double = shape.ChainSegment.Segment.Point2.Y - localCenter.Y
+Var d1 As Double = s1x * s1x + s1y * s1y
+Var d2 As Double = s2x * s2x + s2y * s2y
+Var maxD As Double = d1
+If d2 > maxD Then
+maxD = d2
+End If
+extent.MaxExtent = Maths.Sqrt(maxD)
+Else
+extent.MinExtent = 0.0
+extent.MaxExtent = 0.0
+End If
+End Sub
+
+## Recomputes body mass, centre of mass, inertia, and extents from the
+## attached shapes, ported from b2UpdateBodyMassData.
+Sub UpdateBodyMassData(body As Body)
+Me.ValidateBody(body)
+Var sims As BodySims = Me.GetBodySim(body)
+Var li As Integer = body.LocalIndex
+body.Mass = 0.0
+body.Inertia = 0.0
+sims.InvMass.Items[li] = 0.0
+sims.InvInertia.Items[li] = 0.0
+sims.LCX.Items[li] = 0.0
+sims.LCY.Items[li] = 0.0
+sims.MinExtent.Items[li] = PhysicsConstants.POSITION_LIMIT
+sims.MaxExtent.Items[li] = 0.0
+
+# Static and kinematic sims have zero mass.
+If body.Type <> BodyType.DynamicBody Then
+sims.CenterX.Items[li] = sims.PX.Items[li]
+sims.CenterY.Items[li] = sims.PY.Items[li]
+If body.Type = BodyType.KinematicBody Then
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var kinShape As Shape = Me.Shapes[shapeId]
+shapeId = kinShape.NextShapeId
+Me.mVectorScratch.Set(0.0, 0.0)
+Me.ComputeShapeExtent(kinShape, Me.mVectorScratch, Me.mExtentScratch)
+If Me.mExtentScratch.MinExtent < sims.MinExtent.Items[li] Then
+sims.MinExtent.Items[li] = Me.mExtentScratch.MinExtent
+End If
+If Me.mExtentScratch.MaxExtent > sims.MaxExtent.Items[li] Then
+sims.MaxExtent.Items[li] = Me.mExtentScratch.MaxExtent
+End If
+Wend
+End If
+Return
+End If
+
+# Accumulate mass over all shapes.
+Var centerWX As Double = 0.0
+Var centerWY As Double = 0.0
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+shapeId = shape.NextShapeId
+If shape.Density = 0.0 Then
+Continue While
+End If
+Me.ComputeShapeMassTo(shape, Me.mMassScratch)
+body.Mass = body.Mass + Me.mMassScratch.Mass
+centerWX = centerWX + Me.mMassScratch.Mass * Me.mMassScratch.Center.X
+centerWY = centerWY + Me.mMassScratch.Mass * Me.mMassScratch.Center.Y
+body.Inertia = body.Inertia + Me.mMassScratch.RotationalInertia
+Wend
+
+# Compute centre of mass.
+If body.Mass > 0.0 Then
+sims.InvMass.Items[li] = 1.0 / body.Mass
+centerWX = sims.InvMass.Items[li] * centerWX
+centerWY = sims.InvMass.Items[li] * centerWY
+sims.LCX.Items[li] = centerWX
+sims.LCY.Items[li] = centerWY
+End If
+
+If body.Inertia > 0.0 And Not body.FixedRotation Then
+# Centre the inertia about the centre of mass.
+body.Inertia = body.Inertia - body.Mass * (centerWX * centerWX + centerWY * centerWY)
+sims.InvInertia.Items[li] = 1.0 / body.Inertia
+Else
+body.Inertia = 0.0
+sims.InvInertia.Items[li] = 0.0
+End If
+
+# Move centre of mass.
+Var oldCenterX As Double = sims.CenterX.Items[li]
+Var oldCenterY As Double = sims.CenterY.Items[li]
+Var qc As Double = sims.QC.Items[li]
+Var qs As Double = sims.QS.Items[li]
+Var newCenterX As Double = qc * centerWX - qs * centerWY + sims.PX.Items[li]
+Var newCenterY As Double = qs * centerWX + qc * centerWY + sims.PY.Items[li]
+sims.CenterX.Items[li] = newCenterX
+sims.CenterY.Items[li] = newCenterY
+sims.C0X.Items[li] = newCenterX
+sims.C0Y.Items[li] = newCenterY
+
+# Update centre of mass velocity.
+Var states As BodyStates = Me.GetBodyState(body)
+If states <> Nothing Then
+Var rx As Double = newCenterX - oldCenterX
+Var ry As Double = newCenterY - oldCenterY
+Var angularVelocity As Double = states.AngularVelocity.Items[li]
+states.LVX.Items[li] = states.LVX.Items[li] - angularVelocity * ry
+states.LVY.Items[li] = states.LVY.Items[li] + angularVelocity * rx
+End If
+
+# Compute body extents relative to the centre of mass.
+Me.mVectorScratch.Set(centerWX, centerWY)
+shapeId = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+shapeId = shape.NextShapeId
+Me.ComputeShapeExtent(shape, Me.mVectorScratch, Me.mExtentScratch)
+If Me.mExtentScratch.MinExtent < sims.MinExtent.Items[li] Then
+sims.MinExtent.Items[li] = Me.mExtentScratch.MinExtent
+End If
+If Me.mExtentScratch.MaxExtent > sims.MaxExtent.Items[li] Then
+sims.MaxExtent.Items[li] = Me.mExtentScratch.MaxExtent
+End If
+Wend
+End Sub
+
+## Throws when the shape façade is stale.
+Sub ValidateShape(shape As Shape)
+If Not shape.IsValid() Then
+Throw New RuntimeException("Shape façade is no longer valid")
+End If
+End Sub
+
+## Throws when the chain façade is stale.
+Sub ValidateChain(chain As Chain)
+If Not chain.IsValid() Then
+Throw New RuntimeException("Chain façade is no longer valid")
+End If
+End Sub
+
+## Destroys a shape, ported from b2DestroyShape. Called by Shape.Destroy and
+## the body destruction cascade.
+Sub DestroyShape(shape As Shape, updateBodyMass As Boolean)
+Me.CheckNotLocked()
+Me.ValidateShape(shape)
+Var body As Body = Me.Bodies[shape.BodyId]
+
+# Remove the shape from the body's doubly linked list.
+If shape.PrevShapeId <> PhysicsConstants.NULL_INDEX Then
+Me.Shapes[shape.PrevShapeId].NextShapeId = shape.NextShapeId
+End If
+If shape.NextShapeId <> PhysicsConstants.NULL_INDEX Then
+Me.Shapes[shape.NextShapeId].PrevShapeId = shape.PrevShapeId
+End If
+If shape.Id = body.HeadShapeId Then
+body.HeadShapeId = shape.NextShapeId
+End If
+body.ShapeCount = body.ShapeCount - 1
+
+Me.DestroyShapeProxy(shape)
+
+Me.ShapeIdPool.FreeId(shape.Id)
+shape.Live = False
+Me.ShapeGenerations.Items[shape.Id] = Me.ShapeGenerations.Items[shape.Id] + 1
+shape.Generation = Me.ShapeGenerations.Items[shape.Id]
+Me.Shapes[shape.Id] = Nothing
+shape.Id = PhysicsConstants.NULL_INDEX
+shape.BodyId = PhysicsConstants.NULL_INDEX
+
+If updateBodyMass Then
+Me.UpdateBodyMassData(body)
+End If
+End Sub
+
+# ------------------------------------------------------------------
+# Chain lifecycle
+# ------------------------------------------------------------------
+
+## Creates a chain of chain-segment shapes on the definition's body, ported
+## from b2CreateChain. Loops use one material per solid segment; open chains
+## need at least four points and produce count minus three segments.
+Function CreateChain(def As ChainDefinition) As Chain
+Me.CheckDefinition(def, "ChainDefinition")
+Me.CheckDefinition(def.Body, "ChainDefinition.Body")
+Me.CheckNotLocked()
+If def.Points.Count < 4 Then
+Throw New InvalidArgumentException("ChainDefinition needs at least four points")
+End If
+If def.Materials.Count <> 1 And def.Materials.Count <> def.Points.Count Then
+Throw New InvalidArgumentException("ChainDefinition materials must be one or one per point")
+End If
+Var body As Body = def.Body
+Me.ValidateBody(body)
+For i As Integer = 0 To def.Materials.Count - 1
+Var material As SurfaceMaterial = def.Materials[i]
+If Not material.Friction.IsFinite() Or material.Friction < 0.0 Then
+Throw New InvalidArgumentException("ChainDefinition friction must be finite and non-negative")
+End If
+If Not material.Restitution.IsFinite() Or material.Restitution < 0.0 Then
+Throw New InvalidArgumentException("ChainDefinition restitution must be finite and non-negative")
+End If
+If Not material.RollingResistance.IsFinite() Or material.RollingResistance < 0.0 Then
+Throw New InvalidArgumentException("ChainDefinition rolling resistance must be finite and non-negative")
+End If
+If Not material.TangentSpeed.IsFinite() Then
+Throw New InvalidArgumentException("ChainDefinition tangent speed must be finite")
+End If
+Next i
+
+Var chainId As Integer = Me.ChainIdPool.AllocId()
+If chainId = Me.Chains.Count Then
+Me.Chains.Append(New Chain)
+Else
+Me.Chains[chainId] = New Chain
+End If
+Var chain As Chain = Me.Chains[chainId]
+
+chain.Owner = Me
+chain.Id = chainId
+chain.Live = True
+chain.BodyId = body.Id
+chain.NextChainId = body.HeadChainId
+If chainId = Me.ChainGenerations.Count Then
+Me.ChainGenerations.Append(0)
+End If
+chain.Generation = Me.ChainGenerations.Items[chainId] + 1
+Me.ChainGenerations.Items[chainId] = chain.Generation
+chain.MaterialCount = def.Materials.Count
+For i As Integer = 0 To chain.MaterialCount - 1
+chain.Materials.Append(New SurfaceMaterial(def.Materials[i]))
+Next i
+chain.Filter = New Filter(def.Filter)
+chain.UserData = def.UserData
+chain.IsLoop = def.IsLoop
+body.HeadChainId = chainId
+
+Var shapeDef As New ShapeDefinition
+shapeDef.UserData = def.UserData
+shapeDef.Filter = New Filter(def.Filter)
+shapeDef.EnableSensorEvents = def.EnableSensorEvents
+shapeDef.EnableContactEvents = False
+shapeDef.EnableHitEvents = False
+
+Var n As Integer = def.Points.Count
+If def.IsLoop Then
+Me.AppendLoopChainSegments(body, chain, shapeDef, def.Points, n)
+Else
+Me.AppendOpenChainSegments(body, chain, shapeDef, def.Points, n)
+End If
+Return chain
+End Function
+
+## Creates the segment shapes of a loop chain, ported from the loop branch
+## of b2CreateChain.
+Private Sub AppendLoopChainSegments(body As Body, chain As Chain, shapeDef As ShapeDefinition, points As Array(Of Vector2), n As Integer)
+chain.SegmentCount = n
+Var chainId As Integer = chain.Id
+Var prevIndex As Integer = n - 1
+For i As Integer = 0 To n - 3
+Var chainSegment As New ChainSegment(New Segment(points[i], points[i + 1]), points[prevIndex], points[i + 2], chainId)
+prevIndex = i
+Var shape As Shape = Me.CreateChainSegmentShape(body, chain, shapeDef, chainSegment, i)
+chain.ShapeIndices.Append(shape.Id)
+Next i
+
+Var tailSegment As New ChainSegment(New Segment(points[n - 2], points[n - 1]), points[n - 3], points[0], chainId)
+Var tailShape As Shape = Me.CreateChainSegmentShape(body, chain, shapeDef, tailSegment, n - 2)
+chain.ShapeIndices.Append(tailShape.Id)
+
+Var wrapSegment As New ChainSegment(New Segment(points[n - 1], points[0]), points[n - 2], points[1], chainId)
+Var wrapShape As Shape = Me.CreateChainSegmentShape(body, chain, shapeDef, wrapSegment, n - 1)
+chain.ShapeIndices.Append(wrapShape.Id)
+End Sub
+
+## Creates the segment shapes of an open chain, ported from the open branch
+## of b2CreateChain.
+Private Sub AppendOpenChainSegments(body As Body, chain As Chain, shapeDef As ShapeDefinition, points As Array(Of Vector2), n As Integer)
+chain.SegmentCount = n - 3
+For i As Integer = 0 To n - 4
+Var chainSegment As New ChainSegment(New Segment(points[i + 1], points[i + 2]), points[i], points[i + 3], chain.Id)
+Var shape As Shape = Me.CreateChainSegmentShape(body, chain, shapeDef, chainSegment, i + 1)
+chain.ShapeIndices.Append(shape.Id)
+Next i
+End Sub
+
+## Creates one chain segment shape with the chain's material for the given
+## point index, ported from the material selection in b2CreateChain.
+Private Function CreateChainSegmentShape(body As Body, chain As Chain, shapeDef As ShapeDefinition, chainSegment As ChainSegment, materialIndex As Integer) As Shape
+Var resolvedIndex As Integer = materialIndex
+If chain.MaterialCount = 1 Then
+resolvedIndex = 0
+End If
+shapeDef.Material = New SurfaceMaterial(chain.Materials[resolvedIndex])
+Return Me.CreateShapeInternal(body, shapeDef, ShapeType.ChainSegmentShape, Nothing, Nothing, Nothing, Nothing, chainSegment)
+End Function
+
+## Destroys a chain, ported from b2DestroyChain. The segment shapes were
+## already destroyed by the body cascade or are destroyed here.
+Sub DestroyChain(chain As Chain)
+Me.CheckNotLocked()
+Me.ValidateChain(chain)
+
+# Unlink from the body's chain list.
+Var body As Body = Me.Bodies[chain.BodyId]
+If chain.PrevChainId <> PhysicsConstants.NULL_INDEX Then
+Me.Chains[chain.PrevChainId].NextChainId = chain.NextChainId
+End If
+If chain.NextChainId <> PhysicsConstants.NULL_INDEX Then
+Me.Chains[chain.NextChainId].PrevChainId = chain.PrevChainId
+End If
+If chain.Id = body.HeadChainId Then
+body.HeadChainId = chain.NextChainId
+End If
+
+# Destroy every segment shape.
+For i As Integer = 0 To chain.SegmentCount - 1
+Var shapeId As Integer = chain.ShapeIndices.Items[i]
+Var shape As Shape = Me.Shapes[shapeId]
+If shape <> Nothing And shape.Live Then
+Me.DestroyShape(shape, False)
+End If
+Next i
+
+Me.ChainIdPool.FreeId(chain.Id)
+chain.Live = False
+Me.ChainGenerations.Items[chain.Id] = Me.ChainGenerations.Items[chain.Id] + 1
+chain.Generation = Me.ChainGenerations.Items[chain.Id]
+Me.Chains[chain.Id] = Nothing
+chain.Id = PhysicsConstants.NULL_INDEX
+chain.BodyId = PhysicsConstants.NULL_INDEX
+End Sub
+
+# ------------------------------------------------------------------
+# Shape cast dispatch
+# ------------------------------------------------------------------
+
+## Casts a ray against a shape in world space, ported from b2RayCastShape.
+## The output is a fresh record.
+Function RayCastShape(input As RayCastInput, shape As Shape) As CastOutput
+Var out As New CastOutput
+Me.RayCastShapeTo(input, shape, out)
+Return out
+End Function
+
+## Casts a ray against a shape into the caller-owned output, ported from
+## b2RayCastShape. The reused-output form for warm traversals.
+Function RayCastShapeTo(input As RayCastInput, shape As Shape, out As CastOutput) As CastOutput
+out.Reset()
+Var xf As Transform = Me.GetShapeTransform(shape)
+Me.mLocalRayInput.MaxFraction = input.MaxFraction
+Me.mLocalRayInput.Origin.Set(0.0, 0.0)
+Transform.InvTransformPointTo(xf, input.Origin, Me.mLocalRayInput.Origin)
+Rot.InvRotateVectorTo(xf.Q, input.Translation, Me.mLocalRayInput.Translation)
+
+If shape.Type = ShapeType.CapsuleShape Then
+Casts.RayCastCapsuleTo(Me.mLocalRayInput, shape.Capsule, out)
+ElseIf shape.Type = ShapeType.CircleShape Then
+Casts.RayCastCircleTo(Me.mLocalRayInput, shape.Circle, out)
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Casts.RayCastPolygonTo(Me.mLocalRayInput, shape.Polygon, out)
+ElseIf shape.Type = ShapeType.SegmentShape Then
+Casts.RayCastSegmentTo(Me.mLocalRayInput, shape.Segment, False, out)
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+Casts.RayCastSegmentTo(Me.mLocalRayInput, shape.ChainSegment.Segment, True, out)
+Else
+Return out
+End If
+
+If out.Hit Then
+Var worldPoint As Vector2 = Transform.TransformPoint(xf, out.Point)
+Var worldNormal As Vector2 = Rot.RotateVector(xf.Q, out.Normal)
+out.Point.Set(worldPoint.X, worldPoint.Y)
+out.Normal.Set(worldNormal.X, worldNormal.Y)
+End If
+Return out
+End Function
+
+## Casts a shape against a shape in world space, ported from
+## b2ShapeCastShape. The output is a fresh record.
+Function ShapeCastShape(input As ShapeCastInput, shape As Shape) As CastOutput
+Var out As New CastOutput
+Me.ShapeCastShapeTo(input, shape, out)
+Return out
+End Function
+
+## Casts a shape against a shape into the caller-owned output, ported from
+## b2ShapeCastShape. The reused-output form for warm traversals.
+Function ShapeCastShapeTo(input As ShapeCastInput, shape As Shape, out As CastOutput) As CastOutput
+out.Reset()
+Var xf As Transform = Me.GetShapeTransform(shape)
+
+# Build the local proxy by inverse-transforming every caller point.
+Me.mLocalProxy.Points.Clear()
+Me.mLocalProxy.Count = 0
+Me.mLocalProxy.Radius = input.Proxy.Radius
+For i As Integer = 0 To input.Proxy.Count - 1
+Transform.InvTransformPointTo(xf, input.Proxy.Points[i], Me.mLocalPoint)
+Me.mLocalProxy.Points.Append(New Vector2(Me.mLocalPoint.X, Me.mLocalPoint.Y))
+Next i
+Me.mLocalProxy.Count = input.Proxy.Count
+Rot.InvRotateVectorTo(xf.Q, input.Translation, Me.mLocalCastInput.Translation)
+
+Me.mLocalCastInput.Proxy = Me.mLocalProxy
+Me.mLocalCastInput.MaxFraction = input.MaxFraction
+Me.mLocalCastInput.CanEncroach = input.CanEncroach
+
+# The per-shape casts allocate their own outputs; copy into out.
+Var temp As CastOutput = Nothing
+If shape.Type = ShapeType.CapsuleShape Then
+temp = Casts.ShapeCastCapsule(Me.mLocalCastInput, shape.Capsule)
+ElseIf shape.Type = ShapeType.CircleShape Then
+temp = Casts.ShapeCastCircle(Me.mLocalCastInput, shape.Circle)
+ElseIf shape.Type = ShapeType.PolygonShape Then
+temp = Casts.ShapeCastPolygon(Me.mLocalCastInput, shape.Polygon)
+ElseIf shape.Type = ShapeType.SegmentShape Then
+temp = Casts.ShapeCastSegment(Me.mLocalCastInput, shape.Segment)
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+temp = Casts.ShapeCastSegment(Me.mLocalCastInput, shape.ChainSegment.Segment)
+End If
+If temp = Nothing Then
+Return out
+End If
+out.Hit = temp.Hit
+out.Fraction = temp.Fraction
+out.Point.Set(temp.Point.X, temp.Point.Y)
+out.Normal.Set(temp.Normal.X, temp.Normal.Y)
+If out.Hit Then
+Var worldPoint As Vector2 = Transform.TransformPoint(xf, out.Point)
+Var worldNormal As Vector2 = Rot.RotateVector(xf.Q, out.Normal)
+out.Point.Set(worldPoint.X, worldPoint.Y)
+out.Normal.Set(worldNormal.X, worldNormal.Y)
+End If
+Return out
+End Function
+
+# ------------------------------------------------------------------
+# Shape-level helpers
+# ------------------------------------------------------------------
+
+## Tests whether a world point is inside a shape, ported from
+## b2Shape_TestPoint. Segments and chain segments report False.
+Function ShapeTestPoint(shape As Shape, point As Vector2) As Boolean
+Var xf As Transform = Me.GetShapeTransform(shape)
+Var localPoint As Vector2 = Transform.InvTransformPoint(xf, point)
+If shape.Type = ShapeType.CapsuleShape Then
+Return shape.Capsule.ContainsPoint(localPoint)
+ElseIf shape.Type = ShapeType.CircleShape Then
+Return shape.Circle.ContainsPoint(localPoint)
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Return shape.Polygon.ContainsPoint(localPoint)
+End If
+Return False
+End Function
+
+## Casts a ray against a shape in world space, ported from b2Shape_RayCast.
+Function ShapeRayCast(shape As Shape, input As RayCastInput) As CastOutput
+Return Me.RayCastShape(input, shape)
+End Function
+
+## Casts a ray against a shape into the caller-owned output, ported from
+## b2Shape_RayCast.
+Function ShapeRayCastTo(shape As Shape, input As RayCastInput, out As CastOutput) As CastOutput
+Return Me.RayCastShapeTo(input, shape, out)
+End Function
+
+## Returns the world point on the shape closest to the target, ported from
+## b2Shape_GetClosestPoint.
+Function ShapeClosestPoint(shape As Shape, target As Vector2) As Vector2
+Me.ValidateShape(shape)
+Var input As New DistanceInput
+input.ProxyA = shape.DistanceProxy
+input.ProxyB = New ShapeProxy
+input.ProxyB.Points.Append(New Vector2(target.X, target.Y))
+input.ProxyB.Count = 1
+input.ProxyB.Radius = 0.0
+input.TransformA = Me.GetShapeTransform(shape)
+input.TransformB = New Transform
+input.UseRadii = True
+Var cache As New SimplexCache
+Var output As DistanceOutput = Distance.ShapeDistance(input, cache)
+Return New Vector2(output.PointA.X, output.PointA.Y)
+End Function
+
+# ------------------------------------------------------------------
+# World queries
+# ------------------------------------------------------------------
+
+## Queries every tree for shapes whose bounds overlap the given box and
+## passes them to the callback, ported from b2World_OverlapAABB. Throws when
+## the world is locked or the box is invalid.
+Function OverlapBounds(aabb As AABB, filter As QueryFilter, callback As WorldOverlapCallback) As TreeStats
+Return Me.OverlapBoundsInto(aabb, filter, Nothing, callback)
+End Function
+
+## Queries every tree for shapes whose bounds overlap the given box and
+## appends them to the caller-owned hit list, ported from b2World_OverlapAABB
+## with a collecting callback.
+Function OverlapBoundsInto(aabb As AABB, filter As QueryFilter, hits As ShapeHitList) As TreeStats
+Return Me.OverlapBoundsInto(aabb, filter, hits, Nothing)
+End Function
+
+## Shared overlap bounds implementation. Exactly one of hits and callback
+## is Nothing.
+Private Function OverlapBoundsInto(queryBounds As AABB, filter As QueryFilter, hits As ShapeHitList, callback As WorldOverlapCallback) As TreeStats
+Me.CheckNotLocked()
+If hits <> Nothing Then
+hits.Clear()
+End If
+Me.CheckDefinition(filter, "QueryFilter")
+If Not AABB.IsValid(queryBounds) Then
+Throw New InvalidArgumentException("Overlap bounds must be valid")
+End If
+Var stats As New TreeStats
+Me.mOverlapContext.Owner = Me
+Me.mOverlapContext.Filter = filter
+Me.mOverlapContext.UserCallback = callback
+Me.mOverlapContext.Hits = hits
+Me.mOverlapContext.QueryProxy = Nothing
+For i As Integer = 0 To 2
+Me.BroadPhase.Trees[i].QueryTo(queryBounds, filter.MaskBits, Me.mOverlapContext, stats)
+Next i
+Return stats
+End Function
+
+## Queries every tree for shapes that overlap the given proxy shape,
+## ported from b2World_OverlapShape.
+Function OverlapShape(proxy As ShapeProxy, filter As QueryFilter, callback As WorldOverlapCallback) As TreeStats
+Return Me.OverlapShapeInto(proxy, filter, Nothing, callback)
+End Function
+
+## Queries every tree for shapes that overlap the given proxy shape and
+## appends them to the caller-owned hit list, ported from b2World_OverlapShape.
+Function OverlapShapeInto(proxy As ShapeProxy, filter As QueryFilter, hits As ShapeHitList) As TreeStats
+Return Me.OverlapShapeInto(proxy, filter, hits, Nothing)
+End Function
+
+## Shared overlap shape implementation. Exactly one of hits and callback is
+## Nothing.
+Private Function OverlapShapeInto(proxy As ShapeProxy, filter As QueryFilter, hits As ShapeHitList, callback As WorldOverlapCallback) As TreeStats
+Me.CheckNotLocked()
+If hits <> Nothing Then
+hits.Clear()
+End If
+Me.CheckDefinition(filter, "QueryFilter")
+Me.CheckDefinition(proxy, "ShapeProxy")
+If proxy.Count < 1 Then
+Throw New InvalidArgumentException("Overlap proxy needs at least one point")
+End If
+Var stats As New TreeStats
+Var aabb As AABB = AABB.Make(proxy.Points, proxy.Count, proxy.Radius)
+Me.mOverlapContext.Owner = Me
+Me.mOverlapContext.Filter = filter
+Me.mOverlapContext.UserCallback = callback
+Me.mOverlapContext.Hits = hits
+Me.mOverlapContext.QueryProxy = proxy
+For i As Integer = 0 To 2
+Me.BroadPhase.Trees[i].QueryTo(aabb, filter.MaskBits, Me.mOverlapContext, stats)
+Next i
+Return stats
+End Function
+
+## Casts a ray through every tree and reports hits to the callback, ported
+## from b2World_CastRay. Returns the traversal stats.
+Function CastRay(origin As Vector2, translation As Vector2, filter As QueryFilter, callback As WorldCastCallback) As TreeStats
+Return Me.CastRayInto(origin, translation, filter, Nothing, callback)
+End Function
+
+## Casts a ray through every tree and appends every hit to the caller-owned
+## hit list, ported from b2World_CastRay with a collecting callback.
+Function CastRayInto(origin As Vector2, translation As Vector2, filter As QueryFilter, hits As ShapeHitList) As TreeStats
+Return Me.CastRayInto(origin, translation, filter, hits, Nothing)
+End Function
+
+## Shared ray cast implementation. Exactly one of hits and callback is
+## Nothing. The running fraction clips subsequent tree queries exactly like
+## upstream.
+Private Function CastRayInto(origin As Vector2, translation As Vector2, filter As QueryFilter, hits As ShapeHitList, callback As WorldCastCallback) As TreeStats
+Me.CheckNotLocked()
+If hits <> Nothing Then
+hits.Clear()
+End If
+Me.CheckDefinition(filter, "QueryFilter")
+If Not origin.X.IsFinite() Or Not origin.Y.IsFinite() Then
+Throw New InvalidArgumentException("Ray origin must be finite")
+End If
+If Not translation.X.IsFinite() Or Not translation.Y.IsFinite() Then
+Throw New InvalidArgumentException("Ray translation must be finite")
+End If
+Var stats As New TreeStats
+Me.mRayCastContext.Owner = Me
+Me.mRayCastContext.Filter = filter
+Me.mRayCastContext.UserCallback = callback
+Me.mRayCastContext.Hits = hits
+Me.mRayCastContext.ClosestHit = Nothing
+Me.mRayCastContext.Fraction = 1.0
+Var input As New RayCastInput
+input.Origin = New Vector2(origin.X, origin.Y)
+input.Translation = New Vector2(translation.X, translation.Y)
+input.MaxFraction = 1.0
+For i As Integer = 0 To 2
+Me.BroadPhase.Trees[i].RayCastTo(input, filter.MaskBits, Me.mRayCastContext, stats)
+If Me.mRayCastContext.Fraction = 0.0 Then
+Return stats
+End If
+input.MaxFraction = Me.mRayCastContext.Fraction
+Next i
+Return stats
+End Function
+
+## Casts a ray and returns the first hit, ported from b2World_CastRayClosest.
+## The result is a fresh record with Shape Nothing when nothing was hit.
+Function CastRayClosest(origin As Vector2, translation As Vector2, filter As QueryFilter) As ShapeHit
+Var hit As New ShapeHit
+Me.CastRayClosestTo(origin, translation, filter, hit)
+Return hit
+End Function
+
+## Casts a ray into the caller-owned hit record and returns it, ported from
+## b2World_CastRayClosest. The reused-record form for warm loops.
+Function CastRayClosestTo(origin As Vector2, translation As Vector2, filter As QueryFilter, hit As ShapeHit) As ShapeHit
+Me.CheckNotLocked()
+Me.CheckDefinition(filter, "QueryFilter")
+If Not origin.X.IsFinite() Or Not origin.Y.IsFinite() Then
+Throw New InvalidArgumentException("Ray origin must be finite")
+End If
+If Not translation.X.IsFinite() Or Not translation.Y.IsFinite() Then
+Throw New InvalidArgumentException("Ray translation must be finite")
+End If
+Me.mRayCastContext.Owner = Me
+Me.mRayCastContext.Filter = filter
+Me.mRayCastContext.UserCallback = Nothing
+Me.mRayCastContext.Hits = Nothing
+Me.mRayCastContext.ClosestHit = hit
+Me.mRayCastContext.Fraction = 1.0
+hit.Shape = Nothing
+hit.Point.Set(0.0, 0.0)
+hit.Normal.Set(0.0, 0.0)
+hit.Fraction = 1.0
+Var stats As New TreeStats
+Var input As New RayCastInput
+input.Origin = New Vector2(origin.X, origin.Y)
+input.Translation = New Vector2(translation.X, translation.Y)
+input.MaxFraction = 1.0
+For i As Integer = 0 To 2
+Me.BroadPhase.Trees[i].RayCastTo(input, filter.MaskBits, Me.mRayCastContext, stats)
+If Me.mRayCastContext.Fraction = 0.0 Then
+Return hit
+End If
+input.MaxFraction = Me.mRayCastContext.Fraction
+Next i
+Return hit
+End Function
+
+## Casts a shape through every tree and reports hits to the callback,
+## ported from b2World_CastShape.
+Function CastShape(proxy As ShapeProxy, translation As Vector2, filter As QueryFilter, callback As WorldCastCallback) As TreeStats
+Return Me.CastShapeInto(proxy, translation, filter, Nothing, callback)
+End Function
+
+## Casts a shape through every tree and appends every hit to the
+## caller-owned hit list, ported from b2World_CastShape with a collecting
+## callback.
+Function CastShapeInto(proxy As ShapeProxy, translation As Vector2, filter As QueryFilter, hits As ShapeHitList) As TreeStats
+Return Me.CastShapeInto(proxy, translation, filter, hits, Nothing)
+End Function
+
+## Shared shape cast implementation. Exactly one of hits and callback is
+## Nothing.
+Private Function CastShapeInto(proxy As ShapeProxy, translation As Vector2, filter As QueryFilter, hits As ShapeHitList, callback As WorldCastCallback) As TreeStats
+Me.CheckNotLocked()
+If hits <> Nothing Then
+hits.Clear()
+End If
+Me.CheckDefinition(filter, "QueryFilter")
+Me.CheckDefinition(proxy, "ShapeProxy")
+If proxy.Count < 1 Then
+Throw New InvalidArgumentException("Cast proxy needs at least one point")
+End If
+If Not translation.X.IsFinite() Or Not translation.Y.IsFinite() Then
+Throw New InvalidArgumentException("Cast translation must be finite")
+End If
+Var stats As New TreeStats
+Me.mShapeCastContext.Owner = Me
+Me.mShapeCastContext.Filter = filter
+Me.mShapeCastContext.UserCallback = callback
+Me.mShapeCastContext.Hits = hits
+Me.mShapeCastContext.Fraction = 1.0
+Var input As New ShapeCastInput
+input.Proxy = proxy
+input.Translation = New Vector2(translation.X, translation.Y)
+input.MaxFraction = 1.0
+For i As Integer = 0 To 2
+Me.BroadPhase.Trees[i].ShapeCastTo(input, filter.MaskBits, Me.mShapeCastContext, stats)
+If Me.mShapeCastContext.Fraction = 0.0 Then
+Return stats
+End If
+input.MaxFraction = Me.mShapeCastContext.Fraction
+Next i
+Return stats
+End Function
+
+# ------------------------------------------------------------------
+# World lifecycle
+# ------------------------------------------------------------------
+
+## Number of bodies in the awake solver set, ported from
+## b2World_GetAwakeBodyCount.
+Function AwakeBodyCount() As Integer
+Return Me.SolverSets[2].Sims.Count()
+End Function
+
+## Rebuilds the static tree, ported from b2World_RebuildStaticTree.
+Sub RebuildStaticTree()
+Me.BroadPhase.Trees[Integer(BodyType.StaticBody)].Rebuild(True)
+End Sub
+
+## Validates internal invariants: pool accounting, sparse store identity,
+## and set membership. Called by tests and after destructive operations.
+Sub Validate()
+Me.BodyIdPool.Validate()
+Me.ShapeIdPool.Validate()
+Me.ChainIdPool.Validate()
+Me.BroadPhase.Validate()
+Var bodyCount As Integer = 0
+For i As Integer = 0 To Me.Bodies.Count - 1
+Var body As Body = Me.Bodies[i]
+If body <> Nothing Then
+bodyCount = bodyCount + 1
+If Not body.Live Then
+Throw New RuntimeException("World body store holds a dead body")
+End If
+If body.Id <> i Then
+Throw New RuntimeException("World body slot does not match body id")
+End If
+End If
+Next i
+If bodyCount <> Me.BodyIdPool.IdCount() Then
+Throw New RuntimeException("World live body count does not match pool")
+End If
+Var shapeCount As Integer = 0
+For j As Integer = 0 To Me.Shapes.Count - 1
+Var shape As Shape = Me.Shapes[j]
+If shape <> Nothing Then
+shapeCount = shapeCount + 1
+If Not shape.Live Or shape.Id <> j Then
+Throw New RuntimeException("World shape store holds a stale shape")
+End If
+End If
+Next j
+If shapeCount <> Me.ShapeIdPool.IdCount() Then
+Throw New RuntimeException("World live shape count does not match pool")
+End If
+End Sub
+
+## Returns the world to a reusable empty state: every body, shape, and chain
+## is destroyed, pools reset, and broad-phase storage cleared while
+## retaining capacity, ported from the destruction cascade of
+## b2DestroyWorld combined with the Physics2D capacity-reuse contract.
+Sub Clear()
+Me.CheckNotLocked()
+For i As Integer = 0 To Me.Bodies.Count - 1
+Var body As Body = Me.Bodies[i]
+If body <> Nothing Then
+Me.DestroyBody(body)
+End If
+Next i
+For j As Integer = 0 To Me.Shapes.Count - 1
+Var orphanShape As Shape = Me.Shapes[j]
+If orphanShape <> Nothing Then
+Throw New RuntimeException("World.Clear found an orphaned shape")
+End If
+Next j
+For k As Integer = 0 To Me.Chains.Count - 1
+Var orphanChain As Chain = Me.Chains[k]
+If orphanChain <> Nothing Then
+Throw New RuntimeException("World.Clear found an orphaned chain")
+End If
+Next k
+Me.BodyIdPool.Clear()
+Me.ShapeIdPool.Clear()
+Me.ChainIdPool.Clear()
+Me.SolverSetIdPool.Clear()
+Me.BodyGenerations.Clear()
+Me.ShapeGenerations.Clear()
+Me.ChainGenerations.Clear()
+For s As Integer = 0 To 2
+Me.SolverSets[s].ClearAll()
+Next s
+While Me.SolverSets.Count > 3
+Me.SolverSets.RemoveAt(Me.SolverSets.Count - 1)
+Wend
+Me.BroadPhase.Clear()
+End Sub
+End Class

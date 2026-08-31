@@ -85,6 +85,18 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     pair array with per-move linked lists consumed by the world's contact
     factory; Physics2D keeps the same per-move LIFO consumption over parallel
     `IntegerList` pools and reports pairs through a `BroadPhasePairSink`.
+17. **World constructor surface.** The virtual machine dispatches
+    same-arity constructors by arity alone, so the upstream gravity
+    constructor becomes the shared factory `World.WithGravity(gravity)`
+    alongside `New World()` and `New World(settings)`.
+18. **Locked-world mutation errors.** Upstream world mutators silently
+    return when the world is locked during stepping; Physics2D throws
+    `RuntimeException` from `CheckNotLocked` so misuse is visible.
+19. **Solver-set id pool.** Upstream `b2CreateWorld` allocates solver-set ids
+    0-2 through the id pool; Physics2D mirrors this so the first per-island
+    sleeping set starts at 3.
+20. **Step availability.** `World.StepWorld` refuses to run until Stage 7
+    delivers the solver; every other Stage 6 API is complete.
 
 ## Public Symbol Inventory
 
@@ -122,7 +134,7 @@ Mapping conventions:
 | `b2CreateSegmentShape` | Body.CreateSegment(definition) | 6 |
 | `b2CreateWeldJoint` | World.CreateWeldJoint(definition) | 9 |
 | `b2CreateWheelJoint` | World.CreateWheelJoint(definition) | 9 |
-| `b2CreateWorld` | New World(settings) / New World(gravity) / New World() | 6 |
+| `b2CreateWorld` | New World(settings) / New World() / World.WithGravity(gravity) | 6 |
 | `b2DestroyBody` | Body.Destroy() | 6 |
 | `b2DestroyChain` | Chain.Destroy() | 6 |
 | `b2DestroyJoint` | Joint.Destroy() | 9 |
@@ -187,113 +199,113 @@ Mapping conventions:
 | `b2Body_EnableContactEvents` | Body.EnableContactEvents | 3 |
 | `b2Body_EnableHitEvents` | Body.EnableHitEvents | 3 |
 | `b2Body_EnableSleep` | Body.EnableSleep | 3 |
-| `b2Body_GetAngularDamping` | Body.GetAngularDamping | 3 |
-| `b2Body_GetAngularVelocity` | Body.GetAngularVelocity | 3 |
-| `b2Body_GetContactCapacity` | Body.GetContactCapacity | 3 |
-| `b2Body_GetContactData` | Body.GetContactData | 3 |
-| `b2Body_GetGravityScale` | Body.GetGravityScale | 3 |
+| `b2Body_GetAngularDamping` | Body.GetAngularDamping || 6 |
+| `b2Body_GetAngularVelocity` | Body.GetAngularVelocity || 6 |
+| `b2Body_GetContactCapacity` | Body.GetContactCapacity || 7 |
+| `b2Body_GetContactData` | Body.GetContactData || 7 |
+| `b2Body_GetGravityScale` | Body.GetGravityScale || 6 |
 | `b2Body_GetJointCount` | Body.GetJointCount | 9 |
 | `b2Body_GetJoints` | Body.GetJoints | 9 |
-| `b2Body_GetLinearDamping` | Body.GetLinearDamping | 3 |
-| `b2Body_GetLinearVelocity` | Body.GetLinearVelocity | 3 |
-| `b2Body_GetLocalCenterOfMass` | Body.GetLocalCenterOfMass | 3 |
-| `b2Body_GetLocalPoint` | Body.GetLocalPoint | 3 |
-| `b2Body_GetLocalPointVelocity` | Body.GetLocalPointVelocity | 3 |
-| `b2Body_GetLocalVector` | Body.GetLocalVector | 3 |
-| `b2Body_GetMass` | Body.GetMass | 3 |
-| `b2Body_GetMassData` | Body.GetMassData | 3 |
-| `b2Body_GetName` | Body.GetName | 3 |
-| `b2Body_GetPosition` | Body.GetPosition | 3 |
-| `b2Body_GetRotation` | Body.GetRotation | 3 |
-| `b2Body_GetRotationalInertia` | Body.GetRotationalInertia | 3 |
-| `b2Body_GetShapeCount` | Body.GetShapeCount | 3 |
-| `b2Body_GetShapes` | Body.GetShapes | 3 |
-| `b2Body_GetSleepThreshold` | Body.GetSleepThreshold | 3 |
-| `b2Body_GetTransform` | Body.GetTransform | 3 |
-| `b2Body_GetType` | Body.GetType | 3 |
-| `b2Body_GetUserData` | Body.GetUserData | 3 |
-| `b2Body_GetWorld` | Body.GetWorld | 3 |
-| `b2Body_GetWorldCenterOfMass` | Body.GetWorldCenterOfMass | 3 |
-| `b2Body_GetWorldPoint` | Body.GetWorldPoint | 3 |
-| `b2Body_GetWorldPointVelocity` | Body.GetWorldPointVelocity | 3 |
-| `b2Body_GetWorldVector` | Body.GetWorldVector | 3 |
-| `b2Body_IsAwake` | Body.IsAwake | 3 |
-| `b2Body_IsBullet` | Body.IsBullet | 3 |
-| `b2Body_IsEnabled` | Body.IsEnabled | 3 |
-| `b2Body_IsFixedRotation` | Body.IsFixedRotation | 3 |
-| `b2Body_IsSleepEnabled` | Body.IsSleepEnabled | 3 |
-| `b2Body_IsValid` | Body.IsValid | 3 |
-| `b2Body_SetAngularDamping` | Body.SetAngularDamping | 3 |
-| `b2Body_SetAngularVelocity` | Body.SetAngularVelocity | 3 |
-| `b2Body_SetAwake` | Body.SetAwake | 3 |
-| `b2Body_SetBullet` | Body.SetBullet | 3 |
-| `b2Body_SetFixedRotation` | Body.SetFixedRotation | 3 |
-| `b2Body_SetGravityScale` | Body.SetGravityScale | 3 |
-| `b2Body_SetLinearDamping` | Body.SetLinearDamping | 3 |
-| `b2Body_SetLinearVelocity` | Body.SetLinearVelocity | 3 |
-| `b2Body_SetMassData` | Body.SetMassData | 3 |
-| `b2Body_SetName` | Body.SetName | 3 |
-| `b2Body_SetSleepThreshold` | Body.SetSleepThreshold | 3 |
-| `b2Body_SetTargetTransform` | Body.SetTargetTransform | 3 |
-| `b2Body_SetTransform` | Body.SetTransform | 3 |
-| `b2Body_SetType` | Body.SetType | 3 |
-| `b2Body_SetUserData` | Body.SetUserData | 3 |
-| `b2Chain_GetFriction` | Chain.GetFriction | 3 |
-| `b2Chain_GetMaterial` | Chain.GetMaterial | 3 |
-| `b2Chain_GetRestitution` | Chain.GetRestitution | 3 |
-| `b2Chain_GetSegmentCount` | Chain.GetSegmentCount | 3 |
-| `b2Chain_GetSegments` | Chain.GetSegments | 3 |
-| `b2Chain_GetWorld` | Chain.GetWorld | 3 |
-| `b2Chain_IsValid` | Chain.IsValid | 3 |
-| `b2Chain_SetFriction` | Chain.SetFriction | 3 |
-| `b2Chain_SetMaterial` | Chain.SetMaterial | 3 |
-| `b2Chain_SetRestitution` | Chain.SetRestitution | 3 |
-| `b2Shape_AreContactEventsEnabled` | Shape.AreContactEventsEnabled | 3 |
-| `b2Shape_AreHitEventsEnabled` | Shape.AreHitEventsEnabled | 3 |
-| `b2Shape_ArePreSolveEventsEnabled` | Shape.ArePreSolveEventsEnabled | 3 |
-| `b2Shape_AreSensorEventsEnabled` | Shape.AreSensorEventsEnabled | 3 |
-| `b2Shape_EnableContactEvents` | Shape.EnableContactEvents | 3 |
-| `b2Shape_EnableHitEvents` | Shape.EnableHitEvents | 3 |
-| `b2Shape_EnablePreSolveEvents` | Shape.EnablePreSolveEvents | 3 |
-| `b2Shape_EnableSensorEvents` | Shape.EnableSensorEvents | 3 |
-| `b2Shape_GetAABB` | Shape.GetAABB | 3 |
-| `b2Shape_GetBody` | Shape.GetBody | 3 |
-| `b2Shape_GetCapsule` | Shape.GetCapsule | 3 |
-| `b2Shape_GetChainSegment` | Shape.GetChainSegment | 3 |
-| `b2Shape_GetCircle` | Shape.GetCircle | 3 |
-| `b2Shape_GetClosestPoint` | Shape.GetClosestPoint | 3 |
-| `b2Shape_GetContactCapacity` | Shape.GetContactCapacity | 3 |
-| `b2Shape_GetContactData` | Shape.GetContactData | 3 |
-| `b2Shape_GetDensity` | Shape.GetDensity | 3 |
-| `b2Shape_GetFilter` | Shape.GetFilter | 3 |
-| `b2Shape_GetFriction` | Shape.GetFriction | 3 |
-| `b2Shape_GetMassData` | Shape.GetMassData | 3 |
-| `b2Shape_GetMaterial` | Shape.GetMaterial | 3 |
-| `b2Shape_GetParentChain` | Shape.GetParentChain | 3 |
-| `b2Shape_GetPolygon` | Shape.GetPolygon | 3 |
-| `b2Shape_GetRestitution` | Shape.GetRestitution | 3 |
-| `b2Shape_GetSegment` | Shape.GetSegment | 3 |
-| `b2Shape_GetSensorCapacity` | Shape.GetSensorCapacity | 3 |
-| `b2Shape_GetSensorOverlaps` | Shape.GetSensorOverlaps | 3 |
-| `b2Shape_GetSurfaceMaterial` | Shape.GetSurfaceMaterial | 3 |
-| `b2Shape_GetType` | Shape.GetType | 3 |
-| `b2Shape_GetUserData` | Shape.GetUserData | 3 |
-| `b2Shape_GetWorld` | Shape.GetWorld | 3 |
-| `b2Shape_IsSensor` | Shape.IsSensor | 3 |
-| `b2Shape_IsValid` | Shape.IsValid | 3 |
-| `b2Shape_RayCast` | Shape.RayCast | 3 |
-| `b2Shape_SetCapsule` | Shape.SetCapsule | 3 |
-| `b2Shape_SetCircle` | Shape.SetCircle | 3 |
-| `b2Shape_SetDensity` | Shape.SetDensity | 3 |
-| `b2Shape_SetFilter` | Shape.SetFilter | 3 |
-| `b2Shape_SetFriction` | Shape.SetFriction | 3 |
-| `b2Shape_SetMaterial` | Shape.SetMaterial | 3 |
-| `b2Shape_SetPolygon` | Shape.SetPolygon | 3 |
-| `b2Shape_SetRestitution` | Shape.SetRestitution | 3 |
-| `b2Shape_SetSegment` | Shape.SetSegment | 3 |
-| `b2Shape_SetSurfaceMaterial` | Shape.SetSurfaceMaterial | 3 |
-| `b2Shape_SetUserData` | Shape.SetUserData | 3 |
-| `b2Shape_TestPoint` | Shape.TestPoint | 3 |
+| `b2Body_GetLinearDamping` | Body.GetLinearDamping || 6 |
+| `b2Body_GetLinearVelocity` | Body.GetLinearVelocity || 6 |
+| `b2Body_GetLocalCenterOfMass` | Body.GetLocalCenterOfMass || 6 |
+| `b2Body_GetLocalPoint` | Body.GetLocalPoint || 6 |
+| `b2Body_GetLocalPointVelocity` | Body.GetLocalPointVelocity || 6 |
+| `b2Body_GetLocalVector` | Body.GetLocalVector || 6 |
+| `b2Body_GetMass` | Body.GetMass || 6 |
+| `b2Body_GetMassData` | Body.GetMassData || 6 |
+| `b2Body_GetName` | Body.GetName || 6 |
+| `b2Body_GetPosition` | Body.GetPosition || 6 |
+| `b2Body_GetRotation` | Body.GetRotation || 6 |
+| `b2Body_GetRotationalInertia` | Body.GetRotationalInertia || 6 |
+| `b2Body_GetShapeCount` | Body.GetShapeCount || 6 |
+| `b2Body_GetShapes` | Body.GetShapes || 6 |
+| `b2Body_GetSleepThreshold` | Body.GetSleepThreshold || 6 |
+| `b2Body_GetTransform` | Body.GetTransform || 6 |
+| `b2Body_GetType` | Body.GetType || 6 |
+| `b2Body_GetUserData` | Body.GetUserData || 6 |
+| `b2Body_GetWorld` | Body.GetWorld || 6 |
+| `b2Body_GetWorldCenterOfMass` | Body.GetWorldCenterOfMass || 6 |
+| `b2Body_GetWorldPoint` | Body.GetWorldPoint || 6 |
+| `b2Body_GetWorldPointVelocity` | Body.GetWorldPointVelocity || 6 |
+| `b2Body_GetWorldVector` | Body.GetWorldVector || 6 |
+| `b2Body_IsAwake` | Body.IsAwake || 6 |
+| `b2Body_IsBullet` | Body.IsBullet || 6 |
+| `b2Body_IsEnabled` | Body.IsEnabled || 6 |
+| `b2Body_IsFixedRotation` | Body.IsFixedRotation || 6 |
+| `b2Body_IsSleepEnabled` | Body.IsSleepEnabled || 6 |
+| `b2Body_IsValid` | Body.IsValid || 6 |
+| `b2Body_SetAngularDamping` | Body.SetAngularDamping || 6 |
+| `b2Body_SetAngularVelocity` | Body.SetAngularVelocity || 6 |
+| `b2Body_SetAwake` | Body.SetAwake || 6 |
+| `b2Body_SetBullet` | Body.SetBullet || 6 |
+| `b2Body_SetFixedRotation` | Body.SetFixedRotation || 6 |
+| `b2Body_SetGravityScale` | Body.SetGravityScale || 6 |
+| `b2Body_SetLinearDamping` | Body.SetLinearDamping || 6 |
+| `b2Body_SetLinearVelocity` | Body.SetLinearVelocity || 6 |
+| `b2Body_SetMassData` | Body.SetMassData || 6 |
+| `b2Body_SetName` | Body.SetName || 6 |
+| `b2Body_SetSleepThreshold` | Body.SetSleepThreshold || 6 |
+| `b2Body_SetTargetTransform` | Body.SetTargetTransform || 6 |
+| `b2Body_SetTransform` | Body.SetTransform || 6 |
+| `b2Body_SetType` | Body.SetType || 6 |
+| `b2Body_SetUserData` | Body.SetUserData || 6 |
+| `b2Chain_GetFriction` | Chain.GetFriction || 6 |
+| `b2Chain_GetMaterial` | Chain.GetMaterial || 6 |
+| `b2Chain_GetRestitution` | Chain.GetRestitution || 6 |
+| `b2Chain_GetSegmentCount` | Chain.GetSegmentCount || 6 |
+| `b2Chain_GetSegments` | Chain.GetSegments || 6 |
+| `b2Chain_GetWorld` | Chain.GetWorld || 6 |
+| `b2Chain_IsValid` | Chain.IsValid || 6 |
+| `b2Chain_SetFriction` | Chain.SetFriction || 6 |
+| `b2Chain_SetMaterial` | Chain.SetMaterial || 6 |
+| `b2Chain_SetRestitution` | Chain.SetRestitution || 6 |
+| `b2Shape_AreContactEventsEnabled` | Shape.AreContactEventsEnabled || 6 |
+| `b2Shape_AreHitEventsEnabled` | Shape.AreHitEventsEnabled || 6 |
+| `b2Shape_ArePreSolveEventsEnabled` | Shape.ArePreSolveEventsEnabled || 6 |
+| `b2Shape_AreSensorEventsEnabled` | Shape.AreSensorEventsEnabled || 6 |
+| `b2Shape_EnableContactEvents` | Shape.EnableContactEvents || 6 |
+| `b2Shape_EnableHitEvents` | Shape.EnableHitEvents || 6 |
+| `b2Shape_EnablePreSolveEvents` | Shape.EnablePreSolveEvents || 6 |
+| `b2Shape_EnableSensorEvents` | Shape.EnableSensorEvents || 6 |
+| `b2Shape_GetAABB` | Shape.GetAABB || 6 |
+| `b2Shape_GetBody` | Shape.GetBody || 6 |
+| `b2Shape_GetCapsule` | Shape.GetCapsule || 6 |
+| `b2Shape_GetChainSegment` | Shape.GetChainSegment || 6 |
+| `b2Shape_GetCircle` | Shape.GetCircle || 6 |
+| `b2Shape_GetClosestPoint` | Shape.GetClosestPoint || 6 |
+| `b2Shape_GetContactCapacity` | Shape.GetContactCapacity || 7 |
+| `b2Shape_GetContactData` | Shape.GetContactData || 7 |
+| `b2Shape_GetDensity` | Shape.GetDensity || 6 |
+| `b2Shape_GetFilter` | Shape.GetFilter || 6 |
+| `b2Shape_GetFriction` | Shape.GetFriction || 6 |
+| `b2Shape_GetMassData` | Shape.GetMassData || 6 |
+| `b2Shape_GetMaterial` | Shape.GetMaterial || 6 |
+| `b2Shape_GetParentChain` | Shape.GetParentChain || 6 |
+| `b2Shape_GetPolygon` | Shape.GetPolygon || 6 |
+| `b2Shape_GetRestitution` | Shape.GetRestitution || 6 |
+| `b2Shape_GetSegment` | Shape.GetSegment || 6 |
+| `b2Shape_GetSensorCapacity` | Shape.GetSensorCapacity || 6 |
+| `b2Shape_GetSensorOverlaps` | Shape.GetSensorOverlaps || 6 |
+| `b2Shape_GetSurfaceMaterial` | Shape.GetSurfaceMaterial || 6 |
+| `b2Shape_GetType` | Shape.GetType || 6 |
+| `b2Shape_GetUserData` | Shape.GetUserData || 6 |
+| `b2Shape_GetWorld` | Shape.GetWorld || 6 |
+| `b2Shape_IsSensor` | Shape.IsSensor || 6 |
+| `b2Shape_IsValid` | Shape.IsValid || 6 |
+| `b2Shape_RayCast` | Shape.RayCast || 6 |
+| `b2Shape_SetCapsule` | Shape.SetCapsule || 6 |
+| `b2Shape_SetCircle` | Shape.SetCircle || 6 |
+| `b2Shape_SetDensity` | Shape.SetDensity || 6 |
+| `b2Shape_SetFilter` | Shape.SetFilter || 6 |
+| `b2Shape_SetFriction` | Shape.SetFriction || 6 |
+| `b2Shape_SetMaterial` | Shape.SetMaterial || 6 |
+| `b2Shape_SetPolygon` | Shape.SetPolygon || 6 |
+| `b2Shape_SetRestitution` | Shape.SetRestitution || 6 |
+| `b2Shape_SetSegment` | Shape.SetSegment || 6 |
+| `b2Shape_SetSurfaceMaterial` | Shape.SetSurfaceMaterial || 6 |
+| `b2Shape_SetUserData` | Shape.SetUserData || 6 |
+| `b2Shape_TestPoint` | Shape.TestPoint || 6 |
 
 
 ### Joints (132 symbols)

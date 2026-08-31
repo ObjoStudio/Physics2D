@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "SurfaceMaterial",
+  "Id": "193b5f04-f64c-4fa8-b6b1-aa6263bdcce9",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "SurfaceMaterial.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

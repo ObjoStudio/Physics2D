@@ -1,0 +1,513 @@
+# Tests for the world queries: overlap bounds and shape, ray casts with
+# collecting, closest, and callback forms, and shape casts, each checked
+# against a brute-force oracle over every stored shape, ported from the
+# behaviour of the b2World query family. Ray "all hits" searches are
+# best-first clipped like upstream, so recorded sets are asserted as subsets
+# of the per-shape oracle with the minimum fraction pinned exactly.
+Import Physics2D
+
+Class QueryTests Inherits TestCase
+## Builds an axis-aligned box from a centre and half extents.
+Private Shared Function MakeBox(cx As Double, cy As Double, hx As Double, hy As Double) As AABB
+Var box As New AABB
+box.LowerBound = New Vector2(cx - hx, cy - hy)
+box.UpperBound = New Vector2(cx + hx, cy + hy)
+Return box
+End Function
+
+## Adds a circle shape to a dynamic body at the given position.
+Private Shared Function AddCircle(world As World, x As Double, y As Double, radius As Double, category As Integer) As Shape
+Var bodyDef As New BodyDefinition
+bodyDef.Type = BodyType.DynamicBody
+bodyDef.Position = New Vector2(x, y)
+Var body As Body = world.CreateBody(bodyDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var filter As New Filter
+filter.CategoryBits = category
+shapeDef.Filter = filter
+Var circle As New Circle(New Vector2(0.0, 0.0), radius)
+Return body.CreateCircle(shapeDef, circle)
+End Function
+
+## Adds a static segment shape between two points on a body at the origin.
+Private Shared Function AddSegment(world As World, x1 As Double, y1 As Double, x2 As Double, y2 As Double) As Shape
+Var bodyDef As New BodyDefinition
+bodyDef.Type = BodyType.StaticBody
+Var body As Body = world.CreateBody(bodyDef)
+Var shapeDef As New ShapeDefinition
+Var segment As New Segment(New Vector2(x1, y1), New Vector2(x2, y2))
+Return body.CreateSegment(shapeDef, segment)
+End Function
+
+## Returns the inverse of a transform, computed with InvMul against the
+## identity transform.
+Private Shared Function InverseOf(xf As Transform) As Transform
+Return Transform.InvMul(xf, Transform.Identity())
+End Function
+
+## Rotates a vector by a rotation.
+Private Shared Function RotateVector(q As Rot, v As Vector2) As Vector2
+Return New Vector2(q.C * v.X - q.S * v.Y, q.S * v.X + q.C * v.Y)
+End Function
+
+## Builds the standard test world: four circles, a box, and a segment.
+Shared Function MakeWorld() As World
+Var world As New World
+QueryTests.AddCircle(world, -2.0, 0.0, 0.5, 1)
+QueryTests.AddCircle(world, 2.0, 0.0, 1.0, 1)
+QueryTests.AddCircle(world, 0.0, 3.0, 0.75, 2)
+QueryTests.AddCircle(world, 10.0, 10.0, 0.5, 1)
+Var boxBodyDef As New BodyDefinition
+boxBodyDef.Type = BodyType.StaticBody
+Var boxBody As Body = world.CreateBody(boxBodyDef)
+Var boxDef As New ShapeDefinition
+boxDef.Density = 1.0
+boxBody.CreatePolygon(boxDef, Polygon.MakeOffsetBox(1.0, 0.5, New Vector2(0.0, -3.0), New Rot))
+QueryTests.AddSegment(world, -5.0, 1.0, 5.0, 1.0)
+Return world
+End Function
+
+## Brute-force overlap oracle: every shape whose stored AABB overlaps the
+## query box and passes the filter, compared as a set.
+Private Shared Function BruteForceOverlap(world As World, bounds As AABB, filter As QueryFilter) As Array(Of Integer)
+Var expected As New Array(Of Integer)
+Var shapes As Array(Of Shape) = world.Shapes
+For i As Integer = 0 To shapes.Count - 1
+Var shape As Shape = shapes[i]
+If shape = Nothing Then
+Continue For
+End If
+If Not QueryFilter.ShouldCollide(shape.GetFilter(), filter) Then
+Continue For
+End If
+If AABB.Overlaps(shape.GetAABB(), bounds) Then
+expected.Append(i)
+End If
+Next i
+Return expected
+End Function
+
+## Checks that the hit list matches the expected slot set exactly.
+Private Shared Sub ExpectHits(hits As ShapeHitList, expected As Array(Of Integer), label As String)
+Assert.Equal(expected.Count, hits.Count, label + " count")
+For i As Integer = 0 To expected.Count - 1
+Var found As Boolean = False
+For j As Integer = 0 To hits.Count - 1
+If hits.Item(j).Shape.Id = expected[i] Then
+found = True
+End If
+Next j
+Assert.True(found, label + " slot " + i.ToString())
+Next i
+End Sub
+
+Public Sub TestOverlapBoundsMatchesBruteForce()
+Var world As World = QueryTests.MakeWorld()
+Var filter As New QueryFilter
+Var bounds As AABB = QueryTests.MakeBox(0.0, 0.0, 3.0, 4.0)
+Var hits As New ShapeHitList
+Var stats As TreeStats = world.OverlapBoundsInto(bounds, filter, hits)
+QueryTests.ExpectHits(hits, QueryTests.BruteForceOverlap(world, bounds, filter), "overlap bounds")
+Assert.Equal(5, hits.Count)
+Assert.True(stats.LeafVisits > 0)
+
+# A tight box around one shape.
+Var tight As AABB = QueryTests.MakeBox(-2.0, 0.0, 0.25, 0.25)
+world.OverlapBoundsInto(tight, filter, hits)
+QueryTests.ExpectHits(hits, QueryTests.BruteForceOverlap(world, tight, filter), "tight overlap")
+Assert.Equal(1, hits.Count)
+Assert.Equal(0.5, hits.Item(0).Shape.GetCircle().Radius)
+End Sub
+
+Public Sub TestOverlapBoundsFiltering()
+Var world As World = QueryTests.MakeWorld()
+Var bounds As AABB = QueryTests.MakeBox(0.0, 0.0, 4.0, 4.0)
+Var query As New QueryFilter
+query.CategoryBits = 1
+query.MaskBits = 2
+Var hits As New ShapeHitList
+world.OverlapBoundsInto(bounds, query, hits)
+# Only the category-2 circle at (0, 3) accepts category 1 queries.
+Assert.Equal(1, hits.Count)
+Var circleFilter As Filter = hits.Item(0).Shape.GetFilter()
+Assert.Equal(2, circleFilter.CategoryBits)
+Assert.Equal(PhysicsConstants.DEFAULT_MASK_BITS, circleFilter.MaskBits)
+
+query.MaskBits = 4
+world.OverlapBoundsInto(bounds, query, hits)
+Assert.Equal(0, hits.Count)
+End Sub
+
+Public Sub TestOverlapShapeMatchesBruteForce()
+Var world As New World
+QueryTests.AddCircle(world, -1.0, 0.0, 0.5, 1)
+QueryTests.AddCircle(world, 2.5, 0.0, 1.0, 1)
+Var boxBodyDef As New BodyDefinition
+boxBodyDef.Type = BodyType.StaticBody
+Var boxBody As Body = world.CreateBody(boxBodyDef)
+Var boxDef As New ShapeDefinition
+boxDef.Density = 1.0
+boxBody.CreatePolygon(boxDef, Polygon.MakeOffsetBox(1.0, 0.5, New Vector2(0.0, -3.0), New Rot))
+QueryTests.AddSegment(world, -5.0, 2.0, 5.0, 2.0)
+
+Var filter As New QueryFilter
+Var points() As Vector2 = [New Vector2(0.0, 0.0)]
+Var proxy As ShapeProxy = ShapeProxy.Make(points, 1, 1.0)
+Var hits As New ShapeHitList
+world.OverlapShapeInto(proxy, filter, hits)
+
+# Brute-force oracle: per-shape GJK distance against the same proxy.
+Var shapes As Array(Of Shape) = world.Shapes
+Var expected As New Array(Of Integer)
+For i As Integer = 0 To shapes.Count - 1
+Var shape As Shape = shapes[i]
+If shape = Nothing Then
+Continue For
+End If
+Var input As New DistanceInput
+input.ProxyA = proxy
+input.ProxyB = shape.DistanceProxy
+input.TransformA = New Transform
+input.TransformB = world.GetBodyTransformById(shape.BodyId)
+input.UseRadii = True
+Var cache As New SimplexCache
+Var output As DistanceOutput = Distance.ShapeDistance(input, cache)
+Var tolerance As Double = 0.1 * PhysicsConstants.LINEAR_SLOP
+If output.Distance <= tolerance Then
+expected.Append(i)
+End If
+Next i
+Assert.Equal(1, expected.Count)
+QueryTests.ExpectHits(hits, expected, "overlap shape")
+Assert.Equal(ShapeType.CircleShape, hits.Item(0).Shape.GetShapeType())
+End Sub
+
+Public Sub TestOverlapShapeProxyWithRadius()
+Var world As World = QueryTests.MakeWorld()
+Var filter As New QueryFilter
+
+# A zero-radius point on the segment overlaps it.
+Var points() As Vector2 = [New Vector2(0.0, 1.0)]
+Var pointProxy As ShapeProxy = ShapeProxy.Make(points, 1, 0.0)
+Var hits As New ShapeHitList
+world.OverlapShapeInto(pointProxy, filter, hits)
+Assert.Equal(1, hits.Count)
+Assert.Equal(ShapeType.SegmentShape, hits.Item(0).Shape.GetShapeType())
+
+# Moving the point just off the segment misses; rebuild the proxy because
+# Make deep-copies the points at construction time.
+points[0] = New Vector2(0.0, 1.2)
+pointProxy = ShapeProxy.Make(points, 1, 0.0)
+world.OverlapShapeInto(pointProxy, filter, hits)
+Assert.Equal(0, hits.Count)
+
+# A fat point proxy overlaps again.
+Var fatProxy As ShapeProxy = ShapeProxy.Make(points, 1, 0.3)
+world.OverlapShapeInto(fatProxy, filter, hits)
+Assert.Equal(1, hits.Count)
+End Sub
+
+Public Sub TestCastRayMatchesPerShapeOracle()
+Var world As World = QueryTests.MakeWorld()
+Var filter As New QueryFilter
+Var origin As New Vector2(-6.0, 0.3)
+Var translation As New Vector2(12.0, 0.0)
+
+# Oracle: cast the same ray at every shape directly.
+Var expectedShapes As New Array(Of Integer)
+Var expectedFractions As New Array(Of Double)
+Var shapes As Array(Of Shape) = world.Shapes
+For i As Integer = 0 To shapes.Count - 1
+Var shape As Shape = shapes[i]
+If shape = Nothing Then
+Continue For
+End If
+Var input As New RayCastInput
+input.Origin = New Vector2(origin.X, origin.Y)
+input.Translation = New Vector2(translation.X, translation.Y)
+input.MaxFraction = 1.0
+Var castOutput As CastOutput = world.RayCastShape(input, shape)
+If castOutput.Hit Then
+expectedShapes.Append(i)
+expectedFractions.Append(castOutput.Fraction)
+End If
+Next i
+Assert.Equal(2, expectedShapes.Count)
+
+Var hits As New ShapeHitList
+world.CastRayInto(origin, translation, filter, hits)
+# Best-first clipping means a subset of the oracle hits is recorded, and
+# the nearest oracle hit is always among them.
+Assert.True(hits.Count >= 1)
+Assert.True(hits.Count <= expectedShapes.Count)
+Var minimum As Double = 2.0
+For i As Integer = 0 To expectedShapes.Count - 1
+If expectedFractions[i] < minimum Then
+minimum = expectedFractions[i]
+End If
+Next i
+For j As Integer = 0 To hits.Count - 1
+Var matched As Boolean = False
+For i As Integer = 0 To expectedShapes.Count - 1
+If expectedShapes[i] = hits.Item(j).Shape.Id Then
+matched = True
+PhysicsAssert.Near(expectedFractions[i], hits.Item(j).Fraction, 1e-12, 1e-12, "ray fraction for slot " + i.ToString())
+End If
+Next i
+Assert.True(matched, "recorded hit must match the per-shape oracle")
+Next j
+PhysicsAssert.Near(minimum, hits.Item(0).Fraction, 1e-12, 1e-12, "nearest fraction")
+PhysicsAssert.Near(origin.X + translation.X * hits.Item(0).Fraction, hits.Item(0).Point.X, 1e-9, 1e-9, "hit point x")
+End Sub
+
+Public Sub TestCastRayClosestTakesNearest()
+Var world As World = QueryTests.MakeWorld()
+Var filter As New QueryFilter
+
+# From (-6, 0.3) rightwards the circle at (-2, 0) with radius 0.5 is hit
+# first at x = -2.4, fraction 3.6 / 12 = 0.3, normal (-0.8, 0.6).
+Var hit As ShapeHit = world.CastRayClosest(New Vector2(-6.0, 0.3), New Vector2(12.0, 0.0), filter)
+Assert.True(hit.Shape <> Nothing)
+PhysicsAssert.Near(0.3, hit.Fraction, 1e-12, 1e-12, "closest fraction")
+PhysicsAssert.Near(-2.4, hit.Point.X, 1e-9, 1e-9, "closest point x")
+PhysicsAssert.Near(0.3, hit.Point.Y, 1e-9, 1e-9, "closest point y")
+PhysicsAssert.Near(-0.8, hit.Normal.X, 1e-9, 1e-9, "closest normal x")
+PhysicsAssert.Near(0.6, hit.Normal.Y, 1e-9, 1e-9, "closest normal y")
+
+# A ray straight down from an empty corner hits nothing.
+Var miss As ShapeHit = world.CastRayClosest(New Vector2(20.0, 20.0), New Vector2(0.0, 1.0), filter)
+Assert.True(miss.Shape = Nothing)
+Assert.Equal(1.0, miss.Fraction)
+
+# The To form reuses the caller's record.
+Var reused As New ShapeHit
+world.CastRayClosestTo(New Vector2(-6.0, 0.3), New Vector2(12.0, 0.0), filter, reused)
+Assert.True(reused.Shape <> Nothing)
+PhysicsAssert.Near(0.3, reused.Fraction, 1e-12, 1e-12, "reused fraction")
+End Sub
+
+Public Sub TestCastRayCollectsAcrossTrees()
+# The collecting form visits every tree and records every hit, matching an
+# upstream callback that returns one; the static segment at 10 / 12, the
+# kinematic segment at 10.8 / 12, and the dynamic box at 7.5 / 12 all
+# appear.
+Var world As New World
+QueryTests.AddSegment(world, -5.0, 0.0, 5.0, 0.0)
+Var kinematicDef As New BodyDefinition
+kinematicDef.Type = BodyType.KinematicBody
+Var kinematicBody As Body = world.CreateBody(kinematicDef)
+Var kinematicShapeDef As New ShapeDefinition
+kinematicBody.CreateSegment(kinematicShapeDef, New Segment(New Vector2(-5.0, -0.8), New Vector2(5.0, -0.8)))
+Var dynamicDef As New BodyDefinition
+dynamicDef.Type = BodyType.DynamicBody
+Var dynamicBody As Body = world.CreateBody(dynamicDef)
+Var boxDef As New ShapeDefinition
+boxDef.Density = 1.0
+dynamicBody.CreatePolygon(boxDef, Polygon.MakeOffsetBox(1.0, 0.5, New Vector2(0.0, 2.0), New Rot))
+Var filter As New QueryFilter
+
+Var hits As New ShapeHitList
+world.CastRayInto(New Vector2(0.0, 10.0), New Vector2(0.0, -12.0), filter, hits)
+Assert.Equal(3, hits.Count)
+For i As Integer = 0 To hits.Count - 1
+If hits.Item(i).Shape.GetBody() = kinematicBody Then
+PhysicsAssert.Near(10.8 / 12.0, hits.Item(i).Fraction, 1e-12, 1e-12, "kinematic fraction")
+End If
+If hits.Item(i).Shape.GetBody() = dynamicBody Then
+PhysicsAssert.Near(7.5 / 12.0, hits.Item(i).Fraction, 1e-12, 1e-12, "dynamic fraction")
+End If
+Next i
+
+# Disabling the static body removes only its hit.
+Var shapes As Array(Of Shape) = world.Shapes
+For i As Integer = 0 To shapes.Count - 1
+Var shape As Shape = shapes[i]
+If shape = Nothing Then
+Continue For
+End If
+If shape.GetBody().GetBodyType() = BodyType.StaticBody Then
+shape.GetBody().Disable()
+End If
+Next i
+world.CastRayInto(New Vector2(0.0, 10.0), New Vector2(0.0, -12.0), filter, hits)
+Assert.Equal(2, hits.Count)
+End Sub
+
+Public Sub TestCastRayCallback()
+Var world As World = QueryTests.MakeWorld()
+Var visited As New Array(Of Integer)
+Var callback As New CountingCastCallback(visited)
+world.CastRay(New Vector2(-6.0, 0.3), New Vector2(12.0, 0.0), New QueryFilter(), callback)
+Assert.Equal(2, visited.Count)
+
+# Returning a fraction of zero from the callback stops the traversal.
+Var early As New EarlyExitCastCallback
+Var stats As TreeStats = world.CastRay(New Vector2(-6.0, 0.3), New Vector2(12.0, 0.0), New QueryFilter(), early)
+Assert.Equal(1, early.Visits)
+Assert.True(stats.LeafVisits >= 1)
+End Sub
+
+Public Sub TestCastShapeMatchesPerShapeOracle()
+Var world As World = QueryTests.MakeWorld()
+Var filter As New QueryFilter
+
+Var proxyPoints() As Vector2 = [New Vector2(0.0, 0.0)]
+Var proxy As ShapeProxy = ShapeProxy.Make(proxyPoints, 1, 0.25)
+Var translation As New Vector2(0.0, -6.0)
+
+# Only the box at (0, -3) lies on the swept path of the small disc.
+Var expectedShapes As New Array(Of Integer)
+Var expectedFractions As New Array(Of Double)
+Var shapes As Array(Of Shape) = world.Shapes
+For i As Integer = 0 To shapes.Count - 1
+Var shape As Shape = shapes[i]
+If shape = Nothing Then
+Continue For
+End If
+Var input As New ShapeCastInput
+Var inv As Transform = QueryTests.InverseOf(world.GetBodyTransformById(shape.BodyId))
+input.Proxy = ShapeProxy.MakeOffset(proxyPoints, 1, 0.25, inv.P, inv.Q)
+input.Translation = QueryTests.RotateVector(inv.Q, translation)
+input.MaxFraction = 1.0
+Var castOutput As CastOutput
+If shape.GetShapeType() = ShapeType.CircleShape Then
+castOutput = Casts.ShapeCastCircle(input, shape.GetCircle())
+ElseIf shape.GetShapeType() = ShapeType.SegmentShape Then
+castOutput = Casts.ShapeCastSegment(input, shape.GetSegment())
+ElseIf shape.GetShapeType() = ShapeType.CapsuleShape Then
+castOutput = Casts.ShapeCastCapsule(input, shape.GetCapsule())
+Else
+castOutput = Casts.ShapeCastPolygon(input, shape.GetPolygon())
+End If
+If castOutput.Hit Then
+expectedShapes.Append(i)
+expectedFractions.Append(castOutput.Fraction)
+End If
+Next i
+Assert.Equal(1, expectedShapes.Count)
+
+Var hits As New ShapeHitList
+world.CastShapeInto(proxy, translation, filter, hits)
+Assert.Equal(expectedShapes.Count, hits.Count)
+For j As Integer = 0 To hits.Count - 1
+Assert.Equal(expectedShapes[0], hits.Item(j).Shape.Id)
+PhysicsAssert.Near(expectedFractions[0], hits.Item(j).Fraction, 1e-9, 1e-9, "cast fraction")
+Next j
+
+# Callback form sees the same single hit.
+Var visited As New Array(Of Integer)
+Var callback As New CountingCastCallback(visited)
+world.CastShape(proxy, translation, filter, callback)
+Assert.Equal(1, visited.Count)
+
+# Sweeping right from the origin crosses circle B.
+world.CastShapeInto(proxy, New Vector2(20.0, 0.0), filter, hits)
+Assert.Equal(1, hits.Count)
+End Sub
+
+Public Sub TestHitListReuseAcrossQueries()
+Var world As World = QueryTests.MakeWorld()
+Var filter As New QueryFilter
+Var bounds As AABB = QueryTests.MakeBox(0.0, 0.0, 3.0, 4.0)
+Var hits As New ShapeHitList
+world.OverlapBoundsInto(bounds, filter, hits)
+Var firstShape As Shape = hits.Item(0).Shape
+Assert.Equal(5, hits.Count)
+
+# An empty region resets the count without growing the record array.
+Var far As AABB = QueryTests.MakeBox(20.0, 20.0, 1.0, 1.0)
+world.OverlapBoundsInto(far, filter, hits)
+Assert.Equal(0, hits.Count)
+world.OverlapBoundsInto(bounds, filter, hits)
+Assert.Equal(5, hits.Count)
+Assert.True(hits.Item(0).Shape = firstShape)
+hits.Clear()
+Assert.Equal(0, hits.Count)
+world.OverlapBoundsInto(bounds, filter, hits)
+Assert.Equal(5, hits.Count)
+End Sub
+
+Public Sub TestQueriesRejectInvalidArguments()
+Var world As World = QueryTests.MakeWorld()
+Var filter As New QueryFilter
+
+Var invalid As New AABB
+invalid.LowerBound = New Vector2(2.0, 2.0)
+invalid.UpperBound = New Vector2(1.0, 1.0)
+Var threw As Boolean = False
+Try
+world.OverlapBoundsInto(invalid, filter, New ShapeHitList)
+Catch e As Exception
+threw = True
+End Try
+Assert.True(threw)
+
+threw = False
+Try
+Var noPoints() As Vector2 = []
+Var emptyProxy As ShapeProxy = ShapeProxy.Make(noPoints, 0, 0.0)
+world.OverlapShapeInto(emptyProxy, filter, New ShapeHitList)
+Catch e As Exception
+threw = True
+End Try
+Assert.True(threw)
+
+threw = False
+Try
+world.CastRay(New Vector2(0.0, 0.0), New Vector2(0.0, Double.Infinity), filter, New EarlyExitCastCallback)
+Catch e As Exception
+threw = True
+End Try
+Assert.True(threw)
+
+# A locked world rejects queries.
+world.Locked = True
+threw = False
+Try
+world.OverlapBoundsInto(QueryTests.MakeBox(0.0, 0.0, 1.0, 1.0), filter, New ShapeHitList)
+Catch e As Exception
+threw = True
+End Try
+Assert.True(threw)
+world.Locked = False
+End Sub
+End Class
+
+# A world cast callback that records visited shape ids.
+Class CountingCastCallback Inherits WorldCastCallback
+## The collected shape ids.
+Property Visited As Array(Of Integer)
+
+## Creates the callback with its record array.
+Constructor(records As Array(Of Integer))
+Me.Visited = records
+End Constructor
+
+## Records every visited shape and lets the cast continue.
+Function VisitShape(shape As Shape, point As Vector2, normal As Vector2, fraction As Double) As Double
+Me.Visited.Append(shape.Id)
+Return 1.0
+End Function
+End Class
+
+# A world cast callback that stops after the first visit.
+Class EarlyExitCastCallback Inherits WorldCastCallback
+## The number of visits so far.
+Property Visits As Integer
+
+## Creates the callback.
+Constructor()
+Me.Visits = 0
+End Constructor
+
+## Records the visit and stops the traversal.
+Function VisitShape(shape As Shape, point As Vector2, normal As Vector2, fraction As Double) As Double
+Pragma Unused shape
+Pragma Unused point
+Pragma Unused normal
+Pragma Unused fraction
+Me.Visits = Me.Visits + 1
+Return 0.0
+End Function
+End Class

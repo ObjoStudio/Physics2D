@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "WorldShapeCastContext",
+  "Id": "7a5cedb3-01b4-43ac-871b-8720f4b52fac",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "WorldShapeCastContext.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

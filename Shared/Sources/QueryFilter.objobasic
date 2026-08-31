@@ -1,0 +1,30 @@
+# Query filtering for world queries, ported from upstream b2QueryFilter in
+# types.h. A shape is visited when its category intersects the query mask and
+# its mask intersects the query category.
+Class QueryFilter
+## The collision category bits this query accepts.
+Property CategoryBits As Integer
+## The collision category bits this query looks for.
+Property MaskBits As Integer
+
+## Creates the default query filter, matching upstream b2DefaultQueryFilter.
+Constructor()
+Me.CategoryBits = PhysicsConstants.DEFAULT_CATEGORY_BITS
+Me.MaskBits = PhysicsConstants.DEFAULT_MASK_BITS
+End Constructor
+
+## Copies another query filter.
+Constructor(other As QueryFilter)
+Me.CategoryBits = other.CategoryBits
+Me.MaskBits = other.MaskBits
+End Constructor
+
+## Returns True when a shape with the given shape filter passes this query
+## filter, ported from upstream b2ShouldQueryCollide.
+Shared Function ShouldCollide(shapeFilter As Filter, queryFilter As QueryFilter) As Boolean
+If shapeFilter.CategoryBits.BitAnd(queryFilter.MaskBits) = 0 Then
+Return False
+End If
+Return shapeFilter.MaskBits.BitAnd(queryFilter.CategoryBits) <> 0
+End Function
+End Class

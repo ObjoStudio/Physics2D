@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "WorldTests",
+  "Id": "409005fc-b79d-4748-aaef-e3eebe833a82",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "WorldTests-8a41c2d3-5e6f-4a7b-8c9d-0e1f2a3b4c5d.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

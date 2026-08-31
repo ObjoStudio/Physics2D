@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "WorldCastCallback",
+  "Id": "d3cc1eb3-7380-40de-ab52-9de30b6bf144",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "WorldCastCallback.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

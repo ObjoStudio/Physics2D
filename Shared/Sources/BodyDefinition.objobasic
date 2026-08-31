@@ -1,0 +1,60 @@
+# Body definition passed to World.CreateBody, ported from upstream b2BodyDef
+# in types.h. The constructor sets the same defaults as b2DefaultBodyDef.
+Class BodyDefinition
+## The body type: StaticBody, KinematicBody, or DynamicBody.
+Property Type As BodyType
+## The initial world position of the body origin.
+Property Position As Vector2
+## The initial world rotation of the body.
+Property Rotation As Rot
+## The initial linear velocity of the centre of mass.
+Property LinearVelocity As Vector2
+## The initial angular velocity in radians per second.
+Property AngularVelocity As Double
+## Linear damping (kg per second).
+Property LinearDamping As Double
+## Angular damping (kg per second).
+Property AngularDamping As Double
+## Scales gravity: zero disables it, one applies full gravity.
+Property GravityScale As Double
+## Below this speed a body may sleep (metres per second).
+Property SleepThreshold As Double
+## Whether this body may ever sleep.
+Property EnableSleep As Boolean
+## Whether the body starts awake. Sleeping is forced off when sleep is
+## disabled or the body is disabled.
+Property IsAwake As Boolean
+## Whether the body starts enabled.
+Property IsEnabled As Boolean
+## Whether this body is treated as a bullet for continuous collision.
+Property IsBullet As Boolean
+## Whether rotation is locked.
+Property FixedRotation As Boolean
+## Whether fast rotation is allowed to exceed the rotation cap in a step.
+Property AllowFastRotation As Boolean
+## Optional body name, truncated to 31 characters like upstream.
+Property Name As String
+## User data owned by the application. Never touched by the module.
+Property UserData As Integer
+
+## Creates the default body definition, matching upstream b2DefaultBodyDef.
+Constructor()
+Me.Type = BodyType.StaticBody
+Me.Position = New Vector2(0.0, 0.0)
+Me.Rotation = New Rot()
+Me.LinearVelocity = New Vector2(0.0, 0.0)
+Me.AngularVelocity = 0.0
+Me.LinearDamping = 0.0
+Me.AngularDamping = 0.0
+Me.GravityScale = 1.0
+Me.SleepThreshold = 0.05
+Me.EnableSleep = True
+Me.IsAwake = True
+Me.IsEnabled = True
+Me.IsBullet = False
+Me.FixedRotation = False
+Me.AllowFastRotation = False
+Me.Name = ""
+Me.UserData = 0
+End Constructor
+End Class

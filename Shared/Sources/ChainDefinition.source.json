@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ChainDefinition",
+  "Id": "f26814e6-907e-4629-858f-2cd72ddedb56",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "ChainDefinition.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

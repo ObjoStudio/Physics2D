@@ -256,6 +256,47 @@ ported. A partial rebuild dissolves only the enlarged path and treats clean
 sibling subtrees as atomic leaves, so its returned leaf count is bounded by
 but not equal to the proxy count.
 
+## World Facade (Stage 6)
+
+Stage 6 ports the world and lifecycle family of `box2d.h` plus `world.c`'s
+non-solving half: body, shape, and chain records; mass maintenance; proxy
+synchronisation; transforms; and the overlap/ray/shape-cast queries. Four
+rules shape the layout:
+
+1. **Façade objects over flat state.** `Body`, `Shape`, and `Chain` are
+   per-slot façade objects holding scalars plus identity (`Owner`, `Id`,
+   `Live`, `Generation`); heavy geometry lives in World-owned records
+   (`BodySims`/`BodyStates` per solver set, `ShapeExtent` per shape). Every
+   façade member calls `Validate`, which throws on a destroyed slot, so a
+   stale façade can never read another object's state.
+2. **Per-slot generations.** `BodyGenerations`/`ShapeGenerations`/
+   `ChainGenerations` (parallel `IntegerList`s) carry the current generation
+   per slot; freeing bumps the slot and the stale façade, creation adopts the
+   slot value, so a reused slot never repeats a generation.
+3. **Upstream-faithful bookkeeping.** Shape creation runs the conditional
+   mass update on all four geometry paths; `SetType`, `SetTransform`,
+   density, and material changes re-derive mass data and proxies exactly
+   where upstream does. Solver sets 0/1/2 come from the solver-set id pool at
+   world creation so per-island sleeping sets start at 3. Open chains attach
+   segment *i* to material *i + 1* (the upstream leading-point rule). The
+   world raises `RuntimeException` when locked instead of upstream's silent
+   early returns, and `StepWorld` refuses until Stage 7 delivers the solver.
+4. **Queries own nothing the caller did not pass.** The four `Into` forms
+   reset only the caller's hit list, fill `ShapeHit` façades owned by the
+   list, and apply category filtering through the broad-phase trees. The
+   closest ray-cast form takes the nearest hit inside the traversal, and
+   all-hit forms never clip across trees — both match upstream callback
+   protocols exactly.
+
+The virtual machine dispatches same-arity constructors by arity alone, so
+`World` exposes `New World()`, `New World(settings)`, and the shared factory
+`World.WithGravity(gravity)` instead of a second one-argument constructor.
+Measured allocation budgets (test-pinned): a warm shape creation allocates
+17 objects, all façade-owned state recreated by design; `World.Clear` plus
+rebuilding eight one-shape bodies allocates 136 objects — exactly the eight
+façade groups — because tree, sim, proxy, and id-pool capacity all survive
+`Clear`.
+
 ## Deterministic Maths
 
 `PhysicsMaths` ports the upstream trigonometric approximations so

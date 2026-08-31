@@ -1,0 +1,320 @@
+# Tests for the world façade: settings defaults, the three constructors,
+# body set placement, slot reuse and generations, destruction cascades,
+# chain lifecycle, and the capacity-reusing World.Clear.
+Import Physics2D
+
+Class WorldTests Inherits TestCase
+## Builds a dynamic body definition at the given position.
+Shared Function DynamicDef(x As Double, y As Double) As BodyDefinition
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(x, y)
+Return def
+End Function
+
+## Builds a static body definition at the given position.
+Shared Function StaticDef(x As Double, y As Double) As BodyDefinition
+Var def As New BodyDefinition
+def.Type = BodyType.StaticBody
+def.Position = New Vector2(x, y)
+Return def
+End Function
+
+## Builds a circle shape definition with the given density.
+Shared Function CircleDef(density As Double) As ShapeDefinition
+Var def As New ShapeDefinition
+def.Density = density
+Return def
+End Function
+
+Public Sub TestDefaultSettingsMatchUpstream()
+Var settings As New WorldSettings
+PhysicsAssert.Near(0.0, settings.Gravity.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "gravity x")
+PhysicsAssert.Near(-10.0, settings.Gravity.Y, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "gravity y")
+PhysicsAssert.Near(1.0, settings.RestitutionThreshold, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "restitution threshold")
+PhysicsAssert.Near(1.0, settings.HitEventThreshold, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "hit event threshold")
+PhysicsAssert.Near(3.0, settings.MaxContactPushSpeed, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "contact push speed")
+PhysicsAssert.Near(30.0, settings.ContactHertz, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "contact hertz")
+PhysicsAssert.Near(10.0, settings.ContactDampingRatio, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "contact damping")
+PhysicsAssert.Near(400.0, settings.MaximumLinearSpeed, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "maximum linear speed")
+Assert.True(settings.EnableSleep)
+Assert.True(settings.EnableContinuous)
+End Sub
+
+Public Sub TestThreeConstructors()
+Var defaultWorld As New World
+PhysicsAssert.Near(-10.0, defaultWorld.Gravity.Y, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "default gravity")
+
+Var gravityWorld As World = World.WithGravity(New Vector2(3.0, -2.0))
+PhysicsAssert.Near(3.0, gravityWorld.Gravity.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "gravity constructor x")
+PhysicsAssert.Near(-2.0, gravityWorld.Gravity.Y, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "gravity constructor y")
+PhysicsAssert.Near(30.0, gravityWorld.ContactHertz, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "gravity constructor keeps other defaults")
+
+Var settings As New WorldSettings
+settings.Gravity = New Vector2(1.0, 1.0)
+settings.ContactHertz = 45.0
+settings.EnableSleep = False
+Var settingsWorld As New World(settings)
+PhysicsAssert.Near(1.0, settingsWorld.Gravity.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "settings gravity")
+PhysicsAssert.Near(45.0, settingsWorld.ContactHertz, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "settings hertz")
+Assert.False(settingsWorld.EnableSleeping)
+Assert.True(settingsWorld.WarmStartingEnabled)
+Assert.True(settingsWorld.SpeculativeEnabled)
+Assert.False(settingsWorld.Locked)
+End Sub
+
+Public Sub TestBodySetPlacementAndAwakeCount()
+Var world As New World
+Var staticBody As Body = world.CreateBody(WorldTests.StaticDef(0.0, 0.0))
+Var dynamicBody As Body = world.CreateBody(WorldTests.DynamicDef(1.0, 0.0))
+Var sleepingDef As BodyDefinition = WorldTests.DynamicDef(2.0, 0.0)
+sleepingDef.IsAwake = False
+Var sleepingBody As Body = world.CreateBody(sleepingDef)
+Var disabledDef As BodyDefinition = WorldTests.DynamicDef(3.0, 0.0)
+disabledDef.IsEnabled = False
+Var disabledBody As Body = world.CreateBody(disabledDef)
+
+Assert.Equal(0, staticBody.SetIndex)
+Assert.Equal(2, dynamicBody.SetIndex)
+Assert.True(sleepingBody.SetIndex >= 3)
+Assert.Equal(1, disabledBody.SetIndex)
+Assert.Equal(1, world.AwakeBodyCount())
+Assert.True(dynamicBody.IsAwake())
+Assert.False(sleepingBody.IsAwake())
+Assert.False(disabledBody.IsEnabled())
+world.Validate()
+End Sub
+
+Public Sub TestSlotReuseAndGenerations()
+Var world As New World
+Var bodies As New Array(Of Body)
+For i As Integer = 0 To 5
+bodies.Append(world.CreateBody(WorldTests.DynamicDef(i * 1.0, 0.0)))
+Next i
+Var firstGeneration As Integer = bodies[2].Generation
+Var firstId As Integer = bodies[2].Id
+bodies[1].Destroy()
+bodies[2].Destroy()
+bodies[4].Destroy()
+Assert.False(bodies[2].IsValid())
+Assert.Equal(3, world.BodyIdPool.IdCount())
+world.Validate()
+
+Var replacement As Body = world.CreateBody(WorldTests.DynamicDef(10.0, 10.0))
+# Freed slots are reused most recently freed first, so the replacement
+# takes body 4's slot.
+Assert.Equal(4, replacement.Id)
+Assert.True(replacement.Generation > firstGeneration)
+Assert.False(bodies[2].IsValid())
+Assert.True(replacement.IsValid())
+PhysicsAssert.Near(10.0, replacement.GetPosition().X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "replacement position")
+Assert.Equal(4, world.BodyIdPool.IdCount())
+world.Validate()
+
+# The stale façade must refuse every access.
+Var threw As Boolean = False
+Try
+bodies[2].GetPosition()
+Catch ex As RuntimeException
+threw = True
+End Try
+Assert.True(threw)
+End Sub
+
+Public Sub TestDestroyBodyCascadeInvalidatesShapesAndChains()
+Var world As New World
+Var groundDef As BodyDefinition = WorldTests.StaticDef(0.0, 0.0)
+Var ground As Body = world.CreateBody(groundDef)
+Var chainDef As New ChainDefinition
+chainDef.Body = ground
+chainDef.IsLoop = True
+chainDef.Points.Append(New Vector2(-4.0, 0.0))
+chainDef.Points.Append(New Vector2(4.0, 0.0))
+chainDef.Points.Append(New Vector2(4.0, -2.0))
+chainDef.Points.Append(New Vector2(-4.0, -2.0))
+Var chain As Chain = world.CreateChain(chainDef)
+Assert.True(chain.IsValid())
+Assert.Equal(4, chain.GetSegmentCount())
+# Capture the segment facades before destruction; the chain facade itself
+# becomes invalid with its body.
+Var chainSegments As Array(Of Shape) = chain.GetSegments()
+
+Var dynamicBody As Body = world.CreateBody(WorldTests.DynamicDef(0.0, 3.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = dynamicBody.CreateCircle(WorldTests.CircleDef(1.0), circle)
+Assert.True(shape.IsValid())
+Assert.Equal(1, dynamicBody.GetShapeCount())
+Assert.Equal(4, ground.GetShapeCount())
+
+ground.Destroy()
+Assert.False(ground.IsValid())
+Assert.False(chain.IsValid())
+For i As Integer = 0 To chainSegments.Count - 1
+Assert.False(chainSegments[i].IsValid())
+Next i
+world.Validate()
+
+Assert.True(dynamicBody.IsValid())
+Assert.True(shape.IsValid())
+dynamicBody.Destroy()
+Assert.False(shape.IsValid())
+Assert.Equal(0, world.BodyIdPool.IdCount())
+Assert.Equal(0, world.ShapeIdPool.IdCount())
+Assert.Equal(0, world.ChainIdPool.IdCount())
+world.Validate()
+End Sub
+
+Public Sub TestClearReusesCapacity()
+Var world As New World
+Var bodyDef As BodyDefinition = WorldTests.DynamicDef(0.0, 0.0)
+Var shapeDef As ShapeDefinition = WorldTests.CircleDef(1.0)
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+
+# Warm-up build.
+For i As Integer = 0 To 7
+Var body As Body = world.CreateBody(bodyDef)
+body.CreateCircle(shapeDef, circle)
+Next i
+Var bodyCapacity As Integer = world.Bodies.Count
+Var shapeCapacity As Integer = world.Shapes.Count
+Var nodeCapacity As Integer = world.BroadPhase.Trees[2].NodeCapacity
+world.Clear()
+Assert.Equal(0, world.BodyIdPool.IdCount())
+Assert.Equal(0, world.AwakeBodyCount())
+world.Validate()
+
+Var before As Integer = System.AllocationCount
+For i As Integer = 0 To 7
+Var body As Body = world.CreateBody(bodyDef)
+body.CreateCircle(shapeDef, circle)
+Next i
+world.Clear()
+Var after As Integer = System.AllocationCount
+
+# Each warm create allocates only recreated façade objects and state they
+# own: Body, Shape, bounds, centroid, proxy, filter copy, and cloned circle
+# geometry (17 per iteration, measured).
+Assert.Equal(136, after - before, "warm rebuild must only allocate facades and their owned state")
+Assert.Equal(bodyCapacity, world.Bodies.Count)
+Assert.Equal(shapeCapacity, world.Shapes.Count)
+Assert.True(world.BroadPhase.Trees[2].NodeCapacity >= nodeCapacity)
+End Sub
+
+Public Sub TestLockedWorldRejectsMutation()
+Var world As New World
+world.Locked = True
+Var threw As Boolean = False
+Try
+world.CreateBody(WorldTests.DynamicDef(0.0, 0.0))
+Catch ex As RuntimeException
+threw = True
+End Try
+Assert.True(threw)
+world.Locked = False
+Var body As Body = world.CreateBody(WorldTests.DynamicDef(0.0, 0.0))
+Assert.True(body.IsValid())
+End Sub
+
+Public Sub TestChainSegmentLayoutMatchesUpstream()
+Var world As New World
+Var groundDef As BodyDefinition = WorldTests.StaticDef(0.0, 0.0)
+Var ground As Body = world.CreateBody(groundDef)
+
+# Open chain: five points produce two solid segments with leading-point
+# materials, ported from b2CreateChain.
+Var openDef As New ChainDefinition
+openDef.Body = ground
+openDef.Points.Append(New Vector2(-6.0, -4.0))
+openDef.Points.Append(New Vector2(-3.0, -4.0))
+openDef.Points.Append(New Vector2(0.0, -4.0))
+openDef.Points.Append(New Vector2(3.0, -4.0))
+openDef.Points.Append(New Vector2(6.0, -4.0))
+Var material As New SurfaceMaterial
+material.Friction = 0.4
+openDef.Materials[0] = material
+Var openChain As Chain = world.CreateChain(openDef)
+Assert.Equal(2, openChain.GetSegmentCount())
+Var openSegments As Array(Of Shape) = openChain.GetSegments()
+PhysicsAssert.Near(-3.0, openSegments[0].GetChainSegment().Segment.Point1.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "open segment 1 point 1")
+PhysicsAssert.Near(0.0, openSegments[0].GetChainSegment().Segment.Point2.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "open segment 1 point 2")
+PhysicsAssert.Near(-6.0, openSegments[0].GetChainSegment().Ghost1.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "open segment 1 ghost 1")
+PhysicsAssert.Near(3.0, openSegments[0].GetChainSegment().Ghost2.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "open segment 1 ghost 2")
+PhysicsAssert.Near(0.0, openSegments[1].GetChainSegment().Segment.Point1.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "open segment 2 point 1")
+PhysicsAssert.Near(3.0, openSegments[1].GetChainSegment().Segment.Point2.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "open segment 2 point 2")
+PhysicsAssert.Near(0.4, openChain.GetFriction(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "chain friction")
+PhysicsAssert.Near(0.4, openSegments[1].GetFriction(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "segment friction")
+Assert.Equal(openChain.Id, openSegments[0].GetChainSegment().ChainId)
+
+# Loop chain: four points produce four solid segments wrapping point 0.
+Var loopDef As New ChainDefinition
+loopDef.Body = ground
+loopDef.IsLoop = True
+loopDef.Points.Append(New Vector2(-2.0, -8.0))
+loopDef.Points.Append(New Vector2(2.0, -8.0))
+loopDef.Points.Append(New Vector2(2.0, -6.0))
+loopDef.Points.Append(New Vector2(-2.0, -6.0))
+Var loopChain As Chain = world.CreateChain(loopDef)
+Assert.Equal(4, loopChain.GetSegmentCount())
+Var loopSegments As Array(Of Shape) = loopChain.GetSegments()
+PhysicsAssert.Near(-2.0, loopSegments[3].GetChainSegment().Segment.Point1.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "wrap segment point 1")
+PhysicsAssert.Near(-2.0, loopSegments[3].GetChainSegment().Segment.Point2.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "wrap segment point 2")
+PhysicsAssert.Near(2.0, loopSegments[3].GetChainSegment().Ghost1.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "wrap segment ghost 1")
+PhysicsAssert.Near(2.0, loopSegments[3].GetChainSegment().Ghost2.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "wrap segment ghost 2")
+
+# Per-point materials follow the upstream leading-point rule.
+Var stripedDef As New ChainDefinition
+stripedDef.Body = ground
+stripedDef.Points.Append(New Vector2(-6.0, -10.0))
+stripedDef.Points.Append(New Vector2(-3.0, -10.0))
+stripedDef.Points.Append(New Vector2(0.0, -10.0))
+stripedDef.Points.Append(New Vector2(3.0, -10.0))
+stripedDef.Points.Append(New Vector2(6.0, -10.0))
+Var low As New SurfaceMaterial
+low.Friction = 0.1
+Var high As New SurfaceMaterial
+high.Friction = 0.9
+stripedDef.Materials.Clear()
+stripedDef.Materials.Append(low)
+stripedDef.Materials.Append(high)
+stripedDef.Materials.Append(New SurfaceMaterial())
+stripedDef.Materials.Append(high)
+stripedDef.Materials.Append(low)
+Var stripedChain As Chain = world.CreateChain(stripedDef)
+Var stripedSegments As Array(Of Shape) = stripedChain.GetSegments()
+PhysicsAssert.Near(0.9, stripedSegments[0].GetFriction(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "striped segment 0 uses leading point material")
+PhysicsAssert.Near(0.6, stripedSegments[1].GetFriction(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "striped segment 1 uses leading point material")
+End Sub
+
+Public Sub TestChainMaterialsAndSetters()
+Var world As New World
+Var groundDef As BodyDefinition = WorldTests.StaticDef(0.0, 0.0)
+Var ground As Body = world.CreateBody(groundDef)
+Var chainDef As New ChainDefinition
+chainDef.Body = ground
+chainDef.Points.Append(New Vector2(-3.0, 0.0))
+chainDef.Points.Append(New Vector2(0.0, 0.0))
+chainDef.Points.Append(New Vector2(3.0, 0.0))
+chainDef.Points.Append(New Vector2(6.0, 0.0))
+chainDef.Points.Append(New Vector2(9.0, 0.0))
+Var chain As Chain = world.CreateChain(chainDef)
+Assert.Equal(1, chain.MaterialCount)
+chain.SetFriction(0.25)
+chain.SetRestitution(0.5)
+chain.SetMaterial(7)
+PhysicsAssert.Near(0.25, chain.GetFriction(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "chain friction setter")
+PhysicsAssert.Near(0.5, chain.GetRestitution(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "chain restitution setter")
+Assert.Equal(7, chain.GetMaterial())
+Var chainSegments As Array(Of Shape) = chain.GetSegments()
+For i As Integer = 0 To chainSegments.Count - 1
+Var segment As Shape = chainSegments[i]
+PhysicsAssert.Near(0.25, segment.GetFriction(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "segment friction")
+PhysicsAssert.Near(0.5, segment.GetRestitution(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "segment restitution")
+Assert.Equal(7, segment.GetMaterial())
+Assert.Equal(chain.Id, segment.GetParentChain())
+Assert.True(segment.GetBody() = ground)
+Next i
+chain.Destroy()
+Assert.False(chain.IsValid())
+world.Validate()
+End Sub
+End Class

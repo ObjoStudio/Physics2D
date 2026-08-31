@@ -1,0 +1,43 @@
+# Shape definition passed to Body.CreateCircle and friends, ported from
+# upstream b2ShapeDef in types.h. The constructor sets the same defaults as
+# b2DefaultShapeDef.
+Class ShapeDefinition
+## Surface properties of the shape.
+Property Material As SurfaceMaterial
+## Shape density (kilograms per square metre). Zero produces no mass.
+Property Density As Double
+## Collision filter for this shape.
+Property Filter As Filter
+## User data owned by the application. Never touched by the module.
+Property UserData As Integer
+## Whether this shape reports sensor events.
+Property IsSensor As Boolean
+## Whether this shape reports contact events.
+Property EnableContactEvents As Boolean
+## Whether this shape reports contact hit events.
+Property EnableHitEvents As Boolean
+## Whether this shape reports pre-solve events.
+Property EnablePreSolveEvents As Boolean
+## Whether this shape reports sensor events.
+Property EnableSensorEvents As Boolean
+## Whether pair creation is forced even when the other body is static.
+## Sensors and chains force this implicitly.
+Property InvokeContactCreation As Boolean
+## Whether body mass data is recomputed after the shape is added.
+Property UpdateBodyMass As Boolean
+
+## Creates the default shape definition, matching upstream b2DefaultShapeDef.
+Constructor()
+Me.Material = New SurfaceMaterial()
+Me.Density = 1.0
+Me.Filter = New Filter()
+Me.UserData = 0
+Me.IsSensor = False
+Me.EnableContactEvents = False
+Me.EnableHitEvents = False
+Me.EnablePreSolveEvents = False
+Me.EnableSensorEvents = False
+Me.InvokeContactCreation = True
+Me.UpdateBodyMass = True
+End Constructor
+End Class

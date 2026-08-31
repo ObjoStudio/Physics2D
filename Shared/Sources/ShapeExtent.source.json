@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ShapeExtent",
+  "Id": "8e955d57-001a-4b37-9a56-dbb3c3f716a8",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "ShapeExtent.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

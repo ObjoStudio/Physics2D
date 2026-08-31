@@ -1,0 +1,21 @@
+# One query hit record for the Into forms of the world queries. Point and
+# normal are owned vectors set in place, so a warmed ShapeHitList reuses
+# every record across queries without allocation.
+Class ShapeHit
+## The hit shape façade. Nothing when unused.
+Property Shape As Shape
+## World hit point.
+Property Point As Vector2
+## World surface normal.
+Property Normal As Vector2
+## Hit fraction along the cast translation.
+Property Fraction As Double
+
+## Creates an empty hit record.
+Constructor()
+Me.Shape = Nothing
+Me.Point = New Vector2(0.0, 0.0)
+Me.Normal = New Vector2(0.0, 0.0)
+Me.Fraction = 0.0
+End Constructor
+End Class

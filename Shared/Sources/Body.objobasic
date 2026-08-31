@@ -1,0 +1,510 @@
+# Body façade, ported from upstream b2Body in body.h plus the b2Body_* API
+# family in box2d.h. A body is owned by its world: the world stores one Body
+# per slot in a sparse array, destruction reclaims the slot and increments
+# the generation, and stale façades fail IsValid. The heavy lifecycle logic
+# (solver-set moves, mass updates, proxy sync) lives on World; the façade
+# delegates every mutation there.
+#
+# Contact, joint, and island bookkeeping arrives with Stages 7 and 9.
+Class Body
+## Owning world. Set at creation and never changed.
+Property Owner As World
+## Slot index of this body in the world body store.
+Property Id As Integer
+## Generation counter, incremented when the slot is freed and reused.
+Property Generation As Integer
+## Whether this body is live. Stale façades keep the object but flip this.
+Property Live As Boolean
+## Solver set index: 0 static, 1 disabled, 2 awake, 3+ sleeping sets.
+Property SetIndex As Integer
+## Dense-record index of this body inside its solver set.
+Property LocalIndex As Integer
+## Head of the doubly linked shape list.
+Property HeadShapeId As Integer
+## Number of shapes attached to this body.
+Property ShapeCount As Integer
+## Head of the doubly linked chain list.
+Property HeadChainId As Integer
+## Total mass from shapes (kilograms). Overridden by SetMassData.
+Property Mass As Double
+## Rotational inertia about the centre of mass. Overridden by SetMassData.
+Property Inertia As Double
+## Below this speed a body may sleep (metres per second).
+Property SleepThreshold As Double
+## Time spent below the sleep threshold (seconds).
+Property SleepTime As Double
+## The body type.
+Property Type As BodyType
+## Whether this body may ever sleep.
+Property EnableSleep As Boolean
+## Whether rotation is locked.
+Property FixedRotation As Boolean
+## Whether the speed cap engaged in the last step.
+Property IsSpeedCapped As Boolean
+## Whether the body is marked during island traversal. Solver bookkeeping
+## from Stage 7.
+Property IsMarked As Boolean
+## Optional body name, truncated to 31 characters like upstream.
+Property Name As String
+## User data owned by the application.
+Property UserData As Integer
+
+## Creates an empty, unbound body. Only the world may construct live bodies;
+## the zero-argument form exists for sparse array capacity.
+Constructor()
+Me.Owner = Nothing
+Me.Id = PhysicsConstants.NULL_INDEX
+Me.Generation = PhysicsConstants.INVALID_GENERATION
+Me.Live = False
+Me.SetIndex = PhysicsConstants.NULL_INDEX
+Me.LocalIndex = PhysicsConstants.NULL_INDEX
+Me.HeadShapeId = PhysicsConstants.NULL_INDEX
+Me.ShapeCount = 0
+Me.HeadChainId = PhysicsConstants.NULL_INDEX
+Me.Mass = 0.0
+Me.Inertia = 0.0
+Me.SleepThreshold = 0.0
+Me.SleepTime = 0.0
+Me.Type = BodyType.StaticBody
+Me.EnableSleep = True
+Me.FixedRotation = False
+Me.IsSpeedCapped = False
+Me.IsMarked = False
+Me.Name = ""
+Me.UserData = 0
+End Constructor
+
+## Returns True when this façade still addresses a live body.
+Function IsValid() As Boolean
+If Me.Owner = Nothing Or Not Me.Live Then
+Return False
+End If
+Return Me.Owner.Bodies[Me.Id] = Me
+End Function
+
+## Throws a descriptive exception when this façade is stale. All mutating
+## and reading members call this first.
+Sub Validate()
+If Not Me.IsValid() Then
+Throw New RuntimeException("Body façade is no longer valid")
+End If
+End Sub
+
+## Returns the owning world façade.
+Function GetWorld() As World
+Me.Validate()
+Return Me.Owner
+End Function
+
+## The body type. Named GetBodyType because every Objo object already has a
+## GetType method from the root class.
+Function GetBodyType() As BodyType
+Me.Validate()
+Return Me.Type
+End Function
+
+## The body name.
+Function GetName() As String
+Me.Validate()
+Return Me.Name
+End Function
+
+## Sets the body name, truncated to 31 characters like upstream.
+Sub SetName(name As String)
+Me.Validate()
+If name = Nothing Then
+Me.Name = ""
+Return
+End If
+If name.Length > 31 Then
+Me.Name = name.Substring(0, 31)
+Return
+End If
+Me.Name = name
+End Sub
+
+## User data owned by the application.
+Function GetUserData() As Integer
+Me.Validate()
+Return Me.UserData
+End Function
+
+## Sets user data owned by the application.
+Sub SetUserData(userData As Integer)
+Me.Validate()
+Me.UserData = userData
+End Sub
+
+## The world position of the body origin.
+Function GetPosition() As Vector2
+Me.Validate()
+Return Me.Owner.GetBodyTransform(Me).P
+End Function
+
+## The world rotation of the body.
+Function GetRotation() As Rot
+Me.Validate()
+Return Me.Owner.GetBodyTransform(Me).Q
+End Function
+
+## The world transform of the body origin. The result is a copy.
+Function GetTransform() As Transform
+Me.Validate()
+Return Me.Owner.GetBodyTransform(Me)
+End Function
+
+## Converts a world point to the body frame, ported from
+## b2Body_GetLocalPoint.
+Function GetLocalPoint(worldPoint As Vector2) As Vector2
+Me.Validate()
+Return Transform.InvTransformPoint(Me.Owner.GetBodyTransform(Me), worldPoint)
+End Function
+
+## Converts a local point to the world frame, ported from
+## b2Body_GetWorldPoint.
+Function GetWorldPoint(localPoint As Vector2) As Vector2
+Me.Validate()
+Return Transform.TransformPoint(Me.Owner.GetBodyTransform(Me), localPoint)
+End Function
+
+## Converts a world vector to the body frame, ported from
+## b2Body_GetLocalVector.
+Function GetLocalVector(worldVector As Vector2) As Vector2
+Me.Validate()
+Return Rot.InvRotateVector(Me.Owner.GetBodyTransform(Me).Q, worldVector)
+End Function
+
+## Converts a local vector to the world frame, ported from
+## b2Body_GetWorldVector.
+Function GetWorldVector(localVector As Vector2) As Vector2
+Me.Validate()
+Return Rot.RotateVector(Me.Owner.GetBodyTransform(Me).Q, localVector)
+End Function
+
+## Teleports the body to a new transform and refreshes shape proxies,
+## ported from b2Body_SetTransform. Rejected while the world is locked.
+Sub SetTransform(position As Vector2, rotation As Rot)
+Me.Validate()
+Me.Owner.SetBodyTransform(Me, position, rotation)
+End Sub
+
+## The linear velocity of the centre of mass.
+Function GetLinearVelocity() As Vector2
+Me.Validate()
+Return Me.Owner.GetBodyLinearVelocity(Me)
+End Function
+
+## Sets the linear velocity of the centre of mass, waking the body for a
+## non-zero velocity, ported from b2Body_SetLinearVelocity.
+Sub SetLinearVelocity(linearVelocity As Vector2)
+Me.Validate()
+Me.Owner.SetBodyLinearVelocity(Me, linearVelocity)
+End Sub
+
+## The angular velocity in radians per second.
+Function GetAngularVelocity() As Double
+Me.Validate()
+Return Me.Owner.GetBodyAngularVelocity(Me)
+End Function
+
+## Sets the angular velocity in radians per second, waking the body for a
+## non-zero velocity, ported from b2Body_SetAngularVelocity.
+Sub SetAngularVelocity(angularVelocity As Double)
+Me.Validate()
+Me.Owner.SetBodyAngularVelocity(Me, angularVelocity)
+End Sub
+
+## Drives the body towards the target transform over the given time step,
+## ported from b2Body_SetTargetTransform. Ignored for static bodies and
+## non-positive time steps.
+Sub SetTargetTransform(target As Transform, timeStep As Double)
+Me.Validate()
+Me.Owner.SetBodyTargetTransform(Me, target, timeStep)
+End Sub
+
+## Velocity of a point in the body frame, ported from
+## b2Body_GetLocalPointVelocity.
+Function GetLocalPointVelocity(localPoint As Vector2) As Vector2
+Me.Validate()
+Return Me.Owner.GetBodyLocalPointVelocity(Me, localPoint)
+End Function
+
+## Velocity of a world point attached to the body, ported from
+## b2Body_GetWorldPointVelocity.
+Function GetWorldPointVelocity(worldPoint As Vector2) As Vector2
+Me.Validate()
+Return Me.Owner.GetBodyWorldPointVelocity(Me, worldPoint)
+End Function
+
+## Applies a force at a world point, ported from b2Body_ApplyForce.
+Sub ApplyForce(force As Vector2, point As Vector2, wake As Boolean)
+Me.Validate()
+Me.Owner.ApplyBodyForce(Me, force, point, wake)
+End Sub
+
+## Applies a force at the centre of mass, ported from
+## b2Body_ApplyForceToCenter.
+Sub ApplyForceToCenter(force As Vector2, wake As Boolean)
+Me.Validate()
+Me.Owner.ApplyBodyForceToCenter(Me, force, wake)
+End Sub
+
+## Applies a torque, ported from b2Body_ApplyTorque.
+Sub ApplyTorque(torque As Double, wake As Boolean)
+Me.Validate()
+Me.Owner.ApplyBodyTorque(Me, torque, wake)
+End Sub
+
+## Applies an impulse at a world point, ported from b2Body_ApplyLinearImpulse.
+Sub ApplyLinearImpulse(impulse As Vector2, point As Vector2, wake As Boolean)
+Me.Validate()
+Me.Owner.ApplyBodyLinearImpulse(Me, impulse, point, wake)
+End Sub
+
+## Applies an impulse at the centre of mass, ported from
+## b2Body_ApplyLinearImpulseToCenter.
+Sub ApplyLinearImpulseToCenter(impulse As Vector2, wake As Boolean)
+Me.Validate()
+Me.Owner.ApplyBodyLinearImpulseToCenter(Me, impulse, wake)
+End Sub
+
+## Applies an angular impulse, ported from b2Body_ApplyAngularImpulse.
+Sub ApplyAngularImpulse(impulse As Double, wake As Boolean)
+Me.Validate()
+Me.Owner.ApplyBodyAngularImpulse(Me, impulse, wake)
+End Sub
+
+## Total mass in kilograms.
+Function GetMass() As Double
+Me.Validate()
+Return Me.Mass
+End Function
+
+## Rotational inertia about the centre of mass.
+Function GetRotationalInertia() As Double
+Me.Validate()
+Return Me.Inertia
+End Function
+
+## The local centre of mass relative to the body origin.
+Function GetLocalCenterOfMass() As Vector2
+Me.Validate()
+Return Me.Owner.GetBodyLocalCenterOfMass(Me)
+End Function
+
+## The world centre of mass.
+Function GetWorldCenterOfMass() As Vector2
+Me.Validate()
+Return Me.Owner.GetBodyWorldCenterOfMass(Me)
+End Function
+
+## The mass data of the body, ported from b2Body_GetMassData. The result is
+## a fresh record.
+Function GetMassData() As MassData
+Me.Validate()
+Return Me.Owner.GetBodyMassData(Me)
+End Function
+
+## Overrides the mass data, ported from b2Body_SetMassData.
+Sub SetMassData(massData As MassData)
+Me.Validate()
+Me.Owner.SetBodyMassData(Me, massData)
+End Sub
+
+## Recomputes mass data from the attached shapes, ported from
+## b2Body_ApplyMassFromShapes.
+Sub ApplyMassFromShapes()
+Me.Validate()
+Me.Owner.UpdateBodyMassData(Me)
+End Sub
+
+## Linear damping in kilograms per second.
+Function GetLinearDamping() As Double
+Me.Validate()
+Return Me.Owner.GetBodyLinearDamping(Me)
+End Function
+
+## Sets linear damping in kilograms per second.
+Sub SetLinearDamping(linearDamping As Double)
+Me.Validate()
+Me.Owner.SetBodyLinearDamping(Me, linearDamping)
+End Sub
+
+## Angular damping in kilograms per second.
+Function GetAngularDamping() As Double
+Me.Validate()
+Return Me.Owner.GetBodyAngularDamping(Me)
+End Function
+
+## Sets angular damping in kilograms per second.
+Sub SetAngularDamping(angularDamping As Double)
+Me.Validate()
+Me.Owner.SetBodyAngularDamping(Me, angularDamping)
+End Sub
+
+## The gravity scale.
+Function GetGravityScale() As Double
+Me.Validate()
+Return Me.Owner.GetBodyGravityScale(Me)
+End Function
+
+## Sets the gravity scale.
+Sub SetGravityScale(gravityScale As Double)
+Me.Validate()
+Me.Owner.SetBodyGravityScale(Me, gravityScale)
+End Sub
+
+## Whether the body is in the awake set.
+Function IsAwake() As Boolean
+Me.Validate()
+Return Me.SetIndex = 2
+End Function
+
+## Wakes or sleeps the body, ported from b2Body_SetAwake. Sleeping applies
+## to this body alone in Stage 6; island-wide sleeping arrives in Stage 7.
+Sub SetAwake(awake As Boolean)
+Me.Validate()
+Me.Owner.SetBodyAwake(Me, awake)
+End Sub
+
+## Whether the body is enabled (not in the disabled set).
+Function IsEnabled() As Boolean
+Me.Validate()
+Return Me.SetIndex <> 1
+End Function
+
+## Enables a disabled body, ported from b2Body_Enable.
+Sub Enable()
+Me.Validate()
+Me.Owner.EnableBody(Me)
+End Sub
+
+## Disables a live body, ported from b2Body_Disable.
+Sub Disable()
+Me.Validate()
+Me.Owner.DisableBody(Me)
+End Sub
+
+## Whether the body may ever sleep.
+Function IsSleepEnabled() As Boolean
+Me.Validate()
+Return Me.EnableSleep
+End Function
+
+## Enables or disables sleeping for this body, waking it when disabled,
+## ported from b2Body_EnableSleep. Named SetEnableSleep because EnableSleep
+## names the property.
+Sub SetEnableSleep(enableSleep As Boolean)
+Me.Validate()
+Me.Owner.SetBodyEnableSleep(Me, enableSleep)
+End Sub
+
+## The sleep speed threshold in metres per second.
+Function GetSleepThreshold() As Double
+Me.Validate()
+Return Me.SleepThreshold
+End Function
+
+## Sets the sleep speed threshold in metres per second.
+Sub SetSleepThreshold(sleepThreshold As Double)
+Me.Validate()
+Me.SleepThreshold = sleepThreshold
+End Sub
+
+## Whether rotation is locked.
+Function IsFixedRotation() As Boolean
+Me.Validate()
+Return Me.FixedRotation
+End Function
+
+## Locks or unlocks rotation and recomputes mass, ported from
+## b2Body_SetFixedRotation.
+Sub SetFixedRotation(flag As Boolean)
+Me.Validate()
+Me.Owner.SetBodyFixedRotation(Me, flag)
+End Sub
+
+## Whether the body is treated as a bullet for continuous collision.
+Function IsBullet() As Boolean
+Me.Validate()
+Return Me.Owner.GetBodySim(Me).IsBullet.Items[Me.LocalIndex] <> 0
+End Function
+
+## Sets the bullet flag, ported from b2Body_SetBullet.
+Sub SetBullet(flag As Boolean)
+Me.Validate()
+Var bulletValue As Integer = 0
+If flag Then
+bulletValue = 1
+End If
+Me.Owner.GetBodySim(Me).IsBullet.Items[Me.LocalIndex] = bulletValue
+End Sub
+
+## The number of attached shapes.
+Function GetShapeCount() As Integer
+Me.Validate()
+Return Me.ShapeCount
+End Function
+
+## Returns the attached shape façades in a fresh array. Allocating
+## convenience for cold paths.
+Function GetShapes() As Array(Of Shape)
+Me.Validate()
+Var results As New Array(Of Shape)
+Var shapeId As Integer = Me.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+results.Append(shape)
+shapeId = shape.NextShapeId
+Wend
+Return results
+End Function
+
+## Computes the union of attached shape bounds, ported from
+## b2Body_ComputeAABB. A body without shapes reports its origin point.
+Function ComputeAABB() As AABB
+Me.Validate()
+Return Me.Owner.ComputeBodyAABB(Me)
+End Function
+
+## Changes the body type, ported from b2Body_SetType.
+Sub SetType(bodyType As BodyType)
+Me.Validate()
+Me.Owner.SetBodyType(Me, bodyType)
+End Sub
+
+## Creates a circle shape on this body, ported from b2Body_CreateCircle.
+Function CreateCircle(def As ShapeDefinition, circle As Circle) As Shape
+Me.Validate()
+Return Me.Owner.CreateCircleShape(Me, def, circle)
+End Function
+
+## Creates a capsule shape on this body, ported from b2Body_CreateCapsule.
+## A degenerate capsule collapses to a circle exactly like upstream.
+Function CreateCapsule(def As ShapeDefinition, capsule As Capsule) As Shape
+Me.Validate()
+Return Me.Owner.CreateCapsuleShape(Me, def, capsule)
+End Function
+
+## Creates a polygon shape on this body, ported from b2Body_CreatePolygon.
+Function CreatePolygon(def As ShapeDefinition, polygon As Polygon) As Shape
+Me.Validate()
+Return Me.Owner.CreatePolygonShape(Me, def, polygon)
+End Function
+
+## Creates a segment shape on this body, ported from b2Body_CreateSegment.
+## Degenerate segments are rejected exactly like upstream.
+Function CreateSegment(def As ShapeDefinition, segment As Segment) As Shape
+Me.Validate()
+Return Me.Owner.CreateSegmentShape(Me, def, segment)
+End Function
+
+## Destroys this body, its shapes, and its chains, ported from
+## b2DestroyBody. Idempotent on already-destroyed façades.
+Sub Destroy()
+If Not Me.IsValid() Then
+Return
+End If
+Me.Owner.DestroyBody(Me)
+End Sub
+End Class

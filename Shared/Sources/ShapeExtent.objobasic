@@ -1,0 +1,17 @@
+# Minimum and maximum shape extent relative to a local centre, ported from
+# upstream b2ShapeExtent in shape.h. A plain record passed into and out of
+# extent queries.
+Class ShapeExtent
+## Distance from the local centre to the closest shape surface, plus the
+## shape radius for rounded shapes.
+Property MinExtent As Double
+## Distance from the local centre to the furthest shape point, plus the
+## shape radius for rounded shapes.
+Property MaxExtent As Double
+
+## Creates a zeroed extent record.
+Constructor()
+Me.MinExtent = 0.0
+Me.MaxExtent = 0.0
+End Constructor
+End Class

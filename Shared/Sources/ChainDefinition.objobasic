@@ -1,0 +1,34 @@
+# Chain definition passed to World.CreateChain, ported from upstream
+# b2ChainDef in types.h. Upstream takes the body separately; Physics2D puts
+# it on the definition so chains are created through the world like upstream.
+Class ChainDefinition
+## The body that owns the chain.
+Property Body As Body
+## Chain points in the body frame. At least four points are required,
+## matching the upstream assertion.
+Property Points As Array(Of Vector2)
+## Whether the chain wraps back to the first point.
+Property IsLoop As Boolean
+## Surface materials. Either one material for the whole chain or exactly one
+## material per point.
+Property Materials As Array(Of SurfaceMaterial)
+## Collision filter shared by every chain segment.
+Property Filter As Filter
+## User data copied onto every chain segment shape.
+Property UserData As Integer
+## Whether chain segments report sensor events.
+Property EnableSensorEvents As Boolean
+
+## Creates the default chain definition, matching upstream b2DefaultChainDef:
+## one friction-0.6 material.
+Constructor()
+Me.Body = Nothing
+Me.Points = New Array(Of Vector2)
+Me.IsLoop = False
+Me.Materials = New Array(Of SurfaceMaterial)
+Me.Materials.Append(New SurfaceMaterial())
+Me.Filter = New Filter()
+Me.UserData = 0
+Me.EnableSensorEvents = False
+End Constructor
+End Class

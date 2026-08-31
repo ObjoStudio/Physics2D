@@ -1,0 +1,532 @@
+# Tests for the body façade: mass maintenance, transforms, velocities,
+# forces, type changes, enable/disable, wake and sleep, fixed rotation, and
+# proxy lifecycle, ported from the behaviour of upstream body.c.
+Import Physics2D
+
+Class BodyTests Inherits TestCase
+## Builds a dynamic body definition at the given position.
+Private Shared Function DynamicDef(x As Double, y As Double) As BodyDefinition
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(x, y)
+Return def
+End Function
+
+## Builds a static body definition at the given position.
+Private Shared Function StaticDef(x As Double, y As Double) As BodyDefinition
+Var def As New BodyDefinition
+def.Type = BodyType.StaticBody
+def.Position = New Vector2(x, y)
+Return def
+End Function
+
+## Builds a circle shape definition with the given density.
+Private Shared Function CircleDef(density As Double) As ShapeDefinition
+Var def As New ShapeDefinition
+def.Density = density
+Return def
+End Function
+
+Public Sub TestCircleBodyMassMatchesClosedForm()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+
+# Upstream b2ComputeCircleMass: mass = rho pi r^2, inertia = rho pi r^4 / 2.
+Var expectedMass As Double = 3.14159265358979 * 0.25
+Var expectedInertia As Double = 0.5 * expectedMass * 0.25
+PhysicsAssert.Near(expectedMass, body.GetMass(), 1e-12, 1e-12, "circle mass")
+PhysicsAssert.Near(expectedInertia, body.GetRotationalInertia(), 1e-12, 1e-12, "circle inertia")
+Var sims As BodySims = world.GetBodySim(body)
+PhysicsAssert.Near(1.0 / expectedMass, sims.InvMass.Items[body.LocalIndex], 1e-12, 1e-12, "inverse mass")
+PhysicsAssert.Near(1.0 / expectedInertia, sims.InvInertia.Items[body.LocalIndex], 1e-12, 1e-12, "inverse inertia")
+PhysicsAssert.Near(0.0, body.GetLocalCenterOfMass().X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "circle local centre x")
+PhysicsAssert.Near(0.5, sims.MinExtent.Items[body.LocalIndex], Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "circle min extent")
+PhysicsAssert.Near(0.5, sims.MaxExtent.Items[body.LocalIndex], Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "circle max extent")
+End Sub
+
+Public Sub TestBoxBodyMassMatchesClosedForm()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(2.0, 3.0))
+Var box As Polygon = Polygon.MakeBox(0.5, 0.25)
+body.CreatePolygon(BodyTests.CircleDef(2.5), box)
+
+# Unit box scaled: mass = 4ab rho, inertia about centre = m (w^2 + h^2) / 12.
+Var expectedMass As Double = 4.0 * 0.5 * 0.25 * 2.5
+Var expectedInertia As Double = expectedMass * (1.0 + 0.25) / 12.0
+PhysicsAssert.Near(expectedMass, body.GetMass(), 1e-12, 1e-12, "box mass")
+PhysicsAssert.Near(expectedInertia, body.GetRotationalInertia(), 1e-12, 1e-12, "box inertia")
+PhysicsAssert.Near(2.0, body.GetWorldCenterOfMass().X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "box centre x")
+PhysicsAssert.Near(3.0, body.GetWorldCenterOfMass().Y, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "box centre y")
+End Sub
+
+Public Sub TestOffsetShapesCombineMassWithParallelAxis()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var small As New Circle(New Vector2(-1.0, 0.0), 0.5)
+Var large As New Circle(New Vector2(1.0, 0.0), 1.0)
+Var smallShape As Shape = body.CreateCircle(BodyTests.CircleDef(1.0), small)
+Var largeShape As Shape = body.CreateCircle(BodyTests.CircleDef(1.0), large)
+
+Var smallData As MassData = smallShape.GetMassData()
+Var largeData As MassData = largeShape.GetMassData()
+Var totalMass As Double = smallData.Mass + largeData.Mass
+PhysicsAssert.Near(totalMass, body.GetMass(), 1e-12, 1e-12, "combined mass")
+
+Var comX As Double = (smallData.Mass * smallData.Center.X + largeData.Mass * largeData.Center.X) / totalMass
+PhysicsAssert.Near(comX, body.GetLocalCenterOfMass().X, 1e-9, 1e-9, "combined centre of mass")
+
+# Aggregate inertia, ported from b2UpdateBodyMassData: the per-shape
+# inertias are about the local origin, so the body inertia is their sum
+# minus the mass times the squared distance to the centre of mass.
+Var expectedInertia As Double = smallData.RotationalInertia + largeData.RotationalInertia
+expectedInertia = expectedInertia - totalMass * comX * comX
+PhysicsAssert.Near(expectedInertia, body.GetRotationalInertia(), 1e-9, 1e-9, "aggregate inertia")
+End Sub
+
+Public Sub TestFixedRotationZeroesInertia()
+Var world As New World
+Var def As BodyDefinition = BodyTests.DynamicDef(0.0, 0.0)
+def.FixedRotation = True
+Var body As Body = world.CreateBody(def)
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+PhysicsAssert.Near(3.14159265358979 * 0.25, body.GetMass(), 1e-12, 1e-12, "fixed rotation mass")
+Assert.Equal(0.0, body.GetRotationalInertia())
+Assert.True(body.IsFixedRotation())
+End Sub
+
+Public Sub TestSetMassDataOverridesAndApplyMassFromShapesRestores()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(1.0, 2.0))
+Var circle As New Circle(New Vector2(0.5, 0.0), 0.5)
+body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+
+Var overrideData As New MassData
+overrideData.Mass = 7.0
+overrideData.RotationalInertia = 2.0
+overrideData.Center = New Vector2(0.25, -0.5)
+body.SetMassData(overrideData)
+Assert.Equal(7.0, body.GetMass())
+Assert.Equal(2.0, body.GetRotationalInertia())
+PhysicsAssert.Near(0.25, body.GetLocalCenterOfMass().X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "override centre x")
+PhysicsAssert.Near(-0.5, body.GetLocalCenterOfMass().Y, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "override centre y")
+Var data As MassData = body.GetMassData()
+Assert.Equal(7.0, data.Mass)
+Assert.Equal(2.0, data.RotationalInertia)
+
+body.ApplyMassFromShapes()
+PhysicsAssert.Near(3.14159265358979 * 0.25, body.GetMass(), 1e-12, 1e-12, "restored mass")
+PhysicsAssert.Near(0.5, body.GetLocalCenterOfMass().X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "restored centre x")
+End Sub
+
+Public Sub TestImpulseChangesVelocityByInverseMass()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+body.CreateCircle(BodyTests.CircleDef(2.0), circle)
+Var expectedMass As Double = 2.0 * 3.14159265358979 * 0.25
+body.ApplyLinearImpulseToCenter(New Vector2(3.0, -1.0), False)
+Var velocity As Vector2 = body.GetLinearVelocity()
+PhysicsAssert.Near(3.0 / expectedMass, velocity.X, 1e-12, 1e-12, "impulse velocity x")
+PhysicsAssert.Near(-1.0 / expectedMass, velocity.Y, 1e-12, 1e-12, "impulse velocity y")
+body.ApplyAngularImpulse(0.4, False)
+PhysicsAssert.Near(0.4 / (0.5 * expectedMass * 0.25), body.GetAngularVelocity(), 1e-9, 1e-9, "angular impulse velocity")
+End Sub
+
+Public Sub TestTransformRoundTrips()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var rotation As Rot = Rot.Make(0.75)
+body.SetTransform(New Vector2(-3.5, 8.25), rotation)
+PhysicsAssert.Near(-3.5, body.GetPosition().X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "position x")
+PhysicsAssert.Near(8.25, body.GetPosition().Y, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "position y")
+PhysicsAssert.Near(0.75, Rot.GetAngle(body.GetRotation()), Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "rotation angle")
+
+# The world offset from the body origin is (1, 1); the local point is the
+# inverse-rotated offset. Cosine and sine carry the deterministic
+# approximation error, so scene tolerances apply.
+Var local As Vector2 = body.GetLocalPoint(New Vector2(-2.5, 9.25))
+Var angleCos As Double = Maths.Cos(0.75)
+Var angleSin As Double = Maths.Sin(0.75)
+PhysicsAssert.Near(angleCos + angleSin, local.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "local point x")
+PhysicsAssert.Near(angleCos - angleSin, local.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "local point y")
+Var worldPoint As Vector2 = body.GetWorldPoint(local)
+PhysicsAssert.Near(-2.5, worldPoint.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "world point x")
+PhysicsAssert.Near(9.25, worldPoint.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "world point y")
+
+Var localVector As Vector2 = body.GetLocalVector(New Vector2(0.0, 2.0))
+PhysicsAssert.Near(2.0 * Maths.Sin(0.75), localVector.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "local vector x")
+PhysicsAssert.Near(2.0 * Maths.Cos(0.75), localVector.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "local vector y")
+Var worldVector As Vector2 = body.GetWorldVector(localVector)
+PhysicsAssert.Near(0.0, worldVector.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "world vector x")
+PhysicsAssert.Near(2.0, worldVector.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "world vector y")
+End Sub
+
+Public Sub TestPointVelocitiesWithRotation()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 1.0)
+body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+body.SetLinearVelocity(New Vector2(1.0, 0.0))
+body.SetAngularVelocity(2.0)
+Var pointVelocity As Vector2 = body.GetWorldPointVelocity(New Vector2(0.0, 1.0))
+PhysicsAssert.Near(1.0 - 2.0, pointVelocity.X, 1e-12, 1e-12, "point velocity x")
+PhysicsAssert.Near(0.0, pointVelocity.Y, 1e-12, 1e-12, "point velocity y")
+Var localVelocity As Vector2 = body.GetLocalPointVelocity(New Vector2(1.0, 0.0))
+PhysicsAssert.Near(1.0, localVelocity.X, 1e-12, 1e-12, "local point velocity x")
+PhysicsAssert.Near(2.0, localVelocity.Y, 1e-12, 1e-12, "local point velocity y")
+End Sub
+
+Public Sub TestStaticBodiesIgnoreVelocity()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.StaticDef(0.0, 0.0))
+body.SetLinearVelocity(New Vector2(5.0, 5.0))
+body.SetAngularVelocity(3.0)
+PhysicsAssert.Near(0.0, body.GetLinearVelocity().X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "static velocity x")
+Assert.Equal(0.0, body.GetAngularVelocity())
+End Sub
+
+Public Sub TestForceAndTorqueAccumulate()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(1.0, 1.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+body.ApplyForceToCenter(New Vector2(1.0, 0.0), False)
+body.ApplyForce(New Vector2(0.0, 1.0), New Vector2(1.0, 2.0), False)
+body.ApplyTorque(0.5, False)
+Var sims As BodySims = world.GetBodySim(body)
+PhysicsAssert.Near(1.0, sims.ForceX.Items[body.LocalIndex], Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "force x")
+PhysicsAssert.Near(1.0, sims.ForceY.Items[body.LocalIndex], Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "force y")
+# Torque from the offset force: r = (0, 1), F = (0, 1), so the cross
+# product is zero and only the applied torque remains.
+PhysicsAssert.Near(0.5, sims.Torque.Items[body.LocalIndex], 1e-12, 1e-12, "torque")
+
+# Sleeping bodies ignore forces unless woken.
+Var sleepingDef As BodyDefinition = BodyTests.DynamicDef(5.0, 5.0)
+sleepingDef.IsAwake = False
+Var sleepingBody As Body = world.CreateBody(sleepingDef)
+sleepingBody.ApplyForceToCenter(New Vector2(1.0, 0.0), False)
+Var sleepingSims As BodySims = world.GetBodySim(sleepingBody)
+PhysicsAssert.Near(0.0, sleepingSims.ForceX.Items[sleepingBody.LocalIndex], Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "sleeping force")
+sleepingBody.ApplyForceToCenter(New Vector2(1.0, 0.0), True)
+Assert.True(sleepingBody.IsAwake())
+End Sub
+
+Public Sub TestTypeChangesMoveSetsAndProxies()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.StaticDef(0.0, 0.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+Assert.Equal(0, body.SetIndex)
+Assert.Equal(Integer(BodyType.StaticBody), BroadPhase.ProxyType(shape.ProxyKey))
+
+body.SetType(BodyType.DynamicBody)
+Assert.Equal(2, body.SetIndex)
+Assert.True(body.IsAwake())
+Assert.Equal(Integer(BodyType.DynamicBody), BroadPhase.ProxyType(shape.ProxyKey))
+PhysicsAssert.Near(3.14159265358979 * 0.25, body.GetMass(), 1e-12, 1e-12, "dynamic mass after type change")
+world.Validate()
+
+body.SetType(BodyType.KinematicBody)
+Assert.Equal(Integer(BodyType.KinematicBody), BroadPhase.ProxyType(shape.ProxyKey))
+Assert.Equal(0.0, body.GetMass())
+world.Validate()
+
+body.SetType(BodyType.StaticBody)
+Assert.Equal(0, body.SetIndex)
+Assert.Equal(Integer(BodyType.StaticBody), BroadPhase.ProxyType(shape.ProxyKey))
+world.Validate()
+End Sub
+
+Public Sub TestDisabledBodiesKeepTypeAndLoseProxies()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+Assert.True(shape.ProxyKey <> PhysicsConstants.NULL_INDEX)
+
+body.Disable()
+Assert.False(body.IsEnabled())
+Assert.Equal(1, body.SetIndex)
+Assert.Equal(PhysicsConstants.NULL_INDEX, shape.ProxyKey)
+world.Validate()
+
+# Type changes while disabled do not move sets.
+body.SetType(BodyType.KinematicBody)
+Assert.Equal(1, body.SetIndex)
+Assert.Equal(BodyType.KinematicBody, body.GetBodyType())
+
+body.Enable()
+Assert.True(body.IsEnabled())
+Assert.Equal(2, body.SetIndex)
+Assert.Equal(Integer(BodyType.KinematicBody), BroadPhase.ProxyType(shape.ProxyKey))
+Assert.True(shape.ProxyKey <> PhysicsConstants.NULL_INDEX)
+world.Validate()
+End Sub
+
+Public Sub TestAwakeAndSleepSets()
+Var world As New World
+Var def As BodyDefinition = BodyTests.DynamicDef(0.0, 0.0)
+def.IsAwake = False
+Var body As Body = world.CreateBody(def)
+Assert.False(body.IsAwake())
+Var sleepingSet As Integer = body.SetIndex
+Assert.True(sleepingSet >= 3)
+
+# Velocity writes wake a sleeping body.
+body.SetLinearVelocity(New Vector2(1.0, 0.0))
+Assert.True(body.IsAwake())
+Assert.Equal(2, body.SetIndex)
+world.Validate()
+
+body.SetAwake(False)
+Assert.False(body.IsAwake())
+Assert.True(body.SetIndex >= 3)
+Assert.Equal(0, world.AwakeBodyCount())
+
+body.SetAwake(True)
+Assert.True(body.IsAwake())
+Assert.Equal(1, world.AwakeBodyCount())
+world.Validate()
+End Sub
+
+Public Sub TestEnableSleepAndThresholds()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Assert.Equal(0.05, body.GetSleepThreshold())
+body.SetSleepThreshold(0.2)
+Assert.Equal(0.2, body.GetSleepThreshold())
+Assert.True(body.IsSleepEnabled())
+body.SetEnableSleep(False)
+Assert.False(body.IsSleepEnabled())
+body.SetEnableSleep(True)
+Assert.True(body.IsSleepEnabled())
+End Sub
+
+Public Sub TestDampingAndGravityScale()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Assert.Equal(0.0, body.GetLinearDamping())
+Assert.Equal(0.0, body.GetAngularDamping())
+Assert.Equal(1.0, body.GetGravityScale())
+body.SetLinearDamping(0.3)
+body.SetAngularDamping(0.7)
+body.SetGravityScale(0.0)
+PhysicsAssert.Near(0.3, body.GetLinearDamping(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "linear damping")
+PhysicsAssert.Near(0.7, body.GetAngularDamping(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "angular damping")
+Assert.Equal(0.0, body.GetGravityScale())
+End Sub
+
+Public Sub TestNamesAndUserData()
+Var world As New World
+Var def As BodyDefinition = BodyTests.DynamicDef(0.0, 0.0)
+def.Name = "ground plate"
+def.UserData = 42
+Var body As Body = world.CreateBody(def)
+Assert.Equal("ground plate", body.GetName())
+Assert.Equal(42, body.GetUserData())
+Var longName As String = "0123456789012345678901234567890123456789"
+body.SetName(longName)
+Assert.Equal(31, body.GetName().Length)
+body.SetName("")
+Assert.Equal(0, body.GetName().Length)
+body.SetUserData(7)
+Assert.Equal(7, body.GetUserData())
+End Sub
+
+Public Sub TestBulletFlagAndComputeAABB()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var circle As New Circle(New Vector2(1.0, 0.0), 0.5)
+body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+Var box As Polygon = Polygon.MakeOffsetBox(0.5, 0.5, New Vector2(-1.0, 0.0), New Rot)
+body.CreatePolygon(BodyTests.CircleDef(1.0), box)
+Assert.False(body.IsBullet())
+body.SetBullet(True)
+Assert.True(body.IsBullet())
+
+Var combined As AABB = body.ComputeAABB()
+PhysicsAssert.Near(-1.5 - PhysicsConstants.SPECULATIVE_DISTANCE, combined.LowerBound.X, 1e-9, 1e-9, "combined lower x")
+PhysicsAssert.Near(1.5 + PhysicsConstants.SPECULATIVE_DISTANCE, combined.UpperBound.X, 1e-9, 1e-9, "combined upper x")
+PhysicsAssert.Near(-0.5 - PhysicsConstants.SPECULATIVE_DISTANCE, combined.LowerBound.Y, 1e-9, 1e-9, "combined lower y")
+PhysicsAssert.Near(0.5 + PhysicsConstants.SPECULATIVE_DISTANCE, combined.UpperBound.Y, 1e-9, 1e-9, "combined upper y")
+
+# A body without shapes reports its origin point.
+Var bare As Body = world.CreateBody(BodyTests.DynamicDef(4.0, -2.0))
+Var bareBox As AABB = bare.ComputeAABB()
+PhysicsAssert.Near(4.0, bareBox.LowerBound.X, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "bare lower x")
+PhysicsAssert.Near(-2.0, bareBox.UpperBound.Y, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "bare upper y")
+End Sub
+
+Public Sub TestSetTransformSyncsShapeProxies()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+PhysicsAssert.Near(0.5 + PhysicsConstants.SPECULATIVE_DISTANCE, shape.GetAABB().UpperBound.X, 1e-9, 1e-9, "initial aabb upper x")
+body.SetTransform(New Vector2(10.0, 0.0), New Rot)
+PhysicsAssert.Near(10.5 + PhysicsConstants.SPECULATIVE_DISTANCE, shape.GetAABB().UpperBound.X, 1e-9, 1e-9, "moved aabb upper x")
+Var bounds As AABB = shape.GetAABB()
+Assert.True(bounds.LowerBound.X > 9.0)
+world.Validate()
+End Sub
+
+Public Sub TestDensityChangeUpdatesMass()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+Var baseMass As Double = body.GetMass()
+shape.SetDensity(3.0, True)
+PhysicsAssert.Near(3.0 * baseMass, body.GetMass(), 1e-12, 1e-12, "density scaled mass")
+shape.SetDensity(3.0, True)
+PhysicsAssert.Near(3.0 * baseMass, body.GetMass(), 1e-12, 1e-12, "same density is a no-op")
+shape.SetDensity(1.0, False)
+PhysicsAssert.Near(3.0 * baseMass, body.GetMass(), 1e-12, 1e-12, "skipped mass update keeps body mass")
+body.ApplyMassFromShapes()
+PhysicsAssert.Near(baseMass, body.GetMass(), 1e-12, 1e-12, "apply mass restores")
+End Sub
+
+Public Sub TestShapeGeometryChangeRebuildsProxy()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+Var bigger As New Circle(New Vector2(0.0, 0.0), 2.0)
+shape.SetCircle(bigger)
+Assert.Equal(ShapeType.CircleShape, shape.GetShapeType())
+PhysicsAssert.Near(2.0, shape.GetCircle().Radius, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "circle radius after set")
+Var box As Polygon = Polygon.MakeBox(1.0, 1.0)
+shape.SetPolygon(box)
+Assert.Equal(ShapeType.PolygonShape, shape.GetShapeType())
+Var aabb As AABB = shape.GetAABB()
+PhysicsAssert.Near(1.0 + PhysicsConstants.SPECULATIVE_DISTANCE, aabb.UpperBound.X, 1e-9, 1e-9, "polygon aabb upper x")
+PhysicsAssert.Near(8.0 / 3.0, shape.GetMassData().RotationalInertia, 1e-9, 1e-9, "box shape inertia")
+world.Validate()
+End Sub
+
+Public Sub TestSetSegmentAndCapsuleGeometry()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+Var segment As New Segment(New Vector2(-2.0, 0.0), New Vector2(2.0, 0.0))
+shape.SetSegment(segment)
+Assert.Equal(ShapeType.SegmentShape, shape.GetShapeType())
+Assert.Equal(0.0, shape.GetMassData().Mass)
+Var capsule As New Capsule(New Vector2(0.0, -1.0), New Vector2(0.0, 1.0), 0.5)
+shape.SetCapsule(capsule)
+Assert.Equal(ShapeType.CapsuleShape, shape.GetShapeType())
+PhysicsAssert.Near(0.5, shape.GetCapsule().Radius, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "capsule radius after set")
+PhysicsAssert.Near(3.14159265358979 * 0.25 + 2.0, shape.GetMassData().Mass, 1e-9, 1e-9, "capsule mass")
+End Sub
+
+Public Sub TestCreateCapsuleCollapsesDegenerate()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var capsuleDef As New ShapeDefinition
+capsuleDef.Density = 1.0
+Var tiny As New Capsule(New Vector2(0.0, 0.0), New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = body.CreateCapsule(capsuleDef, tiny)
+Assert.Equal(ShapeType.CircleShape, shape.GetShapeType())
+PhysicsAssert.Near(0.5, shape.GetCircle().Radius, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "degenerate capsule radius")
+
+Var threw As Boolean = False
+Try
+Var degenerate As New Segment(New Vector2(1.0, 1.0), New Vector2(1.0, 1.0))
+body.CreateSegment(capsuleDef, degenerate)
+Catch e As Exception
+threw = True
+End Try
+Assert.True(threw)
+End Sub
+
+Public Sub TestFiltersAndSurfaceMaterials()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var material As New SurfaceMaterial
+material.Friction = 0.8
+material.Restitution = 0.3
+material.RollingResistance = 0.1
+material.TangentSpeed = 2.0
+material.UserMaterialId = 5
+material.CustomColor = 9
+shapeDef.Material = material
+Var filter As New Filter
+filter.CategoryBits = 4
+filter.MaskBits = 6
+filter.GroupIndex = -2
+shapeDef.Filter = filter
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = body.CreateCircle(shapeDef, circle)
+
+Var shapeFilter As Filter = shape.GetFilter()
+Assert.Equal(4, shapeFilter.CategoryBits)
+Assert.Equal(6, shapeFilter.MaskBits)
+Assert.Equal(-2, shapeFilter.GroupIndex)
+Var surface As SurfaceMaterial = shape.GetSurfaceMaterial()
+PhysicsAssert.Near(0.8, surface.Friction, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "surface friction")
+PhysicsAssert.Near(0.3, surface.Restitution, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "surface restitution")
+PhysicsAssert.Near(0.1, surface.RollingResistance, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "rolling resistance")
+PhysicsAssert.Near(2.0, surface.TangentSpeed, Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "tangent speed")
+Assert.Equal(5, surface.UserMaterialId)
+Assert.Equal(9, surface.CustomColor)
+Assert.Equal(5, shape.GetMaterial())
+
+shape.SetFriction(0.2)
+PhysicsAssert.Near(0.2, shape.GetFriction(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "friction setter")
+shape.SetRestitution(0.9)
+PhysicsAssert.Near(0.9, shape.GetRestitution(), Tolerances.INTERNAL_ABS, Tolerances.INTERNAL_REL, "restitution setter")
+
+Var newFilter As New Filter
+newFilter.CategoryBits = 8
+shape.SetFilter(newFilter)
+Assert.Equal(8, shape.GetFilter().CategoryBits)
+Assert.Equal(PhysicsConstants.DEFAULT_MASK_BITS, shape.GetFilter().MaskBits)
+world.Validate()
+End Sub
+
+Public Sub TestEventFlagsAndSensorFlag()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(0.0, 0.0))
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = body.CreateCircle(shapeDef, circle)
+Assert.False(shape.AreSensorEventsEnabled())
+Assert.False(shape.AreContactEventsEnabled())
+Assert.False(shape.AreHitEventsEnabled())
+Assert.False(shape.ArePreSolveEventsEnabled())
+Assert.False(shape.IsSensor())
+shape.SetSensorEventsEnabled(True)
+shape.SetContactEventsEnabled(True)
+shape.SetHitEventsEnabled(True)
+shape.SetPreSolveEventsEnabled(True)
+Assert.True(shape.AreSensorEventsEnabled())
+Assert.True(shape.AreContactEventsEnabled())
+Assert.True(shape.AreHitEventsEnabled())
+Assert.True(shape.ArePreSolveEventsEnabled())
+shape.SetUserData(11)
+Assert.Equal(11, shape.GetUserData())
+Assert.True(shape.GetWorld() = world)
+Assert.True(shape.GetBody() = body)
+Assert.Equal(ShapeType.CircleShape, shape.GetShapeType())
+Assert.Equal(PhysicsConstants.NULL_INDEX, shape.GetParentChain())
+End Sub
+
+Public Sub TestShapePointAndClosestPoint()
+Var world As New World
+Var body As Body = world.CreateBody(BodyTests.DynamicDef(2.0, 0.0))
+Var circle As New Circle(New Vector2(0.0, 0.0), 0.5)
+Var shape As Shape = body.CreateCircle(BodyTests.CircleDef(1.0), circle)
+Assert.True(shape.TestPoint(New Vector2(2.3, 0.0)))
+Assert.False(shape.TestPoint(New Vector2(3.0, 0.0)))
+Var closest As Vector2 = shape.GetClosestPoint(New Vector2(5.0, 0.0))
+PhysicsAssert.Near(2.5, closest.X, 1e-9, 1e-9, "closest point x")
+PhysicsAssert.Near(0.0, closest.Y, 1e-9, 1e-9, "closest point y")
+End Sub
+End Class

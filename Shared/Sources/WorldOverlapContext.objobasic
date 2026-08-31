@@ -1,0 +1,68 @@
+# Engine-internal tree query adapter for world overlap queries, ported from
+# upstream WorldQueryContext, TreeQueryCallback, and TreeOverlapCallback in
+# world.c. One instance is owned by the World and reused across queries.
+# Bounds mode queries aabb overlap only; shape mode adds the distance test
+# with the upstream tolerance.
+Class WorldOverlapContext Inherits TreeQueryCallback
+## The world driving the query.
+Property Owner As World
+## Query filter applied to candidate shapes.
+Property Filter As QueryFilter
+## Caller callback for the callback form. Nothing in the Into form.
+Property UserCallback As WorldOverlapCallback
+## Caller hit list for the Into form. Nothing in the callback form.
+Property Hits As ShapeHitList
+## Caller proxy for the shape-overlap form. Nothing for bounds mode.
+Property QueryProxy As ShapeProxy
+## Reused distance input for shape mode.
+Property DistanceInput As DistanceInput
+## Reused simplex cache for shape mode.
+Property Cache As SimplexCache
+## Reused distance output for shape mode.
+Property DistanceOutput As DistanceOutput
+
+## Creates an unbound context; the world fills the fields per query.
+Constructor()
+Me.Owner = Nothing
+Me.Filter = New QueryFilter()
+Me.UserCallback = Nothing
+Me.Hits = Nothing
+Me.QueryProxy = Nothing
+Me.DistanceInput = New DistanceInput
+Me.Cache = New SimplexCache
+Me.DistanceOutput = New DistanceOutput
+End Constructor
+
+## Tree leaf visit: filter, optional shape-overlap test, dispatch.
+Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Var shape As Shape = Me.Owner.Shapes[userData]
+If Not shape.Live Then
+Return True
+End If
+If Not QueryFilter.ShouldCollide(shape.Filter, Me.Filter) Then
+Return True
+End If
+
+If Me.QueryProxy <> Nothing Then
+Me.DistanceInput.ProxyA = Me.QueryProxy
+Me.DistanceInput.ProxyB = shape.DistanceProxy
+Me.DistanceInput.TransformA = New Transform
+Me.DistanceInput.TransformB = Me.Owner.GetBodyTransformById(shape.BodyId)
+Me.DistanceInput.UseRadii = True
+Me.Cache.Clear()
+Distance.ShapeDistanceTo(Me.DistanceInput, Me.Cache, Me.DistanceOutput)
+Var tolerance As Double = 0.1 * PhysicsConstants.LINEAR_SLOP
+If Me.DistanceOutput.Distance > tolerance Then
+Return True
+End If
+End If
+
+If Me.UserCallback <> Nothing Then
+Return Me.UserCallback.VisitShape(shape)
+End If
+
+Me.Hits.AddHit(shape)
+Return True
+End Function
+End Class

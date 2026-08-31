@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ShapeHitList",
+  "Id": "9dc58de8-6d82-4e8c-a97d-17ce1202b5dd",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "ShapeHitList.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

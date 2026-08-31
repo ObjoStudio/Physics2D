@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "WorldOverlapCallback",
+  "Id": "b3b03db4-4357-4f6d-af99-f6d0d339cb92",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "WorldOverlapCallback.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

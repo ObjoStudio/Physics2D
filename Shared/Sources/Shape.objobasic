@@ -1,0 +1,487 @@
+# Shape façade, ported from upstream b2Shape in shape.h plus the b2Shape_*
+# API family in box2d.h. A shape is owned by its world: the world stores one
+# Shape per slot in a sparse array, destroys reclaim the slot and increment
+# the generation, and stale façades fail IsValid. Geometry is stored as owned
+# value objects, exactly one of which is non-null per shape type. Chain
+# segment geometry carries the owning chain's slot index.
+#
+# Creation goes through Body.CreateCircle and friends; destruction through
+# Shape.Destroy or the owning body/world cascade.
+Class Shape
+## Owning world. Set at creation and never changed.
+Property Owner As World
+## Slot index of this shape in the world shape store.
+Property Id As Integer
+## Generation counter, incremented when the slot is freed and reused.
+Property Generation As Integer
+## Whether this shape is live. Stale façades keep the object but flip this.
+Property Live As Boolean
+## Slot index of the owning body.
+Property BodyId As Integer
+## Previous shape in the body's doubly linked shape list.
+Property PrevShapeId As Integer
+## Next shape in the body's doubly linked shape list.
+Property NextShapeId As Integer
+## Sensor store index, or the null sentinel. The sensor store arrives in
+## Stage 8; until then this stays null and IsSensor reports the definition.
+Property SensorIndex As Integer
+## The geometry type of this shape.
+Property Type As ShapeType
+## Density in kilograms per square metre.
+Property Density As Double
+## Coefficient of friction.
+Property Friction As Double
+## Coefficient of restitution.
+Property Restitution As Double
+## Rolling resistance.
+Property RollingResistance As Double
+## Surface tangent speed in metres per second.
+Property TangentSpeed As Double
+## User material identifier used by mixers.
+Property UserMaterialId As Integer
+## Debug-draw colour override. Zero means no override.
+Property CustomColor As Integer
+## Axis-aligned bounding box including the speculative margin.
+Property AABB As AABB
+## Fat AABB stored for tree move decisions.
+Property FatAABB As AABB
+## Local centroid of the geometry.
+Property LocalCentroid As Vector2
+## Broad-phase proxy key, or the null sentinel when the body is disabled.
+Property ProxyKey As Integer
+## Collision filter.
+Property Filter As Filter
+## User data owned by the application.
+Property UserData As Integer
+## Whether this shape reports sensor events.
+Property EnableSensorEvents As Boolean
+## Whether this shape reports contact events.
+Property EnableContactEvents As Boolean
+## Whether this shape reports hit events.
+Property EnableHitEvents As Boolean
+## Whether this shape reports pre-solve events.
+Property EnablePreSolveEvents As Boolean
+## Whether the AABB was enlarged by a shape change and the proxy needs
+## attention. Consumed by contact updates from Stage 7.
+Property EnlargedAABB As Boolean
+## Whether this shape was created as a sensor. The sensor store itself
+## arrives in Stage 8.
+Property IsSensorFlag As Boolean
+## Circle geometry when Type is CircleShape.
+Property Circle As Circle
+## Capsule geometry when Type is CapsuleShape.
+Property Capsule As Capsule
+## Segment geometry when Type is SegmentShape.
+Property Segment As Segment
+## Polygon geometry when Type is PolygonShape.
+Property Polygon As Polygon
+## Chain segment geometry when Type is ChainSegmentShape.
+Property ChainSegment As ChainSegment
+## Distance proxy over the local geometry, rebuilt on creation and geometry
+## change, used by overlap and closest-point queries.
+Property DistanceProxy As ShapeProxy
+
+## Creates an empty, unbound shape. Only the world may construct live
+## shapes; the zero-argument form exists for sparse array capacity.
+Constructor()
+Me.Owner = Nothing
+Me.Id = PhysicsConstants.NULL_INDEX
+Me.Generation = PhysicsConstants.INVALID_GENERATION
+Me.Live = False
+Me.BodyId = PhysicsConstants.NULL_INDEX
+Me.PrevShapeId = PhysicsConstants.NULL_INDEX
+Me.NextShapeId = PhysicsConstants.NULL_INDEX
+Me.SensorIndex = PhysicsConstants.NULL_INDEX
+Me.Type = ShapeType.CircleShape
+Me.Density = 0.0
+Me.Friction = 0.0
+Me.Restitution = 0.0
+Me.RollingResistance = 0.0
+Me.TangentSpeed = 0.0
+Me.UserMaterialId = 0
+Me.CustomColor = 0
+Me.AABB = New AABB
+Me.FatAABB = New AABB
+Me.LocalCentroid = New Vector2(0.0, 0.0)
+Me.ProxyKey = PhysicsConstants.NULL_INDEX
+Me.Filter = New Filter()
+Me.UserData = 0
+Me.EnableSensorEvents = False
+Me.EnableContactEvents = False
+Me.EnableHitEvents = False
+Me.EnablePreSolveEvents = False
+Me.EnlargedAABB = False
+Me.IsSensorFlag = False
+Me.Circle = Nothing
+Me.Capsule = Nothing
+Me.Segment = Nothing
+Me.Polygon = Nothing
+Me.ChainSegment = Nothing
+Me.DistanceProxy = New ShapeProxy
+End Constructor
+
+## Returns True when this façade still addresses a live shape.
+Function IsValid() As Boolean
+If Me.Owner = Nothing Or Not Me.Live Then
+Return False
+End If
+Return Me.Owner.Shapes[Me.Id] = Me
+End Function
+
+## Throws a descriptive exception when this façade is stale. All mutating
+## and reading members call this first.
+Sub Validate()
+If Not Me.IsValid() Then
+Throw New RuntimeException("Shape façade is no longer valid")
+End If
+End Sub
+
+## Returns the owning body façade.
+Function GetBody() As Body
+Me.Validate()
+Return Me.Owner.Bodies[Me.BodyId]
+End Function
+
+## Returns the owning world façade.
+Function GetWorld() As World
+Me.Validate()
+Return Me.Owner
+End Function
+
+## The geometry type of this shape. Named GetShapeType because every Objo
+## object already has a GetType method from the root class.
+Function GetShapeType() As ShapeType
+Me.Validate()
+Return Me.Type
+End Function
+
+## Whether this shape was created as a sensor.
+Function IsSensor() As Boolean
+Me.Validate()
+Return Me.IsSensorFlag
+End Function
+
+## The axis-aligned bounding box including the speculative margin. The
+## result is a copy, so editing it never corrupts the shape.
+Function GetAABB() As AABB
+Me.Validate()
+Return New AABB(Me.AABB)
+End Function
+
+## User data owned by the application.
+Function GetUserData() As Integer
+Me.Validate()
+Return Me.UserData
+End Function
+
+## Sets user data owned by the application.
+Sub SetUserData(userData As Integer)
+Me.Validate()
+Me.UserData = userData
+End Sub
+
+## Event flag accessors, ported from the b2Shape_Enable*Event family.
+
+## Sets whether this shape reports sensor events.
+Sub SetSensorEventsEnabled(flag As Boolean)
+Me.Validate()
+Me.EnableSensorEvents = flag
+End Sub
+
+## Whether this shape reports sensor events.
+Function AreSensorEventsEnabled() As Boolean
+Me.Validate()
+Return Me.EnableSensorEvents
+End Function
+
+## Sets whether this shape reports contact events.
+Sub SetContactEventsEnabled(flag As Boolean)
+Me.Validate()
+Me.EnableContactEvents = flag
+End Sub
+
+## Whether this shape reports contact events.
+Function AreContactEventsEnabled() As Boolean
+Me.Validate()
+Return Me.EnableContactEvents
+End Function
+
+## Sets whether this shape reports contact hit events.
+Sub SetHitEventsEnabled(flag As Boolean)
+Me.Validate()
+Me.EnableHitEvents = flag
+End Sub
+
+## Whether this shape reports contact hit events.
+Function AreHitEventsEnabled() As Boolean
+Me.Validate()
+Return Me.EnableHitEvents
+End Function
+
+## Sets whether this shape reports pre-solve events.
+Sub SetPreSolveEventsEnabled(flag As Boolean)
+Me.Validate()
+Me.EnablePreSolveEvents = flag
+End Sub
+
+## Whether this shape reports pre-solve events.
+Function ArePreSolveEventsEnabled() As Boolean
+Me.Validate()
+Return Me.EnablePreSolveEvents
+End Function
+
+## Returns a copy of the circle geometry. Throws when the shape is not a
+## circle, matching the upstream assertion.
+Function GetCircle() As Circle
+Me.Validate()
+If Me.Type <> ShapeType.CircleShape Then
+Throw New RuntimeException("Shape is not a circle")
+End If
+Return New Circle(Me.Circle)
+End Function
+
+## Returns a copy of the capsule geometry. Throws when the shape is not a
+## capsule, matching the upstream assertion.
+Function GetCapsule() As Capsule
+Me.Validate()
+If Me.Type <> ShapeType.CapsuleShape Then
+Throw New RuntimeException("Shape is not a capsule")
+End If
+Return New Capsule(Me.Capsule)
+End Function
+
+## Returns a copy of the segment geometry. Throws when the shape is not a
+## segment, matching the upstream assertion.
+Function GetSegment() As Segment
+Me.Validate()
+If Me.Type <> ShapeType.SegmentShape Then
+Throw New RuntimeException("Shape is not a segment")
+End If
+Return New Segment(Me.Segment)
+End Function
+
+## Returns a copy of the chain segment geometry, including ghost vertices.
+## Throws when the shape is not a chain segment, matching the upstream
+## assertion.
+Function GetChainSegment() As ChainSegment
+Me.Validate()
+If Me.Type <> ShapeType.ChainSegmentShape Then
+Throw New RuntimeException("Shape is not a chain segment")
+End If
+Return New ChainSegment(Me.ChainSegment)
+End Function
+
+## Returns a deep copy of the polygon geometry. Throws when the shape is not
+## a polygon, matching the upstream assertion.
+Function GetPolygon() As Polygon
+Me.Validate()
+If Me.Type <> ShapeType.PolygonShape Then
+Throw New RuntimeException("Shape is not a polygon")
+End If
+Return New Polygon(Me.Polygon.Vertices, Me.Polygon.Normals, Me.Polygon.Centroid, Me.Polygon.Radius, Me.Polygon.Count)
+End Function
+
+## Replaces the shape geometry with a circle and rebuilds the proxy,
+## ported from b2Shape_SetCircle.
+Sub SetCircle(circle As Circle)
+Me.Validate()
+Me.Owner.SetShapeGeometryCircle(Me, circle)
+End Sub
+
+## Replaces the shape geometry with a capsule and rebuilds the proxy,
+## ported from b2Shape_SetCapsule.
+Sub SetCapsule(capsule As Capsule)
+Me.Validate()
+Me.Owner.SetShapeGeometryCapsule(Me, capsule)
+End Sub
+
+## Replaces the shape geometry with a segment and rebuilds the proxy,
+## ported from b2Shape_SetSegment.
+Sub SetSegment(segment As Segment)
+Me.Validate()
+Me.Owner.SetShapeGeometrySegment(Me, segment)
+End Sub
+
+## Replaces the shape geometry with a polygon and rebuilds the proxy,
+## ported from b2Shape_SetPolygon.
+Sub SetPolygon(polygon As Polygon)
+Me.Validate()
+Me.Owner.SetShapeGeometryPolygon(Me, polygon)
+End Sub
+
+## The shape density in kilograms per square metre.
+Function GetDensity() As Double
+Me.Validate()
+Return Me.Density
+End Function
+
+## Sets the shape density and optionally recomputes body mass, ported from
+## b2Shape_SetDensity.
+Sub SetDensity(density As Double, updateBodyMass As Boolean)
+Me.Validate()
+Me.Owner.SetShapeDensity(Me, density, updateBodyMass)
+End Sub
+
+## The coefficient of friction.
+Function GetFriction() As Double
+Me.Validate()
+Return Me.Friction
+End Function
+
+## Sets the coefficient of friction.
+Sub SetFriction(friction As Double)
+Me.Validate()
+Me.Friction = friction
+End Sub
+
+## The coefficient of restitution.
+Function GetRestitution() As Double
+Me.Validate()
+Return Me.Restitution
+End Function
+
+## Sets the coefficient of restitution.
+Sub SetRestitution(restitution As Double)
+Me.Validate()
+Me.Restitution = restitution
+End Sub
+
+## Returns the surface material as a record, ported from
+## b2Shape_GetSurfaceMaterial.
+Function GetSurfaceMaterial() As SurfaceMaterial
+Me.Validate()
+Var material As New SurfaceMaterial
+material.Friction = Me.Friction
+material.Restitution = Me.Restitution
+material.RollingResistance = Me.RollingResistance
+material.TangentSpeed = Me.TangentSpeed
+material.UserMaterialId = Me.UserMaterialId
+material.CustomColor = Me.CustomColor
+Return material
+End Function
+
+## Sets every surface property from the given material, ported from
+## b2Shape_SetSurfaceMaterial.
+Sub SetSurfaceMaterial(material As SurfaceMaterial)
+Me.Validate()
+Me.Friction = material.Friction
+Me.Restitution = material.Restitution
+Me.RollingResistance = material.RollingResistance
+Me.TangentSpeed = material.TangentSpeed
+Me.UserMaterialId = material.UserMaterialId
+Me.CustomColor = material.CustomColor
+End Sub
+
+## The user material identifier used by mixers.
+Function GetMaterial() As Integer
+Me.Validate()
+Return Me.UserMaterialId
+End Function
+
+## Sets the user material identifier used by mixers.
+Sub SetMaterial(material As Integer)
+Me.Validate()
+Me.UserMaterialId = material
+End Sub
+
+## Returns a copy of the shape filter.
+Function GetFilter() As Filter
+Me.Validate()
+Return New Filter(Me.Filter)
+End Function
+
+## Replaces the shape filter and refreshes the broad-phase proxy, ported
+## from b2Shape_SetFilter.
+Sub SetFilter(filter As Filter)
+Me.Validate()
+Me.Owner.SetShapeFilter(Me, filter)
+End Sub
+
+## Returns the mass data of the geometry at this shape's density, ported
+## from b2Shape_GetMassData. Segments and chain segments report zero mass.
+Function GetMassData() As MassData
+Me.Validate()
+Return Me.Owner.ComputeShapeMass(Me)
+End Function
+
+## Returns the owning chain slot for chain segment shapes, or the null
+## sentinel, ported from b2Shape_GetParentChain.
+Function GetParentChain() As Integer
+Me.Validate()
+If Me.Type <> ShapeType.ChainSegmentShape Then
+Return PhysicsConstants.NULL_INDEX
+End If
+Return Me.ChainSegment.ChainId
+End Function
+
+## Tests whether a world point is inside the shape, ported from
+## b2Shape_TestPoint. Segments and chain segments report False.
+Function TestPoint(point As Vector2) As Boolean
+Me.Validate()
+Return Me.Owner.ShapeTestPoint(Me, point)
+End Function
+
+## Casts a ray against the shape in world space, ported from b2Shape_RayCast.
+Function RayCast(input As RayCastInput) As CastOutput
+Me.Validate()
+Return Me.Owner.ShapeRayCast(Me, input)
+End Function
+
+## Casts a ray against the shape into the caller-owned output, ported from
+## b2Shape_RayCast. The reused-output form for warm loops.
+Function RayCastTo(input As RayCastInput, out As CastOutput) As CastOutput
+Me.Validate()
+Return Me.Owner.ShapeRayCastTo(Me, input, out)
+End Function
+
+## Returns the world point on the shape closest to the target, ported from
+## b2Shape_GetClosestPoint.
+Function GetClosestPoint(target As Vector2) As Vector2
+Me.Validate()
+Return Me.Owner.ShapeClosestPoint(Me, target)
+End Function
+
+## Destroys this shape and updates the body mass, ported from b2DestroyShape
+## with updateBodyMass true. Idempotent on already-destroyed façades.
+Sub Destroy()
+If Not Me.IsValid() Then
+Return
+End If
+Me.Owner.DestroyShape(Me, True)
+End Sub
+
+## Recomputes the local distance proxy from the current geometry. Called by
+## the world after creation and geometry changes.
+Sub RebuildDistanceProxy()
+Var proxy As ShapeProxy = Me.DistanceProxy
+proxy.Points.Clear()
+proxy.Count = 0
+proxy.Radius = 0.0
+If Me.Type = ShapeType.CapsuleShape Then
+proxy.Points.Append(New Vector2(Me.Capsule.Center1.X, Me.Capsule.Center1.Y))
+proxy.Points.Append(New Vector2(Me.Capsule.Center2.X, Me.Capsule.Center2.Y))
+proxy.Count = 2
+proxy.Radius = Me.Capsule.Radius
+ElseIf Me.Type = ShapeType.CircleShape Then
+proxy.Points.Append(New Vector2(Me.Circle.Center.X, Me.Circle.Center.Y))
+proxy.Count = 1
+proxy.Radius = Me.Circle.Radius
+ElseIf Me.Type = ShapeType.PolygonShape Then
+For i As Integer = 0 To Me.Polygon.Count - 1
+proxy.Points.Append(New Vector2(Me.Polygon.Vertices[i].X, Me.Polygon.Vertices[i].Y))
+Next i
+proxy.Count = Me.Polygon.Count
+proxy.Radius = Me.Polygon.Radius
+ElseIf Me.Type = ShapeType.SegmentShape Then
+proxy.Points.Append(New Vector2(Me.Segment.Point1.X, Me.Segment.Point1.Y))
+proxy.Points.Append(New Vector2(Me.Segment.Point2.X, Me.Segment.Point2.Y))
+proxy.Count = 2
+proxy.Radius = 0.0
+ElseIf Me.Type = ShapeType.ChainSegmentShape Then
+proxy.Points.Append(New Vector2(Me.ChainSegment.Segment.Point1.X, Me.ChainSegment.Segment.Point1.Y))
+proxy.Points.Append(New Vector2(Me.ChainSegment.Segment.Point2.X, Me.ChainSegment.Segment.Point2.Y))
+proxy.Count = 2
+proxy.Radius = 0.0
+End If
+End Sub
+End Class

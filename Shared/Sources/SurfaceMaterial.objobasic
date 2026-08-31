@@ -1,0 +1,47 @@
+# Surface properties of a shape or chain segment, ported from upstream
+# b2SurfaceMaterial in types.h.
+Class SurfaceMaterial
+## Coefficient of friction.
+Property Friction As Double
+## Coefficient of restitution, clipped to the range zero to one by the solver.
+Property Restitution As Double
+## Rolling resistance for circles, spheres, capsules, and rounded polygons.
+Property RollingResistance As Double
+## Surface velocity applied along the contact tangent (metres per second).
+Property TangentSpeed As Double
+## User material identifier used by friction and restitution mixers.
+Property UserMaterialId As Integer
+## Debug-draw colour override. Zero means no override.
+Property CustomColor As Integer
+
+## Creates the default material, matching upstream b2DefaultSurfaceMaterial.
+Constructor()
+Me.Friction = 0.6
+Me.Restitution = 0.0
+Me.RollingResistance = 0.0
+Me.TangentSpeed = 0.0
+Me.UserMaterialId = 0
+Me.CustomColor = 0
+End Constructor
+
+## Copies another material.
+Constructor(other As SurfaceMaterial)
+Me.Friction = other.Friction
+Me.Restitution = other.Restitution
+Me.RollingResistance = other.RollingResistance
+Me.TangentSpeed = other.TangentSpeed
+Me.UserMaterialId = other.UserMaterialId
+Me.CustomColor = other.CustomColor
+End Constructor
+
+## Copies every field from other into this material and returns Me.
+Function CopyFrom(other As SurfaceMaterial) As SurfaceMaterial
+Me.Friction = other.Friction
+Me.Restitution = other.Restitution
+Me.RollingResistance = other.RollingResistance
+Me.TangentSpeed = other.TangentSpeed
+Me.UserMaterialId = other.UserMaterialId
+Me.CustomColor = other.CustomColor
+Return Me
+End Function
+End Class

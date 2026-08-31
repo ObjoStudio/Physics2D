@@ -1,0 +1,27 @@
+# Collision filtering for shapes, ported from upstream b2Filter in types.h.
+# Category and mask bits are wide masks: the default mask has all bits set,
+# expressed as the two's-complement Integer -1.
+Class Filter
+## The collision category bits this shape belongs to.
+Property CategoryBits As Integer
+## The collision category bits this shape accepts.
+Property MaskBits As Integer
+## Collision groups above zero collide only within the same group; groups
+## below zero never collide within the same group; zero falls back to the
+## category and mask rules.
+Property GroupIndex As Integer
+
+## Creates the default filter, matching upstream b2DefaultFilter.
+Constructor()
+Me.CategoryBits = PhysicsConstants.DEFAULT_CATEGORY_BITS
+Me.MaskBits = PhysicsConstants.DEFAULT_MASK_BITS
+Me.GroupIndex = 0
+End Constructor
+
+## Copies another filter.
+Constructor(other As Filter)
+Me.CategoryBits = other.CategoryBits
+Me.MaskBits = other.MaskBits
+Me.GroupIndex = other.GroupIndex
+End Constructor
+End Class

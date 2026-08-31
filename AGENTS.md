@@ -210,6 +210,21 @@ in the Objo checkout remains authoritative.
   prefer scalar slab math over constructing intermediate geometry.
 - A test-project source item needs a sidecar with `"BuildScope": "Test"`;
   `"Application"` there is a packaging error.
+- The virtual machine dispatches same-arity constructors by arity alone: a
+  second constructor with the same arity is silently unreachable (the first
+  wins). Expose the alternatives as shared factory functions
+  (`World.WithGravity`) instead.
+- A parameter name may not collide case-insensitively with a property of the
+  same class (`gravity` vs `Gravity` is an error). Rename the parameter.
+- Array literals are supported and are the way to build small fixed data:
+  `Var points() As Vector2 = [New Vector2(0.0, 1.0)]`.
+- `ElseIf` is one keyword; `Else If` does not parse. `Continue For` is
+  supported. `Double.Infinity` is a shared property.
+- A test sidecar must carry the full field set (`Version`, `Name`, `Id`,
+  `Kind`, `BuildScope`, `Namespace`, `Folder`, `ParentModule`,
+  `ParentModuleId`, `AvailableInDesigner`, `CodeFile`, `LayoutFile`, `Notes`,
+  `InspectorBehaviour`); a minimal sidecar makes the tests compile but
+  silently drop them from discovery.
 
 Forge2D, JBox2D, and the older Xojo Physics project are secondary references
 only. Do not copy implementation code from them into Physics2D. A single pinned
