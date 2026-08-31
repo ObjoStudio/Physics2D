@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ConstraintGraph",
+  "Id": "7ac25e53-c629-4721-a298-70ec47a683ba",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "ConstraintGraph.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

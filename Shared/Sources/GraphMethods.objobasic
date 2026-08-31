@@ -1,0 +1,137 @@
+# Constraint-graph colour assignment and sim migration, ported from
+# constraint_graph.c. Contact sims clone into a colour when they start
+# touching and move back to the awake set's store when they stop. Joint
+# colour assignment arrives with Stage 9.
+Class GraphMethods
+## Claims the first colour whose body set has room for the pair, ported
+## from the colour search of b2AddContactToGraph. Static bodies never
+## occupy colour 0. Marks the claimed body slots.
+Private Shared Function ChooseContactColor(graph As ConstraintGraph, bodyIdA As Integer, bodyIdB As Integer, staticA As Boolean, staticB As Boolean) As Integer
+If staticA And staticB Then
+Throw New RuntimeException("Static bodies cannot share a contact")
+End If
+Var colorIndex As Integer = PhysicsConstants.GRAPH_OVERFLOW_INDEX
+If staticA = False And staticB = False Then
+Var i As Integer = 0
+While i < PhysicsConstants.GRAPH_OVERFLOW_INDEX And colorIndex = PhysicsConstants.GRAPH_OVERFLOW_INDEX
+Var colorSet As BitSet = graph.Colors[i].BodySet
+If colorSet.GetBit(bodyIdA) = False And colorSet.GetBit(bodyIdB) = False Then
+colorSet.SetBitGrow(bodyIdA)
+colorSet.SetBitGrow(bodyIdB)
+colorIndex = i
+End If
+i = i + 1
+Wend
+Else
+# Exactly one body is static; only the moving body claims a bit and the
+# search starts at colour 1.
+Var bodyId As Integer = bodyIdB
+If staticA = False Then
+bodyId = bodyIdA
+End If
+Var j As Integer = 1
+While j < PhysicsConstants.GRAPH_OVERFLOW_INDEX And colorIndex = PhysicsConstants.GRAPH_OVERFLOW_INDEX
+Var colorSet As BitSet = graph.Colors[j].BodySet
+If colorSet.GetBit(bodyId) = False Then
+colorSet.SetBitGrow(bodyId)
+colorIndex = j
+End If
+j = j + 1
+Wend
+End If
+Return colorIndex
+End Function
+
+## Assigns a touching contact to a colour and moves its sim row out of the
+## awake set's store, ported from b2AddContactToGraph.
+Shared Sub AddContactToGraph(world As World, contact As Contact)
+Var graph As ConstraintGraph = world.ConstraintGraph
+Var bodyIdA As Integer = contact.Edge0BodyId
+Var bodyIdB As Integer = contact.Edge1BodyId
+Var bodyA As Body = world.Bodies[bodyIdA]
+Var bodyB As Body = world.Bodies[bodyIdB]
+Var staticA As Boolean = bodyA.SetIndex = PhysicsConstants.STATIC_SET
+Var staticB As Boolean = bodyB.SetIndex = PhysicsConstants.STATIC_SET
+
+Var colorIndex As Integer = ChooseContactColor(graph, bodyIdA, bodyIdB, staticA, staticB)
+Var color As GraphColor = graph.Colors[colorIndex]
+
+# Move the sim row from the awake set's store into the colour.
+Var sourceSet As SolverSet = world.SolverSets[contact.SetIndex]
+Var sourceIndex As Integer = contact.LocalIndex
+contact.ColorIndex = colorIndex
+contact.LocalIndex = color.ContactSims.Count()
+color.ContactSims.Add()
+sourceSet.ContactSims.MoveRowTo(color.ContactSims, contact.LocalIndex, sourceIndex)
+Var movedIndex As Integer = sourceSet.ContactSims.RemoveSwap(sourceIndex)
+If movedIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = sourceSet.ContactSims.ContactId.Items[sourceIndex]
+world.Contacts[movedContactId].LocalIndex = sourceIndex
+End If
+
+# Refresh mass terms against the owning body sims, ported from the tail of
+# b2AddContactToGraph.
+Var awakeSet As SolverSet = world.SolverSets[PhysicsConstants.AWAKE_SET]
+If staticA Then
+color.ContactSims.BodySimIndexA.Items[contact.LocalIndex] = PhysicsConstants.NULL_INDEX
+color.ContactSims.InvMassA.Items[contact.LocalIndex] = 0.0
+color.ContactSims.InvIA.Items[contact.LocalIndex] = 0.0
+Else
+color.ContactSims.BodySimIndexA.Items[contact.LocalIndex] = bodyA.LocalIndex
+color.ContactSims.InvMassA.Items[contact.LocalIndex] = awakeSet.Sims.InvMass.Items[bodyA.LocalIndex]
+color.ContactSims.InvIA.Items[contact.LocalIndex] = awakeSet.Sims.InvInertia.Items[bodyA.LocalIndex]
+End If
+If staticB Then
+color.ContactSims.BodySimIndexB.Items[contact.LocalIndex] = PhysicsConstants.NULL_INDEX
+color.ContactSims.InvMassB.Items[contact.LocalIndex] = 0.0
+color.ContactSims.InvIB.Items[contact.LocalIndex] = 0.0
+Else
+color.ContactSims.BodySimIndexB.Items[contact.LocalIndex] = bodyB.LocalIndex
+color.ContactSims.InvMassB.Items[contact.LocalIndex] = awakeSet.Sims.InvMass.Items[bodyB.LocalIndex]
+color.ContactSims.InvIB.Items[contact.LocalIndex] = awakeSet.Sims.InvInertia.Items[bodyB.LocalIndex]
+End If
+End Sub
+
+## Removes a touching contact's sim from its colour, ported from
+## b2RemoveContactFromGraph. Called when the contact stops touching.
+Shared Sub RemoveContactFromGraph(world As World, colorIndex As Integer, localIndex As Integer)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var movedIndex As Integer = color.ContactSims.RemoveSwap(localIndex)
+If movedIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = color.ContactSims.ContactId.Items[localIndex]
+world.Contacts[movedContactId].LocalIndex = localIndex
+End If
+End Sub
+
+## Moves a touching contact's sim from its colour back into the awake set's
+## store, ported from b2AddNonTouchingContact.
+Shared Sub MoveContactOutOfGraph(world As World, contact As Contact)
+If contact.SetIndex <> PhysicsConstants.AWAKE_SET Then
+Throw New RuntimeException("Graph contacts live in the awake set")
+End If
+Var color As GraphColor = world.ConstraintGraph.Colors[contact.ColorIndex]
+Var sourceIndex As Integer = contact.LocalIndex
+Var awakeSet As SolverSet = world.SolverSets[PhysicsConstants.AWAKE_SET]
+contact.ColorIndex = PhysicsConstants.NULL_INDEX
+contact.LocalIndex = awakeSet.ContactSims.Count()
+awakeSet.ContactSims.Add()
+color.ContactSims.MoveRowTo(awakeSet.ContactSims, contact.LocalIndex, sourceIndex)
+Var movedIndex As Integer = color.ContactSims.RemoveSwap(sourceIndex)
+If movedIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = color.ContactSims.ContactId.Items[sourceIndex]
+world.Contacts[movedContactId].LocalIndex = sourceIndex
+End If
+End Sub
+
+## Removes a non-touching contact sim from its owning set's store, ported
+## from b2RemoveNonTouchingContact.
+Shared Sub RemoveNonTouchingContact(world As World, contact As Contact)
+Var contactSet As SolverSet = world.SolverSets[contact.SetIndex]
+Var localIndex As Integer = contact.LocalIndex
+Var movedIndex As Integer = contactSet.ContactSims.RemoveSwap(localIndex)
+If movedIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedContactId As Integer = contactSet.ContactSims.ContactId.Items[localIndex]
+world.Contacts[movedContactId].LocalIndex = localIndex
+End If
+End Sub
+End Class

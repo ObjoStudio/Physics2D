@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "GraphMethods",
+  "Id": "e78b11c8-7bb6-4af4-8e8a-8f3c27a9244c",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "GraphMethods.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

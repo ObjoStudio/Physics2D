@@ -382,6 +382,95 @@ Assert.Equal(0, world.SolverSets[PhysicsConstants.AWAKE_SET].IslandIds.Count)
 Assert.Equal(PhysicsConstants.NULL_INDEX, world.SplitIslandId)
 world.Validate()
 End Sub
+
+Public Sub TestGraphColorsAndOverflowExist()
+Var world As New World
+Assert.Equal(PhysicsConstants.GRAPH_COLOUR_COUNT, world.ConstraintGraph.Colors.Count)
+For i As Integer = 0 To PhysicsConstants.GRAPH_COLOUR_COUNT - 1
+Var color As GraphColor = world.ConstraintGraph.Colors[i]
+If i = PhysicsConstants.GRAPH_OVERFLOW_INDEX Then
+Assert.True(color.BodySet = Nothing, "overflow colour has no body set")
+Else
+Assert.True(color.BodySet <> Nothing, "regular colours own a body set")
+End If
+Next i
+world.Validate()
+End Sub
+
+Public Sub TestAddContactToGraphRoundTrip()
+Var world As New World
+Var defA As New BodyDefinition
+defA.Type = BodyType.DynamicBody
+defA.Position = New Vector2(0.0, 0.0)
+Var bodyA As Body = world.CreateBody(defA)
+bodyA.CreateCircle(New ShapeDefinition, New Circle(New Vector2(0.0, 0.0), 0.5))
+Var defB As New BodyDefinition
+defB.Type = BodyType.DynamicBody
+defB.Position = New Vector2(0.4, 0.0)
+Var bodyB As Body = world.CreateBody(defB)
+bodyB.CreateCircle(New ShapeDefinition, New Circle(New Vector2(0.0, 0.0), 0.5))
+world.UpdateBroadPhasePairs()
+Var contact As Contact = world.Contacts[0]
+Assert.Equal(PhysicsConstants.AWAKE_SET, contact.SetIndex)
+Assert.Equal(1, world.SolverSets[PhysicsConstants.AWAKE_SET].ContactSims.Count(), "fresh contacts live in the awake set store")
+contact.Flags = contact.Flags.BitOr(Integer(ContactFlags.TouchingFlag))
+
+GraphMethods.AddContactToGraph(world, contact)
+Assert.Equal(0, contact.ColorIndex, "first pair claims colour zero")
+Assert.Equal(0, contact.LocalIndex)
+Assert.Equal(1, world.ConstraintGraph.Colors[0].ContactSims.Count())
+Assert.Equal(0, world.SolverSets[PhysicsConstants.AWAKE_SET].ContactSims.Count())
+Assert.True(world.ConstraintGraph.Colors[0].BodySet.GetBit(bodyA.Id))
+Assert.True(world.ConstraintGraph.Colors[0].BodySet.GetBit(bodyB.Id))
+world.Validate()
+
+GraphMethods.MoveContactOutOfGraph(world, contact)
+Assert.Equal(PhysicsConstants.NULL_INDEX, contact.ColorIndex)
+Assert.Equal(1, world.SolverSets[PhysicsConstants.AWAKE_SET].ContactSims.Count())
+Assert.Equal(0, world.ConstraintGraph.Colors[0].ContactSims.Count())
+world.Validate()
+End Sub
+
+Public Sub TestGraphKeepsStaticContactsOutOfColorZero()
+Var world As World = ContactTests.MakeContactWorld(0.0, 0.0, 0.5)
+world.UpdateBroadPhasePairs()
+Var contact As Contact = world.Contacts[0]
+contact.Flags = contact.Flags.BitOr(Integer(ContactFlags.TouchingFlag))
+GraphMethods.AddContactToGraph(world, contact)
+Assert.True(contact.ColorIndex >= 1, "static contacts never sit in colour zero")
+Assert.False(world.ConstraintGraph.Colors[0].BodySet.AnySet(), "colour zero stays empty for static pairs")
+world.Validate()
+End Sub
+
+Public Sub TestGraphOverflowColourTakesConflictingPairs()
+Var world As New World
+Var hubDef As New BodyDefinition
+hubDef.Type = BodyType.DynamicBody
+Var hub As Body = world.CreateBody(hubDef)
+Var hubShape As Shape = hub.CreateCircle(New ShapeDefinition, New Circle(New Vector2(0.0, 0.0), 0.5))
+# Twelve spokes sit far apart so the broad phase creates no pairs; the
+# contacts are created directly and all share the hub body, forcing each
+# pair to claim its own colour.
+For i As Integer = 0 To 11
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(10.0 + 5.0 * i, 0.0)
+Var spoke As Body = world.CreateBody(def)
+Var spokeShape As Shape = spoke.CreateCircle(New ShapeDefinition, New Circle(New Vector2(0.0, 0.0), 0.5))
+ContactMethods.CreateContact(world, spokeShape, hubShape)
+Next i
+Assert.Equal(12, world.ContactCount)
+For c As Integer = 0 To 11
+Var contact As Contact = world.Contacts[c]
+contact.Flags = contact.Flags.BitOr(Integer(ContactFlags.TouchingFlag))
+GraphMethods.AddContactToGraph(world, contact)
+Next c
+For g As Integer = 0 To PhysicsConstants.GRAPH_OVERFLOW_INDEX - 1
+Assert.Equal(1, world.ConstraintGraph.Colors[g].ContactSims.Count(), "each regular colour holds one hub contact")
+Next g
+Assert.Equal(1, world.ConstraintGraph.Colors[PhysicsConstants.GRAPH_OVERFLOW_INDEX].ContactSims.Count(), "the twelfth pair overflows")
+world.Validate()
+End Sub
 End Class
 
 ## Custom filter hook that vetoes every pair and counts its calls.

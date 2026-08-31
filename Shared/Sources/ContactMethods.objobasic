@@ -264,7 +264,7 @@ End If
 
 Var edgeKey As Integer = (contact.ContactId * 2) + edgeIndex
 If body.HeadContactKey <> PhysicsConstants.NULL_INDEX Then
-Var headContact As Contact = world.Contacts[body.HeadContactKey / 2]
+Var headContact As Contact = world.Contacts[body.HeadContactKey.ShiftRight(1)]
 If body.HeadContactKey Mod 2 = 0 Then
 headContact.Edge0PrevKey = edgeKey
 Else
@@ -297,12 +297,17 @@ If contact.IslandId <> PhysicsConstants.NULL_INDEX Then
 IslandMethods.UnlinkContact(world, contact)
 End If
 
-# Remove the sim record from the set that owns it.
+# Remove the sim record from the graph colour when the contact is an
+# active constraint, otherwise from the set that owns it.
+If contact.ColorIndex <> PhysicsConstants.NULL_INDEX Then
+GraphMethods.RemoveContactFromGraph(world, contact.ColorIndex, contact.LocalIndex)
+Else
 Var contactSet As SolverSet = world.SolverSets[contact.SetIndex]
 Var movedIndex As Integer = contactSet.ContactSims.RemoveSwap(contact.LocalIndex)
 If movedIndex <> PhysicsConstants.NULL_INDEX Then
 Var movedContactId As Integer = contactSet.ContactSims.ContactId.Items[contact.LocalIndex]
 world.Contacts[movedContactId].LocalIndex = contact.LocalIndex
+End If
 End If
 
 contact.ContactId = PhysicsConstants.NULL_INDEX
@@ -333,7 +338,7 @@ nextKey = contact.Edge1NextKey
 End If
 
 If prevKey <> PhysicsConstants.NULL_INDEX Then
-Var prevContact As Contact = world.Contacts[prevKey / 2]
+Var prevContact As Contact = world.Contacts[prevKey.ShiftRight(1)]
 If prevKey Mod 2 = 0 Then
 prevContact.Edge0NextKey = nextKey
 Else
@@ -342,7 +347,7 @@ End If
 End If
 
 If nextKey <> PhysicsConstants.NULL_INDEX Then
-Var nextContact As Contact = world.Contacts[nextKey / 2]
+Var nextContact As Contact = world.Contacts[nextKey.ShiftRight(1)]
 If nextKey Mod 2 = 0 Then
 nextContact.Edge0PrevKey = prevKey
 Else
@@ -422,9 +427,13 @@ End Function
 ## persisted points inherit the old impulses for warm starting. Returns the
 ## new touching state.
 Shared Function UpdateContact(world As World, contact As Contact, shapeA As Shape, transformA As Transform, centerOffsetAX As Double, centerOffsetAY As Double, shapeB As Shape, transformB As Transform, centerOffsetBX As Double, centerOffsetBY As Double) As Boolean
-Var contactSet As SolverSet = world.SolverSets[contact.SetIndex]
+Var sims As ContactSims
+If contact.ColorIndex <> PhysicsConstants.NULL_INDEX Then
+sims = world.ConstraintGraph.Colors[contact.ColorIndex].ContactSims
+Else
+sims = world.SolverSets[contact.SetIndex].ContactSims
+End If
 Var simIndex As Integer = contact.LocalIndex
-Var sims As ContactSims = contactSet.ContactSims
 Var manifold As Manifold = sims.GetManifold(simIndex)
 Var cache As SimplexCache = sims.GetCache(simIndex)
 

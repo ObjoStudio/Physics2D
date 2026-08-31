@@ -70,6 +70,8 @@ Property IslandIdPool As IdPool
 Property Islands As Array(Of Island)
 ## Island selected for splitting during the step. NULL_INDEX when none.
 Property SplitIslandId As Integer
+## Constraint graph holding the touching contacts in twelve colours.
+Property ConstraintGraph As ConstraintGraph
 ## Solver sets. Index 0 static, 1 disabled, 2 awake, 3+ sleeping.
 Property SolverSets As Array(Of SolverSet)
 ## Body slot pool.
@@ -159,6 +161,7 @@ Me.CustomFilter = Nothing
 Me.IslandIdPool = New IdPool
 Me.Islands = New Array(Of Island)
 Me.SplitIslandId = PhysicsConstants.NULL_INDEX
+Me.ConstraintGraph = New ConstraintGraph(8)
 Me.Bodies = New Array(Of Body)
 Me.Shapes = New Array(Of Shape)
 Me.Chains = New Array(Of Chain)
@@ -550,18 +553,12 @@ End If
 Wend
 Wend
 
-# Migrate the sleeping contacts into the awake set. The constraint graph
-# will move touching contacts into colours once the step lands.
-Var contactCount As Integer = solverSet.ContactSims.Count()
-For i As Integer = 0 To contactCount - 1
-Var contactId As Integer = solverSet.ContactSims.ContactId.Items[i]
-Var contact As Contact = Me.Contacts[contactId]
-Var localIndex As Integer = contact.LocalIndex
-contact.SetIndex = PhysicsConstants.AWAKE_SET
-contact.LocalIndex = awakeSet.ContactSims.Count()
-awakeSet.ContactSims.Add()
-solverSet.ContactSims.MoveRowTo(awakeSet.ContactSims, contact.LocalIndex, localIndex)
-Next i
+# Migrate the sleeping contacts into the constraint graph, ported from the
+# touching-contact transfer of b2WakeSolverSet.
+While solverSet.ContactSims.Count() > 0
+Var sleepingContactId As Integer = solverSet.ContactSims.ContactId.Items[0]
+GraphMethods.AddContactToGraph(Me, Me.Contacts[sleepingContactId])
+Wend
 
 # Migrate the islands.
 Var islandCount As Integer = solverSet.IslandIds.Count
@@ -597,6 +594,29 @@ Var disabledSet As SolverSet = Me.SolverSets[PhysicsConstants.DISABLED_SET]
 Var bodyId As Integer = island.HeadBody
 While bodyId <> PhysicsConstants.NULL_INDEX
 Var body As Body = Me.Bodies[bodyId]
+Me.MoveBodyToSleepSet(body, sleepSet, awakeSet, disabledSet)
+bodyId = body.IslandNext
+Wend
+
+# Move the island's touching contacts out of the graph colours.
+Me.MoveIslandContactsToSleepSet(island, sleepSet)
+
+# Move the island record.
+Var islandIndex As Integer = island.LocalIndex
+sleepSet.IslandIds.Append(islandId)
+Var movedIslandIndex As Integer = awakeSet.IslandIds.RemoveSwap(islandIndex)
+If movedIslandIndex <> PhysicsConstants.NULL_INDEX Then
+Var movedIslandId As Integer = awakeSet.IslandIds.Items[islandIndex]
+Me.Islands[movedIslandId].LocalIndex = islandIndex
+End If
+island.SetIndex = sleepSetId
+island.LocalIndex = 0
+End Sub
+
+## Moves one sleeping island body into the sleeping set and relocates its
+## non-touching contacts to the disabled set, ported from the body loop of
+## b2TrySleepIsland.
+Private Sub MoveBodyToSleepSet(body As Body, sleepSet As SolverSet, awakeSet As SolverSet, disabledSet As SolverSet)
 Var awakeBodyIndex As Integer = body.LocalIndex
 Var sleepBodyIndex As Integer = sleepSet.Sims.Count()
 sleepSet.Sims.Add()
@@ -607,6 +627,7 @@ Var movedId As Integer = awakeSet.Sims.BodyId.Items[awakeBodyIndex]
 Me.Bodies[movedId].LocalIndex = awakeBodyIndex
 End If
 awakeSet.States.RemoveSwap(awakeBodyIndex)
+Var sleepSetId As Integer = sleepSet.SetIndex
 body.SetIndex = sleepSetId
 body.LocalIndex = sleepBodyIndex
 
@@ -624,8 +645,6 @@ If contact.SetIndex = PhysicsConstants.DISABLED_SET Then
 Continue While
 End If
 # Touching contacts are moved separately with the island's contact list.
-# The constraint graph will track them through colour indices once the
-# step lands; until then the sim touching flag is authoritative.
 Var owningSet As SolverSet = Me.SolverSets[contact.SetIndex]
 If owningSet.ContactSims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag)) <> 0 Then
 Continue While
@@ -649,39 +668,33 @@ Var movedContactId As Integer = awakeSet.ContactSims.ContactId.Items[localIndex]
 Me.Contacts[movedContactId].LocalIndex = localIndex
 End If
 Wend
+End Sub
 
-bodyId = body.IslandNext
-Wend
-
-# Move the island's touching contacts.
+## Moves an island's touching contacts from the graph colours into the
+## sleeping set, ported from the touching-contact loop of b2TrySleepIsland.
+Private Sub MoveIslandContactsToSleepSet(island As Island, sleepSet As SolverSet)
 Var contactId As Integer = island.HeadContact
 While contactId <> PhysicsConstants.NULL_INDEX
 Var contact As Contact = Me.Contacts[contactId]
+Var color As GraphColor = Me.ConstraintGraph.Colors[contact.ColorIndex]
+If contact.ColorIndex <> PhysicsConstants.GRAPH_OVERFLOW_INDEX Then
+color.BodySet.ClearBit(contact.Edge0BodyId)
+color.BodySet.ClearBit(contact.Edge1BodyId)
+End If
 Var localIndex As Integer = contact.LocalIndex
 Var sleepContactIndex As Integer = sleepSet.ContactSims.Count()
 sleepSet.ContactSims.Add()
-awakeSet.ContactSims.MoveRowTo(sleepSet.ContactSims, sleepContactIndex, localIndex)
-Var movedLocalIndex As Integer = awakeSet.ContactSims.RemoveSwap(localIndex)
+color.ContactSims.MoveRowTo(sleepSet.ContactSims, sleepContactIndex, localIndex)
+Var movedLocalIndex As Integer = color.ContactSims.RemoveSwap(localIndex)
 If movedLocalIndex <> PhysicsConstants.NULL_INDEX Then
-Var movedContactId As Integer = awakeSet.ContactSims.ContactId.Items[localIndex]
+Var movedContactId As Integer = color.ContactSims.ContactId.Items[localIndex]
 Me.Contacts[movedContactId].LocalIndex = localIndex
 End If
-contact.SetIndex = sleepSetId
+contact.SetIndex = sleepSet.SetIndex
 contact.ColorIndex = PhysicsConstants.NULL_INDEX
 contact.LocalIndex = sleepContactIndex
 contactId = contact.IslandNext
 Wend
-
-# Move the island record.
-Var islandIndex As Integer = island.LocalIndex
-sleepSet.IslandIds.Append(islandId)
-Var movedIslandIndex As Integer = awakeSet.IslandIds.RemoveSwap(islandIndex)
-If movedIslandIndex <> PhysicsConstants.NULL_INDEX Then
-Var movedIslandId As Integer = awakeSet.IslandIds.Items[islandIndex]
-Me.Islands[movedIslandId].LocalIndex = islandIndex
-End If
-island.SetIndex = sleepSetId
-island.LocalIndex = 0
 End Sub
 
 ## Merges sleeping set two into sleeping set one and destroys set two,
@@ -2534,10 +2547,7 @@ If contact.ContactId <> c Then
 Throw New RuntimeException("World contact slot does not match contact id")
 End If
 If contact.SetIndex <> PhysicsConstants.NULL_INDEX Then
-Var contactSet As SolverSet = Me.SolverSets[contact.SetIndex]
-If contactSet.ContactSims.ContactId.Items[contact.LocalIndex] <> c Then
-Throw New RuntimeException("Contact sim and contact record disagree on location")
-End If
+Me.ValidateContactLocation(contact, c)
 End If
 End If
 Next c
@@ -2548,11 +2558,33 @@ If contactSet <> Nothing Then
 contactTotal = contactTotal + contactSet.ContactSims.Count()
 End If
 Next s
+For g As Integer = 0 To PhysicsConstants.GRAPH_COLOUR_COUNT - 1
+contactTotal = contactTotal + Me.ConstraintGraph.Colors[g].ContactSims.Count()
+Next g
 If contactTotal <> Me.ContactCount Then
 Throw New RuntimeException("Solver set contact sims do not match contact count")
 End If
 If Me.BroadPhase.PairSet.Count <> Me.ContactCount Then
 Throw New RuntimeException("Pair set keys do not match contact count")
+End If
+End Sub
+
+## Checks that one live contact's sim record sits where the contact record
+## claims, ported from the contact checks of b2ValidateSolverSets.
+Private Sub ValidateContactLocation(contact As Contact, contactId As Integer)
+If contact.ColorIndex <> PhysicsConstants.NULL_INDEX Then
+If contact.SetIndex <> PhysicsConstants.AWAKE_SET Then
+Throw New RuntimeException("Graph contacts live in the awake set")
+End If
+Var colorSims As ContactSims = Me.ConstraintGraph.Colors[contact.ColorIndex].ContactSims
+If colorSims.ContactId.Items[contact.LocalIndex] <> contactId Then
+Throw New RuntimeException("Colour sim and contact record disagree on location")
+End If
+Return
+End If
+Var contactSet As SolverSet = Me.SolverSets[contact.SetIndex]
+If contactSet.ContactSims.ContactId.Items[contact.LocalIndex] <> contactId Then
+Throw New RuntimeException("Contact sim and contact record disagree on location")
 End If
 End Sub
 

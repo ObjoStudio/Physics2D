@@ -1,0 +1,30 @@
+# The constraint graph, ported from upstream b2ConstraintGraph in
+# constraint_graph.h. Touching contacts live in one of twelve colours; the
+# solver processes each colour independently because no body appears in two
+# non-overflow colours. Joints join the colours in Stage 9.
+Class ConstraintGraph
+## The graph colours. Index 11 is the overflow colour.
+Property Colors As Array(Of GraphColor)
+
+## Creates all twelve colours. Non-overflow colours start with a body set
+## sized for at least eight bodies, matching upstream b2CreateGraph.
+Constructor(bodyCapacity As Integer)
+Var capacity As Integer = bodyCapacity
+If capacity < 8 Then
+capacity = 8
+End If
+Me.Colors = New Array(Of GraphColor)
+For i As Integer = 0 To PhysicsConstants.GRAPH_COLOUR_COUNT - 1
+If i < PhysicsConstants.GRAPH_OVERFLOW_INDEX Then
+Me.Colors.Append(New GraphColor(True, capacity))
+Else
+Me.Colors.Append(New GraphColor(False, 0))
+End If
+Next i
+End Constructor
+
+## Creates a placeholder for sparse array capacity.
+Constructor()
+Me.Colors = New Array(Of GraphColor)
+End Constructor
+End Class

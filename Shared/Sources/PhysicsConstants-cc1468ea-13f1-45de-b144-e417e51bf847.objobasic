@@ -75,6 +75,8 @@ Public Const JOINT_CONSTRAINT_DAMPING_RATIO As Double = 2.0
 ## Constraint graph colour count. Constraints that cannot find a colour join
 ## the overflow set, which is solved single-threaded.
 Public Const GRAPH_COLOUR_COUNT As Integer = 12
+## Index of the overflow colour inside the constraint graph.
+Public Const GRAPH_OVERFLOW_INDEX As Integer = 11
 
 ## Maximum number of vertices on a convex polygon. Changing this affects
 ## performance even when fewer vertices are used.

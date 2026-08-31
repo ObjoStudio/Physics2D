@@ -1,0 +1,28 @@
+# One colour of the constraint graph, ported from upstream b2GraphColor in
+# constraint_graph.h. Colours 0..10 track which body slots they hold so the
+# solver can batch independent constraints; colour 11 is the overflow colour
+# and deliberately has no body set. Each colour owns dense contact sims for
+# its touching contacts.
+Class GraphColor
+## Body slots held by this colour. Nothing for the overflow colour.
+Property BodySet As BitSet
+## Touching contact sims assigned to this colour.
+Property ContactSims As ContactSims
+
+## Creates a colour with or without a body set, sized for the given body
+## capacity. The bit set grows on demand afterwards.
+Constructor(hasBodySet As Boolean, bodyCapacity As Integer)
+If hasBodySet Then
+Me.BodySet = New BitSet(bodyCapacity)
+Else
+Me.BodySet = Nothing
+End If
+Me.ContactSims = New ContactSims()
+End Constructor
+
+## Creates a free-record placeholder for sparse array capacity.
+Constructor()
+Me.BodySet = Nothing
+Me.ContactSims = New ContactSims()
+End Constructor
+End Class
