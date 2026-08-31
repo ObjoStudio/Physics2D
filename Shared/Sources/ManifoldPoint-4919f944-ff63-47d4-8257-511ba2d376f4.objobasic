@@ -75,4 +75,19 @@ Me.Id = 0
 Me.Persisted = False
 Return Me
 End Function
+
+## Copies every field from another manifold point into this one. Used to
+## snapshot manifolds for events.
+Sub AssignFrom(other As ManifoldPoint)
+Me.Point.Set(other.Point.X, other.Point.Y)
+Me.AnchorA.Set(other.AnchorA.X, other.AnchorA.Y)
+Me.AnchorB.Set(other.AnchorB.X, other.AnchorB.Y)
+Me.Separation = other.Separation
+Me.NormalImpulse = other.NormalImpulse
+Me.TangentImpulse = other.TangentImpulse
+Me.TotalNormalImpulse = other.TotalNormalImpulse
+Me.NormalVelocity = other.NormalVelocity
+Me.Id = other.Id
+Me.Persisted = other.Persisted
+End Sub
 End Class

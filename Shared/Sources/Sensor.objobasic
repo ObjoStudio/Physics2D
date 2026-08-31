@@ -1,0 +1,25 @@
+# One sensor's double-buffered overlap list, ported from b2Sensor in
+# sensor.h. The world keeps one record per sensor shape; overlaps reference
+# visitor shapes by slot and generation so a destroyed visitor ends the
+# overlap instead of leaking it.
+Class Sensor
+## The sensor shape's slot.
+Property ShapeId As Integer
+## Previous-step overlap shape slots.
+Property Overlap1Ids As IntegerList
+## Previous-step overlap generations.
+Property Overlap1Gens As IntegerList
+## Current-step overlap shape slots.
+Property Overlap2Ids As IntegerList
+## Current-step overlap generations.
+Property Overlap2Gens As IntegerList
+
+## Creates an empty sensor record for one shape.
+Constructor(shapeId As Integer)
+Me.ShapeId = shapeId
+Me.Overlap1Ids = New IntegerList
+Me.Overlap1Gens = New IntegerList
+Me.Overlap2Ids = New IntegerList
+Me.Overlap2Gens = New IntegerList
+End Constructor
+End Class

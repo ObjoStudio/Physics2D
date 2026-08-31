@@ -1,0 +1,20 @@
+# Tree query callback for sensor overlaps, ported from b2SensorQueryCallback
+# in sensor.c. The world owns one instance reused per sensor pass; each visit
+# runs the overlap test and appends the visitor to the sensor's current
+# overlap buffer on a hit.
+Class SensorQueryCallback Inherits TreeQueryCallback
+## Owning world.
+Property World As World
+## Sensor record under test.
+Property Sensor As Sensor
+## Sensor shape under test.
+Property SensorShape As Shape
+## Sensor body transform.
+Property Transform As Transform
+
+## Tests one candidate shape for overlap with the sensor shape.
+Override Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Return Me.World.SensorOverlapTest(userData, Me.Sensor, Me.SensorShape, Me.Transform)
+End Function
+End Class

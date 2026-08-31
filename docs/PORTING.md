@@ -109,6 +109,21 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     material IDs alongside each value, matching the upstream callback
     signature, and routes through `World.MixFrictionWithMaterials` /
     `World.MixRestitutionWithMaterials`.
+24. **Polled events.** Upstream collects primitive event buffers that user
+    code reads through `b2World_Get*Events` structs; Physics2D exposes the
+    same validity windows through the reusable `WorldEvents` view over flat
+    world-owned columns, with begin/hit/move events clearing at step start
+    and end-event buffers double-swapping at step end. There are no
+    registered event callbacks; façade accessors resolve generation-checked
+    references and return `Nothing` for stale ids.
+25. **Body-level collision filter.** Upstream `b2ShouldBodiesCollide` walks
+    connected joints to enforce `collideConnected`; the joint walk arrives
+    with Stage 9, so Stage 8 implements the dynamic-body type rule only.
+26. **Distance overlap reporting.** Upstream zero-initialises
+    `b2DistanceOutput` on the stack, so its simplex-overlap early returns
+    report zero distance and a zero normal; the Physics2D `Distance`
+    module now writes the same zeros explicitly in `WriteOverlapOutput`
+    because reused scratch outputs made the stale fields observable.
 
 ## Public Symbol Inventory
 
@@ -166,14 +181,14 @@ Mapping conventions:
 | `b2World_Explode` | World.Explode | 10 |
 | `b2World_GetAwakeBodyCount` | World.AwakeBodyCount | 6 |
 | `b2World_GetBodyEvents` | World.GetBodyEvents batch view plus post-step BodyMoved events | 8 |
-| `b2World_GetContactEvents` | World.GetContactEvents batch view plus post-step contact events | 8 |
+| `b2World_GetContactEvents` | World.Events contact begin/end/hit views | 8 |
 | `b2World_GetCounters` | World.Counters statistics record | 10 |
 | `b2World_GetGravity` | World.Gravity | 6 |
 | `b2World_GetHitEventThreshold` | World.HitEventThreshold | 6 |
 | `b2World_GetMaximumLinearSpeed` | World.MaximumLinearSpeed | 6 |
 | `b2World_GetProfile` | World.Profile statistics record | 10 |
 | `b2World_GetRestitutionThreshold` | World.RestitutionThreshold | 6 |
-| `b2World_GetSensorEvents` | World.GetSensorEvents batch view plus post-step sensor events | 8 |
+| `b2World_GetSensorEvents` | World.Events sensor begin/end views | 8 |
 | `b2World_GetUserData` | World.UserData | 6 |
 | `b2World_IsContinuousEnabled` | World.ContinuousEnabled | 6 |
 | `b2World_IsSleepingEnabled` | World.SleepingEnabled | 6 |
@@ -653,9 +668,9 @@ Upstream line counts are for orientation only.
 | `src/dynamic_tree.c` | `DynamicTree` | 5 |
 | `src/broad_phase.[ch]` | `BroadPhase` | 5 |
 | `src/body.[ch]`, `src/shape.[ch]` | body/shape stores and façades | 6 |
-| `src/world.[ch]`, `src/types.c` | `World` façade and world core (the solving half of `world.c` lands with Stage 7) | 6/7 |
+| `src/world.[ch]`, `src/types.c` | `World` façade and world core including stepping and events | 8 |
 | `src/contact.[ch]`, `src/contact_solver.c` | contact store and contact solver | 7 |
-| `src/island.[ch]`, `src/solver_set.[ch]`, `src/solver.[ch]` | islands, solver sets, Soft Step solver | 7 |
+| `src/island.[ch]`, `src/solver_set.[ch]`, `src/solver.[ch]` | islands, solver sets, Soft Step solver, and continuous collision | 7/8 |
 | `src/constraint_graph.[ch]` | constraint graph colours | 7 |
 | `src/sensor.[ch]` | sensor tracking and events | 8 |
 | `src/joint.[ch]` | joint store and common joint solver | 9 |

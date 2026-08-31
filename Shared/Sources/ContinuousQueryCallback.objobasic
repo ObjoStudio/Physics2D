@@ -1,0 +1,15 @@
+# Tree query callback for continuous collision, ported from
+# b2ContinuousQueryCallback in solver.c. The world owns one instance reused
+# per sweep; QueryTo mutates the shared context fraction on a hit.
+Class ContinuousQueryCallback Inherits TreeQueryCallback
+## Owning world.
+Property World As World
+## Shared sweep context.
+Property Context As ContinuousContext
+
+## Tests one candidate shape against the fast body's sweep.
+Override Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Return Me.World.ContinuousHitTest(userData, Me.Context)
+End Function
+End Class

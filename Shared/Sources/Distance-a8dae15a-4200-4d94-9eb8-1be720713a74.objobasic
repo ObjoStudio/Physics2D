@@ -210,7 +210,9 @@ vertex.W.Set(vertex.WA.X - vertex.WB.X, vertex.WA.Y - vertex.WB.Y)
 iteration = iteration + 1
 
 # Check for duplicate support points: the main termination criterion. A
-# duplicate means we must exit to avoid cycling.
+# duplicate means we must exit to avoid cycling. The tentative vertex is
+# not committed, matching upstream, so the cached simplex never holds
+# three points outside the overlap case.
 If Distance.IsDuplicateSupport(saveCount, vertex.IndexA, vertex.IndexB, saveA0, saveA1, saveA2, saveB0, saveB1, saveB2) Then
 Exit While
 End If
@@ -481,6 +483,11 @@ Var scratch As DistanceScratch = out.Scratch()
 Distance.ComputeWitnessPoints(simplex, scratch.WitnessA, scratch.WitnessB)
 Distance.TransformInto(out.PointA, input.TransformA, scratch.WitnessA)
 Distance.TransformInto(out.PointB, input.TransformA, scratch.WitnessB)
+# Upstream zero-initialises b2DistanceOutput, so the overlap paths
+# effectively report zero distance and a zero normal. Match that for
+# reused outputs.
+out.Distance = 0.0
+out.Normal.Set(0.0, 0.0)
 End Sub
 
 ## Determines whether the tentative support point repeats an earlier simplex

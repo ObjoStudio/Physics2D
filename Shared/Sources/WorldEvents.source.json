@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "WorldEvents",
+  "Id": "e77dba95-23ca-464a-a16b-7fc3c605f775",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "WorldEvents.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

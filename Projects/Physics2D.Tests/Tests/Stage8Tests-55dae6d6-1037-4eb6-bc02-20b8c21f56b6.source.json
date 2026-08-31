@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage8Tests",
+  "Id": "55dae6d6-1037-4eb6-bc02-20b8c21f56b6",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage8Tests-55dae6d6-1037-4eb6-bc02-20b8c21f56b6.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

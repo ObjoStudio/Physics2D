@@ -6,7 +6,7 @@
 #
 # Input: AABB-375d053c-9aba-487b-b381-874abcd7b5a7.objobasic 995130c81ff8bd6fe0acda99e69614d9e7297e08b19ad3d1a673c89e81bae8a9
 # Input: BitSet-32ba5db1-d4a3-41d8-978f-6020100c45db.objobasic 1625c50d37848f57f6d82ee58302562750774ebbebf4243d84ea610e95d630d7
-# Input: Body.objobasic 076af2a29f0dc0bb9cb5006eeda542e1ade36dedeea8c1902b51c399b3171c24
+# Input: Body.objobasic 203011bf81629ffa35f4a1b69734a9b1fa460fd95aa81f8b89ab29c51b8fd521
 # Input: BodyDefinition.objobasic 6d4099185528eb5fcb4aae0e582e9fd583b979cc95f784781bba3883efcfe9ff
 # Input: BodySims.objobasic 4bc5987447d5544cffad98498671ff642f43b305211a37b9eda321462abe8962
 # Input: BodyStates.objobasic 34ecdd2493c9d76ce09a4fd975cbfa86af0ffbb5eb1de0eb66b9017bce409282
@@ -31,14 +31,16 @@
 # Input: Contact.objobasic 6c9dabeb3bdf783032ea2cc01ddae72f73f7a9b02bf727fa47bcfc8cdae20ab2
 # Input: ContactConstraint.objobasic 035f5e6d9b00737fb1e0d05aed0821441452bf5ae04bd2018caa8b7648a1e517
 # Input: ContactFlags.objobasic 60d159f6cf6e942332b1ff941019e78a96e3c4aab637f56f8f431ad2651221d1
-# Input: ContactMethods.objobasic 41e532f37943b507fcbe779da64b92a4091303f10d31412ea2ca87f8e099c8cb
+# Input: ContactMethods.objobasic 648379807c6d0efc0024395b506a3c824cdbc0ff07bf111fe84711e3c800e5a9
 # Input: ContactSims.objobasic e2bce217a2d08ad5fdf8886b14b636f5b49d2c7bfe46822cfeb3ea81b9462d7e
 # Input: ContactSolver.objobasic 7656cbea54cb438fef2d8fe60975cd85169aa0ca25068de19dc260c3745670a1
+# Input: ContinuousContext.objobasic 4d6fe8a572e0a7e900ced991d880f52e796a5a6690cb25aaad17473607101362
+# Input: ContinuousQueryCallback.objobasic f459556a905ab9b0a21cecf54239cdd2588ad7ce9a6c8403429ec437bf1d98b5
 # Input: CosSin-5c078a22-97ea-4e99-99f1-aeb228b29070.objobasic 336ba8c66991bb2a6b9e11d51e21d0ec630188fedb577d2613eb7dee28dae4ca
 # Input: CustomContactFilter.objobasic 22c6ed2347f3634c8076604defb9dbe63b7a72da3510b15ea32a6c91a46d43e5
 # Input: CustomMaterialMixer.objobasic 432de14a1d23d12f799f20147f1e89738c9958141c72437581dc5f34369554cb
 # Input: CustomPreSolve.objobasic 633a51981a6f216496f322a57c4739d6df454bd1477f101c5586c0034626aebd
-# Input: Distance-a8dae15a-4200-4d94-9eb8-1be720713a74.objobasic a68e792cc70ec0be7ca6799ef96a784df491ac5eb3f86a02be7d2ff8ddb13dc3
+# Input: Distance-a8dae15a-4200-4d94-9eb8-1be720713a74.objobasic c03d3e2850756899619485e0612f26fa32a423c570aedbd6fb986dc911adb65e
 # Input: DistanceInput-491bbf59-5549-4fb5-a028-a761c8544333.objobasic 0127713aa815720f9e01f2be2a5e07f93a9dd0eb3b7993e39145272cff17311a
 # Input: DistanceOutput-d619ee17-034e-4a05-a8d7-d61257435965.objobasic 15dd3383c16f63efed47c74647dfe3949d0481fcb721b5300cd2b84b54fec98a
 # Input: DistanceScratch-b2490261-2e05-45e6-97e1-2d0a41723f65.objobasic f9e1514b2da2d9421f452082d7ddeb84aa9a1af10c333bc05ee6a01d7f050c04
@@ -53,8 +55,8 @@
 # Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
 # Input: Island.objobasic 44f9b035b888e2dbbec81e2c88390bd8081257a3f57a52efc6fffdddabb10fa4
 # Input: IslandMethods.objobasic 46190fa35190f01e3eb228bc6f5fc192b3faeac2811d4ee0537e4bcb148ab4e7
-# Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic f1dd7429b3e77d27bab8cb1ce9d1eab04ed7936ca8c1671227a254cd7f3f8135
-# Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic 0f1a0f5ad2c3f9cc8bc9c281f29f9d30655c3bfbe86a3ef7ef7d41e58ba0b164
+# Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 2204114b1a588c77c29b945afd4b19ad7c68f56bce9f68f6a6ee47f5e8463787
+# Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic dcebd68c0b3500bb6ab7688775a8056b75304728e39537252715a4309cc96402
 # Input: MassData-cd26f83f-962d-4695-aa00-893f86fd1099.objobasic 954cf89f8f01ac0ba9e4d378506536bbb64de2e1630351bf9373731366488987
 # Input: Mover-89f8b58a-a5cb-43a1-bb4e-216fd2e79a45.objobasic a0bd07eed0ced42bc9789f0e0b4df2d56c8dc159f7df92c4ba3c75068e33f576
 # Input: PairKeySet-7d0b7f56-d56b-4fa5-a84f-5f9f8e86c8b1.objobasic e9ed9cfcac78bbfa2b440fbcc2b61d7c2ad25393624cd226b00a22f274b068b0
@@ -70,9 +72,11 @@
 # Input: Rot-e55b6716-f6ac-48d7-90e7-36c4c5a6a40a.objobasic ef4570b5b720c0b4d0726d643c25031ceb40d5ba6ad5a93390b090cfb53f27a1
 # Input: Segment-246ee640-6a60-413a-80c5-c3ed4fc1a7ef.objobasic 16c262058b84fcd3cc8018b731c57537ff5d1508b847a855b356f73ce7173751
 # Input: SegmentDistanceResult-742ba2ff-a0dc-4cc5-af76-2abcc14085e9.objobasic a6f9b50d52382f5dfbf73057443425e2e552298ebe679792936998ecd5ed45eb
+# Input: Sensor.objobasic 9851a9daa4a294f3ace949290a5c46b28d6b32a6465f8621887f08fede629dbc
+# Input: SensorQueryCallback.objobasic 419aeb60aeeaaee029240315f1970e6cac053f1fa122c0e0e3c813747925f7a2
 # Input: SeparationFunction-78667a17-ba12-4e7f-b4fc-428ba678f723.objobasic 3a6d53e6b65a027206033facf93260dc8646353be1597a95cdf3e4bf4f3a314f
 # Input: SeparationResult-964acaa7-f5ff-4e39-a198-75a81617b5e5.objobasic f52de0aa4c122914a799622d4168094f9562db60f8888a899d12c6d03515243d
-# Input: Shape.objobasic ec6d0a8051442435e3883e0147049529784d77f665136b1e5c1668bba65c7af1
+# Input: Shape.objobasic ccb21949e7519d0dd2ec5668b9c0a2c1f765f172df3e93a39ed863144c0e8364
 # Input: ShapeCastInput-1caa227b-308f-4d01-88d3-d97ae90833dc.objobasic b0cab8c32335ec5bafa703389d6b064c00a9f4e7338dace825f8adca9569022c
 # Input: ShapeCastPairInput-3da16779-2b4f-4b54-9941-b9cc5c4abe83.objobasic d6fcaa7682240746180999cc686ab888b181aa106aed40c55d3aa75a825e6776
 # Input: ShapeDefinition.objobasic 5598f2921d34b3eb125948ec0b30578861d9f88dd63b1f56a7bbf6eedf7d1029
@@ -87,7 +91,7 @@
 # Input: Softness.objobasic 06211852d8bbb70e4c5f5479756606be96bb2667bd617c4f635f76a661e47d4a
 # Input: SolverMethods.objobasic b211a0cc05a398e237aa12f8a911af3626e3654ffee4fbe3abd62d5ce5251514
 # Input: SolverSet.objobasic 1d2b42169e753b0f4170547856e8e70e2fe1627878b28a60f941ccc978df8418
-# Input: StepContext.objobasic 3b77b2f83a53e499777a6fcdf70a07f484ad058fcabd8de9d5569c0460c0496b
+# Input: StepContext.objobasic 203f584682477424c7d95486c3a0e2cb2e613d6f0096d52fa4e109fa5ede8ca2
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
 # Input: Sweep-cb00a2fd-6231-417e-b9c8-c8b9600f8a60.objobasic 63ddb320289daea999ff29f84fefccd8f3153869b145930b3c49163fbdbb8578
 # Input: TOIInput-ed2377a5-cd3e-456e-97c1-3b960def0f54.objobasic cdc342dace66bf807f8463117512baf9e8a506b2befd05aa00aec3e30c369753
@@ -102,15 +106,16 @@
 # Input: TreeScratch-3add8e75-acc6-4f27-996e-372dc4d98372.objobasic 35e077b5cec3caafcc6d334013421d7a9612c3ba18ecf97875019b87ac2f9f55
 # Input: TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic 2abd4a4ca724ab02daa1a476dd447403aea4c5d80a507691f770ed20469a832b
 # Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
-# Input: World.objobasic d3e9ca6d494555842afce75c9376bfac82d3cc4edf977209af792f42fede92c9
+# Input: World.objobasic fe69d42437c900eaf45c2b3e39ce773f2743eaa0bba5f5ce1807dbe5cc0d4695
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
+# Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
 # Input: WorldOverlapContext.objobasic d6427a128c7da4c7c28607ce9ce2938ee735594398b6d8bddeaffa2f0f678585
 # Input: WorldRayCastContext.objobasic 7c4264d0297661dbf4824b319ee8829160c85017c99cd14f565d93c505c22614
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): c795ee42941edde08af45f841c586b9c2f9de227df1305c3890a6af3be9ff6b8
+# Source content checksum (SHA-256): c65d7c5e319dafd5cddb112b1a17a214086d490de523e6a38e2960f020f4329e
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -591,6 +596,9 @@ Property IslandId As Integer
 Property IslandPrev As Integer
 ## Doubly linked island list: next body.
 Property IslandNext As Integer
+## Index of this body's moved-body event in the current step, or -1. Set by
+## the finalize stage and consumed by island sleeping. Internal.
+Property MoveEventIndex As Integer
 ## Total mass from shapes (kilograms). Overridden by SetMassData.
 Property Mass As Double
 ## Rotational inertia about the centre of mass. Overridden by SetMassData.
@@ -632,6 +640,7 @@ Me.ContactCount = 0
 Me.IslandId = PhysicsConstants.NULL_INDEX
 Me.IslandPrev = PhysicsConstants.NULL_INDEX
 Me.IslandNext = PhysicsConstants.NULL_INDEX
+Me.MoveEventIndex = -1
 Me.Mass = 0.0
 Me.Inertia = 0.0
 Me.SleepThreshold = 0.0
@@ -5496,6 +5505,17 @@ End If
 Return (filterA.MaskBits.BitAnd(filterB.CategoryBits) <> 0) And (filterA.CategoryBits.BitAnd(filterB.MaskBits) <> 0)
 End Function
 
+## Body-level collision rule, ported from b2ShouldBodiesCollide in body.c.
+## Two bodies collide only when at least one is dynamic; the connected-joint
+## walk arrives with Stage 9.
+Shared Function ShouldBodiesCollide(world As World, bodyA As Body, bodyB As Body) As Boolean
+Pragma Unused world
+If bodyA.Type <> BodyType.DynamicBody And bodyB.Type <> BodyType.DynamicBody Then
+Return False
+End If
+Return True
+End Function
+
 ## Creates a contact for two overlapping broad-phase proxies, ported from
 ## b2CreateContact. The caller has already applied shape and body filtering.
 ## When either body is awake the contact lives in the awake set; otherwise
@@ -5641,6 +5661,14 @@ Var bodyIdA As Integer = contact.Edge0BodyId
 Var bodyIdB As Integer = contact.Edge1BodyId
 Var bodyA As Body = world.Bodies[bodyIdA]
 Var bodyB As Body = world.Bodies[bodyIdB]
+
+# End touch event, ported from the destruction branch of b2DestroyContact.
+If touching And contact.Flags.BitAnd(Integer(ContactFlags.EnableContactEvents)) <> 0 Then
+world.ContactEndShapeAIds[world.EndEventWriteIndex].Append(contact.ShapeIdA)
+world.ContactEndShapeAGens[world.EndEventWriteIndex].Append(world.ShapeGenerations.Items[contact.ShapeIdA])
+world.ContactEndShapeBIds[world.EndEventWriteIndex].Append(contact.ShapeIdB)
+world.ContactEndShapeBGens[world.EndEventWriteIndex].Append(world.ShapeGenerations.Items[contact.ShapeIdB])
+End If
 
 UnlinkContactEdge(world, contact, 0)
 UnlinkContactEdge(world, contact, 1)
@@ -6659,6 +6687,50 @@ manifold.Point2.NormalVelocity = cc.RelativeVelocity2
 End Sub
 End Class
 
+# Scratch state for one fast body's continuous sweep, ported from struct
+# b2ContinuousContext in solver.c. The world owns one instance reused per
+# solve.
+Class ContinuousContext
+## The fast body's sweep from its pre-solve transform to its current one.
+Property Sweep As Sweep
+## Fast shape under test.
+Property FastShape As Shape
+## Fast body slot.
+Property FastBodyId As Integer
+## Fast body's awake sim index.
+Property FastBodySimIndex As Integer
+## Fast shape centroid at sweep start.
+Property Centroid1 As Vector2
+## Fast shape centroid at sweep end.
+Property Centroid2 As Vector2
+## Earliest hit fraction found so far, starting at one.
+Property Fraction As Double
+
+## Creates the context with reusable sweep objects.
+Constructor()
+Me.Sweep = New Sweep
+Me.Centroid1 = New Vector2
+Me.Centroid2 = New Vector2
+Me.Fraction = 1.0
+End Constructor
+End Class
+
+# Tree query callback for continuous collision, ported from
+# b2ContinuousQueryCallback in solver.c. The world owns one instance reused
+# per sweep; QueryTo mutates the shared context fraction on a hit.
+Class ContinuousQueryCallback Inherits TreeQueryCallback
+## Owning world.
+Property World As World
+## Shared sweep context.
+Property Context As ContinuousContext
+
+## Tests one candidate shape against the fast body's sweep.
+Override Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Return Me.World.ContinuousHitTest(userData, Me.Context)
+End Function
+End Class
+
 # Deterministic cosine/sine pair used to build rotations.
 #
 # Mirrors the upstream b2CosSin struct from include/box2d/math_functions.h.
@@ -6959,7 +7031,9 @@ vertex.W.Set(vertex.WA.X - vertex.WB.X, vertex.WA.Y - vertex.WB.Y)
 iteration = iteration + 1
 
 # Check for duplicate support points: the main termination criterion. A
-# duplicate means we must exit to avoid cycling.
+# duplicate means we must exit to avoid cycling. The tentative vertex is
+# not committed, matching upstream, so the cached simplex never holds
+# three points outside the overlap case.
 If Distance.IsDuplicateSupport(saveCount, vertex.IndexA, vertex.IndexB, saveA0, saveA1, saveA2, saveB0, saveB1, saveB2) Then
 Exit While
 End If
@@ -7230,6 +7304,11 @@ Var scratch As DistanceScratch = out.Scratch()
 Distance.ComputeWitnessPoints(simplex, scratch.WitnessA, scratch.WitnessB)
 Distance.TransformInto(out.PointA, input.TransformA, scratch.WitnessA)
 Distance.TransformInto(out.PointB, input.TransformA, scratch.WitnessB)
+# Upstream zero-initialises b2DistanceOutput, so the overlap paths
+# effectively report zero distance and a zero normal. Match that for
+# reused outputs.
+out.Distance = 0.0
+out.Normal.Set(0.0, 0.0)
 End Sub
 
 ## Determines whether the tentative support point repeats an earlier simplex
@@ -10666,6 +10745,16 @@ Me.PointCount = 0
 Return Me
 End Function
 
+## Copies every field from another manifold into this one, including the
+## full contact points. Used to snapshot manifolds for events.
+Sub AssignFrom(other As Manifold)
+Me.Normal.Set(other.Normal.X, other.Normal.Y)
+Me.RollingImpulse = other.RollingImpulse
+Me.Point1.AssignFrom(other.Point1)
+Me.Point2.AssignFrom(other.Point2)
+Me.PointCount = other.PointCount
+End Sub
+
 ## Returns the lazily created reusable workspace. Engine code only.
 Function Scratch() As CollideScratch
 If Me.mScratch = Nothing Then
@@ -10752,6 +10841,21 @@ Me.Id = 0
 Me.Persisted = False
 Return Me
 End Function
+
+## Copies every field from another manifold point into this one. Used to
+## snapshot manifolds for events.
+Sub AssignFrom(other As ManifoldPoint)
+Me.Point.Set(other.Point.X, other.Point.Y)
+Me.AnchorA.Set(other.AnchorA.X, other.AnchorA.Y)
+Me.AnchorB.Set(other.AnchorB.X, other.AnchorB.Y)
+Me.Separation = other.Separation
+Me.NormalImpulse = other.NormalImpulse
+Me.TangentImpulse = other.TangentImpulse
+Me.TotalNormalImpulse = other.TotalNormalImpulse
+Me.NormalVelocity = other.NormalVelocity
+Me.Id = other.Id
+Me.Persisted = other.Persisted
+End Sub
 End Class
 
 # Mass data computed for a shape, ported from upstream b2MassData in
@@ -12329,6 +12433,53 @@ Me.DistanceSquared = 0.0
 End Constructor
 End Class
 
+# One sensor's double-buffered overlap list, ported from b2Sensor in
+# sensor.h. The world keeps one record per sensor shape; overlaps reference
+# visitor shapes by slot and generation so a destroyed visitor ends the
+# overlap instead of leaking it.
+Class Sensor
+## The sensor shape's slot.
+Property ShapeId As Integer
+## Previous-step overlap shape slots.
+Property Overlap1Ids As IntegerList
+## Previous-step overlap generations.
+Property Overlap1Gens As IntegerList
+## Current-step overlap shape slots.
+Property Overlap2Ids As IntegerList
+## Current-step overlap generations.
+Property Overlap2Gens As IntegerList
+
+## Creates an empty sensor record for one shape.
+Constructor(shapeId As Integer)
+Me.ShapeId = shapeId
+Me.Overlap1Ids = New IntegerList
+Me.Overlap1Gens = New IntegerList
+Me.Overlap2Ids = New IntegerList
+Me.Overlap2Gens = New IntegerList
+End Constructor
+End Class
+
+# Tree query callback for sensor overlaps, ported from b2SensorQueryCallback
+# in sensor.c. The world owns one instance reused per sensor pass; each visit
+# runs the overlap test and appends the visitor to the sensor's current
+# overlap buffer on a hit.
+Class SensorQueryCallback Inherits TreeQueryCallback
+## Owning world.
+Property World As World
+## Sensor record under test.
+Property Sensor As Sensor
+## Sensor shape under test.
+Property SensorShape As Shape
+## Sensor body transform.
+Property Transform As Transform
+
+## Tests one candidate shape for overlap with the sensor shape.
+Override Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Return Me.World.SensorOverlapTest(userData, Me.Sensor, Me.SensorShape, Me.Transform)
+End Function
+End Class
+
 # Engine-internal separating axis function for the time-of-impact root
 # finder, ported from upstream b2SeparationFunction in distance.c. The
 # proxies are aliased read-only and the sweeps are copied on make.
@@ -13149,6 +13300,73 @@ proxy.Count = 2
 proxy.Radius = 0.0
 End If
 End Sub
+
+## Computes the minimum and maximum extents of this shape relative to the
+## given centroid, ported from b2ComputeShapeExtent in shape.c. The minimum
+## extent bounds how far the shape can move before fast-body detection fires
+## and the maximum extent bounds sweep enlargement.
+Sub ComputeExtentTo(centroid As Vector2, out As ShapeExtent)
+out.MinExtent = 0.0
+out.MaxExtent = 0.0
+If Me.Type = ShapeType.CapsuleShape Then
+out.MinExtent = Me.Capsule.Radius
+Var c1x As Double = Me.Capsule.Center1.X - centroid.X
+Var c1y As Double = Me.Capsule.Center1.Y - centroid.Y
+Var c2x As Double = Me.Capsule.Center2.X - centroid.X
+Var c2y As Double = Me.Capsule.Center2.Y - centroid.Y
+out.MaxExtent = Maths.Sqrt(Maths.Max(c1x * c1x + c1y * c1y, c2x * c2x + c2y * c2y)) + Me.Capsule.Radius
+ElseIf Me.Type = ShapeType.CircleShape Then
+out.MinExtent = Me.Circle.Radius
+Var dx As Double = Me.Circle.Center.X - centroid.X
+Var dy As Double = Me.Circle.Center.Y - centroid.Y
+out.MaxExtent = Maths.Sqrt(dx * dx + dy * dy) + Me.Circle.Radius
+ElseIf Me.Type = ShapeType.PolygonShape Then
+Var minExtent As Double = 1.7976931348623157e308
+Var maxExtentSqr As Double = 0.0
+Var poly As Polygon = Me.Polygon
+Var centroidX As Double = poly.Centroid.X
+Var centroidY As Double = poly.Centroid.Y
+Var localX As Double = centroid.X
+Var localY As Double = centroid.Y
+For i As Integer = 0 To poly.Count - 1
+Var vx As Double = poly.Vertices[i].X
+Var vy As Double = poly.Vertices[i].Y
+Var normal As Vector2 = poly.Normals[i]
+Var planeOffset As Double = normal.X * (vx - centroidX) + normal.Y * (vy - centroidY)
+minExtent = Maths.Min(minExtent, planeOffset)
+Var ddx As Double = vx - localX
+Var ddy As Double = vy - localY
+Var distanceSqr As Double = ddx * ddx + ddy * ddy
+maxExtentSqr = Maths.Max(maxExtentSqr, distanceSqr)
+Next i
+out.MinExtent = minExtent + poly.Radius
+out.MaxExtent = Maths.Sqrt(maxExtentSqr) + poly.Radius
+Else
+Var p1x As Double
+Var p1y As Double
+Var p2x As Double
+Var p2y As Double
+If Me.Type = ShapeType.SegmentShape Then
+p1x = Me.Segment.Point1.X
+p1y = Me.Segment.Point1.Y
+p2x = Me.Segment.Point2.X
+p2y = Me.Segment.Point2.Y
+ElseIf Me.Type = ShapeType.ChainSegmentShape Then
+p1x = Me.ChainSegment.Segment.Point1.X
+p1y = Me.ChainSegment.Segment.Point1.Y
+p2x = Me.ChainSegment.Segment.Point2.X
+p2y = Me.ChainSegment.Segment.Point2.Y
+Else
+Return
+End If
+out.MinExtent = 0.0
+Var c1x As Double = p1x - centroid.X
+Var c1y As Double = p1y - centroid.Y
+Var c2x As Double = p2x - centroid.X
+Var c2y As Double = p2y - centroid.Y
+out.MaxExtent = Maths.Sqrt(Maths.Max(c1x * c1x + c1y * c1y, c2x * c2x + c2y * c2y))
+End If
+End Sub
 End Class
 
 # Input for casting a shape along a translation, ported from upstream
@@ -13821,11 +14039,14 @@ Property RestitutionThreshold As Double
 Property MaximumLinearVelocity As Double
 ## 1.0 when warm starting is enabled, otherwise 0.0.
 Property WarmStartScale As Double
+## Fast bullet body sim indices collected during finalization.
+Property BulletBodies As IntegerList
 
 ## Creates a scratch context with reusable softness records.
 Constructor()
 Me.ContactSoftness = New Softness
 Me.StaticSoftness = New Softness
+Me.BulletBodies = New IntegerList
 End Constructor
 End Class
 
@@ -14688,6 +14909,117 @@ Private Property mAwakeIslandBits As BitSet
 ## AABBs this step.
 Private Property mEnlargedBodyBits As BitSet
 
+# Stage 8 event storage. The columns are deliberately public so the
+# WorldEvents view can read them; treat them as internal state and never
+# write them from application code.
+## Sensor store, one record per live sensor shape.
+Property Sensors As Array(Of Sensor)
+## End-event buffer being filled during the current step.
+Property EndEventWriteIndex As Integer
+## End-event buffer readable after the current step completes.
+Property ReadableEndIndex As Integer
+## Sensor begin event sensor shape slots.
+Property SensorBeginSensorIds As IntegerList
+## Sensor begin event sensor shape generations.
+Property SensorBeginSensorGens As IntegerList
+## Sensor begin event visitor shape slots.
+Property SensorBeginVisitorIds As IntegerList
+## Sensor begin event visitor shape generations.
+Property SensorBeginVisitorGens As IntegerList
+## Per-buffer sensor end event sensor shape slots.
+Property SensorEndSensorIds As Array(Of IntegerList)
+## Per-buffer sensor end event sensor shape generations.
+Property SensorEndSensorGens As Array(Of IntegerList)
+## Per-buffer sensor end event visitor shape slots.
+Property SensorEndVisitorIds As Array(Of IntegerList)
+## Per-buffer sensor end event visitor shape generations.
+Property SensorEndVisitorGens As Array(Of IntegerList)
+## Contact begin event first shape slots.
+Property ContactBeginShapeAIds As IntegerList
+## Contact begin event first shape generations.
+Property ContactBeginShapeAGens As IntegerList
+## Contact begin event second shape slots.
+Property ContactBeginShapeBIds As IntegerList
+## Contact begin event second shape generations.
+Property ContactBeginShapeBGens As IntegerList
+## Contact begin event manifold snapshots.
+Property ContactBeginManifolds As Array(Of Manifold)
+## Per-buffer contact end event first shape slots.
+Property ContactEndShapeAIds As Array(Of IntegerList)
+## Per-buffer contact end event first shape generations.
+Property ContactEndShapeAGens As Array(Of IntegerList)
+## Per-buffer contact end event second shape slots.
+Property ContactEndShapeBIds As Array(Of IntegerList)
+## Per-buffer contact end event second shape generations.
+Property ContactEndShapeBGens As Array(Of IntegerList)
+## Contact hit event first shape slots.
+Property ContactHitShapeAIds As IntegerList
+## Contact hit event first shape generations.
+Property ContactHitShapeAGens As IntegerList
+## Contact hit event second shape slots.
+Property ContactHitShapeBIds As IntegerList
+## Contact hit event second shape generations.
+Property ContactHitShapeBGens As IntegerList
+## Contact hit event approach speeds.
+Property ContactHitSpeeds As DoubleList
+## Contact hit event point X coordinates.
+Property ContactHitPointXs As DoubleList
+## Contact hit event point Y coordinates.
+Property ContactHitPointYs As DoubleList
+## Moved-body event body slots.
+Property MoveEventBodyIds As IntegerList
+## Moved-body event body generations.
+Property MoveEventBodyGens As IntegerList
+## Moved-body event position X coordinates.
+Property MoveEventPXs As DoubleList
+## Moved-body event position Y coordinates.
+Property MoveEventPYs As DoubleList
+## Moved-body event rotation cosines.
+Property MoveEventQCs As DoubleList
+## Moved-body event rotation sines.
+Property MoveEventQSs As DoubleList
+## Moved-body event fell-asleep flags.
+Property MoveEventFellAsleep As IntegerList
+
+## Reusable event view over this world's buffers.
+Property Events As WorldEvents
+## Scratch bit set marking sensors with stale overlap lists.
+Private Property mSensorEventBits As BitSet
+## Scratch sweep context reused by continuous collision.
+Private Property mContinuousContext As ContinuousContext
+## Reused tree query callback for continuous collision.
+Private Property mContinuousCallback As ContinuousQueryCallback
+## Reused tree query callback for sensor overlaps.
+Private Property mSensorQueryCallback As SensorQueryCallback
+## Reused query statistics for sensor overlap traversal.
+Private Property mQueryStats As TreeStats
+## Scratch transform reused by sweep interpolation.
+Private Property mSweepTransform As Transform
+## Second scratch transform so pre-solve reads two sweep transforms.
+Private Property mSweepTransformB As Transform
+## Scratch shape extent reused by fast-body checks.
+Private Property mSweepExtent As ShapeExtent
+## Scratch distance input reused by sensor overlap tests.
+Private Property mSensorDistanceInput As DistanceInput
+## Scratch simplex cache reused by sensor overlap tests.
+Private Property mSensorCache As SimplexCache
+## Scratch distance output reused by sensor overlap tests.
+Private Property mSensorOutput As DistanceOutput
+## Scratch transform for the visitor body in sensor overlap tests.
+Private Property mSensorOtherTransform As Transform
+## Scratch time-of-impact input reused by continuous collision.
+Private Property mSweepInput As TOIInput
+## Scratch time-of-impact output reused by continuous collision.
+Private Property mSweepOutput As TOIOutput
+## Scratch sweep for the candidate body in continuous collision.
+Private Property mSweepScratch As Sweep
+## Scratch point array reused by the continuous fallback proxy.
+Private Property mSweepPoints As Array(Of Vector2)
+## Scratch simplex cache reused by continuous pre-solve manifolds.
+Private Property mContinuousCache As SimplexCache
+## Scratch manifold reused by continuous pre-solve.
+Private Property mContinuousManifold As Manifold
+
 ## Creates a world with default settings, matching b2CreateWorld with
 ## b2DefaultWorldDef.
 Constructor()
@@ -14767,6 +15099,78 @@ Me.mTransformScratch = New Transform
 Me.mVectorScratch = New Vector2
 Me.mLocalProxy = New ShapeProxy
 Me.mLocalPoint = New Vector2
+Me.Sensors = New Array(Of Sensor)
+Me.EndEventWriteIndex = 0
+Me.ReadableEndIndex = 1
+Me.SensorBeginSensorIds = New IntegerList
+Me.SensorBeginSensorGens = New IntegerList
+Me.SensorBeginVisitorIds = New IntegerList
+Me.SensorBeginVisitorGens = New IntegerList
+Me.SensorEndSensorIds = New Array(Of IntegerList)
+Me.SensorEndSensorGens = New Array(Of IntegerList)
+Me.SensorEndVisitorIds = New Array(Of IntegerList)
+Me.SensorEndVisitorGens = New Array(Of IntegerList)
+Me.SensorEndSensorIds.Append(New IntegerList)
+Me.SensorEndSensorGens.Append(New IntegerList)
+Me.SensorEndVisitorIds.Append(New IntegerList)
+Me.SensorEndVisitorGens.Append(New IntegerList)
+Me.SensorEndSensorIds.Append(New IntegerList)
+Me.SensorEndSensorGens.Append(New IntegerList)
+Me.SensorEndVisitorIds.Append(New IntegerList)
+Me.SensorEndVisitorGens.Append(New IntegerList)
+Me.ContactBeginShapeAIds = New IntegerList
+Me.ContactBeginShapeAGens = New IntegerList
+Me.ContactBeginShapeBIds = New IntegerList
+Me.ContactBeginShapeBGens = New IntegerList
+Me.ContactBeginManifolds = New Array(Of Manifold)
+Me.ContactEndShapeAIds = New Array(Of IntegerList)
+Me.ContactEndShapeAGens = New Array(Of IntegerList)
+Me.ContactEndShapeBIds = New Array(Of IntegerList)
+Me.ContactEndShapeBGens = New Array(Of IntegerList)
+Me.ContactEndShapeAIds.Append(New IntegerList)
+Me.ContactEndShapeAGens.Append(New IntegerList)
+Me.ContactEndShapeBIds.Append(New IntegerList)
+Me.ContactEndShapeBGens.Append(New IntegerList)
+Me.ContactEndShapeAIds.Append(New IntegerList)
+Me.ContactEndShapeAGens.Append(New IntegerList)
+Me.ContactEndShapeBIds.Append(New IntegerList)
+Me.ContactEndShapeBGens.Append(New IntegerList)
+Me.ContactHitShapeAIds = New IntegerList
+Me.ContactHitShapeAGens = New IntegerList
+Me.ContactHitShapeBIds = New IntegerList
+Me.ContactHitShapeBGens = New IntegerList
+Me.ContactHitSpeeds = New DoubleList
+Me.ContactHitPointXs = New DoubleList
+Me.ContactHitPointYs = New DoubleList
+Me.MoveEventBodyIds = New IntegerList
+Me.MoveEventBodyGens = New IntegerList
+Me.MoveEventPXs = New DoubleList
+Me.MoveEventPYs = New DoubleList
+Me.MoveEventQCs = New DoubleList
+Me.MoveEventQSs = New DoubleList
+Me.MoveEventFellAsleep = New IntegerList
+Me.Events = New WorldEvents(Me)
+Me.mSensorEventBits = New BitSet(64)
+Me.mContinuousContext = New ContinuousContext
+Me.mContinuousCallback = New ContinuousQueryCallback
+Me.mContinuousCallback.World = Me
+Me.mContinuousCallback.Context = Me.mContinuousContext
+Me.mSensorQueryCallback = New SensorQueryCallback
+Me.mSensorQueryCallback.World = Me
+Me.mQueryStats = New TreeStats
+Me.mSweepTransform = New Transform
+Me.mSweepTransformB = New Transform
+Me.mSweepExtent = New ShapeExtent
+Me.mSensorDistanceInput = New DistanceInput
+Me.mSensorCache = New SimplexCache
+Me.mSensorOutput = New DistanceOutput
+Me.mSensorOtherTransform = New Transform
+Me.mSweepInput = New TOIInput
+Me.mSweepOutput = New TOIOutput
+Me.mSweepScratch = New Sweep
+Me.mSweepPoints = New Array(Of Vector2)
+Me.mContinuousCache = New SimplexCache
+Me.mContinuousManifold = New Manifold
 End Sub
 
 ## Throws when the world refuses mutation.
@@ -14778,15 +15182,19 @@ End Sub
 
 ## Broad-phase sink hook, ported from the record-time filtering of upstream
 ## b2PairQueryCallback. Returns True when the two shapes may collide. Same
-## body pairs pass, sensor pairs pass because sensors are handled by their
-## own stage, and the built-in shape filter plus the opt-in custom filter
-## decide the rest. Joint filtering arrives with Stage 9.
+## body pairs pass, sensor pairs are rejected because sensors are handled
+## by their own stage, and the built-in shape filter plus the opt-in custom
+## filter decide the rest. Joint filtering arrives with Stage 9.
 Override Function ShouldCollide(shapeIndexA As Integer, shapeIndexB As Integer) As Boolean
 If shapeIndexA = shapeIndexB Then
 Return True
 End If
 Var shapeA As Shape = Me.Shapes[shapeIndexA]
 Var shapeB As Shape = Me.Shapes[shapeIndexB]
+# Sensors are handled by the sensor stage.
+If shapeA.SensorIndex <> PhysicsConstants.NULL_INDEX Or shapeB.SensorIndex <> PhysicsConstants.NULL_INDEX Then
+Return False
+End If
 If Not ContactMethods.ShouldShapesCollide(shapeA.Filter, shapeB.Filter) Then
 Return False
 End If
@@ -14866,8 +15274,14 @@ Me.CheckNotLocked()
 If timeStep.IsFinite() = False Or timeStep < 0.0 Then
 Throw New InvalidArgumentException("StepWorld requires a finite non-negative time step")
 End If
+
+# Capture events: stale data must be unreadable after any early return,
+# ported from the event capture block of b2World_Step.
+Me.ClearStepEventBuffers()
+
 If timeStep = 0.0 Then
-# Upstream swaps the end-event buffers here; events arrive in Stage 8.
+# Swap end event array buffers even when paused.
+Me.SwapEndEventBuffers()
 Return
 End If
 
@@ -14905,7 +15319,644 @@ End If
 Me.CollideStep(context)
 Me.SolveStep(context)
 
+# Sensor overlaps run after the solve so sensors read post-solve
+# transforms, ported from b2OverlapSensors' call site in b2World_Step.
+Me.OverlapSensors()
+
+# Swap end event array buffers so this step's end events stay readable
+# until the end of the next step.
+Me.SwapEndEventBuffers()
+
 Me.Locked = False
+End Sub
+
+## Clears the begin, hit, and move event buffers, ported from the event
+## capture block of b2World_Step.
+Private Sub ClearStepEventBuffers()
+Me.MoveEventBodyIds.Clear()
+Me.MoveEventBodyGens.Clear()
+Me.MoveEventPXs.Clear()
+Me.MoveEventPYs.Clear()
+Me.MoveEventQCs.Clear()
+Me.MoveEventQSs.Clear()
+Me.MoveEventFellAsleep.Clear()
+Me.SensorBeginSensorIds.Clear()
+Me.SensorBeginSensorGens.Clear()
+Me.SensorBeginVisitorIds.Clear()
+Me.SensorBeginVisitorGens.Clear()
+Me.ContactBeginShapeAIds.Clear()
+Me.ContactBeginShapeAGens.Clear()
+Me.ContactBeginShapeBIds.Clear()
+Me.ContactBeginShapeBGens.Clear()
+Me.ContactBeginManifolds.Clear()
+Me.ContactHitShapeAIds.Clear()
+Me.ContactHitShapeAGens.Clear()
+Me.ContactHitShapeBIds.Clear()
+Me.ContactHitShapeBGens.Clear()
+Me.ContactHitSpeeds.Clear()
+Me.ContactHitPointXs.Clear()
+Me.ContactHitPointYs.Clear()
+End Sub
+
+## Swaps and clears the end event buffers, ported from the end of
+## b2World_Step.
+Private Sub SwapEndEventBuffers()
+Me.EndEventWriteIndex = 1 - Me.EndEventWriteIndex
+Me.ReadableEndIndex = 1 - Me.ReadableEndIndex
+Me.SensorEndSensorIds[Me.EndEventWriteIndex].Clear()
+Me.SensorEndSensorGens[Me.EndEventWriteIndex].Clear()
+Me.SensorEndVisitorIds[Me.EndEventWriteIndex].Clear()
+Me.SensorEndVisitorGens[Me.EndEventWriteIndex].Clear()
+Me.ContactEndShapeAIds[Me.EndEventWriteIndex].Clear()
+Me.ContactEndShapeAGens[Me.EndEventWriteIndex].Clear()
+Me.ContactEndShapeBIds[Me.EndEventWriteIndex].Clear()
+Me.ContactEndShapeBGens[Me.EndEventWriteIndex].Clear()
+End Sub
+
+## Resolves a shape reference from an event, returning Nothing for stale
+## or destroyed shapes.
+Function EventShape(shapeId As Integer, generation As Integer) As Shape
+If shapeId < 0 Or shapeId >= Me.Shapes.Count Then
+Return Nothing
+End If
+Var shape As Shape = Me.Shapes[shapeId]
+If shape = Nothing Or shape.Live = False Then
+Return Nothing
+End If
+If shape.Generation <> generation Then
+Return Nothing
+End If
+Return shape
+End Function
+
+## Resolves a body reference from an event, returning Nothing for stale or
+## destroyed bodies.
+Function EventBody(bodyId As Integer, generation As Integer) As Body
+If bodyId < 0 Or bodyId >= Me.Bodies.Count Then
+Return Nothing
+End If
+Var body As Body = Me.Bodies[bodyId]
+If body = Nothing Or body.Live = False Then
+Return Nothing
+End If
+If body.Generation <> generation Then
+Return Nothing
+End If
+Return body
+End Function
+
+## Swaps, re-queries, and publishes sensor begin and end events, ported
+## from b2OverlapSensors. Runs after the solve so sensor queries observe
+## post-solve transforms.
+Private Sub OverlapSensors()
+Var sensorCount As Integer = Me.Sensors.Count
+If sensorCount = 0 Then
+Return
+End If
+
+Me.mSensorEventBits.SetCountAndClear(sensorCount + 8)
+Var sensorIndex As Integer = 0
+While sensorIndex < sensorCount
+Var sensor As Sensor = Me.Sensors[sensorIndex]
+Var sensorShape As Shape = Me.Shapes[sensor.ShapeId]
+
+# Swap the overlap buffers and clear the incoming one.
+Var tempIds As IntegerList = sensor.Overlap1Ids
+sensor.Overlap1Ids = sensor.Overlap2Ids
+sensor.Overlap2Ids = tempIds
+Var tempGens As IntegerList = sensor.Overlap1Gens
+sensor.Overlap1Gens = sensor.Overlap2Gens
+sensor.Overlap2Gens = tempGens
+sensor.Overlap2Ids.Clear()
+sensor.Overlap2Gens.Clear()
+
+Var body As Body = Me.Bodies[sensorShape.BodyId]
+If body.SetIndex = PhysicsConstants.DISABLED_SET Or sensorShape.EnableSensorEvents = False Then
+If sensor.Overlap1Ids.Count > 0 Then
+Me.mSensorEventBits.SetBit(sensorIndex)
+End If
+Else
+Me.GetBodyTransformTo(body, Me.mTransformScratch)
+Me.mSensorQueryCallback.Sensor = sensor
+Me.mSensorQueryCallback.SensorShape = sensorShape
+Me.mSensorQueryCallback.Transform = Me.mTransformScratch
+Var treeIndex As Integer = 0
+While treeIndex <= 2
+Me.mQueryStats.Reset()
+Me.BroadPhase.Trees[treeIndex].QueryTo(sensorShape.AABB, sensorShape.Filter.MaskBits, Me.mSensorQueryCallback, Me.mQueryStats)
+treeIndex = treeIndex + 1
+Wend
+Me.SortSensorOverlaps(sensor)
+
+# Detect change against the previous overlaps.
+Var count1 As Integer = sensor.Overlap1Ids.Count
+Var count2 As Integer = sensor.Overlap2Ids.Count
+If count1 <> count2 Then
+Me.mSensorEventBits.SetBit(sensorIndex)
+Else
+Var i As Integer = 0
+While i < count1
+If sensor.Overlap1Ids.Items[i] <> sensor.Overlap2Ids.Items[i] Or sensor.Overlap1Gens.Items[i] <> sensor.Overlap2Gens.Items[i] Then
+Me.mSensorEventBits.SetBit(sensorIndex)
+Exit While
+End If
+i = i + 1
+Wend
+End If
+End If
+sensorIndex = sensorIndex + 1
+Wend
+
+Me.PublishSensorEvents()
+End Sub
+
+## Sorts a sensor's current overlaps by shape slot then generation,
+## ported from b2CompareShapeRefs. Overlap lists are tiny, so an insertion
+## sort keeps the warm loop allocation free.
+Private Sub SortSensorOverlaps(sensor As Sensor)
+Var ids As IntegerList = sensor.Overlap2Ids
+Var gens As IntegerList = sensor.Overlap2Gens
+Var count As Integer = ids.Count
+Var i As Integer = 1
+While i < count
+Var id As Integer = ids.Items[i]
+Var gen As Integer = gens.Items[i]
+Var j As Integer = i - 1
+While j >= 0
+Var otherId As Integer = ids.Items[j]
+Var otherGen As Integer = gens.Items[j]
+If otherId < id Or (otherId = id And otherGen <= gen) Then
+Exit While
+End If
+ids.Items[j + 1] = otherId
+gens.Items[j + 1] = otherGen
+j = j - 1
+Wend
+ids.Items[j + 1] = id
+gens.Items[j + 1] = gen
+i = i + 1
+Wend
+End Sub
+
+## Publishes sensor begin and end events by diffing the double-buffered
+## overlap lists, ported from the event stage of b2OverlapSensors.
+Private Sub PublishSensorEvents()
+Var bitCount As Integer = Me.mSensorEventBits.WordCount * 64
+Var sensorIndex As Integer = 0
+While sensorIndex < bitCount
+If Me.mSensorEventBits.GetBit(sensorIndex) Then
+Var sensor As Sensor = Me.Sensors[sensorIndex]
+Var sensorGen As Integer = Me.ShapeGenerations.Items[sensor.ShapeId]
+Var count1 As Integer = sensor.Overlap1Ids.Count
+Var count2 As Integer = sensor.Overlap2Ids.Count
+Var index1 As Integer = 0
+Var index2 As Integer = 0
+While index1 < count1 And index2 < count2
+Var id1 As Integer = sensor.Overlap1Ids.Items[index1]
+Var id2 As Integer = sensor.Overlap2Ids.Items[index2]
+If id1 = id2 Then
+If sensor.Overlap1Gens.Items[index1] < sensor.Overlap2Gens.Items[index2] Then
+Me.PushSensorEndEvent(sensor.ShapeId, sensorGen, id1, sensor.Overlap1Gens.Items[index1])
+index1 = index1 + 1
+ElseIf sensor.Overlap1Gens.Items[index1] > sensor.Overlap2Gens.Items[index2] Then
+Me.PushSensorBeginEvent(sensor.ShapeId, sensorGen, id2, sensor.Overlap2Gens.Items[index2])
+index2 = index2 + 1
+Else
+index1 = index1 + 1
+index2 = index2 + 1
+End If
+ElseIf id1 < id2 Then
+Me.PushSensorEndEvent(sensor.ShapeId, sensorGen, id1, sensor.Overlap1Gens.Items[index1])
+index1 = index1 + 1
+Else
+Me.PushSensorBeginEvent(sensor.ShapeId, sensorGen, id2, sensor.Overlap2Gens.Items[index2])
+index2 = index2 + 1
+End If
+Wend
+While index1 < count1
+Me.PushSensorEndEvent(sensor.ShapeId, sensorGen, sensor.Overlap1Ids.Items[index1], sensor.Overlap1Gens.Items[index1])
+index1 = index1 + 1
+Wend
+While index2 < count2
+Me.PushSensorBeginEvent(sensor.ShapeId, sensorGen, sensor.Overlap2Ids.Items[index2], sensor.Overlap2Gens.Items[index2])
+index2 = index2 + 1
+Wend
+End If
+sensorIndex = sensorIndex + 1
+Wend
+End Sub
+
+## Appends one sensor begin event.
+Private Sub PushSensorBeginEvent(sensorId As Integer, sensorGen As Integer, visitorId As Integer, visitorGen As Integer)
+Me.SensorBeginSensorIds.Append(sensorId)
+Me.SensorBeginSensorGens.Append(sensorGen)
+Me.SensorBeginVisitorIds.Append(visitorId)
+Me.SensorBeginVisitorGens.Append(visitorGen)
+End Sub
+
+## Appends one sensor end event to the current write buffer.
+Private Sub PushSensorEndEvent(sensorId As Integer, sensorGen As Integer, visitorId As Integer, visitorGen As Integer)
+Me.SensorEndSensorIds[Me.EndEventWriteIndex].Append(sensorId)
+Me.SensorEndSensorGens[Me.EndEventWriteIndex].Append(sensorGen)
+Me.SensorEndVisitorIds[Me.EndEventWriteIndex].Append(visitorId)
+Me.SensorEndVisitorGens[Me.EndEventWriteIndex].Append(visitorGen)
+End Sub
+
+## Ends every current overlap of a sensor and removes its record, ported
+## from b2DestroySensor.
+Private Sub DestroySensor(shape As Shape)
+Var sensorIndex As Integer = shape.SensorIndex
+Var sensor As Sensor = Me.Sensors[sensorIndex]
+Var sensorGen As Integer = Me.ShapeGenerations.Items[shape.Id]
+Var visitorCount As Integer = sensor.Overlap2Ids.Count
+Var i As Integer = 0
+While i < visitorCount
+Me.PushSensorEndEvent(shape.Id, sensorGen, sensor.Overlap2Ids.Items[i], sensor.Overlap2Gens.Items[i])
+i = i + 1
+Wend
+
+# Swap-remove the record and fix up the moved sensor's shape.
+Var lastIndex As Integer = Me.Sensors.Count - 1
+If sensorIndex <> lastIndex Then
+Var movedSensor As Sensor = Me.Sensors[lastIndex]
+Me.Sensors[sensorIndex] = movedSensor
+Me.Shapes[movedSensor.ShapeId].SensorIndex = sensorIndex
+End If
+Me.Sensors.RemoveAt(lastIndex)
+shape.SensorIndex = PhysicsConstants.NULL_INDEX
+End Sub
+
+## Sensor tree-query hit test, ported from b2SensorQueryCallback. Returns
+## True to continue traversal; appends the visitor to the sensor's current
+## overlap buffer on a hit.
+Function SensorOverlapTest(shapeId As Integer, sensor As Sensor, sensorShape As Shape, transform As Transform) As Boolean
+If shapeId = sensorShape.Id Then
+Return True
+End If
+Var otherShape As Shape = Me.Shapes[shapeId]
+If otherShape = Nothing Then
+Return True
+End If
+If otherShape.EnableSensorEvents = False Then
+Return True
+End If
+If otherShape.BodyId = sensorShape.BodyId Then
+Return True
+End If
+If ContactMethods.ShouldShapesCollide(sensorShape.Filter, otherShape.Filter) = False Then
+Return True
+End If
+
+Me.GetBodyTransformTo(Me.Bodies[otherShape.BodyId], Me.mSensorOtherTransform)
+Me.mSensorDistanceInput.ProxyA = sensorShape.DistanceProxy
+Me.mSensorDistanceInput.ProxyB = otherShape.DistanceProxy
+Me.mSensorDistanceInput.TransformA = transform
+Me.mSensorDistanceInput.TransformB = Me.mSensorOtherTransform
+Me.mSensorDistanceInput.UseRadii = True
+Me.mSensorCache.Count = 0
+Distance.ShapeDistanceTo(Me.mSensorDistanceInput, Me.mSensorCache, Me.mSensorOutput)
+If Me.mSensorOutput.Distance >= 10.0 * PhysicsConstants.FLT_EPSILON Then
+Return True
+End If
+
+# Record the overlap.
+sensor.Overlap2Ids.Append(shapeId)
+sensor.Overlap2Gens.Append(otherShape.Generation)
+Return True
+End Function
+
+## Collects contact hit events from every graph colour, ported from the
+## hit event stage of b2Solve.
+Private Sub CollectHitEvents()
+Var threshold As Double = Me.HitEventThreshold
+Var graph As ConstraintGraph = Me.ConstraintGraph
+Var colorIndex As Integer = 0
+While colorIndex < PhysicsConstants.GRAPH_COLOUR_COUNT
+Var color As GraphColor = graph.Colors[colorIndex]
+Var sims As ContactSims = color.ContactSims
+Var count As Integer = sims.Count()
+Var j As Integer = 0
+While j < count
+If sims.SimFlags.Items[j].BitAnd(Integer(ContactFlags.SimEnableHitEvent)) <> 0 Then
+Var manifold As Manifold = sims.GetManifold(j)
+Var approachSpeed As Double = threshold
+Var pointX As Double = 0.0
+Var pointY As Double = 0.0
+Var hit As Boolean = False
+Var pointCount As Integer = manifold.PointCount
+Var k As Integer = 0
+While k < pointCount
+Var point As ManifoldPoint = manifold.Point1
+If k = 1 Then
+point = manifold.Point2
+End If
+Var speed As Double = -point.NormalVelocity
+If speed > approachSpeed And point.TotalNormalImpulse > 0.0 Then
+approachSpeed = speed
+pointX = point.Point.X
+pointY = point.Point.Y
+hit = True
+End If
+k = k + 1
+Wend
+If hit Then
+Var shapeA As Integer = sims.ShapeIdA.Items[j]
+Var shapeB As Integer = sims.ShapeIdB.Items[j]
+Me.ContactHitShapeAIds.Append(shapeA)
+Me.ContactHitShapeAGens.Append(Me.ShapeGenerations.Items[shapeA])
+Me.ContactHitShapeBIds.Append(shapeB)
+Me.ContactHitShapeBGens.Append(Me.ShapeGenerations.Items[shapeB])
+Me.ContactHitSpeeds.Append(approachSpeed)
+Me.ContactHitPointXs.Append(pointX)
+Me.ContactHitPointYs.Append(pointY)
+End If
+End If
+j = j + 1
+Wend
+colorIndex = colorIndex + 1
+Wend
+End Sub
+
+## Continuous collision sweep hit test against one candidate shape, ported
+## from b2ContinuousQueryCallback. Returns True to continue traversal and
+## lowers the context fraction on a hit.
+Function ContinuousHitTest(shapeId As Integer, context As ContinuousContext) As Boolean
+Var fastShape As Shape = context.FastShape
+If shapeId = fastShape.Id Then
+Return True
+End If
+Var shape As Shape = Me.Shapes[shapeId]
+If shape = Nothing Then
+Return True
+End If
+If shape.BodyId = fastShape.BodyId Then
+Return True
+End If
+If shape.SensorIndex <> PhysicsConstants.NULL_INDEX Then
+Return True
+End If
+If ContactMethods.ShouldShapesCollide(fastShape.Filter, shape.Filter) = False Then
+Return True
+End If
+
+Var body As Body = Me.Bodies[shape.BodyId]
+Var bodySim As BodySims = Me.GetBodySim(body)
+If bodySim.IsBullet.Items[body.LocalIndex] <> 0 Then
+Return True
+End If
+Var fastBody As Body = Me.Bodies[fastShape.BodyId]
+If ContactMethods.ShouldBodiesCollide(Me, fastBody, body) = False Then
+Return True
+End If
+If Me.CustomFilter <> Nothing Then
+If Me.CustomFilter.ShouldCollide(shape, fastShape) = False Then
+Return True
+End If
+End If
+
+# Prevent pausing on chain segment junctions.
+If shape.Type = ShapeType.ChainSegmentShape Then
+If Me.ContinuousChainClip(context, shape) Then
+Return True
+End If
+End If
+
+Var hitFraction As Double = context.Fraction
+Var didHit As Boolean = False
+
+# Build the candidate body's sweep from its pre-solve transform to its
+# current one, ported from b2MakeSweep.
+Var candidateSim As BodySims = Me.GetBodySim(body)
+Var candidateIndex As Integer = body.LocalIndex
+Me.mSweepScratch.C1.Set(candidateSim.C0X.Items[candidateIndex], candidateSim.C0Y.Items[candidateIndex])
+Me.mSweepScratch.C2.Set(candidateSim.CenterX.Items[candidateIndex], candidateSim.CenterY.Items[candidateIndex])
+Me.mSweepScratch.Q1.SetComponents(candidateSim.R0C.Items[candidateIndex], candidateSim.R0S.Items[candidateIndex])
+Me.mSweepScratch.Q2.SetComponents(candidateSim.QC.Items[candidateIndex], candidateSim.QS.Items[candidateIndex])
+Me.mSweepScratch.LocalCenter.Set(candidateSim.LCX.Items[candidateIndex], candidateSim.LCY.Items[candidateIndex])
+
+Me.mSweepInput.ProxyA = shape.DistanceProxy
+Me.mSweepInput.ProxyB = fastShape.DistanceProxy
+Me.mSweepInput.SweepA = Me.mSweepScratch
+Me.mSweepInput.SweepB = context.Sweep
+Me.mSweepInput.MaxFraction = context.Fraction
+TimeOfImpact.ComputeTo(Me.mSweepInput, Me.mSweepOutput)
+If 0.0 < Me.mSweepOutput.Fraction And Me.mSweepOutput.Fraction < context.Fraction Then
+hitFraction = Me.mSweepOutput.Fraction
+didHit = True
+ElseIf Me.mSweepOutput.Fraction = 0.0 Then
+# Fall back to the TOI of a small circle around the fast shape centroid.
+Var centroid As Vector2 = fastShape.LocalCentroid
+Me.ComputeShapeExtent(fastShape, centroid, Me.mSweepExtent)
+Me.mSweepPoints.Clear()
+Me.mSweepPoints.Append(New Vector2(centroid.X, centroid.Y))
+Me.mSweepInput.ProxyB = ShapeProxy.Make(Me.mSweepPoints, 1, 0.25 * Me.mSweepExtent.MinExtent)
+TimeOfImpact.ComputeTo(Me.mSweepInput, Me.mSweepOutput)
+If 0.0 < Me.mSweepOutput.Fraction And Me.mSweepOutput.Fraction < context.Fraction Then
+hitFraction = Me.mSweepOutput.Fraction
+didHit = True
+End If
+End If
+
+If didHit And (shape.EnablePreSolveEvents Or fastShape.EnablePreSolveEvents) And Me.PreSolve <> Nothing Then
+# Pre-solve is expensive because it computes a temporary manifold.
+Me.GetSweepTransformTo(Me.mSweepInput.SweepA, hitFraction, Me.mSweepTransform)
+Me.GetSweepTransformTo(context.Sweep, hitFraction, Me.mSweepTransformB)
+Me.mContinuousCache.Count = 0
+ContactMethods.ComputeManifoldTo(shape, Me.mSweepTransform, fastShape, Me.mSweepTransformB, Me.mContinuousCache, Me.mContinuousManifold)
+If Me.PreSolve.PreSolve(shape, fastShape, Me.mContinuousManifold) = False Then
+didHit = False
+End If
+End If
+
+If didHit Then
+context.Fraction = hitFraction
+End If
+Return True
+End Function
+
+## Chain junction clipping check for continuous collision, ported from the
+## chain segment branch of b2ContinuousQueryCallback. Returns True when the
+## sweep may be safely clipped past this junction.
+Private Function ContinuousChainClip(context As ContinuousContext, shape As Shape) As Boolean
+Var segment As ChainSegment = shape.ChainSegment
+Var body As Body = Me.Bodies[shape.BodyId]
+Me.GetBodyTransformTo(body, Me.mTransformScratch)
+Var p1 As Vector2 = Transform.TransformPoint(Me.mTransformScratch, segment.Segment.Point1)
+Var p2 As Vector2 = Transform.TransformPoint(Me.mTransformScratch, segment.Segment.Point2)
+Var ex As Double = p2.X - p1.X
+Var ey As Double = p2.Y - p1.Y
+Var length As Double = Maths.Sqrt(ex * ex + ey * ey)
+If length <= PhysicsConstants.LINEAR_SLOP Then
+Return False
+End If
+ex = ex / length
+ey = ey / length
+Var c1 As Vector2 = context.Centroid1
+Var offset1 As Double = ex * (c1.Y - p1.Y) - ey * (c1.X - p1.X)
+Var c2 As Vector2 = context.Centroid2
+Var offset2 As Double = ex * (c2.Y - p1.Y) - ey * (c2.X - p1.X)
+Var fastBodySim As BodySims = Me.GetBodySim(Me.Bodies[context.FastBodyId])
+Var allowedFraction As Double = 0.25 * fastBodySim.MinExtent.Items[context.FastBodySimIndex]
+If offset1 < 0.0 Or offset1 - offset2 < allowedFraction Then
+Return True
+End If
+Return False
+End Function
+
+## Solves continuous collision for one fast awake body sim, ported from
+## b2SolveContinuous.
+Private Sub SolveContinuous(bodySimIndex As Integer)
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+Var sims As BodySims = awakeSet.Sims
+Var fastBodyId As Integer = sims.BodyId.Items[bodySimIndex]
+Var fastBody As Body = Me.Bodies[fastBodyId]
+Var context As ContinuousContext = Me.mContinuousContext
+context.Fraction = 1.0
+context.FastBodyId = fastBodyId
+context.FastBodySimIndex = bodySimIndex
+context.FastShape = Nothing
+
+# Build the sweep from the pre-solve transform to the current transform.
+context.Sweep.C1.Set(sims.C0X.Items[bodySimIndex], sims.C0Y.Items[bodySimIndex])
+context.Sweep.C2.Set(sims.CenterX.Items[bodySimIndex], sims.CenterY.Items[bodySimIndex])
+context.Sweep.Q1.SetComponents(sims.R0C.Items[bodySimIndex], sims.R0S.Items[bodySimIndex])
+context.Sweep.Q2.SetComponents(sims.QC.Items[bodySimIndex], sims.QS.Items[bodySimIndex])
+context.Sweep.LocalCenter.Set(sims.LCX.Items[bodySimIndex], sims.LCY.Items[bodySimIndex])
+
+Var xf1 As Transform = Me.mSweepTransform
+xf1.Q.SetComponents(context.Sweep.Q1.C, context.Sweep.Q1.S)
+xf1.P.Set(context.Sweep.C1.X - (xf1.Q.C * context.Sweep.LocalCenter.X - xf1.Q.S * context.Sweep.LocalCenter.Y), context.Sweep.C1.Y - (xf1.Q.S * context.Sweep.LocalCenter.X + xf1.Q.C * context.Sweep.LocalCenter.Y))
+Var xf2 As Transform = Me.mSweepTransformB
+xf2.Q.SetComponents(context.Sweep.Q2.C, context.Sweep.Q2.S)
+xf2.P.Set(context.Sweep.C2.X - (xf2.Q.C * context.Sweep.LocalCenter.X - xf2.Q.S * context.Sweep.LocalCenter.Y), context.Sweep.C2.Y - (xf2.Q.S * context.Sweep.LocalCenter.X + xf2.Q.C * context.Sweep.LocalCenter.Y))
+
+Var isBullet As Boolean = sims.IsBullet.Items[bodySimIndex] <> 0
+Var shapeId As Integer = fastBody.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var fastShape As Shape = Me.Shapes[shapeId]
+shapeId = fastShape.NextShapeId
+context.FastShape = fastShape
+
+Var centroid1X As Double = xf1.Q.C * fastShape.LocalCentroid.X - xf1.Q.S * fastShape.LocalCentroid.Y + xf1.P.X
+Var centroid1Y As Double = xf1.Q.S * fastShape.LocalCentroid.X + xf1.Q.C * fastShape.LocalCentroid.Y + xf1.P.Y
+Var centroid2X As Double = xf2.Q.C * fastShape.LocalCentroid.X - xf2.Q.S * fastShape.LocalCentroid.Y + xf2.P.X
+Var centroid2Y As Double = xf2.Q.S * fastShape.LocalCentroid.X + xf2.Q.C * fastShape.LocalCentroid.Y + xf2.P.Y
+context.Centroid1.Set(centroid1X, centroid1Y)
+context.Centroid2.Set(centroid2X, centroid2Y)
+
+Var box2 As AABB = Me.ComputeShapeAABB(fastShape, xf2)
+Var box As AABB = AABB.Union(fastShape.AABB, box2)
+fastShape.AABB = box2
+
+# No continuous collision for sensors, but the bounds are updated.
+If fastShape.SensorIndex <> PhysicsConstants.NULL_INDEX Then
+Continue While
+End If
+
+Me.mContinuousCallback.Context = context
+Me.BroadPhase.Trees[0].Query(box, PhysicsConstants.DEFAULT_MASK_BITS, Me.mContinuousCallback)
+If isBullet Then
+Me.BroadPhase.Trees[1].Query(box, PhysicsConstants.DEFAULT_MASK_BITS, Me.mContinuousCallback)
+Me.BroadPhase.Trees[2].Query(box, PhysicsConstants.DEFAULT_MASK_BITS, Me.mContinuousCallback)
+End If
+Wend
+
+If context.FastShape = Nothing Then
+Return
+End If
+
+If context.Fraction < 1.0 Then
+Me.ApplyContinuousHit(bodySimIndex, fastBody, context)
+Else
+Me.AdvanceContinuousNoHit(fastBody, bodySimIndex)
+End If
+End Sub
+
+## Applies a continuous time-of-impact hit: advances the body to the hit
+## transform and refreshes shape AABBs, ported from the hit branch of
+## b2SolveContinuous.
+Private Sub ApplyContinuousHit(bodySimIndex As Integer, fastBody As Body, context As ContinuousContext)
+Var sims As BodySims = Me.SolverSets[PhysicsConstants.AWAKE_SET].Sims
+Var sweep As Sweep = context.Sweep
+Var q As Rot = Rot.NLerp(sweep.Q1, sweep.Q2, context.Fraction)
+Var lerped As Vector2 = Vector2.Lerp(sweep.C1, sweep.C2, context.Fraction)
+Var cx As Double = lerped.X
+Var cy As Double = lerped.Y
+Var px As Double = cx - (q.C * sweep.LocalCenter.X - q.S * sweep.LocalCenter.Y)
+Var py As Double = cy - (q.S * sweep.LocalCenter.X + q.C * sweep.LocalCenter.Y)
+
+# Advance the body.
+sims.QC.Items[bodySimIndex] = q.C
+sims.QS.Items[bodySimIndex] = q.S
+sims.PX.Items[bodySimIndex] = px
+sims.PY.Items[bodySimIndex] = py
+sims.CenterX.Items[bodySimIndex] = cx
+sims.CenterY.Items[bodySimIndex] = cy
+sims.R0C.Items[bodySimIndex] = q.C
+sims.R0S.Items[bodySimIndex] = q.S
+sims.C0X.Items[bodySimIndex] = cx
+sims.C0Y.Items[bodySimIndex] = cy
+
+# Update the body move event.
+Me.mTransformScratch.P.Set(px, py)
+Me.mTransformScratch.Q.SetComponents(q.C, q.S)
+Var moveIndex As Integer = fastBody.MoveEventIndex
+If moveIndex >= 0 Then
+Me.MoveEventPXs.Items[moveIndex] = px
+Me.MoveEventPYs.Items[moveIndex] = py
+Me.MoveEventQCs.Items[moveIndex] = q.C
+Me.MoveEventQSs.Items[moveIndex] = q.S
+End If
+
+# Refresh shape AABBs at the interpolated transform.
+Var speculativeDistance As Double = PhysicsConstants.SPECULATIVE_DISTANCE
+Var aabbMargin As Double = PhysicsConstants.AABB_MARGIN
+Var shapeId As Integer = fastBody.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+Var box As AABB = Me.ComputeShapeAABB(shape, Me.mTransformScratch)
+box.LowerBound.Set(box.LowerBound.X - speculativeDistance, box.LowerBound.Y - speculativeDistance)
+box.UpperBound.Set(box.UpperBound.X + speculativeDistance, box.UpperBound.Y + speculativeDistance)
+shape.AABB = box
+If AABB.Contains(shape.FatAABB, box) = False Then
+shape.FatAABB = New AABB(New Vector2(box.LowerBound.X - aabbMargin, box.LowerBound.Y - aabbMargin), New Vector2(box.UpperBound.X + aabbMargin, box.UpperBound.Y + aabbMargin))
+shape.EnlargedAABB = True
+sims.EnlargeAABB.Items[bodySimIndex] = 1
+End If
+shapeId = shape.NextShapeId
+Wend
+End Sub
+
+## Advances a fast body with no time-of-impact hit, ported from the
+## no-hit branch of b2SolveContinuous.
+Private Sub AdvanceContinuousNoHit(fastBody As Body, bodySimIndex As Integer)
+Var sims As BodySims = Me.SolverSets[PhysicsConstants.AWAKE_SET].Sims
+sims.R0C.Items[bodySimIndex] = sims.QC.Items[bodySimIndex]
+sims.R0S.Items[bodySimIndex] = sims.QS.Items[bodySimIndex]
+sims.C0X.Items[bodySimIndex] = sims.CenterX.Items[bodySimIndex]
+sims.C0Y.Items[bodySimIndex] = sims.CenterY.Items[bodySimIndex]
+
+Var aabbMargin As Double = PhysicsConstants.AABB_MARGIN
+Var shapeId As Integer = fastBody.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+If AABB.Contains(shape.FatAABB, shape.AABB) = False Then
+shape.FatAABB = New AABB(New Vector2(shape.AABB.LowerBound.X - aabbMargin, shape.AABB.LowerBound.Y - aabbMargin), New Vector2(shape.AABB.UpperBound.X + aabbMargin, shape.AABB.UpperBound.Y + aabbMargin))
+shape.EnlargedAABB = True
+sims.EnlargeAABB.Items[bodySimIndex] = 1
+End If
+shapeId = shape.NextShapeId
+Wend
+End Sub
+
+## Interpolates a sweep transform at the given fraction, ported from
+## b2GetSweepTransform.
+Private Sub GetSweepTransformTo(sweep As Sweep, fraction As Double, out As Transform)
+Var q As Rot = Rot.NLerp(sweep.Q1, sweep.Q2, fraction)
+out.Q.SetComponents(q.C, q.S)
+Var cx As Double = sweep.C1.X + (sweep.C2.X - sweep.C1.X) * fraction
+Var cy As Double = sweep.C1.Y + (sweep.C2.Y - sweep.C1.Y) * fraction
+out.P.Set(cx - (out.Q.C * sweep.LocalCenter.X - out.Q.S * sweep.LocalCenter.Y), cy - (out.Q.S * sweep.LocalCenter.X + out.Q.C * sweep.LocalCenter.Y))
 End Sub
 
 ## Runs the narrow phase over every graph and awake contact, ported from
@@ -15013,6 +16064,10 @@ Else
 sims = Me.SolverSets[contact.SetIndex].ContactSims
 End If
 Var simFlags As Integer = sims.SimFlags.Items[contact.LocalIndex]
+Var shapeIdA As Integer = contact.ShapeIdA
+Var shapeIdB As Integer = contact.ShapeIdB
+Var genA As Integer = Me.ShapeGenerations.Items[shapeIdA]
+Var genB As Integer = Me.ShapeGenerations.Items[shapeIdB]
 
 If simFlags.BitAnd(Integer(ContactFlags.SimDisjoint)) <> 0 Then
 sims.SimFlags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimDisjoint).BitNot())
@@ -15023,6 +16078,21 @@ End If
 If simFlags.BitAnd(Integer(ContactFlags.SimStartedTouching)) <> 0 Then
 sims.SimFlags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimStartedTouching).BitNot())
 contact.Flags = contact.Flags.BitOr(Integer(ContactFlags.TouchingFlag))
+
+# Contact begin event with a manifold snapshot, ported from
+# b2World_Step's contact state loop. The solver's manifold object is
+# pooled, so the event owns a copy.
+If contact.Flags.BitAnd(Integer(ContactFlags.EnableContactEvents)) <> 0 Then
+Var eventManifold As Manifold = sims.GetManifold(contact.LocalIndex)
+Me.ContactBeginShapeAIds.Append(shapeIdA)
+Me.ContactBeginShapeAGens.Append(genA)
+Me.ContactBeginShapeBIds.Append(shapeIdB)
+Me.ContactBeginShapeBGens.Append(genB)
+Var snapshot As New Manifold
+snapshot.AssignFrom(eventManifold)
+Me.ContactBeginManifolds.Append(snapshot)
+End If
+
 IslandMethods.LinkContact(Me, contact)
 GraphMethods.AddContactToGraph(Me, contact)
 Return
@@ -15031,6 +16101,15 @@ End If
 If simFlags.BitAnd(Integer(ContactFlags.SimStoppedTouching)) <> 0 Then
 sims.SimFlags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimStoppedTouching).BitNot())
 contact.Flags = contact.Flags.BitAnd(Integer(ContactFlags.TouchingFlag).BitNot())
+
+# Contact end event, ported from b2World_Step's contact state loop.
+If contact.Flags.BitAnd(Integer(ContactFlags.EnableContactEvents)) <> 0 Then
+Me.ContactEndShapeAIds[Me.EndEventWriteIndex].Append(shapeIdA)
+Me.ContactEndShapeAGens[Me.EndEventWriteIndex].Append(genA)
+Me.ContactEndShapeBIds[Me.EndEventWriteIndex].Append(shapeIdB)
+Me.ContactEndShapeBGens[Me.EndEventWriteIndex].Append(genB)
+End If
+
 IslandMethods.UnlinkContact(Me, contact)
 GraphMethods.MoveContactOutOfGraph(Me, contact)
 Return
@@ -15112,7 +16191,38 @@ colorIndex = colorIndex + 1
 Wend
 
 Me.FinalizeBodies(context)
+Me.CollectHitEvents()
 Me.RefitBroadPhase()
+
+# Bullet stage: fast bullet bodies resolve continuous collision after the
+# refit, then enlarge their broad-phase proxies serially, ported from the
+# bullet stage of b2Solve.
+Var bulletCount As Integer = context.BulletBodies.Count
+Var bulletIndex As Integer = 0
+While bulletIndex < bulletCount
+Me.SolveContinuous(context.BulletBodies.Items[bulletIndex])
+bulletIndex = bulletIndex + 1
+Wend
+Var awakeSetAfterSolve As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+bulletIndex = 0
+While bulletIndex < bulletCount
+Var bulletSimIndex As Integer = context.BulletBodies.Items[bulletIndex]
+If awakeSetAfterSolve.Sims.EnlargeAABB.Items[bulletSimIndex] <> 0 Then
+awakeSetAfterSolve.Sims.EnlargeAABB.Items[bulletSimIndex] = 0
+Var bulletBody As Body = Me.Bodies[awakeSetAfterSolve.Sims.BodyId.Items[bulletSimIndex]]
+Var shapeId As Integer = bulletBody.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+If shape.EnlargedAABB Then
+shape.EnlargedAABB = False
+Me.BroadPhase.EnlargeProxy(shape.ProxyKey, shape.FatAABB)
+End If
+shapeId = shape.NextShapeId
+Wend
+End If
+bulletIndex = bulletIndex + 1
+Wend
+context.BulletBodies.Clear()
 
 # Island sleeping must run last because sleeping invalidates the enlarged
 # body bits.
@@ -15136,8 +16246,6 @@ Var splitSleepTime As Double = 0.0
 
 Var dt As Double = context.Dt
 Var invDt As Double = context.InvDt
-Var speculativeDistance As Double = PhysicsConstants.SPECULATIVE_DISTANCE
-Var aabbMargin As Double = PhysicsConstants.AABB_MARGIN
 
 Var simIndex As Integer = 0
 While simIndex < count
@@ -15190,6 +16298,18 @@ sims.PX.Items[simIndex] = px
 sims.PY.Items[simIndex] = py
 
 Var body As Body = Me.Bodies[sims.BodyId.Items[simIndex]]
+
+# Moved-body event, ported from the move event block of
+# b2FinalizeBodiesTask. The fell-asleep flag is patched by island sleeping.
+body.MoveEventIndex = simIndex
+Me.MoveEventBodyIds.Append(sims.BodyId.Items[simIndex])
+Me.MoveEventBodyGens.Append(body.Generation)
+Me.MoveEventPXs.Append(px)
+Me.MoveEventPYs.Append(py)
+Me.MoveEventQCs.Append(qc)
+Me.MoveEventQSs.Append(qs)
+Me.MoveEventFellAsleep.Append(0)
+
 body.IsSpeedCapped = sims.IsSpeedCapped.Items[simIndex] <> 0
 sims.IsSpeedCapped.Items[simIndex] = 0
 sims.IsFast.Items[simIndex] = 0
@@ -15199,15 +16319,14 @@ sims.ForceX.Items[simIndex] = 0.0
 sims.ForceY.Items[simIndex] = 0.0
 sims.Torque.Items[simIndex] = 0.0
 
-# Continuous collision arrives in Stage 8; every body is safe to advance.
+If Me.EnableSleeping = False Or body.EnableSleep = False Or sleepVelocity > body.SleepThreshold Then
+Me.FinalizeBodyAwake(context, sims, body, simIndex, centerX, centerY, qc, qs, maxVelocity, dt)
+Else
+# Body is safe to advance and is falling asleep.
 sims.C0X.Items[simIndex] = centerX
 sims.C0Y.Items[simIndex] = centerY
 sims.R0C.Items[simIndex] = qc
 sims.R0S.Items[simIndex] = qs
-
-If Me.EnableSleeping = False Or body.EnableSleep = False Or sleepVelocity > body.SleepThreshold Then
-body.SleepTime = 0.0
-Else
 body.SleepTime = body.SleepTime + dt
 End If
 
@@ -15224,6 +16343,30 @@ End If
 End If
 
 # Update shape AABBs.
+Var isFast As Boolean = sims.IsFast.Items[simIndex] <> 0
+If isFast Then
+# For fast non-bullet bodies the AABB is already updated by
+# SolveContinuous; fast bullet bodies are handled by the bullet stage.
+# Mark the body regardless so the refit stage sees it.
+Me.mEnlargedBodyBits.SetBit(simIndex)
+Else
+Me.UpdateAwakeBodyShapeAABBs(body, px, py, qc, qs, simIndex)
+End If
+
+simIndex = simIndex + 1
+Wend
+
+If splitIslandId <> PhysicsConstants.NULL_INDEX Then
+Me.SplitIslandId = splitIslandId
+End If
+End Sub
+
+## Recomputes speculative shape AABBs for one awake body after the solve
+## and flags enlarged shapes, ported from the shape loop of
+## b2FinalizeBodiesTask.
+Private Sub UpdateAwakeBodyShapeAABBs(body As Body, px As Double, py As Double, qc As Double, qs As Double, simIndex As Integer)
+Var speculativeDistance As Double = PhysicsConstants.SPECULATIVE_DISTANCE
+Var aabbMargin As Double = PhysicsConstants.AABB_MARGIN
 Me.mTransformScratch.P.Set(px, py)
 Me.mTransformScratch.Q.SetComponents(qc, qs)
 Var shapeId As Integer = body.HeadShapeId
@@ -15242,28 +16385,49 @@ End If
 
 shapeId = shape.NextShapeId
 Wend
+End Sub
 
-simIndex = simIndex + 1
-Wend
-
-If splitIslandId <> PhysicsConstants.NULL_INDEX Then
-Me.SplitIslandId = splitIslandId
+## Applies sleep accounting and continuous collision handling to one awake
+## body that has not crossed its sleep threshold, ported from the awake
+## branch of b2FinalizeBodiesTask.
+Private Sub FinalizeBodyAwake(context As StepContext, sims As BodySims, body As Body, simIndex As Integer, centerX As Double, centerY As Double, qc As Double, qs As Double, maxVelocity As Double, dt As Double)
+body.SleepTime = 0.0
+If body.Type = BodyType.DynamicBody And Me.ContinuousEnabled And maxVelocity * dt > 0.5 * sims.MinExtent.Items[simIndex] Then
+# Fast body: continuous collision this step for plain bodies, or
+# collect bullets for the post-refit bullet stage.
+sims.IsFast.Items[simIndex] = 1
+If sims.IsBullet.Items[simIndex] <> 0 Then
+context.BulletBodies.Append(simIndex)
+Else
+Me.SolveContinuous(simIndex)
+End If
+Else
+# Body is safe to advance.
+sims.C0X.Items[simIndex] = centerX
+sims.C0Y.Items[simIndex] = centerY
+sims.R0C.Items[simIndex] = qc
+sims.R0S.Items[simIndex] = qs
 End If
 End Sub
 
 ## Enlarges broad-phase proxies for shapes whose AABBs outgrew their fat
 ## bounds, ported from the refit stage of b2Solve.
 Private Sub RefitBroadPhase()
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
 Var wordCount As Integer = Me.mEnlargedBodyBits.WordCount * 64
 Var simIndex As Integer = 0
 While simIndex < wordCount
 If Me.mEnlargedBodyBits.GetBit(simIndex) Then
-Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
 Var body As Body = Me.Bodies[awakeSet.Sims.BodyId.Items[simIndex]]
+Var fastBullet As Boolean = awakeSet.Sims.IsBullet.Items[simIndex] <> 0 And awakeSet.Sims.IsFast.Items[simIndex] <> 0
 Var shapeId As Integer = body.HeadShapeId
 While shapeId <> PhysicsConstants.NULL_INDEX
 Var shape As Shape = Me.Shapes[shapeId]
-If shape.EnlargedAABB Then
+If fastBullet Then
+# Fast bullet bodies do not have their final AABB yet, so
+# every shape goes into the move array for determinism.
+Me.BroadPhase.BufferMove(shape.ProxyKey)
+ElseIf shape.EnlargedAABB Then
 Me.BroadPhase.EnlargeProxy(shape.ProxyKey, shape.FatAABB)
 shape.EnlargedAABB = False
 End If
@@ -15621,6 +16785,14 @@ Var disabledSet As SolverSet = Me.SolverSets[PhysicsConstants.DISABLED_SET]
 Var bodyId As Integer = island.HeadBody
 While bodyId <> PhysicsConstants.NULL_INDEX
 Var body As Body = Me.Bodies[bodyId]
+
+# Patch the body's moved-body event before it leaves the awake set,
+# ported from b2TrySleepIsland.
+If body.MoveEventIndex >= 0 Then
+Me.MoveEventFellAsleep.Items[body.MoveEventIndex] = 1
+body.MoveEventIndex = -1
+End If
+
 Me.MoveBodyToSleepSet(body, sleepSet, awakeSet, disabledSet)
 bodyId = body.IslandNext
 Wend
@@ -16443,6 +17615,12 @@ Var forcePairCreation As Boolean = def.InvokeContactCreation Or def.IsSensor
 Me.CreateShapeProxy(shape, body.Type, xf, forcePairCreation)
 End If
 
+# Register sensor shapes in the sensor store, ported from b2CreateShape.
+If shape.IsSensorFlag Then
+shape.SensorIndex = Me.Sensors.Count
+Me.Sensors.Append(New Sensor(shapeId))
+End If
+
 # Attach to the body's doubly linked shape list.
 If body.HeadShapeId <> PhysicsConstants.NULL_INDEX Then
 Me.Shapes[body.HeadShapeId].PrevShapeId = shapeId
@@ -16963,6 +18141,12 @@ Me.DestroyShapeProxy(shape)
 # Destroy any contacts associated with the shape, ported from
 # b2DestroyShapeInternal.
 ContactMethods.DestroyShapeContacts(Me, body, shape.Id, True)
+
+# End sensor overlaps and remove the sensor record, ported from the sensor
+# branch of b2DestroyShape.
+If shape.SensorIndex <> PhysicsConstants.NULL_INDEX Then
+Me.DestroySensor(shape)
+End If
 
 Me.ShapeIdPool.FreeId(shape.Id)
 shape.Live = False
@@ -17677,6 +18861,22 @@ Me.SplitIslandId = PhysicsConstants.NULL_INDEX
 Me.BodyGenerations.Clear()
 Me.ShapeGenerations.Clear()
 Me.ChainGenerations.Clear()
+Me.Sensors.Clear()
+Me.ClearStepEventBuffers()
+Me.EndEventWriteIndex = 0
+Me.ReadableEndIndex = 1
+Var bufferIndex As Integer = 0
+While bufferIndex <= 1
+Me.SensorEndSensorIds[bufferIndex].Clear()
+Me.SensorEndSensorGens[bufferIndex].Clear()
+Me.SensorEndVisitorIds[bufferIndex].Clear()
+Me.SensorEndVisitorGens[bufferIndex].Clear()
+Me.ContactEndShapeAIds[bufferIndex].Clear()
+Me.ContactEndShapeAGens[bufferIndex].Clear()
+Me.ContactEndShapeBIds[bufferIndex].Clear()
+Me.ContactEndShapeBGens[bufferIndex].Clear()
+bufferIndex = bufferIndex + 1
+Wend
 For s As Integer = 0 To 2
 Me.SolverSets[s].ClearAll()
 Next s
@@ -17694,6 +18894,136 @@ End Class
 Abstract Class WorldCastCallback
 ## Called for every hit shape in traversal order.
 Abstract Function VisitShape(shape As Shape, point As Vector2, normal As Vector2, fraction As Double) As Double
+End Class
+
+# Reusable view over the world's internal event buffers, valid until the
+# next Step, Clear, or destructive world operation. The view never copies:
+# counts and accessors read the world-owned columns directly, and shape or
+# body accessors return the existing per-slot facades, which stay stable
+# until the object is destroyed. Stale references return Nothing instead of
+# throwing, mirroring upstream generation-checked event ids.
+Class WorldEvents
+## Owning world.
+Private Property mWorld As World
+
+## Wraps one world's buffers.
+Constructor(world As World)
+Me.mWorld = world
+End Constructor
+
+## Number of sensor begin events this step.
+Function SensorBeginCount() As Integer
+Return Me.mWorld.SensorBeginVisitorIds.Count
+End Function
+
+## The sensor shape of one sensor begin event.
+Function SensorBeginSensorShape(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.SensorBeginSensorIds.Items[index], Me.mWorld.SensorBeginSensorGens.Items[index])
+End Function
+
+## The visitor shape of one sensor begin event.
+Function SensorBeginVisitorShape(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.SensorBeginVisitorIds.Items[index], Me.mWorld.SensorBeginVisitorGens.Items[index])
+End Function
+
+## Number of sensor end events in the current readable window.
+Function SensorEndCount() As Integer
+Return Me.mWorld.SensorEndVisitorIds[Me.mWorld.ReadableEndIndex].Count
+End Function
+
+## The sensor shape of one sensor end event.
+Function SensorEndSensorShape(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.SensorEndSensorIds[Me.mWorld.ReadableEndIndex].Items[index], Me.mWorld.SensorEndSensorGens[Me.mWorld.ReadableEndIndex].Items[index])
+End Function
+
+## The visitor shape of one sensor end event.
+Function SensorEndVisitorShape(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.SensorEndVisitorIds[Me.mWorld.ReadableEndIndex].Items[index], Me.mWorld.SensorEndVisitorGens[Me.mWorld.ReadableEndIndex].Items[index])
+End Function
+
+## Number of contact begin events this step.
+Function ContactBeginCount() As Integer
+Return Me.mWorld.ContactBeginShapeAIds.Count
+End Function
+
+## The first shape of one contact begin event.
+Function ContactBeginShapeA(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactBeginShapeAIds.Items[index], Me.mWorld.ContactBeginShapeAGens.Items[index])
+End Function
+
+## The second shape of one contact begin event.
+Function ContactBeginShapeB(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactBeginShapeBIds.Items[index], Me.mWorld.ContactBeginShapeBGens.Items[index])
+End Function
+
+## A snapshot of the begin-event manifold. The returned manifold is owned
+## by the event and stays stable until the next step clears the buffer.
+Function ContactBeginManifold(index As Integer) As Manifold
+Return Me.mWorld.ContactBeginManifolds[index]
+End Function
+
+## Number of contact end events in the current readable window.
+Function ContactEndCount() As Integer
+Return Me.mWorld.ContactEndShapeAIds[Me.mWorld.ReadableEndIndex].Count
+End Function
+
+## The first shape of one contact end event.
+Function ContactEndShapeA(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactEndShapeAIds[Me.mWorld.ReadableEndIndex].Items[index], Me.mWorld.ContactEndShapeAGens[Me.mWorld.ReadableEndIndex].Items[index])
+End Function
+
+## The second shape of one contact end event.
+Function ContactEndShapeB(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactEndShapeBIds[Me.mWorld.ReadableEndIndex].Items[index], Me.mWorld.ContactEndShapeBGens[Me.mWorld.ReadableEndIndex].Items[index])
+End Function
+
+## Number of contact hit events this step.
+Function ContactHitCount() As Integer
+Return Me.mWorld.ContactHitShapeAIds.Count
+End Function
+
+## The first shape of one contact hit event.
+Function ContactHitShapeA(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactHitShapeAIds.Items[index], Me.mWorld.ContactHitShapeAGens.Items[index])
+End Function
+
+## The second shape of one contact hit event.
+Function ContactHitShapeB(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactHitShapeBIds.Items[index], Me.mWorld.ContactHitShapeBGens.Items[index])
+End Function
+
+## The approach speed of one contact hit event in metres per second.
+Function ContactHitApproachSpeed(index As Integer) As Double
+Return Me.mWorld.ContactHitSpeeds.Items[index]
+End Function
+
+## The hit point of one contact hit event.
+Function ContactHitPoint(index As Integer, out As Vector2) As Vector2
+out.Set(Me.mWorld.ContactHitPointXs.Items[index], Me.mWorld.ContactHitPointYs.Items[index])
+Return out
+End Function
+
+## Number of moved-body events this step.
+Function BodyMoveCount() As Integer
+Return Me.mWorld.MoveEventBodyIds.Count
+End Function
+
+## The moved body of one move event, or Nothing when it was destroyed.
+Function BodyMoveBody(index As Integer) As Body
+Return Me.mWorld.EventBody(Me.mWorld.MoveEventBodyIds.Items[index], Me.mWorld.MoveEventBodyGens.Items[index])
+End Function
+
+## The world transform of one moved body at event time.
+Function BodyMoveTransform(index As Integer, out As Transform) As Transform
+out.P.Set(Me.mWorld.MoveEventPXs.Items[index], Me.mWorld.MoveEventPYs.Items[index])
+out.Q.SetComponents(Me.mWorld.MoveEventQCs.Items[index], Me.mWorld.MoveEventQSs.Items[index])
+Return out
+End Function
+
+## Whether one moved body fell asleep during this step.
+Function BodyMoveFellAsleep(index As Integer) As Boolean
+Return Me.mWorld.MoveEventFellAsleep.Items[index] <> 0
+End Function
 End Class
 
 # Client callback receiving the shapes of a world overlap query, ported from

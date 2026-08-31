@@ -143,6 +143,17 @@ End If
 Return (filterA.MaskBits.BitAnd(filterB.CategoryBits) <> 0) And (filterA.CategoryBits.BitAnd(filterB.MaskBits) <> 0)
 End Function
 
+## Body-level collision rule, ported from b2ShouldBodiesCollide in body.c.
+## Two bodies collide only when at least one is dynamic; the connected-joint
+## walk arrives with Stage 9.
+Shared Function ShouldBodiesCollide(world As World, bodyA As Body, bodyB As Body) As Boolean
+Pragma Unused world
+If bodyA.Type <> BodyType.DynamicBody And bodyB.Type <> BodyType.DynamicBody Then
+Return False
+End If
+Return True
+End Function
+
 ## Creates a contact for two overlapping broad-phase proxies, ported from
 ## b2CreateContact. The caller has already applied shape and body filtering.
 ## When either body is awake the contact lives in the awake set; otherwise
@@ -288,6 +299,14 @@ Var bodyIdA As Integer = contact.Edge0BodyId
 Var bodyIdB As Integer = contact.Edge1BodyId
 Var bodyA As Body = world.Bodies[bodyIdA]
 Var bodyB As Body = world.Bodies[bodyIdB]
+
+# End touch event, ported from the destruction branch of b2DestroyContact.
+If touching And contact.Flags.BitAnd(Integer(ContactFlags.EnableContactEvents)) <> 0 Then
+world.ContactEndShapeAIds[world.EndEventWriteIndex].Append(contact.ShapeIdA)
+world.ContactEndShapeAGens[world.EndEventWriteIndex].Append(world.ShapeGenerations.Items[contact.ShapeIdA])
+world.ContactEndShapeBIds[world.EndEventWriteIndex].Append(contact.ShapeIdB)
+world.ContactEndShapeBGens[world.EndEventWriteIndex].Append(world.ShapeGenerations.Items[contact.ShapeIdB])
+End If
 
 UnlinkContactEdge(world, contact, 0)
 UnlinkContactEdge(world, contact, 1)

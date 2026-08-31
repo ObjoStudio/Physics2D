@@ -36,6 +36,9 @@ Property IslandId As Integer
 Property IslandPrev As Integer
 ## Doubly linked island list: next body.
 Property IslandNext As Integer
+## Index of this body's moved-body event in the current step, or -1. Set by
+## the finalize stage and consumed by island sleeping. Internal.
+Property MoveEventIndex As Integer
 ## Total mass from shapes (kilograms). Overridden by SetMassData.
 Property Mass As Double
 ## Rotational inertia about the centre of mass. Overridden by SetMassData.
@@ -77,6 +80,7 @@ Me.ContactCount = 0
 Me.IslandId = PhysicsConstants.NULL_INDEX
 Me.IslandPrev = PhysicsConstants.NULL_INDEX
 Me.IslandNext = PhysicsConstants.NULL_INDEX
+Me.MoveEventIndex = -1
 Me.Mass = 0.0
 Me.Inertia = 0.0
 Me.SleepThreshold = 0.0

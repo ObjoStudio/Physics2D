@@ -484,4 +484,71 @@ proxy.Count = 2
 proxy.Radius = 0.0
 End If
 End Sub
+
+## Computes the minimum and maximum extents of this shape relative to the
+## given centroid, ported from b2ComputeShapeExtent in shape.c. The minimum
+## extent bounds how far the shape can move before fast-body detection fires
+## and the maximum extent bounds sweep enlargement.
+Sub ComputeExtentTo(centroid As Vector2, out As ShapeExtent)
+out.MinExtent = 0.0
+out.MaxExtent = 0.0
+If Me.Type = ShapeType.CapsuleShape Then
+out.MinExtent = Me.Capsule.Radius
+Var c1x As Double = Me.Capsule.Center1.X - centroid.X
+Var c1y As Double = Me.Capsule.Center1.Y - centroid.Y
+Var c2x As Double = Me.Capsule.Center2.X - centroid.X
+Var c2y As Double = Me.Capsule.Center2.Y - centroid.Y
+out.MaxExtent = Maths.Sqrt(Maths.Max(c1x * c1x + c1y * c1y, c2x * c2x + c2y * c2y)) + Me.Capsule.Radius
+ElseIf Me.Type = ShapeType.CircleShape Then
+out.MinExtent = Me.Circle.Radius
+Var dx As Double = Me.Circle.Center.X - centroid.X
+Var dy As Double = Me.Circle.Center.Y - centroid.Y
+out.MaxExtent = Maths.Sqrt(dx * dx + dy * dy) + Me.Circle.Radius
+ElseIf Me.Type = ShapeType.PolygonShape Then
+Var minExtent As Double = 1.7976931348623157e308
+Var maxExtentSqr As Double = 0.0
+Var poly As Polygon = Me.Polygon
+Var centroidX As Double = poly.Centroid.X
+Var centroidY As Double = poly.Centroid.Y
+Var localX As Double = centroid.X
+Var localY As Double = centroid.Y
+For i As Integer = 0 To poly.Count - 1
+Var vx As Double = poly.Vertices[i].X
+Var vy As Double = poly.Vertices[i].Y
+Var normal As Vector2 = poly.Normals[i]
+Var planeOffset As Double = normal.X * (vx - centroidX) + normal.Y * (vy - centroidY)
+minExtent = Maths.Min(minExtent, planeOffset)
+Var ddx As Double = vx - localX
+Var ddy As Double = vy - localY
+Var distanceSqr As Double = ddx * ddx + ddy * ddy
+maxExtentSqr = Maths.Max(maxExtentSqr, distanceSqr)
+Next i
+out.MinExtent = minExtent + poly.Radius
+out.MaxExtent = Maths.Sqrt(maxExtentSqr) + poly.Radius
+Else
+Var p1x As Double
+Var p1y As Double
+Var p2x As Double
+Var p2y As Double
+If Me.Type = ShapeType.SegmentShape Then
+p1x = Me.Segment.Point1.X
+p1y = Me.Segment.Point1.Y
+p2x = Me.Segment.Point2.X
+p2y = Me.Segment.Point2.Y
+ElseIf Me.Type = ShapeType.ChainSegmentShape Then
+p1x = Me.ChainSegment.Segment.Point1.X
+p1y = Me.ChainSegment.Segment.Point1.Y
+p2x = Me.ChainSegment.Segment.Point2.X
+p2y = Me.ChainSegment.Segment.Point2.Y
+Else
+Return
+End If
+out.MinExtent = 0.0
+Var c1x As Double = p1x - centroid.X
+Var c1y As Double = p1y - centroid.Y
+Var c2x As Double = p2x - centroid.X
+Var c2y As Double = p2y - centroid.Y
+out.MaxExtent = Maths.Sqrt(Maths.Max(c1x * c1x + c1y * c1y, c2x * c2x + c2y * c2y))
+End If
+End Sub
 End Class

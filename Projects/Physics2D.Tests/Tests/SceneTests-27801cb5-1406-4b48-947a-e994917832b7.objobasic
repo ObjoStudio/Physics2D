@@ -103,7 +103,9 @@ SceneTests.Steps(second, 240)
 Var firstChecksum As Integer = SceneTests.FoldWorld(first)
 Var secondChecksum As Integer = SceneTests.FoldWorld(second)
 Assert.Equal(firstChecksum, secondChecksum, "repeated runs match bit for bit")
-Assert.Equal(-4440008632116778095, firstChecksum, "pile scene golden checksum")
+# Golden recomputed for Stage 8: continuous collision advances fast
+# bodies to their exact time-of-impact positions.
+Assert.Equal(4006121332606765641, firstChecksum, "pile scene golden checksum")
 first.Validate()
 End Sub
 

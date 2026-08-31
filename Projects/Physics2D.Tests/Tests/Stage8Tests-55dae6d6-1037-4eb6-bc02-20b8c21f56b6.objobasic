@@ -1,0 +1,444 @@
+# Stage 8 tests: sensors, contact begin/end and hit events, moved-body
+# events, and continuous collision.
+Import Physics2D
+
+Class Stage8Tests Inherits TestCase
+## Builds a world with a wide static ground box whose top surface is y=0.
+Shared Function MakeWorld() As World
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(50.0, 0.5))
+Return world
+End Function
+
+## Builds a dynamic box body.
+Shared Function MakeBox(world As World, x As Double, y As Double, halfWidth As Double, halfHeight As Double) As Body
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(x, y)
+Var body As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.4
+body.CreatePolygon(shapeDef, Polygon.MakeBox(halfWidth, halfHeight))
+Return body
+End Function
+
+## Builds a dynamic box body whose single shape enables sensor events.
+Shared Function MakeSensorBox(world As World, x As Double, y As Double, halfWidth As Double, halfHeight As Double) As Body
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(x, y)
+Var body As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.4
+shapeDef.EnableSensorEvents = True
+body.CreatePolygon(shapeDef, Polygon.MakeBox(halfWidth, halfHeight))
+Return body
+End Function
+
+## Steps the world at 60 Hz.
+Shared Sub Steps(world As World, count As Integer)
+Var i As Integer = 0
+While i < count
+world.StepWorld(1.0 / 60.0)
+i = i + 1
+Wend
+End Sub
+
+## A fast small box must not tunnel through a thin static wall.
+Public Sub TestContinuousStopsFastBoxAtThinWall()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var wallDef As New BodyDefinition
+wallDef.Position = New Vector2(0.0, 0.0)
+Var wall As Body = world.CreateBody(wallDef)
+Var wallShapeDef As New ShapeDefinition
+wall.CreatePolygon(wallShapeDef, Polygon.MakeBox(0.05, 2.0))
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(-6.0, 0.0)
+def.LinearVelocity = New Vector2(60.0, 0.0)
+Var box As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.1, 0.1))
+Var i As Integer = 0
+While i < 30
+world.StepWorld(1.0 / 60.0)
+i = i + 1
+Wend
+Var position As Vector2 = world.GetBodyTransform(box).P
+PhysicsAssert.Near(0.0, position.X, 0.35, 0.35, "fast box stopped by thin wall")
+PhysicsAssert.Near(0.0, world.GetBodyLinearVelocity(box).X, 1.0, 1.0, "fast box velocity arrested")
+world.Validate()
+End Sub
+
+## A bullet body must not tunnel through a thin static wall either.
+Public Sub TestBulletStopsAtThinWall()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var wallDef As New BodyDefinition
+wallDef.Position = New Vector2(0.0, 0.0)
+Var wall As Body = world.CreateBody(wallDef)
+Var wallShapeDef As New ShapeDefinition
+wall.CreatePolygon(wallShapeDef, Polygon.MakeBox(0.05, 2.0))
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.IsBullet = True
+def.Position = New Vector2(-8.0, 0.0)
+def.LinearVelocity = New Vector2(120.0, 0.0)
+Var box As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.1, 0.1))
+Var i As Integer = 0
+While i < 30
+world.StepWorld(1.0 / 60.0)
+i = i + 1
+Wend
+Var position As Vector2 = world.GetBodyTransform(box).P
+PhysicsAssert.Near(0.0, position.X, 0.35, 0.35, "bullet stopped by thin wall")
+world.Validate()
+End Sub
+
+## Continuous collision must also catch a fast spinner hitting a wall.
+Public Sub TestContinuousCatchesFastSpinner()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var wallDef As New BodyDefinition
+wallDef.Position = New Vector2(0.0, 0.0)
+Var wall As Body = world.CreateBody(wallDef)
+Var wallShapeDef As New ShapeDefinition
+wall.CreatePolygon(wallShapeDef, Polygon.MakeBox(0.05, 1.0))
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(-5.0, 0.0)
+def.LinearVelocity = New Vector2(40.0, 0.0)
+def.AngularVelocity = 30.0
+Var box As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.15, 0.05))
+Var i As Integer = 0
+While i < 40
+world.StepWorld(1.0 / 60.0)
+i = i + 1
+Wend
+Var position As Vector2 = world.GetBodyTransform(box).P
+PhysicsAssert.Near(0.0, position.X, 0.4, 0.4, "fast spinner stopped by wall")
+world.Validate()
+End Sub
+
+## With continuous collision disabled the same fast box tunnels through
+## the thin wall, proving the Stage 8 guard is what stops it.
+Public Sub TestContinuousDisableTunnels()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+world.ContinuousEnabled = False
+Var wallDef As New BodyDefinition
+wallDef.Position = New Vector2(0.0, 0.0)
+Var wall As Body = world.CreateBody(wallDef)
+Var wallShapeDef As New ShapeDefinition
+wall.CreatePolygon(wallShapeDef, Polygon.MakeBox(0.05, 2.0))
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(-6.0, 0.0)
+def.LinearVelocity = New Vector2(60.0, 0.0)
+Var box As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.1, 0.1))
+Var i As Integer = 0
+While i < 30
+world.StepWorld(1.0 / 60.0)
+i = i + 1
+Wend
+Var position As Vector2 = world.GetBodyTransform(box).P
+Assert.True(position.X > 0.5, "box tunneled past the thin wall with continuous disabled")
+world.Validate()
+End Sub
+
+## A body created overlapping a wall resolves without wedging or explosion.
+Public Sub TestInitialOverlapDoesNotWedge()
+Var world As World = MakeWorld()
+Var box As Body = MakeBox(world, 0.0, 0.1, 0.25, 0.25)
+Steps(world, 120)
+Var position As Vector2 = world.GetBodyTransform(box).P
+PhysicsAssert.Near(0.0, position.Y, 0.3, 0.3, "overlapping body rests near the surface")
+PhysicsAssert.Near(0.0, world.GetBodyLinearVelocity(box).Y, 0.2, 0.2, "overlapping body settles")
+world.Validate()
+End Sub
+
+## A circle falling through a static sensor fires begin and end events
+## exactly once and never creates contacts.
+Public Sub TestSensorBeginAndEndEvents()
+Var world As World = MakeWorld()
+Var sensorDef As New BodyDefinition
+sensorDef.Position = New Vector2(0.0, 0.5)
+Var sensorBody As Body = world.CreateBody(sensorDef)
+Var sensorShapeDef As New ShapeDefinition
+sensorShapeDef.IsSensor = True
+sensorShapeDef.EnableSensorEvents = True
+Var sensorShape As Shape = sensorBody.CreatePolygon(sensorShapeDef, Polygon.MakeBox(0.5, 0.5))
+Var ball As Body = MakeSensorBox(world, 0.0, 6.0, 0.1, 0.1)
+Var beginTotal As Integer = 0
+Var endTotal As Integer = 0
+Var i As Integer = 0
+While i < 120
+world.StepWorld(1.0 / 60.0)
+beginTotal = beginTotal + world.Events.SensorBeginCount()
+endTotal = endTotal + world.Events.SensorEndCount()
+i = i + 1
+Wend
+Assert.Equal(1, beginTotal, "sensor begin fired exactly once")
+Assert.Equal(0, endTotal, "overlap persists while the visitor rests inside")
+Var sensorTouched As Boolean = False
+Var contactKey As Integer = ball.HeadContactKey
+While contactKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = contactKey.ShiftRight(1)
+Var edgeIndex As Integer = contactKey.BitAnd(1)
+Var contact As Contact = world.Contacts[contactId]
+If contact.ShapeIdA = sensorShape.Id Or contact.ShapeIdB = sensorShape.Id Then
+sensorTouched = True
+End If
+If edgeIndex = 0 Then
+contactKey = contact.Edge0NextKey
+Else
+contactKey = contact.Edge1NextKey
+End If
+Wend
+Assert.Equal(False, sensorTouched, "sensors create no contacts")
+world.Validate()
+End Sub
+
+## Destroying the sensor shape pushes end events for current overlaps.
+Public Sub TestSensorDestructionPushesEndEvents()
+Var world As World = MakeWorld()
+Var sensorDef As New BodyDefinition
+sensorDef.Position = New Vector2(0.0, 0.5)
+Var sensorBody As Body = world.CreateBody(sensorDef)
+Var sensorShapeDef As New ShapeDefinition
+sensorShapeDef.IsSensor = True
+sensorShapeDef.EnableSensorEvents = True
+Var sensorShape As Shape = sensorBody.CreatePolygon(sensorShapeDef, Polygon.MakeBox(0.5, 0.5))
+Var ball As Body = MakeSensorBox(world, 0.0, 2.0, 0.1, 0.1)
+Var beginTotal As Integer = 0
+Var i As Integer = 0
+While i < 60
+world.StepWorld(1.0 / 60.0)
+beginTotal = beginTotal + world.Events.SensorBeginCount()
+i = i + 1
+Wend
+Assert.True(beginTotal >= 1, "sensor fired begin")
+world.StepWorld(1.0 / 60.0)
+Assert.Equal(0, world.Events.SensorBeginCount(), "begin suppressed while overlapping")
+sensorShape.Destroy()
+world.StepWorld(1.0 / 60.0)
+Assert.Equal(1, world.Events.SensorEndCount(), "destruction pushed end event after the next step")
+world.Validate()
+End Sub
+
+## Shapes without EnableSensorEvents never report overlaps.
+Public Sub TestSensorEventsDisabled()
+Var world As World = MakeWorld()
+Var sensorDef As New BodyDefinition
+sensorDef.Position = New Vector2(0.0, 1.0)
+Var sensorBody As Body = world.CreateBody(sensorDef)
+Var sensorShapeDef As New ShapeDefinition
+sensorShapeDef.IsSensor = True
+sensorBody.CreatePolygon(sensorShapeDef, Polygon.MakeBox(0.5, 0.5))
+Var ball As Body = MakeBox(world, 0.0, 2.5, 0.1, 0.1)
+Steps(world, 60)
+Assert.Equal(0, world.Events.SensorBeginCount(), "no begin without EnableSensorEvents")
+world.Validate()
+End Sub
+
+## A resting overlap produces no repeated begin events.
+Public Sub TestSensorBeginNotRepeatedWhileResting()
+Var world As World = MakeWorld()
+Var sensorDef As New BodyDefinition
+sensorDef.Position = New Vector2(0.0, 0.5)
+Var sensorBody As Body = world.CreateBody(sensorDef)
+Var sensorShapeDef As New ShapeDefinition
+sensorShapeDef.IsSensor = True
+sensorShapeDef.EnableSensorEvents = True
+sensorBody.CreatePolygon(sensorShapeDef, Polygon.MakeBox(1.0, 0.25))
+Var ball As Body = MakeSensorBox(world, 0.0, 3.0, 0.2, 0.2)
+Var beginTotal As Integer = 0
+Var i As Integer = 0
+While i < 180
+world.StepWorld(1.0 / 60.0)
+beginTotal = beginTotal + world.Events.SensorBeginCount()
+i = i + 1
+Wend
+Assert.Equal(1, beginTotal, "one begin event for a resting overlap")
+world.Validate()
+End Sub
+
+## A box landing on the ground fires one begin event and no end events
+## while resting, and the begin event carries a manifold snapshot.
+Public Sub TestContactBeginEventAndManifoldSnapshot()
+Var world As World = MakeWorld()
+Var groundShape As Shape = groundShapeOf(world)
+Var box As Body = MakeBox(world, 0.0, 3.0, 0.25, 0.25)
+Var groundShapeDef As New ShapeDefinition
+groundShape.EnableContactEvents = True
+Var shapeDef As New ShapeDefinition
+shapeDef.EnableContactEvents = True
+Var boxShape As Shape = FirstShape(box)
+Var beginTotal As Integer = 0
+Var endTotal As Integer = 0
+Var manifoldPoints As Integer = 0
+Var i As Integer = 0
+While i < 120
+world.StepWorld(1.0 / 60.0)
+beginTotal = beginTotal + world.Events.ContactBeginCount()
+endTotal = endTotal + world.Events.ContactEndCount()
+If world.Events.ContactBeginCount() > 0 Then
+manifoldPoints = world.Events.ContactBeginManifold(0).PointCount
+End If
+i = i + 1
+Wend
+Assert.Equal(1, beginTotal, "contact begin fired exactly once")
+Assert.Equal(0, endTotal, "no end while resting")
+Assert.Equal(2, manifoldPoints, "begin manifold has two points")
+world.Validate()
+End Sub
+
+## Destroying a touching body pushes a contact end event.
+Public Sub TestContactEndEventOnDestroy()
+Var world As World = MakeWorld()
+Var box As Body = MakeBox(world, 0.0, 0.25, 0.25, 0.25)
+Var ground As Shape = groundShapeOf(world)
+ground.EnableContactEvents = True
+FirstShape(box).EnableContactEvents = True
+Var beginTotal As Integer = 0
+Var endTotal As Integer = 0
+Var i As Integer = 0
+While i < 30
+world.StepWorld(1.0 / 60.0)
+beginTotal = beginTotal + world.Events.ContactBeginCount()
+endTotal = endTotal + world.Events.ContactEndCount()
+i = i + 1
+Wend
+Assert.Equal(1, beginTotal, "began touching")
+Assert.Equal(0, endTotal, "no end before destroy")
+box.Destroy()
+world.StepWorld(1.0 / 60.0)
+Assert.Equal(1, world.Events.ContactEndCount(), "destroy pushed end event after the next step")
+world.Validate()
+End Sub
+
+## A fast ball triggers a hit event with an approach speed above the
+## threshold; a slow ball does not.
+Public Sub TestContactHitEvent()
+Var world As World = MakeWorld()
+Var ground As Shape = groundShapeOf(world)
+ground.EnableHitEvents = True
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(0.0, 6.0)
+def.LinearVelocity = New Vector2(0.0, -8.0)
+Var ball As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.EnableHitEvents = True
+ball.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.2))
+Var hitTotal As Integer = 0
+Var hitSpeed As Double = 0.0
+Var i As Integer = 0
+While i < 80
+world.StepWorld(1.0 / 60.0)
+If world.Events.ContactHitCount() > 0 Then
+hitTotal = hitTotal + world.Events.ContactHitCount()
+hitSpeed = world.Events.ContactHitApproachSpeed(0)
+End If
+i = i + 1
+Wend
+Assert.Equal(1, hitTotal, "fast ball produced one hit event")
+PhysicsAssert.Near(8.0, hitSpeed, 6.0, 6.0, "hit approach speed at least impact speed")
+world.Validate()
+End Sub
+
+## Falling bodies produce move events; a sleeping body reports fellAsleep.
+Public Sub TestBodyMoveEventsAndSleepFlag()
+Var world As World = MakeWorld()
+Var box As Body = MakeBox(world, 0.0, 3.0, 0.25, 0.25)
+world.EnableSleeping = True
+Var moveCount As Integer = 0
+Var i As Integer = 0
+While i < 300
+world.StepWorld(1.0 / 60.0)
+moveCount = moveCount + world.Events.BodyMoveCount()
+If world.Events.BodyMoveCount() > 0 Then
+If world.Events.BodyMoveFellAsleep(world.Events.BodyMoveCount() - 1) Then
+moveCount = -moveCount
+i = 1000
+End If
+End If
+i = i + 1
+Wend
+Assert.True(moveCount < 0, "a move event reported fellAsleep")
+Assert.True(moveCount > -400, "falling produced move events before sleep")
+world.Validate()
+End Sub
+
+## Stale event references resolve to Nothing instead of throwing.
+Public Sub TestStaleEventReferencesReturnNothing()
+Var world As World = MakeWorld()
+Var box As Body = MakeBox(world, 0.0, 3.0, 0.25, 0.25)
+Var ground As Shape = groundShapeOf(world)
+ground.EnableContactEvents = True
+FirstShape(box).EnableContactEvents = True
+Var staleBegin As Integer = 0
+Var i As Integer = 0
+While i < 90
+world.StepWorld(1.0 / 60.0)
+staleBegin = staleBegin + world.Events.ContactBeginCount()
+i = i + 1
+Wend
+Assert.Equal(1, staleBegin, "begin present")
+box.Destroy()
+Assert.Equal(Nothing, world.Events.ContactBeginShapeB(0), "stale shape resolves to Nothing")
+world.Validate()
+End Sub
+
+## Disabling a sensor body pushes end events for its overlaps.
+Public Sub TestDisabledSensorBodyEndsOverlaps()
+Var world As World = MakeWorld()
+Var sensorDef As New BodyDefinition
+sensorDef.Position = New Vector2(0.0, 0.5)
+Var sensorBody As Body = world.CreateBody(sensorDef)
+Var sensorShapeDef As New ShapeDefinition
+sensorShapeDef.IsSensor = True
+sensorShapeDef.EnableSensorEvents = True
+sensorBody.CreatePolygon(sensorShapeDef, Polygon.MakeBox(0.5, 0.5))
+Var ball As Body = MakeSensorBox(world, 0.0, 2.0, 0.1, 0.1)
+Var beginTotal As Integer = 0
+Var i As Integer = 0
+While i < 60
+world.StepWorld(1.0 / 60.0)
+beginTotal = beginTotal + world.Events.SensorBeginCount()
+i = i + 1
+Wend
+Assert.Equal(1, beginTotal, "begin fired")
+sensorBody.Disable()
+world.StepWorld(1.0 / 60.0)
+Assert.Equal(1, world.Events.SensorEndCount(), "disabling pushed end event")
+world.Validate()
+End Sub
+
+Shared Function groundShapeOf(world As World) As Shape
+Return world.Bodies[0].GetShapes()[0]
+End Function
+
+## Returns the body's first shape facade.
+Shared Function FirstShape(body As Body) As Shape
+Return body.GetShapes()[0]
+End Function
+End Class

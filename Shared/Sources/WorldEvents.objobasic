@@ -1,0 +1,129 @@
+# Reusable view over the world's internal event buffers, valid until the
+# next Step, Clear, or destructive world operation. The view never copies:
+# counts and accessors read the world-owned columns directly, and shape or
+# body accessors return the existing per-slot facades, which stay stable
+# until the object is destroyed. Stale references return Nothing instead of
+# throwing, mirroring upstream generation-checked event ids.
+Class WorldEvents
+## Owning world.
+Private Property mWorld As World
+
+## Wraps one world's buffers.
+Constructor(world As World)
+Me.mWorld = world
+End Constructor
+
+## Number of sensor begin events this step.
+Function SensorBeginCount() As Integer
+Return Me.mWorld.SensorBeginVisitorIds.Count
+End Function
+
+## The sensor shape of one sensor begin event.
+Function SensorBeginSensorShape(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.SensorBeginSensorIds.Items[index], Me.mWorld.SensorBeginSensorGens.Items[index])
+End Function
+
+## The visitor shape of one sensor begin event.
+Function SensorBeginVisitorShape(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.SensorBeginVisitorIds.Items[index], Me.mWorld.SensorBeginVisitorGens.Items[index])
+End Function
+
+## Number of sensor end events in the current readable window.
+Function SensorEndCount() As Integer
+Return Me.mWorld.SensorEndVisitorIds[Me.mWorld.ReadableEndIndex].Count
+End Function
+
+## The sensor shape of one sensor end event.
+Function SensorEndSensorShape(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.SensorEndSensorIds[Me.mWorld.ReadableEndIndex].Items[index], Me.mWorld.SensorEndSensorGens[Me.mWorld.ReadableEndIndex].Items[index])
+End Function
+
+## The visitor shape of one sensor end event.
+Function SensorEndVisitorShape(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.SensorEndVisitorIds[Me.mWorld.ReadableEndIndex].Items[index], Me.mWorld.SensorEndVisitorGens[Me.mWorld.ReadableEndIndex].Items[index])
+End Function
+
+## Number of contact begin events this step.
+Function ContactBeginCount() As Integer
+Return Me.mWorld.ContactBeginShapeAIds.Count
+End Function
+
+## The first shape of one contact begin event.
+Function ContactBeginShapeA(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactBeginShapeAIds.Items[index], Me.mWorld.ContactBeginShapeAGens.Items[index])
+End Function
+
+## The second shape of one contact begin event.
+Function ContactBeginShapeB(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactBeginShapeBIds.Items[index], Me.mWorld.ContactBeginShapeBGens.Items[index])
+End Function
+
+## A snapshot of the begin-event manifold. The returned manifold is owned
+## by the event and stays stable until the next step clears the buffer.
+Function ContactBeginManifold(index As Integer) As Manifold
+Return Me.mWorld.ContactBeginManifolds[index]
+End Function
+
+## Number of contact end events in the current readable window.
+Function ContactEndCount() As Integer
+Return Me.mWorld.ContactEndShapeAIds[Me.mWorld.ReadableEndIndex].Count
+End Function
+
+## The first shape of one contact end event.
+Function ContactEndShapeA(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactEndShapeAIds[Me.mWorld.ReadableEndIndex].Items[index], Me.mWorld.ContactEndShapeAGens[Me.mWorld.ReadableEndIndex].Items[index])
+End Function
+
+## The second shape of one contact end event.
+Function ContactEndShapeB(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactEndShapeBIds[Me.mWorld.ReadableEndIndex].Items[index], Me.mWorld.ContactEndShapeBGens[Me.mWorld.ReadableEndIndex].Items[index])
+End Function
+
+## Number of contact hit events this step.
+Function ContactHitCount() As Integer
+Return Me.mWorld.ContactHitShapeAIds.Count
+End Function
+
+## The first shape of one contact hit event.
+Function ContactHitShapeA(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactHitShapeAIds.Items[index], Me.mWorld.ContactHitShapeAGens.Items[index])
+End Function
+
+## The second shape of one contact hit event.
+Function ContactHitShapeB(index As Integer) As Shape
+Return Me.mWorld.EventShape(Me.mWorld.ContactHitShapeBIds.Items[index], Me.mWorld.ContactHitShapeBGens.Items[index])
+End Function
+
+## The approach speed of one contact hit event in metres per second.
+Function ContactHitApproachSpeed(index As Integer) As Double
+Return Me.mWorld.ContactHitSpeeds.Items[index]
+End Function
+
+## The hit point of one contact hit event.
+Function ContactHitPoint(index As Integer, out As Vector2) As Vector2
+out.Set(Me.mWorld.ContactHitPointXs.Items[index], Me.mWorld.ContactHitPointYs.Items[index])
+Return out
+End Function
+
+## Number of moved-body events this step.
+Function BodyMoveCount() As Integer
+Return Me.mWorld.MoveEventBodyIds.Count
+End Function
+
+## The moved body of one move event, or Nothing when it was destroyed.
+Function BodyMoveBody(index As Integer) As Body
+Return Me.mWorld.EventBody(Me.mWorld.MoveEventBodyIds.Items[index], Me.mWorld.MoveEventBodyGens.Items[index])
+End Function
+
+## The world transform of one moved body at event time.
+Function BodyMoveTransform(index As Integer, out As Transform) As Transform
+out.P.Set(Me.mWorld.MoveEventPXs.Items[index], Me.mWorld.MoveEventPYs.Items[index])
+out.Q.SetComponents(Me.mWorld.MoveEventQCs.Items[index], Me.mWorld.MoveEventQSs.Items[index])
+Return out
+End Function
+
+## Whether one moved body fell asleep during this step.
+Function BodyMoveFellAsleep(index As Integer) As Boolean
+Return Me.mWorld.MoveEventFellAsleep.Items[index] <> 0
+End Function
+End Class

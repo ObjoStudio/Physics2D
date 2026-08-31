@@ -24,10 +24,13 @@ Property RestitutionThreshold As Double
 Property MaximumLinearVelocity As Double
 ## 1.0 when warm starting is enabled, otherwise 0.0.
 Property WarmStartScale As Double
+## Fast bullet body sim indices collected during finalization.
+Property BulletBodies As IntegerList
 
 ## Creates a scratch context with reusable softness records.
 Constructor()
 Me.ContactSoftness = New Softness
 Me.StaticSoftness = New Softness
+Me.BulletBodies = New IntegerList
 End Constructor
 End Class

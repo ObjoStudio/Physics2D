@@ -45,6 +45,16 @@ Me.PointCount = 0
 Return Me
 End Function
 
+## Copies every field from another manifold into this one, including the
+## full contact points. Used to snapshot manifolds for events.
+Sub AssignFrom(other As Manifold)
+Me.Normal.Set(other.Normal.X, other.Normal.Y)
+Me.RollingImpulse = other.RollingImpulse
+Me.Point1.AssignFrom(other.Point1)
+Me.Point2.AssignFrom(other.Point2)
+Me.PointCount = other.PointCount
+End Sub
+
 ## Returns the lazily created reusable workspace. Engine code only.
 Function Scratch() As CollideScratch
 If Me.mScratch = Nothing Then

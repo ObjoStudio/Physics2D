@@ -1,0 +1,27 @@
+# Scratch state for one fast body's continuous sweep, ported from struct
+# b2ContinuousContext in solver.c. The world owns one instance reused per
+# solve.
+Class ContinuousContext
+## The fast body's sweep from its pre-solve transform to its current one.
+Property Sweep As Sweep
+## Fast shape under test.
+Property FastShape As Shape
+## Fast body slot.
+Property FastBodyId As Integer
+## Fast body's awake sim index.
+Property FastBodySimIndex As Integer
+## Fast shape centroid at sweep start.
+Property Centroid1 As Vector2
+## Fast shape centroid at sweep end.
+Property Centroid2 As Vector2
+## Earliest hit fraction found so far, starting at one.
+Property Fraction As Double
+
+## Creates the context with reusable sweep objects.
+Constructor()
+Me.Sweep = New Sweep
+Me.Centroid1 = New Vector2
+Me.Centroid2 = New Vector2
+Me.Fraction = 1.0
+End Constructor
+End Class

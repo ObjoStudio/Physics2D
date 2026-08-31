@@ -339,6 +339,46 @@ and the deterministic `PhysicsMaths` routines. The `stage7-pyramid-40`
 benchmark (820 bodies, four 60 Hz steps per iteration) is the first
 full-solver baseline and doubles as a checksum-pinned regression.
 
+## Continuous Collision, Sensors, And Events (Stage 8)
+
+Stage 8 adds high-speed collision handling and the post-step observation
+model without changing the solver.
+
+1. **Continuous collision.** `FinalizeBodies` flags dynamic bodies whose
+   `maxVelocity * dt` exceeds half their minimum extent (`ShapeExtent` via
+   `Shape.ComputeExtentTo`). Non-bullet fast bodies resolve
+   `World.SolveContinuous` immediately: a swept-TOI query over the three
+   broad-phase trees (static, kinematic, and dynamic for bullets only)
+   advances the body to the exact impact transform, refreshes shape AABBs,
+   and updates its moved-body event. The query callback mirrors upstream's
+   `b2ContinuousQueryCallback`, including the chain-junction clipping rule
+   and the small-circle TOI fallback. Bullet bodies are collected into
+   `StepContext.BulletBodies` and resolved after the broad-phase refit,
+   whose fast-bullet branch queues proxy moves for determinism.
+2. **Sensors.** `Sensor` records live in `World.Sensors`, one per sensor
+   shape, each holding double-buffered overlap lists of shape slot plus
+   generation. After the solve, `OverlapSensors` swaps buffers, re-queries
+   the three trees with the sensor's filter, resolves exact overlaps with
+   a shape-distance test, sorts, and diffs against the previous buffer to
+   publish begin/end events. Disabled sensor bodies and destroyed sensors
+   publish end events, mirroring `b2DestroySensor`. Sensor shapes never
+   create contacts: the world's broad-phase sink rejects sensor pairs.
+3. **Events.** Flat world-owned columns back four event groups: contact
+   begin (with pooled-manifold snapshots copied via `Manifold.AssignFrom`),
+   contact end (also on touching-contact destruction), contact hit
+   (approach speed and point from the stored manifold), and moved bodies
+   (transform plus a fell-asleep flag patched by island sleeping).
+   `World.Events` exposes a reusable `WorldEvents` view whose accessors
+   return the existing stable Shape/Body façades or `Nothing` for stale
+   references. Begin/hit/move buffers clear at step start and end-event
+   buffers double-swap at step end, so every event is readable until the
+   next step or destructive world operation, and user code never runs
+   while the world is locked.
+
+The pile golden in `SceneTests` was recomputed for Stage 8 because
+continuous collision now advances fast bodies to their exact impact
+positions.
+
 ## Deterministic Maths
 
 `PhysicsMaths` ports the upstream trigonometric approximations so
