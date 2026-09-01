@@ -467,6 +467,74 @@ End If
 Me.Owner.GetBodySim(Me).IsBullet.Items[Me.LocalIndex] = bulletValue
 End Sub
 
+## Enables or disables contact begin/end events on every shape attached to
+## the body, ported from b2Body_EnableContactEvents. The body-level switch
+## writes through to each attached shape's event flag; new shapes start
+## from the definition default, so call this again after adding shapes.
+Sub EnableContactEvents(flag As Boolean)
+Me.Validate()
+Me.Owner.CheckNotLocked()
+Var shapeId As Integer = Me.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+shape.EnableContactEvents = flag
+shapeId = shape.NextShapeId
+Wend
+End Sub
+
+## Enables or disables hit events on every shape attached to the body,
+## ported from b2Body_EnableHitEvents. The body-level switch writes
+## through to each attached shape's event flag; new shapes start from the
+## definition default, so call this again after adding shapes.
+Sub EnableHitEvents(flag As Boolean)
+Me.Validate()
+Me.Owner.CheckNotLocked()
+Var shapeId As Integer = Me.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+shape.EnableHitEvents = flag
+shapeId = shape.NextShapeId
+Wend
+End Sub
+
+## True when every shape attached to the body reports contact events,
+## ported from b2Body_AreContactEventsEnabled. False when the body has no
+## shapes or any shape has the flag disabled.
+Function AreContactEventsEnabled() As Boolean
+Me.Validate()
+If Me.HeadShapeId = PhysicsConstants.NULL_INDEX Then
+Return False
+End If
+Var shapeId As Integer = Me.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+If shape.EnableContactEvents = False Then
+Return False
+End If
+shapeId = shape.NextShapeId
+Wend
+Return True
+End Function
+
+## True when every shape attached to the body reports hit events, ported
+## from b2Body_AreHitEventsEnabled. False when the body has no shapes or
+## any shape has the flag disabled.
+Function AreHitEventsEnabled() As Boolean
+Me.Validate()
+If Me.HeadShapeId = PhysicsConstants.NULL_INDEX Then
+Return False
+End If
+Var shapeId As Integer = Me.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+If shape.EnableHitEvents = False Then
+Return False
+End If
+shapeId = shape.NextShapeId
+Wend
+Return True
+End Function
+
 ## The number of attached shapes.
 Function GetShapeCount() As Integer
 Me.Validate()

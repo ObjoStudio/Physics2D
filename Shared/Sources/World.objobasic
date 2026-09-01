@@ -244,6 +244,22 @@ Property MoveEventQSs As DoubleList
 Property MoveEventFellAsleep As IntegerList
 
 ## Reusable event view over this world's buffers.
+## Rebuilds the static tree with a full quality build, ported from
+## b2World_RebuildStaticTree. The step path only enlarges proxies, so a
+## world whose static geometry was moved through Body.SetTransform should
+## call this once to restore optimal tree quality. Throws while the world
+## is locked.
+Sub RebuildStaticTree()
+Me.CheckNotLocked()
+Me.BroadPhase.RebuildStaticTree()
+End Sub
+
+## Returns the batched event views for the most recent step. Contact
+## begin/end, sensor begin/end, hit, and body-move events stay valid until
+## the next step begins or ends respectively; see WorldEvents for the
+## validity windows. This is the polled equivalent of upstream
+## b2World_GetContactEvents, b2World_GetSensorEvents, and
+## b2World_GetBodyEvents.
 Property Events As WorldEvents
 ## Scratch bit set marking sensors with stale overlap lists.
 Private Property mSensorEventBits As BitSet

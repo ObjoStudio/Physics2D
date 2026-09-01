@@ -6,12 +6,12 @@
 #
 # Input: AABB-375d053c-9aba-487b-b381-874abcd7b5a7.objobasic 995130c81ff8bd6fe0acda99e69614d9e7297e08b19ad3d1a673c89e81bae8a9
 # Input: BitSet-32ba5db1-d4a3-41d8-978f-6020100c45db.objobasic 1625c50d37848f57f6d82ee58302562750774ebbebf4243d84ea610e95d630d7
-# Input: Body.objobasic ffa0bd0824ec34a954e7dccfaefac9678872365f1588d49cc5b231abea12e09c
+# Input: Body.objobasic 35db96c763697d0181ceb4c8e9fcddd6052e988ebb3e1fc90b1cabfbac92645d
 # Input: BodyDefinition.objobasic 1800aac54e0524a02133b8e773c6c6429aa7d5d9795a0c1f0b22bf1e8b15262f
 # Input: BodySims.objobasic 8cc8fd052c363a3df4c31a10e66c51895e66bd3c194c80b34840261b943104a3
 # Input: BodyStates.objobasic 34ecdd2493c9d76ce09a4fd975cbfa86af0ffbb5eb1de0eb66b9017bce409282
 # Input: BodyType-ee3f0727-fa8d-4967-b4d7-d603cf4d360f.objobasic bfcfff5fa273c0dd6e1cf4df8a120cbf91a278dbedccda64660f9667bf92404c
-# Input: BroadPhase-0a5f096e-e982-43bf-8d21-9bd30be75593.objobasic 766a3a695846174fb27471c22af6dc7dec7b963f9bb0c3eaacfa0ce6fdd36118
+# Input: BroadPhase-0a5f096e-e982-43bf-8d21-9bd30be75593.objobasic eca1edfbb8c0f9e00a78c28502ab242a6c10d1d4930d0c7fc9a1b9e60820311f
 # Input: BroadPhasePairSink-51b85b57-7ae5-4b25-b19d-f2416a1ec73c.objobasic 9d84130a2512bfd860c5f24780a9dc86e206e5647df7afddb5d988bc237efb77
 # Input: BroadPhaseQueryContext-6a904469-8dbf-4d77-a18a-13216ab74eac.objobasic 899e7564d5ad95a36cf7b34fca8d6a16d036fe8210f84a675d71335d6df00cd0
 # Input: Capsule-f9484042-9a35-4f26-b657-5c45a198eca0.objobasic 9c046142e6c3b300de364d2d9d34e9333b663ae115eda9cc38913c6edfa19b64
@@ -127,7 +127,7 @@
 # Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
 # Input: WheelJoint.objobasic 063db7c796ee6df9b2ed0d4db36d51dec921e3a61ec1b001cd6ab07308136b4d
 # Input: WheelJointDefinition.objobasic 1ae60874c31b501cb219d8af36f26398fea1ad6a74eb924c08d53b70109e0641
-# Input: World.objobasic 0f12907eeaffc963c10134a2425edd338bcf9025ad8b6c0d9e61999da9be0e4f
+# Input: World.objobasic 73557a52e76525946dd95703931cb965b50a0f38cecf31fa132cd731ad54c276
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
@@ -136,7 +136,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 94bff18bf80fd7bc846b84e2c3231ca1c3863353e71523bdd5381f5b0b807270
+# Source content checksum (SHA-256): 9f0499ecd75a6c7d54c0bf3413532f192db6a0b43d3ffb4cf605ae70c4c1d4b9
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -1048,6 +1048,74 @@ End If
 Me.Owner.GetBodySim(Me).IsBullet.Items[Me.LocalIndex] = bulletValue
 End Sub
 
+## Enables or disables contact begin/end events on every shape attached to
+## the body, ported from b2Body_EnableContactEvents. The body-level switch
+## writes through to each attached shape's event flag; new shapes start
+## from the definition default, so call this again after adding shapes.
+Sub EnableContactEvents(flag As Boolean)
+Me.Validate()
+Me.Owner.CheckNotLocked()
+Var shapeId As Integer = Me.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+shape.EnableContactEvents = flag
+shapeId = shape.NextShapeId
+Wend
+End Sub
+
+## Enables or disables hit events on every shape attached to the body,
+## ported from b2Body_EnableHitEvents. The body-level switch writes
+## through to each attached shape's event flag; new shapes start from the
+## definition default, so call this again after adding shapes.
+Sub EnableHitEvents(flag As Boolean)
+Me.Validate()
+Me.Owner.CheckNotLocked()
+Var shapeId As Integer = Me.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+shape.EnableHitEvents = flag
+shapeId = shape.NextShapeId
+Wend
+End Sub
+
+## True when every shape attached to the body reports contact events,
+## ported from b2Body_AreContactEventsEnabled. False when the body has no
+## shapes or any shape has the flag disabled.
+Function AreContactEventsEnabled() As Boolean
+Me.Validate()
+If Me.HeadShapeId = PhysicsConstants.NULL_INDEX Then
+Return False
+End If
+Var shapeId As Integer = Me.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+If shape.EnableContactEvents = False Then
+Return False
+End If
+shapeId = shape.NextShapeId
+Wend
+Return True
+End Function
+
+## True when every shape attached to the body reports hit events, ported
+## from b2Body_AreHitEventsEnabled. False when the body has no shapes or
+## any shape has the flag disabled.
+Function AreHitEventsEnabled() As Boolean
+Me.Validate()
+If Me.HeadShapeId = PhysicsConstants.NULL_INDEX Then
+Return False
+End If
+Var shapeId As Integer = Me.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+If shape.EnableHitEvents = False Then
+Return False
+End If
+shapeId = shape.NextShapeId
+Wend
+Return True
+End Function
+
 ## The number of attached shapes.
 Function GetShapeCount() As Integer
 Me.Validate()
@@ -1693,6 +1761,14 @@ End Sub
 Sub RebuildTrees()
 Me.Trees[Integer(BodyType.DynamicBody)].Rebuild(False)
 Me.Trees[Integer(BodyType.KinematicBody)].Rebuild(False)
+End Sub
+
+## Rebuilds the static tree with a full quality build, ported from the
+## static-tree branch of b2World_RebuildStaticTree. The step path only
+## enlarges proxies, so static geometry moved through transform writes
+## needs this call to restore optimal tree quality.
+Sub RebuildStaticTree()
+Me.Trees[Integer(BodyType.StaticBody)].Rebuild(True)
 End Sub
 
 ## Returns the shape index carried by a proxy.
@@ -21288,6 +21364,22 @@ Property MoveEventQSs As DoubleList
 Property MoveEventFellAsleep As IntegerList
 
 ## Reusable event view over this world's buffers.
+## Rebuilds the static tree with a full quality build, ported from
+## b2World_RebuildStaticTree. The step path only enlarges proxies, so a
+## world whose static geometry was moved through Body.SetTransform should
+## call this once to restore optimal tree quality. Throws while the world
+## is locked.
+Sub RebuildStaticTree()
+Me.CheckNotLocked()
+Me.BroadPhase.RebuildStaticTree()
+End Sub
+
+## Returns the batched event views for the most recent step. Contact
+## begin/end, sensor begin/end, hit, and body-move events stay valid until
+## the next step begins or ends respectively; see WorldEvents for the
+## validity windows. This is the polled equivalent of upstream
+## b2World_GetContactEvents, b2World_GetSensorEvents, and
+## b2World_GetBodyEvents.
 Property Events As WorldEvents
 ## Scratch bit set marking sensors with stale overlap lists.
 Private Property mSensorEventBits As BitSet

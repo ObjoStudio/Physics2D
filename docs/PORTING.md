@@ -283,13 +283,13 @@ Mapping conventions:
 | `b2World_CollideMover` | World.CollideMover into a reusable plane buffer | 10 |
 | `b2World_Draw` | World.DrawDebug(renderer, options) | 10 |
 | `b2World_DumpMemoryStats` | World.Counters plus documented capacity planning; no text dump | 10 |
-| `b2World_EnableContinuous` | World.EnableContinuous | 6 |
+| `b2World_EnableContinuous` | World.ContinuousEnabled (settable property) | 6 |
 | `b2World_EnableSleeping` | World.EnableSleeping | 6 |
-| `b2World_EnableSpeculative` | World.EnableSpeculative | 6 |
-| `b2World_EnableWarmStarting` | World.EnableWarmStarting | 6 |
+| `b2World_EnableSpeculative` | World.SpeculativeEnabled (settable property) | 6 |
+| `b2World_EnableWarmStarting` | World.WarmStartingEnabled (settable property) | 6 |
 | `b2World_Explode` | World.Explode | 10 |
 | `b2World_GetAwakeBodyCount` | World.AwakeBodyCount | 6 |
-| `b2World_GetBodyEvents` | World.GetBodyEvents batch view plus post-step BodyMoved events | 8 |
+| `b2World_GetBodyEvents` | World.Events batch view (WorldEvents) plus post-step BodyMoved events | 8 |
 | `b2World_GetContactEvents` | World.Events contact begin/end/hit views | 8 |
 | `b2World_GetCounters` | World.Counters statistics record | 10 |
 | `b2World_GetGravity` | World.Gravity | 6 |
@@ -300,13 +300,13 @@ Mapping conventions:
 | `b2World_GetSensorEvents` | World.Events sensor begin/end views | 8 |
 | `b2World_GetUserData` | World.UserData | 6 |
 | `b2World_IsContinuousEnabled` | World.ContinuousEnabled | 6 |
-| `b2World_IsSleepingEnabled` | World.SleepingEnabled | 6 |
+| `b2World_IsSleepingEnabled` | World.EnableSleeping (read the property) | 6 |
 | `b2World_IsValid` | Protected internal validation; façade objects validate their own state | 6 |
 | `b2World_IsWarmStartingEnabled` | World.WarmStartingEnabled | 6 |
 | `b2World_OverlapAABB` | World.OverlapBounds and World.OverlapBoundsInto | 6 |
 | `b2World_OverlapShape` | World.OverlapShape and World.OverlapShapeInto | 6 |
 | `b2World_RebuildStaticTree` | World.RebuildStaticTree | 6 |
-| `b2World_SetContactTuning` | World.ContactTuning | 6 |
+| `b2World_SetContactTuning` | World.ContactHertz, World.ContactDampingRatio, and World.MaxContactPushSpeed (settable properties) | 6 |
 | `b2World_SetCustomFilterCallback` | World.CustomFilter hook (explicit opt-in) | 7 |
 | `b2World_SetFrictionCallback` | World.FrictionMixer hook (explicit opt-in) | 7 |
 | `b2World_SetGravity` | World.Gravity | 6 |
@@ -332,8 +332,8 @@ Mapping conventions:
 | `b2Body_ComputeAABB` | Body.ComputeAABB | 3 |
 | `b2Body_Disable` | Body.Disable | 3 |
 | `b2Body_Enable` | Body.Enable | 3 |
-| `b2Body_EnableContactEvents` | Body.EnableContactEvents | 3 |
-| `b2Body_EnableHitEvents` | Body.EnableHitEvents | 3 |
+| `b2Body_EnableContactEvents` | Body.EnableContactEvents(flag) writing through to every attached shape; Body.AreContactEventsEnabled is a documented Physics2D addition mirroring the shape getters | 10 |
+| `b2Body_EnableHitEvents` | Body.EnableHitEvents(flag) writing through to every attached shape; Body.AreHitEventsEnabled is a documented Physics2D addition mirroring the shape getters | 10 |
 | `b2Body_EnableSleep` | Body.EnableSleep | 3 |
 | `b2Body_GetAngularDamping` | Body.GetAngularDamping || 6 |
 | `b2Body_GetAngularVelocity` | Body.GetAngularVelocity || 6 |
@@ -475,13 +475,13 @@ Mapping conventions:
 | `b2Joint_GetCollideConnected` | Joint.GetCollideConnected | 9 |
 | `b2Joint_GetConstraintForce` | Joint.GetConstraintForce | 9 |
 | `b2Joint_GetConstraintTorque` | Joint.GetConstraintTorque | 9 |
-| `b2Joint_GetConstraintTuning` | Joint.GetConstraintTuning | 9 |
+| `b2Joint_GetConstraintTuning` | Joint.GetConstraintHertz and Joint.GetConstraintDampingRatio | 9 |
 | `b2Joint_GetLinearSeparation` | Joint.GetLinearSeparation | 9 |
 | `b2Joint_GetLocalAnchorA` | Joint.GetLocalAnchorA | 9 |
 | `b2Joint_GetLocalAnchorB` | Joint.GetLocalAnchorB | 9 |
 | `b2Joint_GetLocalAxisA` | Joint.GetLocalAxisA | 9 |
 | `b2Joint_GetReferenceAngle` | Joint.GetReferenceAngle | 9 |
-| `b2Joint_GetType` | Joint.GetType | 9 |
+| `b2Joint_GetType` | Joint.GetJointType | 9 |
 | `b2Joint_GetUserData` | Joint.GetUserData | 9 |
 | `b2Joint_GetWorld` | Joint.GetWorld | 9 |
 | `b2Joint_IsValid` | Joint.IsValid | 9 |
@@ -642,7 +642,7 @@ Mapping conventions:
 
 | Upstream symbol | Physics2D mapping | Stage |
 |---|---|---|
-| `b2DynamicTree_Create` | Protected internal DynamicTree.Create | 5 |
+| `b2DynamicTree_Create` | Protected internal DynamicTree constructor | 5 |
 | `b2DynamicTree_CreateProxy` | Protected internal DynamicTree.CreateProxy | 5 |
 | `b2DynamicTree_Destroy` | Protected internal DynamicTree.Destroy | 5 |
 | `b2DynamicTree_DestroyProxy` | Protected internal DynamicTree.DestroyProxy | 5 |
@@ -652,7 +652,7 @@ Mapping conventions:
 | `b2DynamicTree_GetByteCount` | Excluded (v1): GC-managed node storage has no faithful byte count | 5 |
 | `b2DynamicTree_GetCategoryBits` | Protected internal DynamicTree.GetCategoryBits | 5 |
 | `b2DynamicTree_GetHeight` | Protected internal DynamicTree.GetHeight | 5 |
-| `b2DynamicTree_GetProxyCount` | Protected internal DynamicTree.GetProxyCount | 5 |
+| `b2DynamicTree_GetProxyCount` | Protected internal DynamicTree.ProxyCount (read the property) | 5 |
 | `b2DynamicTree_GetRootBounds` | Protected internal DynamicTree.GetRootBounds | 5 |
 | `b2DynamicTree_GetUserData` | Protected internal DynamicTree.GetUserData | 5 |
 | `b2DynamicTree_MoveProxy` | Protected internal DynamicTree.MoveProxy | 5 |

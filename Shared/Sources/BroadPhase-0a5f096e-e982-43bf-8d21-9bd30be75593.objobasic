@@ -159,6 +159,14 @@ Me.Trees[Integer(BodyType.DynamicBody)].Rebuild(False)
 Me.Trees[Integer(BodyType.KinematicBody)].Rebuild(False)
 End Sub
 
+## Rebuilds the static tree with a full quality build, ported from the
+## static-tree branch of b2World_RebuildStaticTree. The step path only
+## enlarges proxies, so static geometry moved through transform writes
+## needs this call to restore optimal tree quality.
+Sub RebuildStaticTree()
+Me.Trees[Integer(BodyType.StaticBody)].Rebuild(True)
+End Sub
+
 ## Returns the shape index carried by a proxy.
 Function GetShapeIndex(proxyKey As Integer) As Integer
 Var typeIndex As Integer = BroadPhase.ProxyType(proxyKey)

@@ -1,0 +1,89 @@
+# Stage 10 tests: API reconciliation between the Stage 0 inventory and the
+# implementation. Covers the static-tree rebuild entry and the body-level
+# event enablers, the last unmapped inventory rows.
+Import Physics2D
+
+Class Stage10Tests Inherits TestCase
+
+## Rebuilding the static tree after moving static geometry keeps queries,
+## contacts, and validation consistent, ported from b2World_RebuildStaticTree.
+Public Sub TestRebuildStaticTree()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var platformDef As New BodyDefinition
+platformDef.Position = New Vector2(6.0, 0.0)
+Var platform As Body = world.CreateBody(platformDef)
+platform.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(1.0, 0.5))
+Var secondDef As New BodyDefinition
+secondDef.Position = New Vector2(-6.0, 0.0)
+Var second As Body = world.CreateBody(secondDef)
+second.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(1.0, 0.5))
+
+# A falling box lands on the platform.
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+boxDef.Position = New Vector2(6.0, 4.0)
+Var box As Body = world.CreateBody(boxDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Stage10Tests.Steps(world, 90)
+PhysicsAssert.Near(0.75, world.GetBodyTransform(box).P.Y, 0.02, 0.02, "box rests on the platform")
+
+# Move the platform away and rebuild the static tree. A sleeping box
+# stays asleep exactly like upstream (moving static geometry does not
+# wake touching bodies, verified against a pinned-source C probe); an
+# explicitly woken box falls past the moved platform.
+platform.SetTransform(New Vector2(20.0, 0.0), New Rot(1.0, 0.0))
+world.RebuildStaticTree()
+world.Validate()
+Stage10Tests.Steps(world, 180)
+Assert.True(box.IsAwake() = False, "sleeping box stays asleep like upstream")
+PhysicsAssert.Near(0.75, world.GetBodyTransform(box).P.Y, 0.02, 0.02, "sleeping box keeps its rest pose")
+box.SetAwake(True)
+Stage10Tests.Steps(world, 180)
+Assert.True(world.GetBodyTransform(box).P.Y < 0.0, "woken box falls past the moved platform")
+# An overlap query at the new static position finds the moved platform.
+Var bounds As New AABB(New Vector2(19.5, -0.5), New Vector2(20.5, 0.5))
+Var hits As New ShapeHitList
+world.OverlapBoundsInto(bounds, New QueryFilter, hits)
+Assert.Equal(1, hits.Count, "query finds the moved static platform after the rebuild")
+world.Validate()
+End Sub
+
+## Body-level event enablers write through to every attached shape, ported
+## from b2Body_EnableContactEvents and b2Body_EnableHitEvents.
+Public Sub TestBodyEventEnablers()
+Var world As New World
+Var bodyDef As New BodyDefinition
+Var body As Body = world.CreateBody(bodyDef)
+Assert.True(body.AreContactEventsEnabled() = False, "empty body reports no contact events")
+Assert.True(body.AreHitEventsEnabled() = False, "empty body reports no hit events")
+Var shapeDef As New ShapeDefinition
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+body.CreateCircle(shapeDef, New Circle(New Vector2(0.5, 0.0), 0.25))
+Assert.True(body.AreContactEventsEnabled() = False, "event flags default off")
+Assert.True(body.AreHitEventsEnabled() = False, "hit flags default off")
+body.EnableContactEvents(True)
+body.EnableHitEvents(True)
+Assert.True(body.AreContactEventsEnabled(), "body-level contact enable writes through")
+Assert.True(body.AreHitEventsEnabled(), "body-level hit enable writes through")
+# Disabling one shape's flag makes the body-level getter false.
+Var shapes As Array(Of Shape) = body.GetShapes()
+shapes[0].EnableContactEvents = False
+Assert.True(body.AreContactEventsEnabled() = False, "one disabled shape clears the body-level getter")
+Assert.True(body.AreHitEventsEnabled(), "hit flags unaffected")
+body.EnableContactEvents(True)
+Assert.True(body.AreContactEventsEnabled(), "re-enabling restores the body-level getter")
+world.Validate()
+End Sub
+
+## Steps the world at 60 Hz.
+Shared Sub Steps(world As World, count As Integer)
+Var i As Integer = 0
+While i < count
+world.StepWorld(1.0 / 60.0)
+i = i + 1
+Wend
+End Sub
+End Class
