@@ -1,0 +1,28 @@
+# World statistics snapshot, ported from upstream b2Counters in types.h.
+# The byte, stack, and task counters of the C struct are excluded: Objo
+# manages memory and the deterministic scalar solver has no task scheduler.
+# The world owns one reusable record; Counters() refreshes it in place.
+Class WorldCounters
+## Number of live bodies.
+Property BodyCount As Integer
+## Number of live shapes.
+Property ShapeCount As Integer
+## Number of live contacts.
+Property ContactCount As Integer
+## Number of live joints.
+Property JointCount As Integer
+## Number of live islands.
+Property IslandCount As Integer
+## Height of the static broad-phase tree.
+Property StaticTreeHeight As Integer
+## Height of the tallest dynamic or kinematic broad-phase tree.
+Property TreeHeight As Integer
+## Constraint row count per graph colour, indexed by colour; the overflow
+## colour sits at index 11.
+Property ColorCounts() As Integer
+
+## Creates an empty record with the colour array zeroed.
+Constructor()
+Me.ColorCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+End Constructor
+End Class

@@ -226,6 +226,69 @@ Var pullX As Double = world.GetBodyLinearVelocity(boxC).X
 Assert.True(pullX < 0.0, "negative impulse pulls the box toward the centre")
 world.Validate()
 End Sub
+## World counters reflect the live scene, ported from b2World_GetCounters.
+Public Sub TestCounters()
+Var world As World = Stage10Tests.MakeMoverWorld()
+Var boxA As Body = Stage9Tests.MakeDraggedBox(world, -0.6, 6.0)
+Var boxB As Body = Stage9Tests.MakeDraggedBox(world, 0.6, 6.0)
+Var def As New RevoluteJointDefinition
+def.BodyA = boxA
+def.BodyB = boxB
+world.CreateRevoluteJoint(def)
+# While the scene is awake the colour counts cover the live constraint
+# rows.
+Stage10Tests.Steps(world, 30)
+Var counters As WorldCounters = world.Counters()
+# Two ground shapes (segment and polygon) plus two boxes.
+Assert.Equal(4, counters.BodyCount, "body count")
+Assert.Equal(4, counters.ShapeCount, "shape count")
+Assert.Equal(1, counters.JointCount, "joint count")
+Assert.True(counters.IslandCount >= 1, "islands exist")
+Assert.True(counters.StaticTreeHeight >= 1, "static tree has height")
+Assert.True(counters.TreeHeight >= 1, "dynamic tree has height")
+Var colourSum As Integer = 0
+Var i As Integer = 0
+While i < 12
+colourSum = colourSum + counters.ColorCounts[i]
+i = i + 1
+Wend
+Assert.True(colourSum >= counters.JointCount, "colour counts cover the awake joint rows")
+# After the scene sleeps the constraint rows leave the graph colours and
+# move into the sleeping solver set, so the colour sum drops to zero
+# while the live joint count stays.
+Stage10Tests.Steps(world, 150)
+counters = world.Counters()
+Assert.Equal(1, counters.JointCount, "sleeping joint stays live")
+Assert.True(counters.ContactCount >= 1, "resting boxes hold ground contacts")
+colourSum = 0
+i = 0
+While i < 12
+colourSum = colourSum + counters.ColorCounts[i]
+i = i + 1
+Wend
+Assert.Equal(0, colourSum, "sleeping scene empties the graph colours")
+world.Validate()
+End Sub
+
+## The step profile reports positive stage times, ported from
+## b2World_GetProfile at Physics2D's stage granularity.
+Public Sub TestStepProfile()
+Var world As World = Stage10Tests.MakeMoverWorld()
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 0.0, 5.0)
+Stage10Tests.Steps(world, 60)
+Var profile As WorldProfile = world.Profile()
+Assert.True(profile.StepMs >= 0.0, "step time recorded")
+Assert.True(profile.PairsMs >= 0.0, "pairs time recorded")
+Assert.True(profile.CollideMs >= 0.0, "collide time recorded")
+Assert.True(profile.SolveMs >= 0.0, "solve time recorded")
+Assert.True(profile.SensorsMs >= 0.0, "sensors time recorded")
+# Coarse clocks can report exact zeros for fast stages, so only bound
+# the totals after a heavy step.
+Stage10Tests.Steps(world, 240)
+profile = world.Profile()
+Assert.True(profile.StepMs > 0.0, "stepped world records a positive step time")
+world.Validate()
+End Sub
 End Class
 
 # Records mover collision planes for the Stage 10 tests. StopAfterFirst

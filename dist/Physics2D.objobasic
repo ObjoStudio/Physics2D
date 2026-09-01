@@ -129,19 +129,21 @@
 # Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
 # Input: WheelJoint.objobasic 063db7c796ee6df9b2ed0d4db36d51dec921e3a61ec1b001cd6ab07308136b4d
 # Input: WheelJointDefinition.objobasic 1ae60874c31b501cb219d8af36f26398fea1ad6a74eb924c08d53b70109e0641
-# Input: World.objobasic 962d803f2250ff07bd2d52ea2779a5c90c771abc50add1ef7d9e7da5cc9d66ac
+# Input: World.objobasic 3a65212e823bac28b3a06ade608c352b09e6d62eab5791fbe4a625b5009111e8
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
+# Input: WorldCounters.objobasic d77a7a134e677e6c387b086034e1ec984829d66679d8887753fcaa6254cdffb7
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldMoverCastContext.objobasic 8fc345845092d5e3be521532ba4c2f3689ae87e4e28788620145307bc88c80b7
 # Input: WorldMoverCollideContext.objobasic 852413232a33ce66c6abbb3cebe1f62b55710e2f5a2fb75dbc13b1db58f5d641
 # Input: WorldMoverPlaneCallback.objobasic 6083e6e711ac09d6c3f5366294b90be6701b858be4d97e421abc1efbe3e0af8f
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
 # Input: WorldOverlapContext.objobasic d6427a128c7da4c7c28607ce9ce2938ee735594398b6d8bddeaffa2f0f678585
+# Input: WorldProfile.objobasic 4a1c944e1651b2fe5b3ce69c0f02fc5a1f7d7d80982aa6d4ca976f6c742bcf60
 # Input: WorldRayCastContext.objobasic 7c4264d0297661dbf4824b319ee8829160c85017c99cd14f565d93c505c22614
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 6e41d97edfadb3a5fea36aea1afdc47bec13a50c28421958bc2777d5b832eab4
+# Source content checksum (SHA-256): 59ffb4e01ca87793b4bf2e04fd12cbab336ca70bf6c9cc0c270ccfedfd7ae941
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -21549,6 +21551,12 @@ Property mMoverCollideContext As WorldMoverCollideContext
 
 ## Reusable explosion context; engine-internal.
 Property mExplosionContext As ExplosionContext
+
+## Reusable counters record; engine-internal.
+Property mCounters As WorldCounters
+
+## Reusable profile record; engine-internal.
+Property mProfile As WorldProfile
 ## Reused local ray cast input for shape casts.
 Private Property mLocalRayInput As RayCastInput
 ## Reused local shape cast input for shape casts.
@@ -21779,6 +21787,44 @@ aabb.UpperBound.Set(def.Position.X + reach, def.Position.Y + reach)
 Me.BroadPhase.Trees[Integer(BodyType.DynamicBody)].QueryTo(aabb, def.MaskBits, Me.mExplosionContext, New TreeStats)
 End Sub
 
+## Refreshes and returns the world's reusable statistics record, ported
+## from b2World_GetCounters. The byte, stack, and task counters of the
+## upstream struct are excluded: Objo manages memory and the solver has no
+## task scheduler. Allocation-free after warm-up; the returned record is a
+## live view that the next call overwrites.
+Function Counters() As WorldCounters
+Me.Validate()
+Me.mCounters.BodyCount = Me.Bodies.Count
+Me.mCounters.ShapeCount = Me.Shapes.Count
+Me.mCounters.ContactCount = Me.ContactCount
+Me.mCounters.JointCount = Me.JointCount
+Me.mCounters.IslandCount = Me.Islands.Count
+Me.mCounters.StaticTreeHeight = Me.BroadPhase.Trees[0].GetHeight()
+Var dynamicHeight As Integer = Me.BroadPhase.Trees[2].GetHeight()
+Var kinematicHeight As Integer = Me.BroadPhase.Trees[1].GetHeight()
+If kinematicHeight > dynamicHeight Then
+dynamicHeight = kinematicHeight
+End If
+Me.mCounters.TreeHeight = dynamicHeight
+Var colourIndex As Integer = 0
+While colourIndex < 12
+Var colour As GraphColor = Me.ConstraintGraph.Colors[colourIndex]
+Me.mCounters.ColorCounts[colourIndex] = colour.ContactSims.Count() + colour.JointSims.Count()
+colourIndex = colourIndex + 1
+Wend
+Return Me.mCounters
+End Function
+
+## The reusable profile of the most recent step, ported from
+## b2World_GetProfile at Physics2D's stage granularity. All times are
+## wall-clock milliseconds measured with the Objo clock; the record is
+## overwritten by every step. The zero-alloc step path only writes into
+## this record.
+Function Profile() As WorldProfile
+Me.Validate()
+Return Me.mProfile
+End Function
+
 ## Collides a capsule mover against the world and registers one collision
 ## plane per overlapping shape, ported from b2World_CollideMover. The
 ## callback receives each hit shape and its world-space plane result and
@@ -21939,6 +21985,8 @@ Me.mShapeCastContext = New WorldShapeCastContext
 Me.mMoverCastContext = New WorldMoverCastContext
 Me.mMoverCollideContext = New WorldMoverCollideContext
 Me.mExplosionContext = New ExplosionContext
+Me.mCounters = New WorldCounters
+Me.mProfile = New WorldProfile
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
 Me.mTransformScratchB = New Transform
@@ -22153,8 +22201,14 @@ End If
 
 Me.Locked = True
 
+# Profile the stage granularity of this step, ported from the profile
+# capture in b2World_Step. System.Ticks reads the monotonic clock.
+Var stepStart As Double = System.Ticks
+Var stageStart As Double = stepStart
+
 # Discover new contacts from moved proxies.
 Me.UpdateBroadPhasePairs()
+Me.mProfile.PairsMs = (System.Ticks - stageStart) * 1000.0
 
 Var context As StepContext = Me.mStepScratch
 context.Dt = timeStep
@@ -22183,12 +22237,20 @@ Var awakeSetForContext As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
 context.States = awakeSetForContext.States
 Me.InvH = context.InvH
 
+stageStart = System.Ticks
 Me.CollideStep(context)
+Me.mProfile.CollideMs = (System.Ticks - stageStart) * 1000.0
+
+stageStart = System.Ticks
 Me.SolveStep(context)
+Me.mProfile.SolveMs = (System.Ticks - stageStart) * 1000.0
 
 # Sensor overlaps run after the solve so sensors read post-solve
 # transforms, ported from b2OverlapSensors' call site in b2World_Step.
+stageStart = System.Ticks
 Me.OverlapSensors()
+Me.mProfile.SensorsMs = (System.Ticks - stageStart) * 1000.0
+Me.mProfile.StepMs = (System.Ticks - stepStart) * 1000.0
 
 # Swap end event array buffers so this step's end events stay readable
 # until the end of the next step.
@@ -27092,6 +27154,35 @@ Abstract Class WorldCastCallback
 Abstract Function VisitShape(shape As Shape, point As Vector2, normal As Vector2, fraction As Double) As Double
 End Class
 
+# World statistics snapshot, ported from upstream b2Counters in types.h.
+# The byte, stack, and task counters of the C struct are excluded: Objo
+# manages memory and the deterministic scalar solver has no task scheduler.
+# The world owns one reusable record; Counters() refreshes it in place.
+Class WorldCounters
+## Number of live bodies.
+Property BodyCount As Integer
+## Number of live shapes.
+Property ShapeCount As Integer
+## Number of live contacts.
+Property ContactCount As Integer
+## Number of live joints.
+Property JointCount As Integer
+## Number of live islands.
+Property IslandCount As Integer
+## Height of the static broad-phase tree.
+Property StaticTreeHeight As Integer
+## Height of the tallest dynamic or kinematic broad-phase tree.
+Property TreeHeight As Integer
+## Constraint row count per graph colour, indexed by colour; the overflow
+## colour sits at index 11.
+Property ColorCounts() As Integer
+
+## Creates an empty record with the colour array zeroed.
+Constructor()
+Me.ColorCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+End Constructor
+End Class
+
 # Reusable view over the world's internal event buffers, valid until the
 # next Step, Clear, or destructive world operation. The view never copies:
 # counts and accessors read the world-owned columns directly, and shape or
@@ -27401,6 +27492,25 @@ End If
 Me.Hits.AddHit(shape)
 Return True
 End Function
+End Class
+
+# World step profile, ported from upstream b2Profile in types.h. Physics2D
+# measures its own stage granularity: the broad-phase pair pass, the
+# collision pass, the solve pass, and the sensor pass, plus the whole step.
+# Upstream's finer solver stage timings are internal to the port's fused
+# solve pass. All times are wall-clock milliseconds measured with the Objo
+# clock. The world owns one reusable record; each step overwrites it.
+Class WorldProfile
+## Milliseconds spent in the whole step.
+Property StepMs As Double
+## Milliseconds spent updating broad-phase pairs.
+Property PairsMs As Double
+## Milliseconds spent in the collision pass.
+Property CollideMs As Double
+## Milliseconds spent in the solve pass.
+Property SolveMs As Double
+## Milliseconds spent detecting sensor overlaps.
+Property SensorsMs As Double
 End Class
 
 # Engine-internal tree ray cast adapter for world ray casts, ported from

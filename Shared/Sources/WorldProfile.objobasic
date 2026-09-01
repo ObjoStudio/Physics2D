@@ -1,0 +1,18 @@
+# World step profile, ported from upstream b2Profile in types.h. Physics2D
+# measures its own stage granularity: the broad-phase pair pass, the
+# collision pass, the solve pass, and the sensor pass, plus the whole step.
+# Upstream's finer solver stage timings are internal to the port's fused
+# solve pass. All times are wall-clock milliseconds measured with the Objo
+# clock. The world owns one reusable record; each step overwrites it.
+Class WorldProfile
+## Milliseconds spent in the whole step.
+Property StepMs As Double
+## Milliseconds spent updating broad-phase pairs.
+Property PairsMs As Double
+## Milliseconds spent in the collision pass.
+Property CollideMs As Double
+## Milliseconds spent in the solve pass.
+Property SolveMs As Double
+## Milliseconds spent detecting sensor overlaps.
+Property SensorsMs As Double
+End Class

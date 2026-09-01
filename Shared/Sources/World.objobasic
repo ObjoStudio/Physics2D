@@ -115,6 +115,12 @@ Property mMoverCollideContext As WorldMoverCollideContext
 
 ## Reusable explosion context; engine-internal.
 Property mExplosionContext As ExplosionContext
+
+## Reusable counters record; engine-internal.
+Property mCounters As WorldCounters
+
+## Reusable profile record; engine-internal.
+Property mProfile As WorldProfile
 ## Reused local ray cast input for shape casts.
 Private Property mLocalRayInput As RayCastInput
 ## Reused local shape cast input for shape casts.
@@ -345,6 +351,44 @@ aabb.UpperBound.Set(def.Position.X + reach, def.Position.Y + reach)
 Me.BroadPhase.Trees[Integer(BodyType.DynamicBody)].QueryTo(aabb, def.MaskBits, Me.mExplosionContext, New TreeStats)
 End Sub
 
+## Refreshes and returns the world's reusable statistics record, ported
+## from b2World_GetCounters. The byte, stack, and task counters of the
+## upstream struct are excluded: Objo manages memory and the solver has no
+## task scheduler. Allocation-free after warm-up; the returned record is a
+## live view that the next call overwrites.
+Function Counters() As WorldCounters
+Me.Validate()
+Me.mCounters.BodyCount = Me.Bodies.Count
+Me.mCounters.ShapeCount = Me.Shapes.Count
+Me.mCounters.ContactCount = Me.ContactCount
+Me.mCounters.JointCount = Me.JointCount
+Me.mCounters.IslandCount = Me.Islands.Count
+Me.mCounters.StaticTreeHeight = Me.BroadPhase.Trees[0].GetHeight()
+Var dynamicHeight As Integer = Me.BroadPhase.Trees[2].GetHeight()
+Var kinematicHeight As Integer = Me.BroadPhase.Trees[1].GetHeight()
+If kinematicHeight > dynamicHeight Then
+dynamicHeight = kinematicHeight
+End If
+Me.mCounters.TreeHeight = dynamicHeight
+Var colourIndex As Integer = 0
+While colourIndex < 12
+Var colour As GraphColor = Me.ConstraintGraph.Colors[colourIndex]
+Me.mCounters.ColorCounts[colourIndex] = colour.ContactSims.Count() + colour.JointSims.Count()
+colourIndex = colourIndex + 1
+Wend
+Return Me.mCounters
+End Function
+
+## The reusable profile of the most recent step, ported from
+## b2World_GetProfile at Physics2D's stage granularity. All times are
+## wall-clock milliseconds measured with the Objo clock; the record is
+## overwritten by every step. The zero-alloc step path only writes into
+## this record.
+Function Profile() As WorldProfile
+Me.Validate()
+Return Me.mProfile
+End Function
+
 ## Collides a capsule mover against the world and registers one collision
 ## plane per overlapping shape, ported from b2World_CollideMover. The
 ## callback receives each hit shape and its world-space plane result and
@@ -505,6 +549,8 @@ Me.mShapeCastContext = New WorldShapeCastContext
 Me.mMoverCastContext = New WorldMoverCastContext
 Me.mMoverCollideContext = New WorldMoverCollideContext
 Me.mExplosionContext = New ExplosionContext
+Me.mCounters = New WorldCounters
+Me.mProfile = New WorldProfile
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
 Me.mTransformScratchB = New Transform
@@ -719,8 +765,14 @@ End If
 
 Me.Locked = True
 
+# Profile the stage granularity of this step, ported from the profile
+# capture in b2World_Step. System.Ticks reads the monotonic clock.
+Var stepStart As Double = System.Ticks
+Var stageStart As Double = stepStart
+
 # Discover new contacts from moved proxies.
 Me.UpdateBroadPhasePairs()
+Me.mProfile.PairsMs = (System.Ticks - stageStart) * 1000.0
 
 Var context As StepContext = Me.mStepScratch
 context.Dt = timeStep
@@ -749,12 +801,20 @@ Var awakeSetForContext As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
 context.States = awakeSetForContext.States
 Me.InvH = context.InvH
 
+stageStart = System.Ticks
 Me.CollideStep(context)
+Me.mProfile.CollideMs = (System.Ticks - stageStart) * 1000.0
+
+stageStart = System.Ticks
 Me.SolveStep(context)
+Me.mProfile.SolveMs = (System.Ticks - stageStart) * 1000.0
 
 # Sensor overlaps run after the solve so sensors read post-solve
 # transforms, ported from b2OverlapSensors' call site in b2World_Step.
+stageStart = System.Ticks
 Me.OverlapSensors()
+Me.mProfile.SensorsMs = (System.Ticks - stageStart) * 1000.0
+Me.mProfile.StepMs = (System.Ticks - stepStart) * 1000.0
 
 # Swap end event array buffers so this step's end events stay readable
 # until the end of the next step.

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "WorldCounters",
+  "Id": "ec6cdfb5-2131-48f0-b938-1b9e11fe4c5b",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "WorldCounters.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}
