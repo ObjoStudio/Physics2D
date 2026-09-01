@@ -1,0 +1,28 @@
+# Explosion definition, ported from upstream b2ExplosionDef and
+# b2DefaultExplosionDef in types.h. All fields default to zero: the
+# explosion applies impulses to dynamic shapes within the radius plus
+# falloff distance, scaled by the shape perimeter facing the explosion.
+Class ExplosionDefinition
+## Mask bits filtering the shapes the explosion reaches. Defaults to all
+## bits set.
+Property MaskBits As Integer
+## The centre of the explosion in world space, in metres.
+Property Position As Vector2
+## The radius of the full-strength explosion in metres.
+Property Radius As Double
+## The falloff distance beyond the radius in metres. The impulse reduces
+## linearly to zero at this distance.
+Property Falloff As Double
+## Impulse per unit length of facing perimeter, typically in
+## kilogram-metres per second per metre. May be negative for implosions.
+Property ImpulsePerLength As Double
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.MaskBits = PhysicsConstants.DEFAULT_MASK_BITS
+Me.Position = New Vector2(0.0, 0.0)
+Me.Radius = 0.0
+Me.Falloff = 0.0
+Me.ImpulsePerLength = 0.0
+End Constructor
+End Class

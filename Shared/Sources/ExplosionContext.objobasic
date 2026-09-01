@@ -1,0 +1,169 @@
+# Engine-internal tree query adapter for world explosions, ported from
+# upstream ExplosionContext and ExplosionCallback in world.c. One instance
+# is owned by the World and reused across explosions. Per dynamic shape in
+# range it wakes the body and applies the facing-perimeter impulse at the
+# closest point.
+Class ExplosionContext Inherits TreeQueryCallback
+## The world driving the explosion.
+Property Owner As World
+## The explosion centre in world space.
+Property Position As Vector2
+## The full-strength radius.
+Property Radius As Double
+## The falloff distance beyond the radius.
+Property Falloff As Double
+## Impulse per unit length of facing perimeter.
+Property ImpulsePerLength As Double
+
+## Creates an unbound context; the world fills the fields per explosion.
+Constructor()
+Me.Owner = Nothing
+Me.Position = New Vector2(0.0, 0.0)
+Me.Radius = 0.0
+Me.Falloff = 0.0
+Me.ImpulsePerLength = 0.0
+End Constructor
+
+## Tree leaf visit: distance gate, wake, then the facing-perimeter
+## impulse at the closest point. Returns True to continue traversal.
+Override Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Var shape As Shape = Me.Owner.Shapes[userData]
+If Not shape.Live Then
+Return True
+End If
+Var body As Body = Me.Owner.Bodies[shape.BodyId]
+
+# Distance from the explosion centre to the shape, radii included,
+# matching the upstream useRadii = true query.
+Var input As New DistanceInput
+input.ProxyA = shape.DistanceProxy
+Var centrePoints() As Vector2 = [Me.Position]
+input.ProxyB = ShapeProxy.Make(centrePoints, 1, 0.0)
+input.TransformA = Me.Owner.GetShapeTransform(shape)
+input.TransformB = New Transform(New Vector2(0.0, 0.0), New Rot(1.0, 0.0))
+input.UseRadii = True
+Var cache As New SimplexCache
+Var output As DistanceOutput = Distance.ShapeDistance(input, cache)
+
+If output.Distance > Me.Radius + Me.Falloff Then
+Return True
+End If
+
+# Wake the body; the impulse application below re-wakes through the
+# public path when the wake succeeded.
+body.SetAwake(True)
+If body.IsAwake() = False Then
+Return True
+End If
+
+Var closestX As Double = output.PointA.X
+Var closestY As Double = output.PointA.Y
+If output.Distance = 0.0 Then
+# Deep overlap: use the shape centroid in world space.
+Var centroidLocal As Vector2 = ShapeCentroid(shape)
+Var transform As Transform = Me.Owner.GetShapeTransform(shape)
+closestX = transform.P.X + transform.Q.C * centroidLocal.X - transform.Q.S * centroidLocal.Y
+closestY = transform.P.Y + transform.Q.S * centroidLocal.X + transform.Q.C * centroidLocal.Y
+End If
+
+Var directionX As Double = closestX - Me.Position.X
+Var directionY As Double = closestY - Me.Position.Y
+Var lengthSquared As Double = directionX * directionX + directionY * directionY
+If lengthSquared > 100.0 * PhysicsConstants.FLT_EPSILON * PhysicsConstants.FLT_EPSILON Then
+Var length As Double = Maths.Sqrt(lengthSquared)
+directionX = directionX / length
+directionY = directionY / length
+Else
+directionX = 1.0
+directionY = 0.0
+End If
+
+# The perimeter facing the explosion, computed on the local geometry
+# against the local line, ported from b2GetShapeProjectedPerimeter.
+Var invC As Double = Me.Owner.GetShapeTransform(shape).Q.C
+Var invS As Double = -Me.Owner.GetShapeTransform(shape).Q.S
+Var localLineX As Double = invC * directionX - invS * directionY
+Var localLineY As Double = invS * directionX + invC * directionY
+Var perimeter As Double = ShapeProjectedPerimeter(shape, localLineX, localLineY)
+
+Var scale As Double = 1.0
+If output.Distance > Me.Radius And Me.Falloff > 0.0 Then
+Var falloffScale As Double = (Me.Radius + Me.Falloff - output.Distance) / Me.Falloff
+If falloffScale < 0.0 Then
+falloffScale = 0.0
+ElseIf falloffScale > 1.0 Then
+falloffScale = 1.0
+End If
+scale = falloffScale
+End If
+
+Var magnitude As Double = Me.ImpulsePerLength * perimeter * scale
+Var impulse As New Vector2(magnitude * directionX, magnitude * directionY)
+Var closest As New Vector2(closestX, closestY)
+body.ApplyLinearImpulse(impulse, closest, False)
+Return True
+End Function
+
+## Returns the shape's local centroid, ported from b2GetShapeCentroid.
+Private Shared Function ShapeCentroid(shape As Shape) As Vector2
+If shape.Type = ShapeType.CircleShape Then
+Return New Vector2(shape.Circle.Center.X, shape.Circle.Center.Y)
+ElseIf shape.Type = ShapeType.CapsuleShape Then
+Var midX As Double = 0.5 * (shape.Capsule.Center1.X + shape.Capsule.Center2.X)
+Var midY As Double = 0.5 * (shape.Capsule.Center1.Y + shape.Capsule.Center2.Y)
+Return New Vector2(midX, midY)
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Return New Vector2(shape.Polygon.Centroid.X, shape.Polygon.Centroid.Y)
+ElseIf shape.Type = ShapeType.SegmentShape Then
+Var midX As Double = 0.5 * (shape.Segment.Point1.X + shape.Segment.Point2.X)
+Var midY As Double = 0.5 * (shape.Segment.Point1.Y + shape.Segment.Point2.Y)
+Return New Vector2(midX, midY)
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+Var midX As Double = 0.5 * (shape.ChainSegment.Segment.Point1.X + shape.ChainSegment.Segment.Point2.X)
+Var midY As Double = 0.5 * (shape.ChainSegment.Segment.Point1.Y + shape.ChainSegment.Segment.Point2.Y)
+Return New Vector2(midX, midY)
+End If
+Return New Vector2(0.0, 0.0)
+End Function
+
+## Returns the shape's local perimeter projected onto the line, ported
+## from b2GetShapeProjectedPerimeter.
+Private Shared Function ShapeProjectedPerimeter(shape As Shape, lineX As Double, lineY As Double) As Double
+If shape.Type = ShapeType.CapsuleShape Then
+Var axisX As Double = shape.Capsule.Center2.X - shape.Capsule.Center1.X
+Var axisY As Double = shape.Capsule.Center2.Y - shape.Capsule.Center1.Y
+Var projected As Double = Maths.Abs(axisX * lineX + axisY * lineY)
+Return projected + 2.0 * shape.Capsule.Radius
+ElseIf shape.Type = ShapeType.CircleShape Then
+Return 2.0 * shape.Circle.Radius
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Var vertices() As Vector2 = shape.Polygon.Vertices
+Var count As Integer = shape.Polygon.Count
+Var value As Double = vertices[0].X * lineX + vertices[0].Y * lineY
+Var lower As Double = value
+Var upper As Double = value
+Var i As Integer = 1
+While i < count
+value = vertices[i].X * lineX + vertices[i].Y * lineY
+If value < lower Then
+lower = value
+End If
+If value > upper Then
+upper = value
+End If
+i = i + 1
+Wend
+Return (upper - lower) + 2.0 * shape.Polygon.Radius
+ElseIf shape.Type = ShapeType.SegmentShape Then
+Var value1 As Double = shape.Segment.Point1.X * lineX + shape.Segment.Point1.Y * lineY
+Var value2 As Double = shape.Segment.Point2.X * lineX + shape.Segment.Point2.Y * lineY
+Return Maths.Abs(value2 - value1)
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+Var value1 As Double = shape.ChainSegment.Segment.Point1.X * lineX + shape.ChainSegment.Segment.Point1.Y * lineY
+Var value2 As Double = shape.ChainSegment.Segment.Point2.X * lineX + shape.ChainSegment.Segment.Point2.Y * lineY
+Return Maths.Abs(value2 - value1)
+End If
+Return 0.0
+End Function
+End Class

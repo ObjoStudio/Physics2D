@@ -49,6 +49,8 @@
 # Input: DistanceScratch-b2490261-2e05-45e6-97e1-2d0a41723f65.objobasic f9e1514b2da2d9421f452082d7ddeb84aa9a1af10c333bc05ee6a01d7f050c04
 # Input: DoubleList-bf54ef29-8eae-4760-bd6b-fae9a46f6114.objobasic 88f6cd11834dcbdad3bd27ec627e3538f2f2427177020c6047c557ecb4019516
 # Input: DynamicTree-55542eb0-42a0-4347-b11f-3b7e2e8c53c6.objobasic ac6b68a02f16f857df7fa0607843ce77b76e57169086dccc5e8fa413bc9456d7
+# Input: ExplosionContext.objobasic 50ac424b117e66bcfd9ebaccb41a3bc60459640a16f6c0033b0dd3718ae61cc3
+# Input: ExplosionDefinition.objobasic 4b0f80307b6eebaae79be6472388a61c0594699dd4cd2387f45b739062a74439
 # Input: Filter.objobasic 455187bd46728c62c4c2784de321128dacf43ccf7964a1352b88c042796bac78
 # Input: FilterJoint.objobasic 6b40e027e46250267b9e3dfbcddf908e73e6ad80936c5b6af4700cfd32010ce2
 # Input: FilterJointDefinition.objobasic e840e135996c7b5167db0264730afe7bb286b3c0baf36f70caaf3d11ed925ad9
@@ -127,7 +129,7 @@
 # Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
 # Input: WheelJoint.objobasic 063db7c796ee6df9b2ed0d4db36d51dec921e3a61ec1b001cd6ab07308136b4d
 # Input: WheelJointDefinition.objobasic 1ae60874c31b501cb219d8af36f26398fea1ad6a74eb924c08d53b70109e0641
-# Input: World.objobasic 9aaad5a03cb786d7440a01801c149352080f39ffef204456ef5fb2c5b85d0aeb
+# Input: World.objobasic 962d803f2250ff07bd2d52ea2779a5c90c771abc50add1ef7d9e7da5cc9d66ac
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldMoverCastContext.objobasic 8fc345845092d5e3be521532ba4c2f3689ae87e4e28788620145307bc88c80b7
@@ -139,7 +141,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 7e41cf1062fc48a4aeaeab621c358e208d90dffc821a15b27133e231478f04a3
+# Source content checksum (SHA-256): 6e41d97edfadb3a5fea36aea1afdc47bec13a50c28421958bc2777d5b832eab4
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -9785,6 +9787,205 @@ rootNode.CategoryBits = rootChild1.CategoryBits.BitOr(rootChild2.CategoryBits)
 
 Return scratch.RebuildNodeIndex.Items[0]
 End Function
+End Class
+
+# Engine-internal tree query adapter for world explosions, ported from
+# upstream ExplosionContext and ExplosionCallback in world.c. One instance
+# is owned by the World and reused across explosions. Per dynamic shape in
+# range it wakes the body and applies the facing-perimeter impulse at the
+# closest point.
+Class ExplosionContext Inherits TreeQueryCallback
+## The world driving the explosion.
+Property Owner As World
+## The explosion centre in world space.
+Property Position As Vector2
+## The full-strength radius.
+Property Radius As Double
+## The falloff distance beyond the radius.
+Property Falloff As Double
+## Impulse per unit length of facing perimeter.
+Property ImpulsePerLength As Double
+
+## Creates an unbound context; the world fills the fields per explosion.
+Constructor()
+Me.Owner = Nothing
+Me.Position = New Vector2(0.0, 0.0)
+Me.Radius = 0.0
+Me.Falloff = 0.0
+Me.ImpulsePerLength = 0.0
+End Constructor
+
+## Tree leaf visit: distance gate, wake, then the facing-perimeter
+## impulse at the closest point. Returns True to continue traversal.
+Override Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Var shape As Shape = Me.Owner.Shapes[userData]
+If Not shape.Live Then
+Return True
+End If
+Var body As Body = Me.Owner.Bodies[shape.BodyId]
+
+# Distance from the explosion centre to the shape, radii included,
+# matching the upstream useRadii = true query.
+Var input As New DistanceInput
+input.ProxyA = shape.DistanceProxy
+Var centrePoints() As Vector2 = [Me.Position]
+input.ProxyB = ShapeProxy.Make(centrePoints, 1, 0.0)
+input.TransformA = Me.Owner.GetShapeTransform(shape)
+input.TransformB = New Transform(New Vector2(0.0, 0.0), New Rot(1.0, 0.0))
+input.UseRadii = True
+Var cache As New SimplexCache
+Var output As DistanceOutput = Distance.ShapeDistance(input, cache)
+
+If output.Distance > Me.Radius + Me.Falloff Then
+Return True
+End If
+
+# Wake the body; the impulse application below re-wakes through the
+# public path when the wake succeeded.
+body.SetAwake(True)
+If body.IsAwake() = False Then
+Return True
+End If
+
+Var closestX As Double = output.PointA.X
+Var closestY As Double = output.PointA.Y
+If output.Distance = 0.0 Then
+# Deep overlap: use the shape centroid in world space.
+Var centroidLocal As Vector2 = ShapeCentroid(shape)
+Var transform As Transform = Me.Owner.GetShapeTransform(shape)
+closestX = transform.P.X + transform.Q.C * centroidLocal.X - transform.Q.S * centroidLocal.Y
+closestY = transform.P.Y + transform.Q.S * centroidLocal.X + transform.Q.C * centroidLocal.Y
+End If
+
+Var directionX As Double = closestX - Me.Position.X
+Var directionY As Double = closestY - Me.Position.Y
+Var lengthSquared As Double = directionX * directionX + directionY * directionY
+If lengthSquared > 100.0 * PhysicsConstants.FLT_EPSILON * PhysicsConstants.FLT_EPSILON Then
+Var length As Double = Maths.Sqrt(lengthSquared)
+directionX = directionX / length
+directionY = directionY / length
+Else
+directionX = 1.0
+directionY = 0.0
+End If
+
+# The perimeter facing the explosion, computed on the local geometry
+# against the local line, ported from b2GetShapeProjectedPerimeter.
+Var invC As Double = Me.Owner.GetShapeTransform(shape).Q.C
+Var invS As Double = -Me.Owner.GetShapeTransform(shape).Q.S
+Var localLineX As Double = invC * directionX - invS * directionY
+Var localLineY As Double = invS * directionX + invC * directionY
+Var perimeter As Double = ShapeProjectedPerimeter(shape, localLineX, localLineY)
+
+Var scale As Double = 1.0
+If output.Distance > Me.Radius And Me.Falloff > 0.0 Then
+Var falloffScale As Double = (Me.Radius + Me.Falloff - output.Distance) / Me.Falloff
+If falloffScale < 0.0 Then
+falloffScale = 0.0
+ElseIf falloffScale > 1.0 Then
+falloffScale = 1.0
+End If
+scale = falloffScale
+End If
+
+Var magnitude As Double = Me.ImpulsePerLength * perimeter * scale
+Var impulse As New Vector2(magnitude * directionX, magnitude * directionY)
+Var closest As New Vector2(closestX, closestY)
+body.ApplyLinearImpulse(impulse, closest, False)
+Return True
+End Function
+
+## Returns the shape's local centroid, ported from b2GetShapeCentroid.
+Private Shared Function ShapeCentroid(shape As Shape) As Vector2
+If shape.Type = ShapeType.CircleShape Then
+Return New Vector2(shape.Circle.Center.X, shape.Circle.Center.Y)
+ElseIf shape.Type = ShapeType.CapsuleShape Then
+Var midX As Double = 0.5 * (shape.Capsule.Center1.X + shape.Capsule.Center2.X)
+Var midY As Double = 0.5 * (shape.Capsule.Center1.Y + shape.Capsule.Center2.Y)
+Return New Vector2(midX, midY)
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Return New Vector2(shape.Polygon.Centroid.X, shape.Polygon.Centroid.Y)
+ElseIf shape.Type = ShapeType.SegmentShape Then
+Var midX As Double = 0.5 * (shape.Segment.Point1.X + shape.Segment.Point2.X)
+Var midY As Double = 0.5 * (shape.Segment.Point1.Y + shape.Segment.Point2.Y)
+Return New Vector2(midX, midY)
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+Var midX As Double = 0.5 * (shape.ChainSegment.Segment.Point1.X + shape.ChainSegment.Segment.Point2.X)
+Var midY As Double = 0.5 * (shape.ChainSegment.Segment.Point1.Y + shape.ChainSegment.Segment.Point2.Y)
+Return New Vector2(midX, midY)
+End If
+Return New Vector2(0.0, 0.0)
+End Function
+
+## Returns the shape's local perimeter projected onto the line, ported
+## from b2GetShapeProjectedPerimeter.
+Private Shared Function ShapeProjectedPerimeter(shape As Shape, lineX As Double, lineY As Double) As Double
+If shape.Type = ShapeType.CapsuleShape Then
+Var axisX As Double = shape.Capsule.Center2.X - shape.Capsule.Center1.X
+Var axisY As Double = shape.Capsule.Center2.Y - shape.Capsule.Center1.Y
+Var projected As Double = Maths.Abs(axisX * lineX + axisY * lineY)
+Return projected + 2.0 * shape.Capsule.Radius
+ElseIf shape.Type = ShapeType.CircleShape Then
+Return 2.0 * shape.Circle.Radius
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Var vertices() As Vector2 = shape.Polygon.Vertices
+Var count As Integer = shape.Polygon.Count
+Var value As Double = vertices[0].X * lineX + vertices[0].Y * lineY
+Var lower As Double = value
+Var upper As Double = value
+Var i As Integer = 1
+While i < count
+value = vertices[i].X * lineX + vertices[i].Y * lineY
+If value < lower Then
+lower = value
+End If
+If value > upper Then
+upper = value
+End If
+i = i + 1
+Wend
+Return (upper - lower) + 2.0 * shape.Polygon.Radius
+ElseIf shape.Type = ShapeType.SegmentShape Then
+Var value1 As Double = shape.Segment.Point1.X * lineX + shape.Segment.Point1.Y * lineY
+Var value2 As Double = shape.Segment.Point2.X * lineX + shape.Segment.Point2.Y * lineY
+Return Maths.Abs(value2 - value1)
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+Var value1 As Double = shape.ChainSegment.Segment.Point1.X * lineX + shape.ChainSegment.Segment.Point1.Y * lineY
+Var value2 As Double = shape.ChainSegment.Segment.Point2.X * lineX + shape.ChainSegment.Segment.Point2.Y * lineY
+Return Maths.Abs(value2 - value1)
+End If
+Return 0.0
+End Function
+End Class
+
+# Explosion definition, ported from upstream b2ExplosionDef and
+# b2DefaultExplosionDef in types.h. All fields default to zero: the
+# explosion applies impulses to dynamic shapes within the radius plus
+# falloff distance, scaled by the shape perimeter facing the explosion.
+Class ExplosionDefinition
+## Mask bits filtering the shapes the explosion reaches. Defaults to all
+## bits set.
+Property MaskBits As Integer
+## The centre of the explosion in world space, in metres.
+Property Position As Vector2
+## The radius of the full-strength explosion in metres.
+Property Radius As Double
+## The falloff distance beyond the radius in metres. The impulse reduces
+## linearly to zero at this distance.
+Property Falloff As Double
+## Impulse per unit length of facing perimeter, typically in
+## kilogram-metres per second per metre. May be negative for implosions.
+Property ImpulsePerLength As Double
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.MaskBits = PhysicsConstants.DEFAULT_MASK_BITS
+Me.Position = New Vector2(0.0, 0.0)
+Me.Radius = 0.0
+Me.Falloff = 0.0
+Me.ImpulsePerLength = 0.0
+End Constructor
 End Class
 
 # Collision filtering for shapes, ported from upstream b2Filter in types.h.
@@ -21345,6 +21546,9 @@ Property mMoverCastContext As WorldMoverCastContext
 
 ## Reusable mover collide context; engine-internal.
 Property mMoverCollideContext As WorldMoverCollideContext
+
+## Reusable explosion context; engine-internal.
+Property mExplosionContext As ExplosionContext
 ## Reused local ray cast input for shape casts.
 Private Property mLocalRayInput As RayCastInput
 ## Reused local shape cast input for shape casts.
@@ -21540,6 +21744,41 @@ Wend
 Return fraction
 End Function
 
+## Applies a radial explosion impulse to every dynamic shape within the
+## blast range, ported from b2World_Explode. Each shape receives an
+## impulse scaled by its perimeter facing the explosion centre, applied at
+## the closest point and falling off linearly to zero across the falloff
+## distance; deep overlaps use the shape centroid as the closest point.
+## Wakes every touched body. Only the dynamic tree is queried. Throws
+## while the world is locked or on non-finite or negative definition
+## values.
+Sub Explode(def As ExplosionDefinition)
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "ExplosionDefinition")
+If Not def.Position.X.IsFinite() Or Not def.Position.Y.IsFinite() Then
+Throw New InvalidArgumentException("Explosion position must be finite")
+End If
+If Not def.Radius.IsFinite() Or def.Radius < 0.0 Then
+Throw New InvalidArgumentException("Explosion radius must be finite and non-negative")
+End If
+If Not def.Falloff.IsFinite() Or def.Falloff < 0.0 Then
+Throw New InvalidArgumentException("Explosion falloff must be finite and non-negative")
+End If
+If Not def.ImpulsePerLength.IsFinite() Then
+Throw New InvalidArgumentException("Explosion impulse per length must be finite")
+End If
+Me.mExplosionContext.Owner = Me
+Me.mExplosionContext.Position = New Vector2(def.Position.X, def.Position.Y)
+Me.mExplosionContext.Radius = def.Radius
+Me.mExplosionContext.Falloff = def.Falloff
+Me.mExplosionContext.ImpulsePerLength = def.ImpulsePerLength
+Var reach As Double = def.Radius + def.Falloff
+Var aabb As New AABB
+aabb.LowerBound.Set(def.Position.X - reach, def.Position.Y - reach)
+aabb.UpperBound.Set(def.Position.X + reach, def.Position.Y + reach)
+Me.BroadPhase.Trees[Integer(BodyType.DynamicBody)].QueryTo(aabb, def.MaskBits, Me.mExplosionContext, New TreeStats)
+End Sub
+
 ## Collides a capsule mover against the world and registers one collision
 ## plane per overlapping shape, ported from b2World_CollideMover. The
 ## callback receives each hit shape and its world-space plane result and
@@ -21699,6 +21938,7 @@ Me.mRayCastContext = New WorldRayCastContext
 Me.mShapeCastContext = New WorldShapeCastContext
 Me.mMoverCastContext = New WorldMoverCastContext
 Me.mMoverCollideContext = New WorldMoverCollideContext
+Me.mExplosionContext = New ExplosionContext
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
 Me.mTransformScratchB = New Transform
@@ -24993,8 +25233,17 @@ Me.ValidateBody(body)
 If awake And body.SetIndex >= 3 Then
 Me.WakeBody(body)
 ElseIf Not awake And body.SetIndex = 2 Then
-Var setId As Integer = Me.AllocSleepingSet()
-Me.TransferBody(Me.SolverSets[setId], Me.SolverSets[2], body)
+# Island-aware forced sleep, ported from b2Body_SetAwake: an island with
+# a pending split must split first, then the body's whole island sleeps
+# through the island transfer (a raw body transfer would leave the
+# island's bookkeeping disagreeing with the solver sets).
+If body.IslandId <> PhysicsConstants.NULL_INDEX Then
+Var island As Island = Me.Islands[body.IslandId]
+If island.ConstraintRemoveCount > 0 Then
+IslandMethods.SplitIsland(Me, body.IslandId)
+End If
+Me.TrySleepIsland(body.IslandId)
+End If
 End If
 End Sub
 

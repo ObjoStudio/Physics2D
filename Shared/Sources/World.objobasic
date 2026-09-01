@@ -112,6 +112,9 @@ Property mMoverCastContext As WorldMoverCastContext
 
 ## Reusable mover collide context; engine-internal.
 Property mMoverCollideContext As WorldMoverCollideContext
+
+## Reusable explosion context; engine-internal.
+Property mExplosionContext As ExplosionContext
 ## Reused local ray cast input for shape casts.
 Private Property mLocalRayInput As RayCastInput
 ## Reused local shape cast input for shape casts.
@@ -307,6 +310,41 @@ Wend
 Return fraction
 End Function
 
+## Applies a radial explosion impulse to every dynamic shape within the
+## blast range, ported from b2World_Explode. Each shape receives an
+## impulse scaled by its perimeter facing the explosion centre, applied at
+## the closest point and falling off linearly to zero across the falloff
+## distance; deep overlaps use the shape centroid as the closest point.
+## Wakes every touched body. Only the dynamic tree is queried. Throws
+## while the world is locked or on non-finite or negative definition
+## values.
+Sub Explode(def As ExplosionDefinition)
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "ExplosionDefinition")
+If Not def.Position.X.IsFinite() Or Not def.Position.Y.IsFinite() Then
+Throw New InvalidArgumentException("Explosion position must be finite")
+End If
+If Not def.Radius.IsFinite() Or def.Radius < 0.0 Then
+Throw New InvalidArgumentException("Explosion radius must be finite and non-negative")
+End If
+If Not def.Falloff.IsFinite() Or def.Falloff < 0.0 Then
+Throw New InvalidArgumentException("Explosion falloff must be finite and non-negative")
+End If
+If Not def.ImpulsePerLength.IsFinite() Then
+Throw New InvalidArgumentException("Explosion impulse per length must be finite")
+End If
+Me.mExplosionContext.Owner = Me
+Me.mExplosionContext.Position = New Vector2(def.Position.X, def.Position.Y)
+Me.mExplosionContext.Radius = def.Radius
+Me.mExplosionContext.Falloff = def.Falloff
+Me.mExplosionContext.ImpulsePerLength = def.ImpulsePerLength
+Var reach As Double = def.Radius + def.Falloff
+Var aabb As New AABB
+aabb.LowerBound.Set(def.Position.X - reach, def.Position.Y - reach)
+aabb.UpperBound.Set(def.Position.X + reach, def.Position.Y + reach)
+Me.BroadPhase.Trees[Integer(BodyType.DynamicBody)].QueryTo(aabb, def.MaskBits, Me.mExplosionContext, New TreeStats)
+End Sub
+
 ## Collides a capsule mover against the world and registers one collision
 ## plane per overlapping shape, ported from b2World_CollideMover. The
 ## callback receives each hit shape and its world-space plane result and
@@ -466,6 +504,7 @@ Me.mRayCastContext = New WorldRayCastContext
 Me.mShapeCastContext = New WorldShapeCastContext
 Me.mMoverCastContext = New WorldMoverCastContext
 Me.mMoverCollideContext = New WorldMoverCollideContext
+Me.mExplosionContext = New ExplosionContext
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
 Me.mTransformScratchB = New Transform
@@ -3760,8 +3799,17 @@ Me.ValidateBody(body)
 If awake And body.SetIndex >= 3 Then
 Me.WakeBody(body)
 ElseIf Not awake And body.SetIndex = 2 Then
-Var setId As Integer = Me.AllocSleepingSet()
-Me.TransferBody(Me.SolverSets[setId], Me.SolverSets[2], body)
+# Island-aware forced sleep, ported from b2Body_SetAwake: an island with
+# a pending split must split first, then the body's whole island sleeps
+# through the island transfer (a raw body transfer would leave the
+# island's bookkeeping disagreeing with the solver sets).
+If body.IslandId <> PhysicsConstants.NULL_INDEX Then
+Var island As Island = Me.Islands[body.IslandId]
+If island.ConstraintRemoveCount > 0 Then
+IslandMethods.SplitIsland(Me, body.IslandId)
+End If
+Me.TrySleepIsland(body.IslandId)
+End If
 End If
 End Sub
 

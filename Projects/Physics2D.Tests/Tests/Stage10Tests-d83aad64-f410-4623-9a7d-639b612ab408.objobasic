@@ -78,6 +78,18 @@ Assert.True(body.AreContactEventsEnabled(), "re-enabling restores the body-level
 world.Validate()
 End Sub
 
+## Builds a dynamic box for the explosion tests.
+Shared Function MakeExplosionBox(world As World, x As Double, y As Double) As Body
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(x, y)
+Var body As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Return body
+End Function
+
 ## Steps the world at 60 Hz.
 Shared Sub Steps(world As World, count As Integer)
 Var i As Integer = 0
@@ -174,6 +186,46 @@ wall.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(0.5, 2.0))
 world.UpdateBroadPhasePairs()
 Return world
 End Function
+## An explosion pushes boxes away from the centre with the facing-perimeter
+## impulse, scaled by the falloff, and skips shapes out of range, ported
+## from b2World_Explode. The expected velocities were recorded from the
+## pinned upstream source.
+Public Sub TestExplosionAppliesImpulses()
+Var world As New World
+Var boxA As Body = Stage10Tests.MakeExplosionBox(world, 0.8, 0.3)
+Var boxB As Body = Stage10Tests.MakeExplosionBox(world, 2.0, 0.3)
+Var boxC As Body = Stage10Tests.MakeExplosionBox(world, 5.0, 0.3)
+Var def As New ExplosionDefinition
+def.Position = New Vector2(0.0, 0.0)
+def.Radius = 1.0
+def.Falloff = 2.0
+def.ImpulsePerLength = 2.0
+boxC.SetAwake(False)
+world.Explode(def)
+Var velocityA As Vector2 = world.GetBodyLinearVelocity(boxA)
+Var velocityB As Vector2 = world.GetBodyLinearVelocity(boxB)
+Var velocityC As Vector2 = world.GetBodyLinearVelocity(boxC)
+PhysicsAssert.Near(4.327869, velocityA.X, 0.01, 0.01, "inner box push x")
+PhysicsAssert.Near(0.393443, velocityA.Y, 0.01, 0.01, "inner box push y")
+PhysicsAssert.Near(2.567863, velocityB.X, 0.01, 0.01, "falloff box push x")
+PhysicsAssert.Near(0.073368, velocityB.Y, 0.01, 0.01, "falloff box push y")
+PhysicsAssert.Near(0.0, velocityC.X, 1e-9, 1e-9, "out-of-range box untouched x")
+PhysicsAssert.Near(0.0, velocityC.Y, 1e-9, 1e-9, "out-of-range box untouched y")
+Assert.True(boxA.IsAwake(), "explosion wakes the inner box")
+Assert.True(boxC.IsAwake() = False, "out-of-range box stays asleep")
+world.Validate()
+# A negative impulse per length implodes: the blast centre sits 0.95 m
+# from box C's near face, inside the 1.0 m radius.
+Var implodeDef As New ExplosionDefinition
+implodeDef.Position = New Vector2(3.8, 0.3)
+implodeDef.Radius = 1.0
+implodeDef.Falloff = 0.5
+implodeDef.ImpulsePerLength = -2.0
+world.Explode(implodeDef)
+Var pullX As Double = world.GetBodyLinearVelocity(boxC).X
+Assert.True(pullX < 0.0, "negative impulse pulls the box toward the centre")
+world.Validate()
+End Sub
 End Class
 
 # Records mover collision planes for the Stage 10 tests. StopAfterFirst

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ExplosionDefinition",
+  "Id": "4d83d852-c200-443a-aa30-111a72cd4f26",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "ExplosionDefinition.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}
