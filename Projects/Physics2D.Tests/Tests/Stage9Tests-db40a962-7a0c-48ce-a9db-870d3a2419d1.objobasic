@@ -18,6 +18,12 @@ Private Property mCrossMouseDef As MouseJointDefinition
 ## Mouse joint used by the validation throwers.
 Private Property mMouseThrowJoint As MouseJoint
 
+## Motor definition reused by the cross-world throwers.
+Private Property mCrossMotorDef As MotorJointDefinition
+
+## Motor joint used by the validation throwers.
+Private Property mMotorThrowJoint As MotorJoint
+
 ## Builds a world with a wide static ground box whose top surface is y=0.
 Shared Function MakeWorld() As World
 Var world As New World
@@ -95,6 +101,20 @@ def.Hertz = hertz
 def.DampingRatio = dampingRatio
 def.MaxForce = maxForce
 Return world.CreateMouseJoint(def)
+End Function
+
+## Builds a motor joint driving the box toward the offset pose with the
+## given force clamp, torque clamp, and correction factor.
+Shared Function MakeMotorJoint(world As World, bodyA As Body, bodyB As Body, offsetX As Double, offsetY As Double, angularOffset As Double, maxForce As Double, maxTorque As Double, correctionFactor As Double) As MotorJoint
+Var def As New MotorJointDefinition
+def.BodyA = bodyA
+def.BodyB = bodyB
+def.LinearOffset = New Vector2(offsetX, offsetY)
+def.AngularOffset = angularOffset
+def.MaxForce = maxForce
+def.MaxTorque = maxTorque
+def.CorrectionFactor = correctionFactor
+Return world.CreateMotorJoint(def)
 End Function
 
 ## A rigid distance joint holds two hanging boxes at the rest length.
@@ -967,6 +987,388 @@ Assert.True(box.IsAwake() = False, "box asleep after measured window")
 world.Validate()
 End Sub
 
+## A motor joint drives the box to the position and angle offset relative
+## to a static ground and holds it against gravity with the weight as the
+## equilibrium force. This is the upstream default correction factor.
+Public Sub TestMotorJointDrivesBodyToPose()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 3.0, 0.5)
+Var joint As MotorJoint = Stage9Tests.MakeMotorJoint(world, ground, box, 3.0, 2.0, 0.5, 500.0, 200.0, 0.3)
+Assert.Equal(JointType.MotorJoint, joint.GetJointType(), "motor joint type")
+Var offset As Vector2 = joint.GetLinearOffset()
+PhysicsAssert.Near(3.0, offset.X, 0.0, 0.0, "linear offset x round trip")
+PhysicsAssert.Near(2.0, offset.Y, 0.0, 0.0, "linear offset y round trip")
+Assert.Equal(0.5, joint.GetAngularOffset(), "angular offset round trip")
+Assert.Equal(500.0, joint.GetMaxForce(), "max force round trip")
+Assert.Equal(200.0, joint.GetMaxTorque(), "max torque round trip")
+Assert.Equal(0.3, joint.GetCorrectionFactor(), "correction factor round trip")
+Stage9Tests.Steps(world, 240)
+Var transform As Transform = world.GetBodyTransform(box)
+PhysicsAssert.Near(3.0, transform.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "driven to offset pose x")
+PhysicsAssert.Near(1.0, transform.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "driven to offset pose y")
+PhysicsAssert.Near(0.5, Rot.GetAngle(transform.Q), 0.001, 0.001, "driven to angular offset")
+Assert.True(box.IsAwake() = False, "driven body falls asleep at the pose")
+Var force As Vector2 = joint.GetConstraintForce()
+PhysicsAssert.Near(0.0, force.X, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "settled force x")
+PhysicsAssert.Near(2.5, force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "settled force holds the 0.25 kg weight")
+PhysicsAssert.Near(0.0, joint.GetConstraintTorque(), Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "settled torque")
+Assert.Equal(0.0, joint.GetLinearSeparation(), "motor joint reports no linear separation")
+world.Validate()
+End Sub
+
+## A motor joint whose maximum torque is zero rotates nothing while the
+## linear drive still works, and one whose maximum force is below the
+## weight saturates its impulse clamp so the body falls at the expected
+## reduced acceleration.
+Public Sub TestMotorJointClamps()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 3.0, 0.5)
+Stage9Tests.MakeMotorJoint(world, ground, box, 3.0, 2.0, 0.5, 500.0, 0.0, 1.0)
+Stage9Tests.Steps(world, 240)
+Var transform As Transform = world.GetBodyTransform(box)
+PhysicsAssert.Near(3.0, transform.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "zero-torque drive still reaches pose x")
+PhysicsAssert.Near(1.0, transform.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "zero-torque drive still reaches pose y")
+PhysicsAssert.Near(0.0, Rot.GetAngle(transform.Q), 0.001, 0.001, "zero torque never rotates the body")
+Assert.True(box.IsAwake() = False, "zero-torque driven body sleeps at the pose")
+world.Validate()
+
+Var weakWorld As World = Stage9Tests.MakeMouseWorld()
+Var weakGround As Body = weakWorld.Bodies[0]
+Var weakBox As Body = Stage9Tests.MakeDraggedBox(weakWorld, 3.0, 0.5)
+Var weakJoint As MotorJoint = Stage9Tests.MakeMotorJoint(weakWorld, weakGround, weakBox, 3.0, 2.0, 0.5, 1.0, 200.0, 1.0)
+Stage9Tests.Steps(weakWorld, 120)
+Var force As Vector2 = weakJoint.GetConstraintForce()
+Var magnitude As Double = Maths.Sqrt(force.X * force.X + force.Y * force.Y)
+Assert.True(magnitude <= 1.0 + 0.01, "clamped motor force stays within the maximum")
+PhysicsAssert.Near(1.0, force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "motor clamp saturates upward pull")
+# Recorded upstream endpoint of the same scene: the 1 N clamp against the
+# 2.5 N weight yields the constant 6 m/s^2 fall (see the weak-clamp probe
+# for joint_motor fixtures and the matching mouse scene).
+PhysicsAssert.Near(-11.524978, weakWorld.GetBodyTransform(weakBox).P.Y, 0.02, 0.02, "clamped body falls at 6 m/s^2")
+Assert.True(weakBox.IsAwake(), "clamped falling body stays awake")
+weakWorld.Validate()
+End Sub
+
+## A motor joint drives body B to the offset pose relative to a dynamic
+## body A; the relative pose converges and both bodies sleep.
+Public Sub TestMotorJointBetweenDynamicBodies()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var carrierDef As New BodyDefinition
+carrierDef.Type = BodyType.DynamicBody
+carrierDef.Position = New Vector2(0.0, 0.5)
+Var carrier As Body = world.CreateBody(carrierDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+carrier.CreatePolygon(shapeDef, Polygon.MakeBox(0.5, 0.5))
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 3.0, 0.5)
+Stage9Tests.MakeMotorJoint(world, carrier, box, 3.0, 2.0, 0.5, 500.0, 200.0, 0.3)
+Stage9Tests.Steps(world, 240)
+Var carrierTransform As Transform = world.GetBodyTransform(carrier)
+Var boxTransform As Transform = world.GetBodyTransform(box)
+Var relativeX As Double = boxTransform.P.X - carrierTransform.P.X
+Var relativeY As Double = boxTransform.P.Y - carrierTransform.P.Y
+PhysicsAssert.Near(3.0, relativeX, 0.005, 0.005, "relative pose offset x")
+PhysicsAssert.Near(2.0, relativeY, 0.005, 0.005, "relative pose offset y")
+Var relativeAngle As Double = Rot.GetAngle(boxTransform.Q) - Rot.GetAngle(carrierTransform.Q)
+PhysicsAssert.Near(0.5, relativeAngle, 0.005, 0.005, "relative pose angle")
+Assert.True(box.IsAwake() = False, "driven body sleeps")
+Assert.True(carrier.IsAwake() = False, "carrier sleeps")
+world.Validate()
+End Sub
+
+## Motor joint tuning setters round trip; force and torque clamp negative
+## inputs to zero and the correction factor clamps into [0, 1] like
+## upstream, non-finite inputs throw, and offset changes do not wake a
+## sleeping body.
+Public Sub TestMotorJointRuntimeProperties()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 3.0, 0.5)
+Var joint As MotorJoint = Stage9Tests.MakeMotorJoint(world, ground, box, 3.0, 2.0, 0.5, 500.0, 200.0, 0.3)
+Me.mMotorThrowJoint = joint
+joint.SetLinearOffset(New Vector2(1.0, 4.0))
+joint.SetAngularOffset(-0.25)
+joint.SetMaxForce(80.0)
+joint.SetMaxTorque(40.0)
+joint.SetCorrectionFactor(0.8)
+Var offset As Vector2 = joint.GetLinearOffset()
+PhysicsAssert.Near(1.0, offset.X, 0.0, 0.0, "runtime linear offset x")
+PhysicsAssert.Near(4.0, offset.Y, 0.0, 0.0, "runtime linear offset y")
+Assert.Equal(-0.25, joint.GetAngularOffset(), "runtime angular offset")
+Assert.Equal(80.0, joint.GetMaxForce(), "runtime max force")
+Assert.Equal(40.0, joint.GetMaxTorque(), "runtime max torque")
+Assert.Equal(0.8, joint.GetCorrectionFactor(), "runtime correction factor")
+# Upstream clamps rather than throwing for negative force and torque and
+# for correction factors outside [0, 1].
+joint.SetMaxForce(-5.0)
+Assert.Equal(0.0, joint.GetMaxForce(), "negative max force clamps to zero")
+joint.SetMaxTorque(-5.0)
+Assert.Equal(0.0, joint.GetMaxTorque(), "negative max torque clamps to zero")
+joint.SetCorrectionFactor(-1.0)
+Assert.Equal(0.0, joint.GetCorrectionFactor(), "correction factor clamps at zero")
+joint.SetCorrectionFactor(2.0)
+Assert.Equal(1.0, joint.GetCorrectionFactor(), "correction factor clamps at one")
+joint.SetCorrectionFactor(0.3)
+joint.SetMaxForce(500.0)
+joint.SetMaxTorque(200.0)
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowMotorNonFiniteOffset)
+joint.SetUserData(box)
+Assert.True(joint.GetUserData() = box, "motor user data round trip")
+# A sleeping body stays asleep across offset changes.
+Stage9Tests.Steps(world, 120)
+Assert.True(box.IsAwake() = False, "body asleep before retarget")
+Var frozen As Transform = world.GetBodyTransform(box)
+joint.SetLinearOffset(5.0, 4.0)
+joint.SetAngularOffset(1.0)
+Assert.True(box.IsAwake() = False, "retarget does not wake a sleeping body")
+Stage9Tests.Steps(world, 30)
+Var still As Transform = world.GetBodyTransform(box)
+PhysicsAssert.Near(frozen.P.X, still.P.X, 0.001, 0.001, "sleeping body ignores the retarget")
+PhysicsAssert.Near(frozen.P.Y, still.P.Y, 0.001, 0.001, "sleeping body ignores the retarget vertically")
+box.SetAwake(True)
+Stage9Tests.Steps(world, 240)
+Var moved As Transform = world.GetBodyTransform(box)
+PhysicsAssert.Near(5.0, moved.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "woken body chases the new pose")
+PhysicsAssert.Near(3.0, moved.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "woken body chases the new pose vertically")
+PhysicsAssert.Near(1.0, Rot.GetAngle(moved.Q), 0.005, 0.005, "woken body chases the new angle")
+Assert.True(box.IsAwake() = False, "body sleeps at the new pose")
+world.Validate()
+End Sub
+
+## Recreates the three motor-joint scenes of the joint_motor golden fixture
+## and compares final transforms, awake flags, and constraint forces against
+## upstream Box2D 3.1.1 output generated from the pinned sources.
+Public Sub TestMotorJointMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("joint_motor.txt")
+
+Var poseWorld As World = Stage9Tests.MakeMouseWorld()
+Var poseGround As Body = poseWorld.Bodies[0]
+Var poseBody As Body = Stage9Tests.MakeDraggedBox(poseWorld, 3.0, 0.5)
+Var poseJoint As MotorJoint = Stage9Tests.MakeMotorJoint(poseWorld, poseGround, poseBody, 3.0, 2.0, 0.5, 500.0, 200.0, 0.3)
+Var retargetWorld As World = Stage9Tests.MakeMouseWorld()
+Var retargetGround As Body = retargetWorld.Bodies[0]
+Var retargetBody As Body = Stage9Tests.MakeDraggedBox(retargetWorld, 3.0, 0.5)
+Var retargetJoint As MotorJoint = Stage9Tests.MakeMotorJoint(retargetWorld, retargetGround, retargetBody, 3.0, 1.5, 0.0, 2000.0, 800.0, 1.0)
+Var clampedWorld As World = Stage9Tests.MakeMouseWorld()
+Var clampedGround As Body = clampedWorld.Bodies[0]
+Var clampedBody As Body = Stage9Tests.MakeDraggedBox(clampedWorld, 3.0, 0.5)
+Var clampedJoint As MotorJoint = Stage9Tests.MakeMotorJoint(clampedWorld, clampedGround, clampedBody, 3.0, 2.0, 0.0, 3.0, 1.0, 1.0)
+
+Var frameIndex As Integer = 0
+While frameIndex < 240
+Stage9Tests.StepMotorFrame(retargetWorld, retargetJoint, retargetBody, frameIndex)
+If frameIndex < 239 Then
+poseWorld.StepWorld(1.0 / 60.0)
+clampedWorld.StepWorld(1.0 / 60.0)
+End If
+frameIndex = frameIndex + 1
+Wend
+
+Var checkedRecords As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+Var caseName As String = fields[1]
+Var kind As String = fields[2]
+If kind = "body" Then
+Var values() As String = fields[4].Split(" ")
+Var expectedX As Double = Double.Parse(values[0])
+Var expectedY As Double = Double.Parse(values[1])
+Var expectedAngle As Double = Double.Parse(values[2])
+Var expectedAwake As Integer = Integer.Parse(values[3])
+Var label As String = caseName + " body"
+Var world As World = Nothing
+Var body As Body = Nothing
+If caseName = "pose" Then
+world = poseWorld
+body = poseBody
+ElseIf caseName = "retarget" Then
+world = retargetWorld
+body = retargetBody
+ElseIf caseName = "clamped" Then
+world = clampedWorld
+body = clampedBody
+Else
+Assert.Fail("unknown motor fixture body " + caseName)
+End If
+Var transform As Transform = world.GetBodyTransform(body)
+PhysicsAssert.Near(expectedX, transform.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, label + " x")
+PhysicsAssert.Near(expectedY, transform.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, label + " y")
+PhysicsAssert.Near(expectedAngle, Rot.GetAngle(transform.Q), Tolerances.SCENE_ABS, Tolerances.SCENE_REL, label + " angle")
+If expectedAwake = 1 Then
+Assert.True(body.IsAwake(), label + " awake")
+Else
+Assert.True(body.IsAwake() = False, label + " asleep")
+End If
+ElseIf kind = "motor" Then
+Var jointValues() As String = fields[3].Split(" ")
+Var joint As MotorJoint = Nothing
+If caseName = "pose" Then
+joint = poseJoint
+ElseIf caseName = "retarget" Then
+joint = retargetJoint
+ElseIf caseName = "clamped" Then
+joint = clampedJoint
+Else
+Assert.Fail("unknown motor fixture joint " + caseName)
+End If
+Var force As Vector2 = joint.GetConstraintForce()
+PhysicsAssert.Near(Double.Parse(jointValues[0]), force.X, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, caseName + " force x")
+PhysicsAssert.Near(Double.Parse(jointValues[1]), force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, caseName + " force y")
+PhysicsAssert.Near(Double.Parse(jointValues[2]), joint.GetConstraintTorque(), Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, caseName + " torque")
+Else
+Assert.Fail("unknown motor fixture kind " + kind)
+End If
+checkedRecords = checkedRecords + 1
+Next line
+Assert.Equal(6, checkedRecords)
+poseWorld.Validate()
+retargetWorld.Validate()
+clampedWorld.Validate()
+End Sub
+
+## Steps one frame of a golden motor scene, applying the mid-scene
+## retarget-and-wake at frame sixty.
+Shared Sub StepMotorFrame(world As World, joint As MotorJoint, body As Body, frameIndex As Integer)
+world.StepWorld(1.0 / 60.0)
+If frameIndex = 60 Then
+joint.SetLinearOffset(New Vector2(3.0, 3.0))
+joint.SetAngularOffset(0.5)
+body.SetAwake(True)
+End If
+End Sub
+
+## Motor joint lifecycle: destruction, stale facades, slot reuse, and body
+## destruction destroying the attached joint.
+Public Sub TestMotorJointLifecycle()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 3.0, 0.5)
+Var joint As MotorJoint = Stage9Tests.MakeMotorJoint(world, ground, box, 3.0, 2.0, 0.5, 500.0, 200.0, 0.3)
+Assert.Equal(1, world.JointCount, "one live motor joint")
+Assert.Equal(1, ground.GetJointCount(), "ground holds the joint edge")
+Assert.Equal(1, box.GetJointCount(), "box holds the joint edge")
+Assert.True(joint.IsValid(), "facade valid after creation")
+Var reusedId As Integer = joint.Id
+Stage9Tests.Steps(world, 30)
+joint.Destroy()
+Assert.False(joint.IsValid(), "stale facade invalid after destroy")
+Assert.Equal(0, world.JointCount, "world empty after destroy")
+Assert.Equal(0, ground.GetJointCount(), "ground unlinked")
+Assert.Equal(0, box.GetJointCount(), "box unlinked")
+Assert.True(box.IsAwake(), "destroy wakes the driven body")
+Var replacement As MotorJoint = Stage9Tests.MakeMotorJoint(world, ground, box, 1.0, 2.0, 0.0, 500.0, 200.0, 0.3)
+Assert.Equal(reusedId, replacement.Id, "slot reused")
+Assert.False(joint.IsValid(), "stale facade stays invalid after slot reuse")
+world.DestroyBody(box)
+Assert.Equal(0, world.JointCount, "attached motor joint destroyed with the body")
+Stage9Tests.Steps(world, 10)
+world.Validate()
+End Sub
+
+## Cross-world and missing motor joint bodies are rejected at creation.
+Public Sub TestMotorJointRejectsCrossWorldBodies()
+Var worldA As New World
+Var worldB As New World
+Var bodyA As Body = Stage9Tests.MakeDraggedBox(worldA, 3.0, 0.5)
+Var bodyB As Body = Stage9Tests.MakeDraggedBox(worldB, 3.0, 0.5)
+Var def As New MotorJointDefinition
+def.BodyA = bodyA
+def.BodyB = bodyB
+Me.mCrossMotorDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldMotorJoint)
+def.BodyB = Nothing
+Me.mCrossMotorDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldMotorJoint)
+def.BodyA = Nothing
+def.BodyB = bodyB
+Me.mCrossMotorDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldMotorJoint)
+worldA.Validate()
+worldB.Validate()
+End Sub
+
+## A motor joint drags the body deterministically across repeated worlds.
+Public Sub TestMotorJointDeterminism()
+Var first As World = Stage9Tests.MakeMotorDriveWorld()
+Var second As World = Stage9Tests.MakeMotorDriveWorld()
+Stage9Tests.Steps(first, 240)
+Stage9Tests.Steps(second, 240)
+Var firstChecksum As Integer = Stage9Tests.FoldWorld(first)
+Var secondChecksum As Integer = Stage9Tests.FoldWorld(second)
+Assert.Equal(firstChecksum, secondChecksum, "motor drive repeats bit for bit")
+first.Validate()
+second.Validate()
+End Sub
+
+## Builds a three-body drive scene with staggered offsets and tunings.
+Shared Function MakeMotorDriveWorld() As World
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var boxA As Body = Stage9Tests.MakeDraggedBox(world, -1.0, 0.5)
+Var boxB As Body = Stage9Tests.MakeDraggedBox(world, 0.0, 0.5)
+Var boxC As Body = Stage9Tests.MakeDraggedBox(world, 1.0, 0.5)
+Stage9Tests.MakeMotorJoint(world, ground, boxA, -1.0, 3.0, 0.25, 500.0, 200.0, 0.3)
+Stage9Tests.MakeMotorJoint(world, ground, boxB, 0.0, 3.0, 0.0, 1000.0, 400.0, 1.0)
+Stage9Tests.MakeMotorJoint(world, ground, boxC, 1.0, 2.0, -0.5, 2000.0, 800.0, 0.5)
+Return world
+End Function
+
+## After a warm-up that covers sleeping, waking, retargeting, and
+## re-sleeping with a motor joint attached, further steps must allocate
+## nothing. Gate for the Stage 9 zero-allocation requirement on the motor
+## family, including the runtime offset-change path.
+Public Sub TestWarmMotorJointAllocatesNothing()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 3.0, 0.5)
+Var joint As MotorJoint = Stage9Tests.MakeMotorJoint(world, ground, box, 3.0, 2.0, 0.5, 500.0, 200.0, 0.3)
+
+# Warm-up: settle, sleep, wake with a retarget, sleep again so every
+# migration buffer and graph colour list is sized.
+Var warmIndex As Integer = 0
+While warmIndex < 120
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+joint.SetLinearOffset(4.0, 3.0)
+joint.SetAngularOffset(0.75)
+box.SetAwake(True)
+While warmIndex < 300
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(box.IsAwake() = False, "box asleep after first retarget warm-up")
+box.SetAwake(True)
+While warmIndex < 420
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(box.IsAwake() = False, "box asleep after warm-up")
+
+# Measured window: wake the body, retarget mid-window, let it sleep. The
+# scalar SetLinearOffset overload keeps the runtime tuning path
+# allocation-free; the wake is explicit because offset changes do not wake
+# a sleeping body.
+Var before As Integer = System.AllocationCount
+box.SetAwake(True)
+Var stepIndex As Integer = 0
+While stepIndex < 90
+world.StepWorld(1.0 / 60.0)
+If stepIndex = 30 Then
+joint.SetLinearOffset(5.0, 4.0)
+box.SetAwake(True)
+End If
+stepIndex = stepIndex + 1
+Wend
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed motor joint stepping allocates nothing")
+Assert.True(box.IsAwake() = False, "box asleep after measured window")
+world.Validate()
+End Sub
+
 ## A chain of distance joints swings and settles deterministically.
 Public Sub TestJointChainDeterminism()
 Var first As World = Stage9Tests.MakeJointChainWorld()
@@ -1088,6 +1490,17 @@ Var world As World = Stage9Tests.MakeMouseWorld()
 world.CreateMouseJoint(Me.mCrossMouseDef)
 End Sub
 
+## Throws a non-finite motor offset.
+Private Sub ThrowMotorNonFiniteOffset()
+Me.mMotorThrowJoint.SetAngularOffset(Double.Infinity)
+End Sub
+
+## Throws while creating a motor joint with a definition that mixes worlds.
+Private Sub ThrowCrossWorldMotorJoint()
+Var world As World = Stage9Tests.MakeMouseWorld()
+world.CreateMotorJoint(Me.mCrossMotorDef)
+End Sub
+
 ## Throws an inverted length range.
 Private Sub ThrowInvertedLengthRange()
 Me.mTuningJoint.SetLengthRange(2.0, 1.0)
@@ -1108,4 +1521,5 @@ End If
 Next i
 Return checksum
 End Function
+
 End Class

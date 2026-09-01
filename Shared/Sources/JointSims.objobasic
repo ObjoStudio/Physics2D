@@ -144,6 +144,42 @@ Property MouseLinearMassXY As DoubleList
 ## Lower-right entry of the symmetric linear effective mass.
 Property MouseLinearMassYY As DoubleList
 
+# Motor joint family columns, ported from upstream b2MotorJoint in joint.h.
+# Valid only while Type = Integer(JointType.MotorJoint). The motor joint
+# reuses the base IndexA/IndexB, AnchorA/AnchorB, DeltaCenter, and inverse
+# mass columns for its two bodies; the constraint ignores the base softness
+# (upstream's solve body never reads it) and uses correction-factor bias.
+## X component of the target position of body B minus body A in body A's
+## frame.
+Property MotorLinearOffsetX As DoubleList
+## Y component of the linear offset target.
+Property MotorLinearOffsetY As DoubleList
+## Target body B angle minus body A angle in radians.
+Property MotorAngularOffset As DoubleList
+## Maximum linear force magnitude.
+Property MotorMaxForce As DoubleList
+## Maximum torque magnitude.
+Property MotorMaxTorque As DoubleList
+## Position correction factor in [0, 1].
+Property MotorCorrectionFactor As DoubleList
+## X component of the accumulated linear impulse.
+Property MotorLinearImpulseX As DoubleList
+## Y component of the accumulated linear impulse.
+Property MotorLinearImpulseY As DoubleList
+## Accumulated angular impulse.
+Property MotorAngularImpulse As DoubleList
+## Upper-left entry of the symmetric 2x2 linear effective mass.
+Property MotorLinearMassXX As DoubleList
+## Off-diagonal entry of the symmetric linear effective mass.
+Property MotorLinearMassXY As DoubleList
+## Lower-right entry of the symmetric linear effective mass.
+Property MotorLinearMassYY As DoubleList
+## Inverse of the sum of both rotational inertias, zero when both are zero.
+Property MotorAngularMass As DoubleList
+## Angle of body B relative to body A at prepare time minus the angular
+## offset, ported from joint->deltaAngle.
+Property MotorDeltaAngle As DoubleList
+
 ## Creates an empty store.
 Constructor()
 Me.JointId = New IntegerList
@@ -206,6 +242,20 @@ Me.MouseAngularSoftnessImpulseScale = New DoubleList
 Me.MouseLinearMassXX = New DoubleList
 Me.MouseLinearMassXY = New DoubleList
 Me.MouseLinearMassYY = New DoubleList
+Me.MotorLinearOffsetX = New DoubleList
+Me.MotorLinearOffsetY = New DoubleList
+Me.MotorAngularOffset = New DoubleList
+Me.MotorMaxForce = New DoubleList
+Me.MotorMaxTorque = New DoubleList
+Me.MotorCorrectionFactor = New DoubleList
+Me.MotorLinearImpulseX = New DoubleList
+Me.MotorLinearImpulseY = New DoubleList
+Me.MotorAngularImpulse = New DoubleList
+Me.MotorLinearMassXX = New DoubleList
+Me.MotorLinearMassXY = New DoubleList
+Me.MotorLinearMassYY = New DoubleList
+Me.MotorAngularMass = New DoubleList
+Me.MotorDeltaAngle = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -279,6 +329,20 @@ Me.MouseAngularSoftnessImpulseScale.Append(0.0)
 Me.MouseLinearMassXX.Append(0.0)
 Me.MouseLinearMassXY.Append(0.0)
 Me.MouseLinearMassYY.Append(0.0)
+Me.MotorLinearOffsetX.Append(0.0)
+Me.MotorLinearOffsetY.Append(0.0)
+Me.MotorAngularOffset.Append(0.0)
+Me.MotorMaxForce.Append(0.0)
+Me.MotorMaxTorque.Append(0.0)
+Me.MotorCorrectionFactor.Append(0.0)
+Me.MotorLinearImpulseX.Append(0.0)
+Me.MotorLinearImpulseY.Append(0.0)
+Me.MotorAngularImpulse.Append(0.0)
+Me.MotorLinearMassXX.Append(0.0)
+Me.MotorLinearMassXY.Append(0.0)
+Me.MotorLinearMassYY.Append(0.0)
+Me.MotorAngularMass.Append(0.0)
+Me.MotorDeltaAngle.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -352,6 +416,20 @@ Me.MouseAngularSoftnessImpulseScale.RemoveSwap(index)
 Me.MouseLinearMassXX.RemoveSwap(index)
 Me.MouseLinearMassXY.RemoveSwap(index)
 Me.MouseLinearMassYY.RemoveSwap(index)
+Me.MotorLinearOffsetX.RemoveSwap(index)
+Me.MotorLinearOffsetY.RemoveSwap(index)
+Me.MotorAngularOffset.RemoveSwap(index)
+Me.MotorMaxForce.RemoveSwap(index)
+Me.MotorMaxTorque.RemoveSwap(index)
+Me.MotorCorrectionFactor.RemoveSwap(index)
+Me.MotorLinearImpulseX.RemoveSwap(index)
+Me.MotorLinearImpulseY.RemoveSwap(index)
+Me.MotorAngularImpulse.RemoveSwap(index)
+Me.MotorLinearMassXX.RemoveSwap(index)
+Me.MotorLinearMassXY.RemoveSwap(index)
+Me.MotorLinearMassYY.RemoveSwap(index)
+Me.MotorAngularMass.RemoveSwap(index)
+Me.MotorDeltaAngle.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -419,6 +497,20 @@ target.MouseAngularSoftnessImpulseScale.Items[targetIndex] = Me.MouseAngularSoft
 target.MouseLinearMassXX.Items[targetIndex] = Me.MouseLinearMassXX.Items[sourceIndex]
 target.MouseLinearMassXY.Items[targetIndex] = Me.MouseLinearMassXY.Items[sourceIndex]
 target.MouseLinearMassYY.Items[targetIndex] = Me.MouseLinearMassYY.Items[sourceIndex]
+target.MotorLinearOffsetX.Items[targetIndex] = Me.MotorLinearOffsetX.Items[sourceIndex]
+target.MotorLinearOffsetY.Items[targetIndex] = Me.MotorLinearOffsetY.Items[sourceIndex]
+target.MotorAngularOffset.Items[targetIndex] = Me.MotorAngularOffset.Items[sourceIndex]
+target.MotorMaxForce.Items[targetIndex] = Me.MotorMaxForce.Items[sourceIndex]
+target.MotorMaxTorque.Items[targetIndex] = Me.MotorMaxTorque.Items[sourceIndex]
+target.MotorCorrectionFactor.Items[targetIndex] = Me.MotorCorrectionFactor.Items[sourceIndex]
+target.MotorLinearImpulseX.Items[targetIndex] = Me.MotorLinearImpulseX.Items[sourceIndex]
+target.MotorLinearImpulseY.Items[targetIndex] = Me.MotorLinearImpulseY.Items[sourceIndex]
+target.MotorAngularImpulse.Items[targetIndex] = Me.MotorAngularImpulse.Items[sourceIndex]
+target.MotorLinearMassXX.Items[targetIndex] = Me.MotorLinearMassXX.Items[sourceIndex]
+target.MotorLinearMassXY.Items[targetIndex] = Me.MotorLinearMassXY.Items[sourceIndex]
+target.MotorLinearMassYY.Items[targetIndex] = Me.MotorLinearMassYY.Items[sourceIndex]
+target.MotorAngularMass.Items[targetIndex] = Me.MotorAngularMass.Items[sourceIndex]
+target.MotorDeltaAngle.Items[targetIndex] = Me.MotorDeltaAngle.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -483,5 +575,19 @@ Me.MouseAngularSoftnessImpulseScale.Clear()
 Me.MouseLinearMassXX.Clear()
 Me.MouseLinearMassXY.Clear()
 Me.MouseLinearMassYY.Clear()
+Me.MotorLinearOffsetX.Clear()
+Me.MotorLinearOffsetY.Clear()
+Me.MotorAngularOffset.Clear()
+Me.MotorMaxForce.Clear()
+Me.MotorMaxTorque.Clear()
+Me.MotorCorrectionFactor.Clear()
+Me.MotorLinearImpulseX.Clear()
+Me.MotorLinearImpulseY.Clear()
+Me.MotorAngularImpulse.Clear()
+Me.MotorLinearMassXX.Clear()
+Me.MotorLinearMassXY.Clear()
+Me.MotorLinearMassYY.Clear()
+Me.MotorAngularMass.Clear()
+Me.MotorDeltaAngle.Clear()
 End Sub
 End Class

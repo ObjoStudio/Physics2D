@@ -58,13 +58,15 @@
 # Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
 # Input: Island.objobasic 44f9b035b888e2dbbec81e2c88390bd8081257a3f57a52efc6fffdddabb10fa4
 # Input: IslandMethods.objobasic 20833e02e72df2d6818e0ebd92de184099fb656f56a10b14b7df86353eda2f6d
-# Input: Joint.objobasic 2bde5fa098c4e52536289d25e3af7ccdc79dfb3687ec6bd384384443d4f5a7ad
-# Input: JointSims.objobasic 660d7a899d40d573083a0ee27f7bf4e9a7bc1fad4df79683d84ebb4b1244261b
-# Input: JointSolver.objobasic 30e9c3beec7269abbfcd08000b96ae1214039897cd385e9e28f2a7fcc923df22
+# Input: Joint.objobasic 0e26039d3ba2b50955401804b38d2b27663b29f4560e51ea720339558e17618b
+# Input: JointSims.objobasic d56ef34ff56e1c602522325738d480b4c1e71e87fda20c7fb4be59cea2fed4e5
+# Input: JointSolver.objobasic ffac754557b346065ccf21cbdad44cc65bf5dbeeafa9c232537e5f101679fec4
 # Input: JointType-856da3bd-dadf-41a2-af79-4e1fcc92c642.objobasic 595178f214846dc7716badeb118dfb5729356f738f99204ff34b849f6fd14838
 # Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 2204114b1a588c77c29b945afd4b19ad7c68f56bce9f68f6a6ee47f5e8463787
 # Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic dcebd68c0b3500bb6ab7688775a8056b75304728e39537252715a4309cc96402
 # Input: MassData-cd26f83f-962d-4695-aa00-893f86fd1099.objobasic 954cf89f8f01ac0ba9e4d378506536bbb64de2e1630351bf9373731366488987
+# Input: MotorJoint.objobasic ea21c6179216c79e6189262613e9865eba867e21fbddad904c55d19ea703fe22
+# Input: MotorJointDefinition.objobasic d39fe2e5443b6898e9f6d8d16bded2692c3c8483496be6dbdbe6363b589788d7
 # Input: MouseJoint.objobasic 148e02225783bf7128a2c67af99a94264b0e4e59e9e7bcf141fe38b44e66b0ab
 # Input: MouseJointDefinition.objobasic 28be646a98699dbd233dba1bc466b171d372095f1a5b0ad6c34412916b34d655
 # Input: Mover-89f8b58a-a5cb-43a1-bb4e-216fd2e79a45.objobasic a0bd07eed0ced42bc9789f0e0b4df2d56c8dc159f7df92c4ba3c75068e33f576
@@ -98,7 +100,7 @@
 # Input: SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic 82bc4694e90f396c176e50cbe8196ea7c809da4842781d5f9750137a1d087314
 # Input: SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic 7c911da9871051f8580713a107d379e349bdc89cf9f9f0e9968f07c29e2f19da
 # Input: Softness.objobasic 06211852d8bbb70e4c5f5479756606be96bb2667bd617c4f635f76a661e47d4a
-# Input: SolverMethods.objobasic f4f1ac6f9014e62cee73915f7da65b8168b505d2b895e188a9b3a865d458795e
+# Input: SolverMethods.objobasic 0a2cdd3831837354aa38dee6df838cee2fdcdb23435f74a62eea13815a4ea7aa
 # Input: SolverSet.objobasic ae57d26036c92d75a660f380cae829c6ef353d45bbba3876779bf1689234a922
 # Input: StepContext.objobasic 0d6a04f453555a2ff4207c21b9cacba5f3f2103f22c2d8ac4dd8c449f7b67e12
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
@@ -115,7 +117,7 @@
 # Input: TreeScratch-3add8e75-acc6-4f27-996e-372dc4d98372.objobasic 35e077b5cec3caafcc6d334013421d7a9612c3ba18ecf97875019b87ac2f9f55
 # Input: TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic 2abd4a4ca724ab02daa1a476dd447403aea4c5d80a507691f770ed20469a832b
 # Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
-# Input: World.objobasic 7bc656b8aed81f7972c18b0d9ab718fbfc96beb6266125c9bbea50dac9182792
+# Input: World.objobasic c3cedc1be0b812ca81db0b8b0413b7f533e5c3cd5a767cf227256b7715867b45
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
@@ -124,7 +126,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): affa757b1552a627c3d06635488f09ea19b7915c363e0ed216f8fd75eca04550
+# Source content checksum (SHA-256): 10d16b283a5fa7e2f3a882b5b8dd0c48b2aefa836d6d02805b451b99931aaeba
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -11753,6 +11755,9 @@ End If
 If Me.Type = JointType.MouseJoint Then
 Return JointSolver.GetMouseJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
+If Me.Type = JointType.MotorJoint Then
+Return JointSolver.GetMotorJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return New Vector2(0.0, 0.0)
 End Function
 
@@ -11762,6 +11767,9 @@ Function GetConstraintTorque() As Double
 Me.CheckValid()
 If Me.Type = JointType.MouseJoint Then
 Return JointSolver.GetMouseJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
+If Me.Type = JointType.MotorJoint Then
+Return JointSolver.GetMotorJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
 Return 0.0
 End Function
@@ -11947,6 +11955,42 @@ Property MouseLinearMassXY As DoubleList
 ## Lower-right entry of the symmetric linear effective mass.
 Property MouseLinearMassYY As DoubleList
 
+# Motor joint family columns, ported from upstream b2MotorJoint in joint.h.
+# Valid only while Type = Integer(JointType.MotorJoint). The motor joint
+# reuses the base IndexA/IndexB, AnchorA/AnchorB, DeltaCenter, and inverse
+# mass columns for its two bodies; the constraint ignores the base softness
+# (upstream's solve body never reads it) and uses correction-factor bias.
+## X component of the target position of body B minus body A in body A's
+## frame.
+Property MotorLinearOffsetX As DoubleList
+## Y component of the linear offset target.
+Property MotorLinearOffsetY As DoubleList
+## Target body B angle minus body A angle in radians.
+Property MotorAngularOffset As DoubleList
+## Maximum linear force magnitude.
+Property MotorMaxForce As DoubleList
+## Maximum torque magnitude.
+Property MotorMaxTorque As DoubleList
+## Position correction factor in [0, 1].
+Property MotorCorrectionFactor As DoubleList
+## X component of the accumulated linear impulse.
+Property MotorLinearImpulseX As DoubleList
+## Y component of the accumulated linear impulse.
+Property MotorLinearImpulseY As DoubleList
+## Accumulated angular impulse.
+Property MotorAngularImpulse As DoubleList
+## Upper-left entry of the symmetric 2x2 linear effective mass.
+Property MotorLinearMassXX As DoubleList
+## Off-diagonal entry of the symmetric linear effective mass.
+Property MotorLinearMassXY As DoubleList
+## Lower-right entry of the symmetric linear effective mass.
+Property MotorLinearMassYY As DoubleList
+## Inverse of the sum of both rotational inertias, zero when both are zero.
+Property MotorAngularMass As DoubleList
+## Angle of body B relative to body A at prepare time minus the angular
+## offset, ported from joint->deltaAngle.
+Property MotorDeltaAngle As DoubleList
+
 ## Creates an empty store.
 Constructor()
 Me.JointId = New IntegerList
@@ -12009,6 +12053,20 @@ Me.MouseAngularSoftnessImpulseScale = New DoubleList
 Me.MouseLinearMassXX = New DoubleList
 Me.MouseLinearMassXY = New DoubleList
 Me.MouseLinearMassYY = New DoubleList
+Me.MotorLinearOffsetX = New DoubleList
+Me.MotorLinearOffsetY = New DoubleList
+Me.MotorAngularOffset = New DoubleList
+Me.MotorMaxForce = New DoubleList
+Me.MotorMaxTorque = New DoubleList
+Me.MotorCorrectionFactor = New DoubleList
+Me.MotorLinearImpulseX = New DoubleList
+Me.MotorLinearImpulseY = New DoubleList
+Me.MotorAngularImpulse = New DoubleList
+Me.MotorLinearMassXX = New DoubleList
+Me.MotorLinearMassXY = New DoubleList
+Me.MotorLinearMassYY = New DoubleList
+Me.MotorAngularMass = New DoubleList
+Me.MotorDeltaAngle = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -12082,6 +12140,20 @@ Me.MouseAngularSoftnessImpulseScale.Append(0.0)
 Me.MouseLinearMassXX.Append(0.0)
 Me.MouseLinearMassXY.Append(0.0)
 Me.MouseLinearMassYY.Append(0.0)
+Me.MotorLinearOffsetX.Append(0.0)
+Me.MotorLinearOffsetY.Append(0.0)
+Me.MotorAngularOffset.Append(0.0)
+Me.MotorMaxForce.Append(0.0)
+Me.MotorMaxTorque.Append(0.0)
+Me.MotorCorrectionFactor.Append(0.0)
+Me.MotorLinearImpulseX.Append(0.0)
+Me.MotorLinearImpulseY.Append(0.0)
+Me.MotorAngularImpulse.Append(0.0)
+Me.MotorLinearMassXX.Append(0.0)
+Me.MotorLinearMassXY.Append(0.0)
+Me.MotorLinearMassYY.Append(0.0)
+Me.MotorAngularMass.Append(0.0)
+Me.MotorDeltaAngle.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -12155,6 +12227,20 @@ Me.MouseAngularSoftnessImpulseScale.RemoveSwap(index)
 Me.MouseLinearMassXX.RemoveSwap(index)
 Me.MouseLinearMassXY.RemoveSwap(index)
 Me.MouseLinearMassYY.RemoveSwap(index)
+Me.MotorLinearOffsetX.RemoveSwap(index)
+Me.MotorLinearOffsetY.RemoveSwap(index)
+Me.MotorAngularOffset.RemoveSwap(index)
+Me.MotorMaxForce.RemoveSwap(index)
+Me.MotorMaxTorque.RemoveSwap(index)
+Me.MotorCorrectionFactor.RemoveSwap(index)
+Me.MotorLinearImpulseX.RemoveSwap(index)
+Me.MotorLinearImpulseY.RemoveSwap(index)
+Me.MotorAngularImpulse.RemoveSwap(index)
+Me.MotorLinearMassXX.RemoveSwap(index)
+Me.MotorLinearMassXY.RemoveSwap(index)
+Me.MotorLinearMassYY.RemoveSwap(index)
+Me.MotorAngularMass.RemoveSwap(index)
+Me.MotorDeltaAngle.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -12222,6 +12308,20 @@ target.MouseAngularSoftnessImpulseScale.Items[targetIndex] = Me.MouseAngularSoft
 target.MouseLinearMassXX.Items[targetIndex] = Me.MouseLinearMassXX.Items[sourceIndex]
 target.MouseLinearMassXY.Items[targetIndex] = Me.MouseLinearMassXY.Items[sourceIndex]
 target.MouseLinearMassYY.Items[targetIndex] = Me.MouseLinearMassYY.Items[sourceIndex]
+target.MotorLinearOffsetX.Items[targetIndex] = Me.MotorLinearOffsetX.Items[sourceIndex]
+target.MotorLinearOffsetY.Items[targetIndex] = Me.MotorLinearOffsetY.Items[sourceIndex]
+target.MotorAngularOffset.Items[targetIndex] = Me.MotorAngularOffset.Items[sourceIndex]
+target.MotorMaxForce.Items[targetIndex] = Me.MotorMaxForce.Items[sourceIndex]
+target.MotorMaxTorque.Items[targetIndex] = Me.MotorMaxTorque.Items[sourceIndex]
+target.MotorCorrectionFactor.Items[targetIndex] = Me.MotorCorrectionFactor.Items[sourceIndex]
+target.MotorLinearImpulseX.Items[targetIndex] = Me.MotorLinearImpulseX.Items[sourceIndex]
+target.MotorLinearImpulseY.Items[targetIndex] = Me.MotorLinearImpulseY.Items[sourceIndex]
+target.MotorAngularImpulse.Items[targetIndex] = Me.MotorAngularImpulse.Items[sourceIndex]
+target.MotorLinearMassXX.Items[targetIndex] = Me.MotorLinearMassXX.Items[sourceIndex]
+target.MotorLinearMassXY.Items[targetIndex] = Me.MotorLinearMassXY.Items[sourceIndex]
+target.MotorLinearMassYY.Items[targetIndex] = Me.MotorLinearMassYY.Items[sourceIndex]
+target.MotorAngularMass.Items[targetIndex] = Me.MotorAngularMass.Items[sourceIndex]
+target.MotorDeltaAngle.Items[targetIndex] = Me.MotorDeltaAngle.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -12286,6 +12386,20 @@ Me.MouseAngularSoftnessImpulseScale.Clear()
 Me.MouseLinearMassXX.Clear()
 Me.MouseLinearMassXY.Clear()
 Me.MouseLinearMassYY.Clear()
+Me.MotorLinearOffsetX.Clear()
+Me.MotorLinearOffsetY.Clear()
+Me.MotorAngularOffset.Clear()
+Me.MotorMaxForce.Clear()
+Me.MotorMaxTorque.Clear()
+Me.MotorCorrectionFactor.Clear()
+Me.MotorLinearImpulseX.Clear()
+Me.MotorLinearImpulseY.Clear()
+Me.MotorAngularImpulse.Clear()
+Me.MotorLinearMassXX.Clear()
+Me.MotorLinearMassXY.Clear()
+Me.MotorLinearMassYY.Clear()
+Me.MotorAngularMass.Clear()
+Me.MotorDeltaAngle.Clear()
 End Sub
 End Class
 
@@ -12311,6 +12425,8 @@ If sims.Type.Items[index] = Integer(JointType.DistanceJoint) Then
 PrepareDistanceJoint(sims, index, context)
 ElseIf sims.Type.Items[index] = Integer(JointType.MouseJoint) Then
 PrepareMouseJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.MotorJoint) Then
+PrepareMotorJoint(sims, index, context)
 End If
 End Sub
 
@@ -12875,6 +12991,296 @@ states.LVY.Items[indexB] = vBY
 states.AngularVelocity.Items[indexB] = wB
 End Sub
 
+## Prepares one motor joint row, ported from b2PrepareMotorJoint. The motor
+## constraint drives the relative pose, so both bodies contribute to the
+## mass matrix. The linear mass is the inverse of the symmetric 2x2
+## combined constraint matrix, stored as three scalars because the matrix
+## is symmetric by construction. Upstream asserts at least one body is
+## awake; a non-awake body stores a NULL_INDEX state row that the warm-start
+## and solve kernels replace with an identity dummy, exactly like the
+## upstream dummy b2BodyState for static bodies.
+Private Shared Sub PrepareMotorJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyA As Body = world.Bodies[sims.BodyIdA.Items[index]]
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simA As BodySims = world.GetBodySim(bodyA)
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexA As Integer = bodyA.LocalIndex
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassA.Items[index] = simA.InvMass.Items[indexA]
+sims.InvIA.Items[index] = simA.InvInertia.Items[indexA]
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexA.Items[index] = indexA
+Else
+sims.IndexA.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+# Anchors at the body origins offset by the local centres; the motor
+# joint creation writes zero local anchors.
+Var localDX As Double = sims.LocalOriginAnchorAX.Items[index] - simA.LCX.Items[indexA]
+Var localDY As Double = sims.LocalOriginAnchorAY.Items[index] - simA.LCY.Items[indexA]
+Var qcA As Double = simA.QC.Items[indexA]
+Var qsA As Double = simA.QS.Items[indexA]
+sims.AnchorAX.Items[index] = qcA * localDX - qsA * localDY
+sims.AnchorAY.Items[index] = qsA * localDX + qcA * localDY
+Var localEX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localEY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localEX - qsB * localEY
+sims.AnchorBY.Items[index] = qsB * localEX + qcB * localEY
+
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA] - sims.MotorLinearOffsetX.Items[index]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA] - sims.MotorLinearOffsetY.Items[index]
+# Relative angle with scalar components: constructing intermediate Rot
+# values here would allocate twice per prepared row per step.
+Var relS As Double = simB.QS.Items[indexB] * simA.QC.Items[indexA] - simB.QC.Items[indexB] * simA.QS.Items[indexA]
+Var relC As Double = simB.QC.Items[indexB] * simA.QC.Items[indexA] + simB.QS.Items[indexB] * simA.QS.Items[indexA]
+sims.MotorDeltaAngle.Items[index] = PhysicsMaths.Atan2(relS, relC) - sims.MotorAngularOffset.Items[index]
+
+Var rAX As Double = sims.AnchorAX.Items[index]
+Var rAY As Double = sims.AnchorAY.Items[index]
+Var rBX As Double = sims.AnchorBX.Items[index]
+Var rBY As Double = sims.AnchorBY.Items[index]
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var k11 As Double = mA + mB + rAY * rAY * iA + rBY * rBY * iB
+Var k12 As Double = -(rAY * rAX * iA + rBY * rBX * iB)
+Var k22 As Double = mA + mB + rAX * rAX * iA + rBX * rBX * iB
+Var det As Double = k11 * k22 - k12 * k12
+If det <> 0.0 Then
+det = 1.0 / det
+End If
+sims.MotorLinearMassXX.Items[index] = det * k22
+sims.MotorLinearMassXY.Items[index] = -det * k12
+sims.MotorLinearMassYY.Items[index] = det * k11
+Var ka As Double = iA + iB
+If ka > 0.0 Then
+sims.MotorAngularMass.Items[index] = 1.0 / ka
+Else
+sims.MotorAngularMass.Items[index] = 0.0
+End If
+
+If context.WarmStartScale = 0.0 Then
+sims.MotorLinearImpulseX.Items[index] = 0.0
+sims.MotorLinearImpulseY.Items[index] = 0.0
+sims.MotorAngularImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored motor joint impulses to both body states before
+## iterating, ported from b2WarmStartMotorJoint. Non-awake bodies use an
+## identity dummy state, matching the upstream static-body path.
+Shared Sub WarmStartMotorJoint(sims As JointSims, index As Integer, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var pX As Double = sims.MotorLinearImpulseX.Items[index]
+Var pY As Double = sims.MotorLinearImpulseY.Items[index]
+Var angularImpulse As Double = sims.MotorAngularImpulse.Items[index]
+
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (rAX * pY - rAY * pX + angularImpulse)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (rBX * pY - rBY * pX + angularImpulse)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Runs one velocity iteration for one motor joint row, ported from
+## b2SolveMotorJoint. Upstream ignores the bias flag: the motor bias comes
+## from the correction factor, not the solver softness.
+Shared Sub SolveMotorJoint(sims As JointSims, index As Integer, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+# Angular constraint: unwind the relative angle and drive it toward the
+# offset with the correction-factor bias. The relative angle uses scalar
+# components because two Rot allocations per solve iteration would break
+# the zero-allocation step gate.
+Var relS As Double = dqBS * dqAC - dqBC * dqAS
+Var relC As Double = dqBC * dqAC + dqBS * dqAS
+Var angularSeparation As Double = PhysicsMaths.Atan2(relS, relC) + sims.MotorDeltaAngle.Items[index]
+angularSeparation = PhysicsMaths.UnwindAngle(angularSeparation)
+Var angularBias As Double = context.InvH * sims.MotorCorrectionFactor.Items[index] * angularSeparation
+Var angularCdot As Double = wB - wA
+Var angularImpulse As Double = -sims.MotorAngularMass.Items[index] * (angularCdot + angularBias)
+Var maxTorqueImpulse As Double = context.H * sims.MotorMaxTorque.Items[index]
+Var newAngularImpulse As Double = sims.MotorAngularImpulse.Items[index] + angularImpulse
+If newAngularImpulse > maxTorqueImpulse Then
+newAngularImpulse = maxTorqueImpulse
+ElseIf newAngularImpulse < -maxTorqueImpulse Then
+newAngularImpulse = -maxTorqueImpulse
+End If
+angularImpulse = newAngularImpulse - sims.MotorAngularImpulse.Items[index]
+sims.MotorAngularImpulse.Items[index] = newAngularImpulse
+wA = wA - iA * angularImpulse
+wB = wB + iB * angularImpulse
+
+# Linear constraint.
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var dsX As Double = dpBX - dpAX + rBX - rAX
+Var dsY As Double = dpBY - dpAY + rBY - rAY
+Var biasRate As Double = context.InvH * sims.MotorCorrectionFactor.Items[index]
+Var rhsX As Double = vBX - wB * rBY - (vAX - wA * rAY) + biasRate * (sims.DeltaCenterX.Items[index] + dsX)
+Var rhsY As Double = vBY + wB * rBX - (vAY + wA * rAX) + biasRate * (sims.DeltaCenterY.Items[index] + dsY)
+Var bX As Double = sims.MotorLinearMassXX.Items[index] * rhsX + sims.MotorLinearMassXY.Items[index] * rhsY
+Var bY As Double = sims.MotorLinearMassXY.Items[index] * rhsX + sims.MotorLinearMassYY.Items[index] * rhsY
+Var oldX As Double = sims.MotorLinearImpulseX.Items[index]
+Var oldY As Double = sims.MotorLinearImpulseY.Items[index]
+Var totalX As Double = oldX - bX
+Var totalY As Double = oldY - bY
+
+# Clamp the accumulated impulse magnitude, porting b2Normalize's
+# degenerate branch: below the float epsilon the upstream normalization
+# returns zero rather than a unit direction.
+Var maxForceImpulse As Double = context.H * sims.MotorMaxForce.Items[index]
+Var magSquared As Double = totalX * totalX + totalY * totalY
+If magSquared > maxForceImpulse * maxForceImpulse Then
+Var mag As Double = Maths.Sqrt(magSquared)
+If mag >= PhysicsConstants.FLT_EPSILON Then
+Var scale As Double = maxForceImpulse / mag
+totalX = scale * totalX
+totalY = scale * totalY
+Else
+totalX = 0.0
+totalY = 0.0
+End If
+End If
+sims.MotorLinearImpulseX.Items[index] = totalX
+sims.MotorLinearImpulseY.Items[index] = totalY
+
+Var deltaX As Double = totalX - oldX
+Var deltaY As Double = totalY - oldY
+vAX = vAX - mA * deltaX
+vAY = vAY - mA * deltaY
+wA = wA - iA * (rAX * deltaY - rAY * deltaX)
+vBX = vBX + mB * deltaX
+vBY = vBY + mB * deltaY
+wB = wB + iB * (rBX * deltaY - rBY * deltaX)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Total force the motor joint row applied this step, ported from
+## b2GetMotorJointForce.
+Shared Function GetMotorJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var scale As Double = invH
+Return New Vector2(scale * sims.MotorLinearImpulseX.Items[index], scale * sims.MotorLinearImpulseY.Items[index])
+End Function
+
+## Torque the motor joint row applied this step, ported from
+## b2GetMotorJointTorque.
+Shared Function GetMotorJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * sims.MotorAngularImpulse.Items[index]
+End Function
+
 ## Total force the mouse joint row applied this step, ported from
 ## b2GetMouseJointForce.
 Shared Function GetMouseJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
@@ -13126,6 +13532,170 @@ Me.Center.Set(other.Center.X, other.Center.Y)
 Me.RotationalInertia = other.RotationalInertia
 Return Me
 End Function
+End Class
+
+# Public motor joint façade, ported from the b2MotorJoint_* surface in
+# motor_joint.c. The motor joint drives body B toward a position and angle
+# offset relative to body A, applying up to the maximum force and torque.
+# Tuning changes deliberately do not wake the bodies, matching upstream; the
+# solver picks up new values on the next step, and a sleeping body B keeps
+# sleeping until the application wakes it. Maximum force and torque clamp
+# negative inputs to zero like upstream b2MotorJoint_SetMaxForce and
+# b2MotorJoint_SetMaxTorque, while non-finite inputs throw. The façade reads
+# and writes its row in the owning JointSims store.
+Class MotorJoint Inherits Joint
+## Moves the linear offset target, ported from b2MotorJoint_SetLinearOffset.
+## The offset is a tuning value: changing it does not wake the attached
+## bodies, so wake body B explicitly when retargeting a sleeping joint.
+Sub SetLinearOffset(linearOffset As Vector2)
+Me.SetLinearOffset(linearOffset.X, linearOffset.Y)
+End Sub
+
+## Scalar form of SetLinearOffset. Prefer this overload in per-frame move
+## loops: the vector form constructs a Vector2 argument, which allocates
+## one object at the call site, while this form allocates nothing.
+Sub SetLinearOffset(x As Double, y As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not x.IsFinite() Or Not y.IsFinite() Then
+Throw New InvalidArgumentException("Motor joint linear offset must be finite")
+End If
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+store.MotorLinearOffsetX.Items[Me.LocalIndex] = x
+store.MotorLinearOffsetY.Items[Me.LocalIndex] = y
+End Sub
+
+## Linear offset target, ported from b2MotorJoint_GetLinearOffset. Returns
+## a new Vector2 copy; safe to retain.
+Function GetLinearOffset() As Vector2
+Me.CheckValid()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return New Vector2(store.MotorLinearOffsetX.Items[Me.LocalIndex], store.MotorLinearOffsetY.Items[Me.LocalIndex])
+End Function
+
+## Moves the angular offset target in radians, ported from
+## b2MotorJoint_SetAngularOffset. The motor drives along the shortest arc.
+Sub SetAngularOffset(angularOffset As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not angularOffset.IsFinite() Then
+Throw New InvalidArgumentException("Motor joint angular offset must be finite")
+End If
+Me.Owner.GetJointSims(Me).MotorAngularOffset.Items[Me.LocalIndex] = angularOffset
+End Sub
+
+## Angular offset target in radians, ported from
+## b2MotorJoint_GetAngularOffset.
+Function GetAngularOffset() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MotorAngularOffset.Items[Me.LocalIndex]
+End Function
+
+## Maximum force magnitude in newtons, ported from b2MotorJoint_SetMaxForce.
+## Negative values clamp to zero like upstream; non-finite values throw.
+Sub SetMaxForce(maxForce As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not maxForce.IsFinite() Then
+Throw New InvalidArgumentException("Motor joint max force must be finite")
+End If
+If maxForce < 0.0 Then
+maxForce = 0.0
+End If
+Me.Owner.GetJointSims(Me).MotorMaxForce.Items[Me.LocalIndex] = maxForce
+End Sub
+
+## Maximum force magnitude in newtons, ported from b2MotorJoint_GetMaxForce.
+Function GetMaxForce() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MotorMaxForce.Items[Me.LocalIndex]
+End Function
+
+## Maximum torque magnitude in newton-metres, ported from
+## b2MotorJoint_SetMaxTorque. Negative values clamp to zero like upstream;
+## non-finite values throw.
+Sub SetMaxTorque(maxTorque As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not maxTorque.IsFinite() Then
+Throw New InvalidArgumentException("Motor joint max torque must be finite")
+End If
+If maxTorque < 0.0 Then
+maxTorque = 0.0
+End If
+Me.Owner.GetJointSims(Me).MotorMaxTorque.Items[Me.LocalIndex] = maxTorque
+End Sub
+
+## Maximum torque magnitude in newton-metres, ported from
+## b2MotorJoint_GetMaxTorque.
+Function GetMaxTorque() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MotorMaxTorque.Items[Me.LocalIndex]
+End Function
+
+## Position correction factor, ported from b2MotorJoint_SetCorrectionFactor.
+## Values clamp into [0, 1] like upstream.
+Sub SetCorrectionFactor(correctionFactor As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not correctionFactor.IsFinite() Then
+Throw New InvalidArgumentException("Motor joint correction factor must be finite")
+End If
+If correctionFactor < 0.0 Then
+correctionFactor = 0.0
+ElseIf correctionFactor > 1.0 Then
+correctionFactor = 1.0
+End If
+Me.Owner.GetJointSims(Me).MotorCorrectionFactor.Items[Me.LocalIndex] = correctionFactor
+End Sub
+
+## Position correction factor, ported from
+## b2MotorJoint_GetCorrectionFactor.
+Function GetCorrectionFactor() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MotorCorrectionFactor.Items[Me.LocalIndex]
+End Function
+End Class
+
+# Motor joint definition, ported from upstream b2MotorJointDef and
+# b2DefaultMotorJointDef in types.h and joint.c. Defaults match upstream:
+# zero offsets, one newton maximum force, one newton-metre maximum torque,
+# 0.3 correction factor. The joint drives body B toward a pose relative to
+# body A rather than holding anchors together.
+Class MotorJointDefinition
+## First attached body, ported from b2MotorJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, driven toward the offset pose.
+Property BodyB As Body
+## Target position of body B minus body A in body A's frame, in metres.
+Property LinearOffset As Vector2
+## Target body B angle minus body A angle in radians.
+Property AngularOffset As Double
+## Maximum linear force magnitude, typically in newtons.
+Property MaxForce As Double
+## Maximum torque magnitude, typically in newton-metres.
+Property MaxTorque As Double
+## Position correction factor in [0, 1]; higher values close the pose gap
+## faster. Clamped to the range like upstream.
+Property CorrectionFactor As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LinearOffset = New Vector2(0.0, 0.0)
+Me.AngularOffset = 0.0
+Me.MaxForce = 1.0
+Me.MaxTorque = 1.0
+Me.CorrectionFactor = 0.3
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
 End Class
 
 # Public mouse joint façade, ported from the b2MouseJoint_* surface in
@@ -16230,6 +16800,8 @@ If sims.Type.Items[i] = Integer(JointType.DistanceJoint) Then
 JointSolver.WarmStartDistanceJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
 JointSolver.WarmStartMouseJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.MotorJoint) Then
+JointSolver.WarmStartMotorJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -16246,6 +16818,8 @@ If sims.Type.Items[i] = Integer(JointType.DistanceJoint) Then
 JointSolver.SolveDistanceJoint(sims, i, context, useBias)
 ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
 JointSolver.SolveMouseJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.MotorJoint) Then
+JointSolver.SolveMotorJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -19298,6 +19872,8 @@ If jointType = JointType.DistanceJoint Then
 record = New DistanceJoint
 ElseIf jointType = JointType.MouseJoint Then
 record = New MouseJoint
+ElseIf jointType = JointType.MotorJoint Then
+record = New MotorJoint
 Else
 record = New Joint
 End If
@@ -19534,6 +20110,69 @@ Me.DestroyContactsBetweenBodies(bodyA, bodyB)
 End If
 
 Var facade As MouseJoint = MouseJoint(joint)
+Return facade
+End Function
+
+## Creates a motor joint, ported from b2CreateMotorJoint. Throws on a
+## missing definition, missing or foreign bodies, or non-finite or negative
+## force or torque values. The correction factor clamps into [0, 1] like
+## upstream. The joint has no anchors: localOriginAnchorA and
+## localOriginAnchorB stay at the body origins, and the constraint drives
+## body B toward the offset pose relative to body A.
+Function CreateMotorJoint(def As MotorJointDefinition) As MotorJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "MotorJointDefinition")
+Me.CheckJointBody(def.BodyA, "MotorJointDefinition.BodyA")
+Me.CheckJointBody(def.BodyB, "MotorJointDefinition.BodyB")
+If Not def.LinearOffset.X.IsFinite() Or Not def.LinearOffset.Y.IsFinite() Then
+Throw New InvalidArgumentException("MotorJointDefinition linear offset must be finite")
+End If
+If Not def.AngularOffset.IsFinite() Then
+Throw New InvalidArgumentException("MotorJointDefinition angular offset must be finite")
+End If
+If Not def.MaxForce.IsFinite() Or def.MaxForce < 0.0 Then
+Throw New InvalidArgumentException("MotorJointDefinition max force must be finite and non-negative")
+End If
+If Not def.MaxTorque.IsFinite() Or def.MaxTorque < 0.0 Then
+Throw New InvalidArgumentException("MotorJointDefinition max torque must be finite and non-negative")
+End If
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.MotorJoint, def.CollideConnected, 1.0)
+Var localIndex As Integer = Me.PlaceJointSim(joint, bodyA, bodyB)
+Var store As JointSims = Me.GetJointSims(joint)
+store.ConstraintHertz.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+store.ConstraintDampingRatio.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+store.MotorLinearOffsetX.Items[localIndex] = def.LinearOffset.X
+store.MotorLinearOffsetY.Items[localIndex] = def.LinearOffset.Y
+store.MotorAngularOffset.Items[localIndex] = def.AngularOffset
+store.MotorMaxForce.Items[localIndex] = def.MaxForce
+store.MotorMaxTorque.Items[localIndex] = def.MaxTorque
+Var correctionFactor As Double = def.CorrectionFactor
+If correctionFactor < 0.0 Then
+correctionFactor = 0.0
+ElseIf correctionFactor > 1.0 Then
+correctionFactor = 1.0
+End If
+store.MotorCorrectionFactor.Items[localIndex] = correctionFactor
+store.MotorLinearImpulseX.Items[localIndex] = 0.0
+store.MotorLinearImpulseY.Items[localIndex] = 0.0
+store.MotorAngularImpulse.Items[localIndex] = 0.0
+joint.UserData = def.UserData
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# If the joint prevents collisions, destroy all contacts between the
+# attached bodies.
+If def.CollideConnected = False Then
+Me.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+
+Var facade As MotorJoint = MotorJoint(joint)
 Return facade
 End Function
 

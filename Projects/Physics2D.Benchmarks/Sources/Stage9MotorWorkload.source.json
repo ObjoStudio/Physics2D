@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9MotorWorkload",
+  "Id": "88b1e017-6f74-4d20-a23e-4b1d1c4b26a8",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9MotorWorkload-88b1e017-6f74-4d20-a23e-4b1d1c4b26a8.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

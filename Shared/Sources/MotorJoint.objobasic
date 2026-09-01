@@ -1,0 +1,122 @@
+# Public motor joint façade, ported from the b2MotorJoint_* surface in
+# motor_joint.c. The motor joint drives body B toward a position and angle
+# offset relative to body A, applying up to the maximum force and torque.
+# Tuning changes deliberately do not wake the bodies, matching upstream; the
+# solver picks up new values on the next step, and a sleeping body B keeps
+# sleeping until the application wakes it. Maximum force and torque clamp
+# negative inputs to zero like upstream b2MotorJoint_SetMaxForce and
+# b2MotorJoint_SetMaxTorque, while non-finite inputs throw. The façade reads
+# and writes its row in the owning JointSims store.
+Class MotorJoint Inherits Joint
+## Moves the linear offset target, ported from b2MotorJoint_SetLinearOffset.
+## The offset is a tuning value: changing it does not wake the attached
+## bodies, so wake body B explicitly when retargeting a sleeping joint.
+Sub SetLinearOffset(linearOffset As Vector2)
+Me.SetLinearOffset(linearOffset.X, linearOffset.Y)
+End Sub
+
+## Scalar form of SetLinearOffset. Prefer this overload in per-frame move
+## loops: the vector form constructs a Vector2 argument, which allocates
+## one object at the call site, while this form allocates nothing.
+Sub SetLinearOffset(x As Double, y As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not x.IsFinite() Or Not y.IsFinite() Then
+Throw New InvalidArgumentException("Motor joint linear offset must be finite")
+End If
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+store.MotorLinearOffsetX.Items[Me.LocalIndex] = x
+store.MotorLinearOffsetY.Items[Me.LocalIndex] = y
+End Sub
+
+## Linear offset target, ported from b2MotorJoint_GetLinearOffset. Returns
+## a new Vector2 copy; safe to retain.
+Function GetLinearOffset() As Vector2
+Me.CheckValid()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return New Vector2(store.MotorLinearOffsetX.Items[Me.LocalIndex], store.MotorLinearOffsetY.Items[Me.LocalIndex])
+End Function
+
+## Moves the angular offset target in radians, ported from
+## b2MotorJoint_SetAngularOffset. The motor drives along the shortest arc.
+Sub SetAngularOffset(angularOffset As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not angularOffset.IsFinite() Then
+Throw New InvalidArgumentException("Motor joint angular offset must be finite")
+End If
+Me.Owner.GetJointSims(Me).MotorAngularOffset.Items[Me.LocalIndex] = angularOffset
+End Sub
+
+## Angular offset target in radians, ported from
+## b2MotorJoint_GetAngularOffset.
+Function GetAngularOffset() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MotorAngularOffset.Items[Me.LocalIndex]
+End Function
+
+## Maximum force magnitude in newtons, ported from b2MotorJoint_SetMaxForce.
+## Negative values clamp to zero like upstream; non-finite values throw.
+Sub SetMaxForce(maxForce As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not maxForce.IsFinite() Then
+Throw New InvalidArgumentException("Motor joint max force must be finite")
+End If
+If maxForce < 0.0 Then
+maxForce = 0.0
+End If
+Me.Owner.GetJointSims(Me).MotorMaxForce.Items[Me.LocalIndex] = maxForce
+End Sub
+
+## Maximum force magnitude in newtons, ported from b2MotorJoint_GetMaxForce.
+Function GetMaxForce() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MotorMaxForce.Items[Me.LocalIndex]
+End Function
+
+## Maximum torque magnitude in newton-metres, ported from
+## b2MotorJoint_SetMaxTorque. Negative values clamp to zero like upstream;
+## non-finite values throw.
+Sub SetMaxTorque(maxTorque As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not maxTorque.IsFinite() Then
+Throw New InvalidArgumentException("Motor joint max torque must be finite")
+End If
+If maxTorque < 0.0 Then
+maxTorque = 0.0
+End If
+Me.Owner.GetJointSims(Me).MotorMaxTorque.Items[Me.LocalIndex] = maxTorque
+End Sub
+
+## Maximum torque magnitude in newton-metres, ported from
+## b2MotorJoint_GetMaxTorque.
+Function GetMaxTorque() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MotorMaxTorque.Items[Me.LocalIndex]
+End Function
+
+## Position correction factor, ported from b2MotorJoint_SetCorrectionFactor.
+## Values clamp into [0, 1] like upstream.
+Sub SetCorrectionFactor(correctionFactor As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not correctionFactor.IsFinite() Then
+Throw New InvalidArgumentException("Motor joint correction factor must be finite")
+End If
+If correctionFactor < 0.0 Then
+correctionFactor = 0.0
+ElseIf correctionFactor > 1.0 Then
+correctionFactor = 1.0
+End If
+Me.Owner.GetJointSims(Me).MotorCorrectionFactor.Items[Me.LocalIndex] = correctionFactor
+End Sub
+
+## Position correction factor, ported from
+## b2MotorJoint_GetCorrectionFactor.
+Function GetCorrectionFactor() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MotorCorrectionFactor.Items[Me.LocalIndex]
+End Function
+End Class

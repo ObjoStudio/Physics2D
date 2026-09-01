@@ -1,0 +1,6 @@
+joint|pose|body|0|3 1 0.5 0
+joint|pose|motor|0 2.5 0
+joint|retarget|body|0|3 2 0.5 0
+joint|retarget|motor|0 2.5 0
+joint|clamped|body|0|3 1 0 0
+joint|clamped|motor|0 2.5 0

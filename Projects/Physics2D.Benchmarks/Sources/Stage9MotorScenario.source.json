@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9MotorScenario",
+  "Id": "4b3e9f2a-c5d1-4e88-9a2b-7f6e1d3c05b9",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9MotorScenario-4b3e9f2a-c5d1-4e88-9a2b-7f6e1d3c05b9.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

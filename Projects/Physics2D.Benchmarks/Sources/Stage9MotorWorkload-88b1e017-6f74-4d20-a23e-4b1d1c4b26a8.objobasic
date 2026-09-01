@@ -1,0 +1,123 @@
+# Stage 9 motor drive workload: thirty boxes each driven by a motor joint
+# whose offset pose moves every step, the realistic per-frame retargeting
+# pattern. The scalar SetLinearOffset overload keeps the retarget path
+# allocation-free, and each retarget wakes the driven body so the solver
+# path stays measured, matching the upstream sample's wake-on-retarget flow.
+Class MotorDriveWorkload
+## The stepped world.
+Property World As World
+## The driven boxes.
+Property Boxes As Array(Of Body)
+## The motor joints, in box order.
+Property Joints As Array(Of MotorJoint)
+## Substep count per step call.
+Property SubSteps As Integer
+## Frame counter driving the deterministic offset path.
+Property Frame As Integer
+
+## Builds a fresh scene of thirty motor-driven boxes over a static ground.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -1.0)
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 1.0))
+
+Me.Boxes = New Array(Of Body)
+Me.Joints = New Array(Of MotorJoint)
+Me.Boxes.Reserve(30)
+Me.Joints.Reserve(30)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var boxIndex As Integer = 0
+While boxIndex < 30
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+boxDef.Position = New Vector2(-7.25 + 0.5 * boxIndex, 4.0 + 0.25 * (boxIndex Mod 4))
+Var box As Body = Me.World.CreateBody(boxDef)
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Me.Boxes.Append(box)
+Var def As New MotorJointDefinition
+def.BodyA = ground
+def.BodyB = box
+def.LinearOffset = New Vector2(-7.25 + 0.5 * boxIndex, 6.0)
+def.AngularOffset = 0.0
+def.MaxForce = 1000.0
+def.MaxTorque = 400.0
+def.CorrectionFactor = 0.3
+Me.Joints.Append(Me.World.CreateMotorJoint(def))
+boxIndex = boxIndex + 1
+Wend
+Me.SubSteps = 1
+Me.Frame = 0
+Me.World.UpdateBroadPhasePairs()
+# Warm the solver so measured iterations exclude capacity growth.
+Var warmIndex As Integer = 0
+While warmIndex < 240
+Me.StepFrame()
+warmIndex = warmIndex + 1
+Wend
+End Sub
+
+## Steps one frame, retargeting every joint along a deterministic circular
+## path and waking the driven body like the upstream sample's drag flow.
+Sub StepFrame()
+Var count As Integer = Me.Joints.Count
+Var i As Integer = 0
+While i < count
+Var angle As Double = 0.1 * (Me.Frame + i)
+Var joint As MotorJoint = Me.Joints[i]
+Var box As Body = Me.Boxes[i]
+joint.SetLinearOffset(Maths.Cos(angle) * (1.0 + 0.05 * i) - 7.25 + 0.5 * i, 6.0 + Maths.Sin(angle) * 0.5)
+joint.SetAngularOffset(0.25 * Maths.Sin(angle + 0.5 * i))
+box.SetAwake(True)
+i = i + 1
+Wend
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+Me.Frame = Me.Frame + 1
+End Sub
+
+## Steps the scene four times, then folds live transforms.
+Sub RunKernels()
+Var stepIndex As Integer = 0
+While stepIndex < 4
+Me.StepFrame()
+stepIndex = stepIndex + 1
+Wend
+Var checksum As Integer = 0
+Var count As Integer = Me.Boxes.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Boxes[i])
+checksum = Me.FoldDouble(checksum, transform.P.X)
+checksum = Me.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## Folds one Double into the checksum, matching the PhysicsAssert fold:
+## round to nine decimals, then FNV-1a over the little-end octets.
+Function FoldDouble(checksum As Integer, value As Double) As Integer
+Var scaled As Integer = Integer(Maths.Round(value * 1000000000.0))
+Var hash As Integer = checksum
+Var octetIndex As Integer = 0
+While octetIndex < 8
+Var octet As Integer = scaled.BitAnd(255)
+hash = hash.BitXor(octet)
+hash = hash * 1099511628211
+scaled = scaled.ShiftRight(8)
+octetIndex = octetIndex + 1
+Wend
+Return hash
+End Function
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class

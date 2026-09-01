@@ -1,0 +1,40 @@
+# Motor joint definition, ported from upstream b2MotorJointDef and
+# b2DefaultMotorJointDef in types.h and joint.c. Defaults match upstream:
+# zero offsets, one newton maximum force, one newton-metre maximum torque,
+# 0.3 correction factor. The joint drives body B toward a pose relative to
+# body A rather than holding anchors together.
+Class MotorJointDefinition
+## First attached body, ported from b2MotorJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, driven toward the offset pose.
+Property BodyB As Body
+## Target position of body B minus body A in body A's frame, in metres.
+Property LinearOffset As Vector2
+## Target body B angle minus body A angle in radians.
+Property AngularOffset As Double
+## Maximum linear force magnitude, typically in newtons.
+Property MaxForce As Double
+## Maximum torque magnitude, typically in newton-metres.
+Property MaxTorque As Double
+## Position correction factor in [0, 1]; higher values close the pose gap
+## faster. Clamped to the range like upstream.
+Property CorrectionFactor As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LinearOffset = New Vector2(0.0, 0.0)
+Me.AngularOffset = 0.0
+Me.MaxForce = 1.0
+Me.MaxTorque = 1.0
+Me.CorrectionFactor = 0.3
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
+End Class

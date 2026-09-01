@@ -901,11 +901,168 @@ static void EmitJointMouse(void)
 	EmitMouseStiff();
 }
 
+// -------------------------------------------------------- motor joints ----
+
+// Motor-joint scene fixture: three deterministic pose-driving cases stepped
+// with the upstream default of four substeps. Every case hangs a 0.25 kg
+// box off a static ground with the box driven toward a position and angle
+// offset; each ends asleep at the offset pose, so the records are stable
+// across float widths.
+static void DumpMotorJoint(const char* name, b2JointId jointId)
+{
+	b2Vec2 force = b2Joint_GetConstraintForce(jointId);
+	float torque = b2Joint_GetConstraintTorque(jointId);
+	printf("joint|%s|motor|", name);
+	PrintNum(force.x); printf(" ");
+	PrintNum(force.y); printf(" ");
+	PrintNum(torque); printf("\n");
+}
+
+static void EmitMotorPose(void)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	groundDef.position = (b2Vec2){0.0f, -1.0f};
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon groundBox = b2MakeBox(50.0f, 1.0f);
+	b2CreatePolygonShape(groundId, &shapeDef, &groundBox);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){3.0f, 0.5f};
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	// Upstream default correction factor of 0.3 drives the box up to the
+	// offset pose and rotates it to half a radian.
+	b2MotorJointDef jointDef = b2DefaultMotorJointDef();
+	jointDef.bodyIdA = groundId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.linearOffset = (b2Vec2){3.0f, 2.0f};
+	jointDef.angularOffset = 0.5f;
+	jointDef.maxForce = 500.0f;
+	jointDef.maxTorque = 200.0f;
+	b2JointId jointId = b2CreateMotorJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 240; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+	}
+
+	DumpJointBody("pose", 0, bodyId);
+	DumpMotorJoint("pose", jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitMotorRetarget(void)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	groundDef.position = (b2Vec2){0.0f, -1.0f};
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon groundBox = b2MakeBox(50.0f, 1.0f);
+	b2CreatePolygonShape(groundId, &shapeDef, &groundBox);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){3.0f, 0.5f};
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	// The box starts at its offset pose, sleeps, then a strong correction
+	// factor retargets it one metre up and half a radian over via the
+	// runtime setters with an explicit wake.
+	b2MotorJointDef jointDef = b2DefaultMotorJointDef();
+	jointDef.bodyIdA = groundId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.linearOffset = (b2Vec2){3.0f, 1.5f};
+	jointDef.angularOffset = 0.0f;
+	jointDef.maxForce = 2000.0f;
+	jointDef.maxTorque = 800.0f;
+	jointDef.correctionFactor = 1.0f;
+	b2JointId jointId = b2CreateMotorJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 240; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+		if (frame == 60)
+		{
+			b2MotorJoint_SetLinearOffset(jointId, (b2Vec2){3.0f, 3.0f});
+			b2MotorJoint_SetAngularOffset(jointId, 0.5f);
+			b2Body_SetAwake(bodyId, true);
+		}
+	}
+
+	DumpJointBody("retarget", 0, bodyId);
+	DumpMotorJoint("retarget", jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitMotorClamped(void)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	groundDef.position = (b2Vec2){0.0f, -1.0f};
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon groundBox = b2MakeBox(50.0f, 1.0f);
+	b2CreatePolygonShape(groundId, &shapeDef, &groundBox);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){3.0f, 0.5f};
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	// A 3 N maximum force sits just above the 2.5 N weight: the linear
+	// clamp saturates through the early transit and the box crawls up to
+	// the pose, while a 1 N-m clamp limits the angular drive.
+	b2MotorJointDef jointDef = b2DefaultMotorJointDef();
+	jointDef.bodyIdA = groundId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.linearOffset = (b2Vec2){3.0f, 2.0f};
+	jointDef.angularOffset = 0.0f;
+	jointDef.maxForce = 3.0f;
+	jointDef.maxTorque = 1.0f;
+	jointDef.correctionFactor = 1.0f;
+	b2JointId jointId = b2CreateMotorJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 240; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+	}
+
+	DumpJointBody("clamped", 0, bodyId);
+	DumpMotorJoint("clamped", jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitMotorCases(void)
+{
+	EmitMotorPose();
+	EmitMotorRetarget();
+	EmitMotorClamped();
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
 	{
-		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse>\n");
+		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse|joint_motor>\n");
 		return 2;
 	}
 
@@ -922,6 +1079,7 @@ int main(int argc, char** argv)
 	else if (strcmp(name, "scene_stack") == 0) EmitScene("stack", 240, 8, 64);
 	else if (strcmp(name, "joint_distance") == 0) EmitJointDistance();
 	else if (strcmp(name, "joint_mouse") == 0) EmitJointMouse();
+	else if (strcmp(name, "joint_motor") == 0) EmitMotorCases();
 	else
 	{
 		fprintf(stderr, "unknown fixture: %s\n", name);

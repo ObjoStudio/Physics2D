@@ -4,7 +4,7 @@
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (see docs/PORTING.md).
 #
 # Generation command (from the repository root, after building the tool):
-#   for f in maths hull distance raycast shapecast manifold mass scene_falling scene_pyramid scene_stack joint_distance joint_mouse; do
+#   for f in maths hull distance raycast shapecast manifold mass scene_falling scene_pyramid scene_stack joint_distance joint_mouse joint_motor; do
 #     ./build/tools/fixture_gen $f > testdata/golden/$f.txt
 #   done
 #
@@ -21,6 +21,7 @@ Generated on 2026-08-30.
 | `testdata/golden/hull.txt` | 48d12525c5a1a837349d3180c74b640769f56ae78139121be649f2c45a058121 |
 | `testdata/golden/joint_distance.txt` | ff5bf412c046aed8f4abf71d3855d977914ef770d7c1ae24c5ab24384d8f6a67 |
 | `testdata/golden/joint_mouse.txt` | 87312b76153d92d69dcdd690d192143faeaaa334f3f426b5a973a92ace197c72 |
+| `testdata/golden/joint_motor.txt` | ac82f90abaa938d38b3991adaee5de017ac4c0a267257e97042c6d9a6f4fe6c7 |
 | `testdata/golden/manifold.txt` | d3364d2db2bd598856668578b7910b44c9183245fafca1ccfb3e5db980c35701 |
 | `testdata/golden/mass.txt` | 880a0a41bb111488631f89e8864d9ee0c4f20df0d335cddd79a1a83422aad736 |
 | `testdata/golden/maths.txt` | b88060fa94260d4850309e753a72fb42cc02184d6931371def7ce708ad1e186f |
@@ -69,3 +70,11 @@ with exact equality. A trailing `1`/`0` integer encodes a Boolean.
   2.5 newton weight, constant 6 m/s^2 fall, 150 frames), `stiff` (20 Hz
   well-damped retargeted drag, 180 frames). Every frame steps with the
   upstream default substep count of four.
+- `joint|case|body|index|positionx positiony angle awake`, then one
+  `joint|case|motor|forceX forceY torque` line per motor joint case. Cases:
+  `pose` (default 0.3 correction factor drives the box up and half a radian
+  over, 240 frames), `retarget` (box starts at its pose, sleeps, then a
+  unit correction factor retargets it via the runtime setters with an
+  explicit wake, 240 frames), `clamped` (3 N force just above the 2.5 N
+  weight saturates the linear clamp through the transit, 240 frames). Every
+  frame steps with the upstream default substep count of four.

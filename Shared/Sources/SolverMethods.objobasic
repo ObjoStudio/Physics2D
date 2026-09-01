@@ -26,6 +26,8 @@ If sims.Type.Items[i] = Integer(JointType.DistanceJoint) Then
 JointSolver.WarmStartDistanceJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
 JointSolver.WarmStartMouseJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.MotorJoint) Then
+JointSolver.WarmStartMotorJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -42,6 +44,8 @@ If sims.Type.Items[i] = Integer(JointType.DistanceJoint) Then
 JointSolver.SolveDistanceJoint(sims, i, context, useBias)
 ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
 JointSolver.SolveMouseJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.MotorJoint) Then
+JointSolver.SolveMotorJoint(sims, i, context)
 End If
 Next i
 End Sub

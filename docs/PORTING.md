@@ -162,6 +162,23 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     where upstream only asserts. `MouseJoint.GetAnchorB` returns the
     dragged body's world anchor point as a documented Physics2D addition
     for drag rendering.
+33. **Motor joint clamping and ergonomics.** Upstream clamps motor joint
+    tuning at the setter: `b2MotorJoint_SetMaxForce` and
+    `b2MotorJoint_SetMaxTorque` clamp negative inputs to zero through
+    `b2MaxFloat`, and `b2MotorJoint_SetCorrectionFactor` and
+    `b2CreateMotorJoint` clamp the correction factor into [0, 1] through
+    `b2ClampFloat`. Physics2D matches that clamping and additionally throws
+    `InvalidArgumentException` for non-finite inputs and for negative
+    definition force or torque values, where upstream only asserts.
+    `MotorJoint.SetLinearOffset` adds the scalar overload
+    `SetLinearOffset(x, y)` for allocation-free per-frame retargeting. The
+    linear impulse clamp ports `b2Normalize`'s degenerate branch: below the
+    float epsilon the upstream normalization returns zero rather than a
+    unit direction, so a clamped impulse collapses to zero instead of
+    scaling. Non-awake bodies store a `NULL_INDEX` state row and receive no
+    impulses (upstream asserts at least one awake body and otherwise reads
+    the state array unguarded), and the solve body never reads the base
+    constraint softness, so the motor family stores no softness columns.
 
 ## Public Symbol Inventory
 
