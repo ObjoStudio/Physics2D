@@ -1,0 +1,139 @@
+# Stage 9 weld workload: thirty soft-welded pairs rocking under
+# deterministic oscillating forces, the realistic flexing-weld pattern.
+# One reusable force vector drives every box through the To-form
+# ApplyForceToCenter, so the workload allocates nothing per frame and the
+# measured path is the solver loop itself.
+Class WeldFlexWorkload
+## The stepped world.
+Property World As World
+## The lower boxes of each pair.
+Property BoxesA As Array(Of Body)
+## The upper boxes of each pair.
+Property BoxesB As Array(Of Body)
+## The weld joints, in pair order.
+Property Joints As Array(Of WeldJoint)
+## Substep count per step call.
+Property SubSteps As Integer
+## Frame counter driving the deterministic force path.
+Property Frame As Integer
+## Reusable force vector for the To-form apply calls.
+Property Push As Vector2
+
+## Builds a fresh scene of thirty welded pairs resting on a static ground.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+Var ground As Body = Me.World.CreateBody(groundDef)
+Var groundShape As New ShapeDefinition
+ground.CreatePolygon(groundShape, Polygon.MakeBox(60.0, 0.5))
+
+Me.BoxesA = New Array(Of Body)
+Me.BoxesB = New Array(Of Body)
+Me.Joints = New Array(Of WeldJoint)
+Me.BoxesA.Reserve(30)
+Me.BoxesB.Reserve(30)
+Me.Joints.Reserve(30)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var pairIndex As Integer = 0
+While pairIndex < 30
+Var baseX As Double = -14.5 + 1.0 * pairIndex
+Var defA As New BodyDefinition
+defA.Type = BodyType.DynamicBody
+defA.Position = New Vector2(baseX, 0.75)
+Var boxA As Body = Me.World.CreateBody(defA)
+boxA.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Me.BoxesA.Append(boxA)
+Var defB As New BodyDefinition
+defB.Type = BodyType.DynamicBody
+defB.Position = New Vector2(baseX + 0.4, 0.95)
+Var boxB As Body = Me.World.CreateBody(defB)
+boxB.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Me.BoxesB.Append(boxB)
+Var def As New WeldJointDefinition
+def.BodyA = boxA
+def.BodyB = boxB
+def.LocalAnchorA = New Vector2(0.2, 0.2)
+def.LocalAnchorB = New Vector2(-0.2, -0.2)
+def.LinearHertz = 2.0
+def.AngularHertz = 2.0
+def.LinearDampingRatio = 0.5
+def.AngularDampingRatio = 0.5
+Me.Joints.Append(Me.World.CreateWeldJoint(def))
+pairIndex = pairIndex + 1
+Wend
+Me.SubSteps = 1
+Me.Frame = 0
+Me.Push = New Vector2(0.0, 0.0)
+Me.World.UpdateBroadPhasePairs()
+# Warm the solver so measured iterations exclude capacity growth.
+Var warmIndex As Integer = 0
+While warmIndex < 240
+Me.StepFrame()
+warmIndex = warmIndex + 1
+Wend
+End Sub
+
+## Steps one frame, driving every box with an oscillating force pair.
+Sub StepFrame()
+Var count As Integer = Me.Joints.Count
+Var i As Integer = 0
+While i < count
+Var magnitude As Double = 3.0 * Maths.Sin(0.15 * (Me.Frame + 2 * i))
+Var push As Vector2 = Me.Push
+push.Set(magnitude, 0.0)
+Me.BoxesA[i].ApplyForceToCenter(push, True)
+push.Set(-magnitude, 0.0)
+Me.BoxesB[i].ApplyForceToCenter(push, True)
+i = i + 1
+Wend
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+Me.Frame = Me.Frame + 1
+End Sub
+
+## Steps the scene four times, then folds live transforms.
+Sub RunKernels()
+Var stepIndex As Integer = 0
+While stepIndex < 4
+Me.StepFrame()
+stepIndex = stepIndex + 1
+Wend
+Var checksum As Integer = 0
+Var count As Integer = Me.BoxesA.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.BoxesA[i])
+checksum = Me.FoldDouble(checksum, transform.P.X)
+checksum = Me.FoldDouble(checksum, transform.P.Y)
+checksum = Me.FoldDouble(checksum, transform.Q.C)
+checksum = Me.FoldDouble(checksum, transform.Q.S)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## Folds one Double into the checksum, matching the PhysicsAssert fold:
+## round to nine decimals, then FNV-1a over the little-end octets.
+Function FoldDouble(checksum As Integer, value As Double) As Integer
+Var scaled As Integer = Integer(Maths.Round(value * 1000000000.0))
+Var hash As Integer = checksum
+Var octetIndex As Integer = 0
+While octetIndex < 8
+Var octet As Integer = scaled.BitAnd(255)
+hash = hash.BitXor(octet)
+hash = hash * 1099511628211
+scaled = scaled.ShiftRight(8)
+octetIndex = octetIndex + 1
+Wend
+Return hash
+End Function
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class

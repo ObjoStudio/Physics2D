@@ -1,0 +1,37 @@
+# Stage 9 benchmark scenario wrapping the weld flex workload.
+Import Physics2D
+
+Class Stage9WeldScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As WeldFlexWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage9-weld-flex-30"
+Me.Description = "Rocks 30 soft-welded pairs with oscillating forces through the full Stage 9 solver four times per iteration."
+Me.WarmupIterations = 3
+Me.MeasuredIterations = 8
+Me.mWorkload = New WeldFlexWorkload
+End Constructor
+
+## Describes the flex parameters.
+Override Function Parameters() As String
+Return "pairs=30,joints=30,boxes=60,steps=4,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class

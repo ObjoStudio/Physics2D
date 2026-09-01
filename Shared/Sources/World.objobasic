@@ -2083,6 +2083,8 @@ ElseIf jointType = JointType.RevoluteJoint Then
 record = New RevoluteJoint
 ElseIf jointType = JointType.PrismaticJoint Then
 record = New PrismaticJoint
+ElseIf jointType = JointType.WeldJoint Then
+record = New WeldJoint
 Else
 record = New Joint
 End If
@@ -2581,6 +2583,71 @@ Me.DestroyContactsBetweenBodies(bodyA, bodyB)
 End If
 
 Var facade As PrismaticJoint = PrismaticJoint(joint)
+Return facade
+End Function
+
+## Creates a weld joint, ported from b2CreateWeldJoint. Throws on a missing
+## definition, missing or foreign bodies, non-finite anchors or tuning, or
+## negative hertz or damping ratios, matching the upstream assertions. Zero
+## hertz means maximum stiffness: the solver falls back to the base
+## constraint softness.
+Function CreateWeldJoint(def As WeldJointDefinition) As WeldJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "WeldJointDefinition")
+Me.CheckJointBody(def.BodyA, "WeldJointDefinition.BodyA")
+Me.CheckJointBody(def.BodyB, "WeldJointDefinition.BodyB")
+If Not def.LocalAnchorA.X.IsFinite() Or Not def.LocalAnchorA.Y.IsFinite() Then
+Throw New InvalidArgumentException("WeldJointDefinition local anchor A must be finite")
+End If
+If Not def.LocalAnchorB.X.IsFinite() Or Not def.LocalAnchorB.Y.IsFinite() Then
+Throw New InvalidArgumentException("WeldJointDefinition local anchor B must be finite")
+End If
+If Not def.ReferenceAngle.IsFinite() Then
+Throw New InvalidArgumentException("WeldJointDefinition reference angle must be finite")
+End If
+If Not def.LinearHertz.IsFinite() Or def.LinearHertz < 0.0 Then
+Throw New InvalidArgumentException("WeldJointDefinition linear hertz must be finite and non-negative")
+End If
+If Not def.LinearDampingRatio.IsFinite() Or def.LinearDampingRatio < 0.0 Then
+Throw New InvalidArgumentException("WeldJointDefinition linear damping ratio must be finite and non-negative")
+End If
+If Not def.AngularHertz.IsFinite() Or def.AngularHertz < 0.0 Then
+Throw New InvalidArgumentException("WeldJointDefinition angular hertz must be finite and non-negative")
+End If
+If Not def.AngularDampingRatio.IsFinite() Or def.AngularDampingRatio < 0.0 Then
+Throw New InvalidArgumentException("WeldJointDefinition angular damping ratio must be finite and non-negative")
+End If
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.WeldJoint, def.CollideConnected, 1.0)
+Var localIndex As Integer = Me.PlaceJointSim(joint, bodyA, bodyB)
+Var store As JointSims = Me.GetJointSims(joint)
+store.ConstraintHertz.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+store.ConstraintDampingRatio.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+store.LocalOriginAnchorAX.Items[localIndex] = def.LocalAnchorA.X
+store.LocalOriginAnchorAY.Items[localIndex] = def.LocalAnchorA.Y
+store.LocalOriginAnchorBX.Items[localIndex] = def.LocalAnchorB.X
+store.LocalOriginAnchorBY.Items[localIndex] = def.LocalAnchorB.Y
+store.WeldReferenceAngle.Items[localIndex] = def.ReferenceAngle
+store.WeldLinearHertz.Items[localIndex] = def.LinearHertz
+store.WeldLinearDampingRatio.Items[localIndex] = def.LinearDampingRatio
+store.WeldAngularHertz.Items[localIndex] = def.AngularHertz
+store.WeldAngularDampingRatio.Items[localIndex] = def.AngularDampingRatio
+joint.UserData = def.UserData
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# If the joint prevents collisions, destroy all contacts between the
+# attached bodies.
+If def.CollideConnected = False Then
+Me.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+
+Var facade As WeldJoint = WeldJoint(joint)
 Return facade
 End Function
 

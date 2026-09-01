@@ -278,6 +278,46 @@ Property PrismaticSpringSoftnessBiasRate As DoubleList
 Property PrismaticSpringSoftnessMassScale As DoubleList
 ## Spring softness impulse scale.
 Property PrismaticSpringSoftnessImpulseScale As DoubleList
+
+# Weld joint family columns, ported from upstream b2WeldJoint in joint.h.
+# Valid only while Type = Integer(JointType.WeldJoint). The weld reuses the
+# base two-body columns (IndexA/IndexB, AnchorA/AnchorB, DeltaCenter,
+# inverse masses, LocalOriginAnchorA/B). A zero hertz copies the base
+# constraint softness into the weld softness columns at prepare time.
+## Reference angle in radians: body B angle minus body A angle in the
+## reference state.
+Property WeldReferenceAngle As DoubleList
+## Linear stiffness in hertz; zero means maximum stiffness.
+Property WeldLinearHertz As DoubleList
+## Linear damping ratio.
+Property WeldLinearDampingRatio As DoubleList
+## Angular stiffness in hertz; zero means maximum stiffness.
+Property WeldAngularHertz As DoubleList
+## Angular damping ratio.
+Property WeldAngularDampingRatio As DoubleList
+## X component of the accumulated linear impulse.
+Property WeldLinearImpulseX As DoubleList
+## Y component of the accumulated linear impulse.
+Property WeldLinearImpulseY As DoubleList
+## Accumulated angular impulse.
+Property WeldAngularImpulse As DoubleList
+## Inverse of the sum of both rotational inertias, zero when both are zero.
+Property WeldAxialMass As DoubleList
+## Angle of body B relative to body A at prepare time minus the reference
+## angle, unwound, ported from joint->deltaAngle.
+Property WeldDeltaAngle As DoubleList
+## Linear softness bias rate.
+Property WeldLinearSoftnessBiasRate As DoubleList
+## Linear softness mass scale.
+Property WeldLinearSoftnessMassScale As DoubleList
+## Linear softness impulse scale.
+Property WeldLinearSoftnessImpulseScale As DoubleList
+## Angular softness bias rate.
+Property WeldAngularSoftnessBiasRate As DoubleList
+## Angular softness mass scale.
+Property WeldAngularSoftnessMassScale As DoubleList
+## Angular softness impulse scale.
+Property WeldAngularSoftnessImpulseScale As DoubleList
 ## Spring softness mass scale.
 Property RevoluteSpringSoftnessMassScale As DoubleList
 ## Spring softness impulse scale.
@@ -401,6 +441,22 @@ Me.PrismaticDeltaAngle = New DoubleList
 Me.PrismaticSpringSoftnessBiasRate = New DoubleList
 Me.PrismaticSpringSoftnessMassScale = New DoubleList
 Me.PrismaticSpringSoftnessImpulseScale = New DoubleList
+Me.WeldReferenceAngle = New DoubleList
+Me.WeldLinearHertz = New DoubleList
+Me.WeldLinearDampingRatio = New DoubleList
+Me.WeldAngularHertz = New DoubleList
+Me.WeldAngularDampingRatio = New DoubleList
+Me.WeldLinearImpulseX = New DoubleList
+Me.WeldLinearImpulseY = New DoubleList
+Me.WeldAngularImpulse = New DoubleList
+Me.WeldAxialMass = New DoubleList
+Me.WeldDeltaAngle = New DoubleList
+Me.WeldLinearSoftnessBiasRate = New DoubleList
+Me.WeldLinearSoftnessMassScale = New DoubleList
+Me.WeldLinearSoftnessImpulseScale = New DoubleList
+Me.WeldAngularSoftnessBiasRate = New DoubleList
+Me.WeldAngularSoftnessMassScale = New DoubleList
+Me.WeldAngularSoftnessImpulseScale = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -530,6 +586,22 @@ Me.PrismaticDeltaAngle.Append(0.0)
 Me.PrismaticSpringSoftnessBiasRate.Append(0.0)
 Me.PrismaticSpringSoftnessMassScale.Append(1.0)
 Me.PrismaticSpringSoftnessImpulseScale.Append(0.0)
+Me.WeldReferenceAngle.Append(0.0)
+Me.WeldLinearHertz.Append(0.0)
+Me.WeldLinearDampingRatio.Append(0.0)
+Me.WeldAngularHertz.Append(0.0)
+Me.WeldAngularDampingRatio.Append(0.0)
+Me.WeldLinearImpulseX.Append(0.0)
+Me.WeldLinearImpulseY.Append(0.0)
+Me.WeldAngularImpulse.Append(0.0)
+Me.WeldAxialMass.Append(0.0)
+Me.WeldDeltaAngle.Append(0.0)
+Me.WeldLinearSoftnessBiasRate.Append(0.0)
+Me.WeldLinearSoftnessMassScale.Append(1.0)
+Me.WeldLinearSoftnessImpulseScale.Append(0.0)
+Me.WeldAngularSoftnessBiasRate.Append(0.0)
+Me.WeldAngularSoftnessMassScale.Append(1.0)
+Me.WeldAngularSoftnessImpulseScale.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -659,6 +731,22 @@ Me.PrismaticDeltaAngle.RemoveSwap(index)
 Me.PrismaticSpringSoftnessBiasRate.RemoveSwap(index)
 Me.PrismaticSpringSoftnessMassScale.RemoveSwap(index)
 Me.PrismaticSpringSoftnessImpulseScale.RemoveSwap(index)
+Me.WeldReferenceAngle.RemoveSwap(index)
+Me.WeldLinearHertz.RemoveSwap(index)
+Me.WeldLinearDampingRatio.RemoveSwap(index)
+Me.WeldAngularHertz.RemoveSwap(index)
+Me.WeldAngularDampingRatio.RemoveSwap(index)
+Me.WeldLinearImpulseX.RemoveSwap(index)
+Me.WeldLinearImpulseY.RemoveSwap(index)
+Me.WeldAngularImpulse.RemoveSwap(index)
+Me.WeldAxialMass.RemoveSwap(index)
+Me.WeldDeltaAngle.RemoveSwap(index)
+Me.WeldLinearSoftnessBiasRate.RemoveSwap(index)
+Me.WeldLinearSoftnessMassScale.RemoveSwap(index)
+Me.WeldLinearSoftnessImpulseScale.RemoveSwap(index)
+Me.WeldAngularSoftnessBiasRate.RemoveSwap(index)
+Me.WeldAngularSoftnessMassScale.RemoveSwap(index)
+Me.WeldAngularSoftnessImpulseScale.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -782,6 +870,22 @@ target.PrismaticDeltaAngle.Items[targetIndex] = Me.PrismaticDeltaAngle.Items[sou
 target.PrismaticSpringSoftnessBiasRate.Items[targetIndex] = Me.PrismaticSpringSoftnessBiasRate.Items[sourceIndex]
 target.PrismaticSpringSoftnessMassScale.Items[targetIndex] = Me.PrismaticSpringSoftnessMassScale.Items[sourceIndex]
 target.PrismaticSpringSoftnessImpulseScale.Items[targetIndex] = Me.PrismaticSpringSoftnessImpulseScale.Items[sourceIndex]
+target.WeldReferenceAngle.Items[targetIndex] = Me.WeldReferenceAngle.Items[sourceIndex]
+target.WeldLinearHertz.Items[targetIndex] = Me.WeldLinearHertz.Items[sourceIndex]
+target.WeldLinearDampingRatio.Items[targetIndex] = Me.WeldLinearDampingRatio.Items[sourceIndex]
+target.WeldAngularHertz.Items[targetIndex] = Me.WeldAngularHertz.Items[sourceIndex]
+target.WeldAngularDampingRatio.Items[targetIndex] = Me.WeldAngularDampingRatio.Items[sourceIndex]
+target.WeldLinearImpulseX.Items[targetIndex] = Me.WeldLinearImpulseX.Items[sourceIndex]
+target.WeldLinearImpulseY.Items[targetIndex] = Me.WeldLinearImpulseY.Items[sourceIndex]
+target.WeldAngularImpulse.Items[targetIndex] = Me.WeldAngularImpulse.Items[sourceIndex]
+target.WeldAxialMass.Items[targetIndex] = Me.WeldAxialMass.Items[sourceIndex]
+target.WeldDeltaAngle.Items[targetIndex] = Me.WeldDeltaAngle.Items[sourceIndex]
+target.WeldLinearSoftnessBiasRate.Items[targetIndex] = Me.WeldLinearSoftnessBiasRate.Items[sourceIndex]
+target.WeldLinearSoftnessMassScale.Items[targetIndex] = Me.WeldLinearSoftnessMassScale.Items[sourceIndex]
+target.WeldLinearSoftnessImpulseScale.Items[targetIndex] = Me.WeldLinearSoftnessImpulseScale.Items[sourceIndex]
+target.WeldAngularSoftnessBiasRate.Items[targetIndex] = Me.WeldAngularSoftnessBiasRate.Items[sourceIndex]
+target.WeldAngularSoftnessMassScale.Items[targetIndex] = Me.WeldAngularSoftnessMassScale.Items[sourceIndex]
+target.WeldAngularSoftnessImpulseScale.Items[targetIndex] = Me.WeldAngularSoftnessImpulseScale.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -902,5 +1006,21 @@ Me.PrismaticDeltaAngle.Clear()
 Me.PrismaticSpringSoftnessBiasRate.Clear()
 Me.PrismaticSpringSoftnessMassScale.Clear()
 Me.PrismaticSpringSoftnessImpulseScale.Clear()
+Me.WeldReferenceAngle.Clear()
+Me.WeldLinearHertz.Clear()
+Me.WeldLinearDampingRatio.Clear()
+Me.WeldAngularHertz.Clear()
+Me.WeldAngularDampingRatio.Clear()
+Me.WeldLinearImpulseX.Clear()
+Me.WeldLinearImpulseY.Clear()
+Me.WeldAngularImpulse.Clear()
+Me.WeldAxialMass.Clear()
+Me.WeldDeltaAngle.Clear()
+Me.WeldLinearSoftnessBiasRate.Clear()
+Me.WeldLinearSoftnessMassScale.Clear()
+Me.WeldLinearSoftnessImpulseScale.Clear()
+Me.WeldAngularSoftnessBiasRate.Clear()
+Me.WeldAngularSoftnessMassScale.Clear()
+Me.WeldAngularSoftnessImpulseScale.Clear()
 End Sub
 End Class

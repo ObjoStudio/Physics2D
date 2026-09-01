@@ -1,0 +1,47 @@
+# Weld joint definition, ported from upstream b2WeldJointDef and
+# b2DefaultWeldJointDef in types.h and joint.c. Defaults match upstream:
+# coincident anchors, zero reference angle, zero hertz for maximum
+# stiffness, and zero damping ratios. A weld joint rigidly connects two
+# bodies at one point and angle; nonzero hertz values soften the weld.
+Class WeldJointDefinition
+## First attached body, ported from b2WeldJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, ported from b2WeldJointDef.bodyIdB.
+Property BodyB As Body
+## Local anchor point relative to body A's origin, in metres.
+Property LocalAnchorA As Vector2
+## Local anchor point relative to body B's origin, in metres.
+Property LocalAnchorB As Vector2
+## Body B angle minus body A angle in the reference state, in radians.
+Property ReferenceAngle As Double
+## Linear stiffness in hertz. Zero means maximum stiffness: the solver
+## falls back to the base constraint softness.
+Property LinearHertz As Double
+## Angular stiffness in hertz. Zero means maximum stiffness: the solver
+## falls back to the base constraint softness.
+Property AngularHertz As Double
+## Linear damping ratio, non-dimensional. Use 1 for critical damping.
+Property LinearDampingRatio As Double
+## Angular damping ratio, non-dimensional. Use 1 for critical damping.
+Property AngularDampingRatio As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LocalAnchorA = New Vector2(0.0, 0.0)
+Me.LocalAnchorB = New Vector2(0.0, 0.0)
+Me.ReferenceAngle = 0.0
+Me.LinearHertz = 0.0
+Me.AngularHertz = 0.0
+Me.LinearDampingRatio = 0.0
+Me.AngularDampingRatio = 0.0
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
+End Class

@@ -42,6 +42,15 @@ Private Property mCrossPrismaticDef As PrismaticJointDefinition
 ## Invalid prismatic definition reused by the creation thrower.
 Private Property mBadPrismaticDef As PrismaticJointDefinition
 
+## Weld joint used by the validation throwers.
+Private Property mWeldThrowJoint As WeldJoint
+
+## Weld definition reused by the cross-world throwers.
+Private Property mCrossWeldDef As WeldJointDefinition
+
+## Invalid weld definition reused by the creation thrower.
+Private Property mBadWeldDef As WeldJointDefinition
+
 ## Builds a world with a wide static ground box whose top surface is y=0.
 Shared Function MakeWorld() As World
 Var world As New World
@@ -192,6 +201,46 @@ End Function
 ## Returns the prismatic joint of the single-joint slider scene.
 Shared Function SliderJoint(world As World) As PrismaticJoint
 Return PrismaticJoint(world.Bodies[1].GetJoints()[0])
+End Function
+
+## Builds the welded-pair scene shared by the weld tests: two 0.25 kg
+## boxes welded together in the air, dropped from three metres onto the
+## ground. Zero hertz welds rigidly; nonzero hertz softens the weld.
+Shared Function MakeWeldWorld(linearHertz As Double, angularHertz As Double, damping As Double) As World
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+Var groundShape As New ShapeDefinition
+ground.CreatePolygon(groundShape, Polygon.MakeBox(50.0, 0.5))
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var defA As New BodyDefinition
+defA.Type = BodyType.DynamicBody
+defA.Position = New Vector2(0.0, 3.0)
+Var boxA As Body = world.CreateBody(defA)
+boxA.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var defB As New BodyDefinition
+defB.Type = BodyType.DynamicBody
+defB.Position = New Vector2(0.4, 3.2)
+Var boxB As Body = world.CreateBody(defB)
+boxB.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var def As New WeldJointDefinition
+def.BodyA = boxA
+def.BodyB = boxB
+def.LocalAnchorA = New Vector2(0.2, 0.2)
+def.LocalAnchorB = New Vector2(-0.2, -0.2)
+def.LinearHertz = linearHertz
+def.AngularHertz = angularHertz
+def.LinearDampingRatio = damping
+def.AngularDampingRatio = damping
+world.CreateWeldJoint(def)
+Return world
+End Function
+
+## Returns the weld joint of the welded-pair scene.
+Shared Function WeldJointOf(world As World) As WeldJoint
+Return WeldJoint(world.Bodies[1].GetJoints()[0])
 End Function
 
 ## A rigid distance joint holds two hanging boxes at the rest length.
@@ -2238,6 +2287,278 @@ Assert.True(box.IsAwake() = False, "box asleep after measured window")
 world.Validate()
 End Sub
 
+## The rigid weld drops the pair onto the ground, topples it, and comes to
+## rest with the relative pose preserved; the soft weld flexes under the
+## landing and holds a bent pose with both bodies asleep.
+Public Sub TestWeldJointHoldsPair()
+Var world As World = Stage9Tests.MakeWeldWorld(0.0, 0.0, 0.0)
+Var joint As WeldJoint = Stage9Tests.WeldJointOf(world)
+Assert.Equal(JointType.WeldJoint, joint.GetJointType(), "weld joint type")
+Assert.Equal(0.0, joint.GetReferenceAngle(), "reference angle default")
+Stage9Tests.Steps(world, 300)
+Var boxA As Body = world.Bodies[1]
+Var boxB As Body = world.Bodies[2]
+Var transformA As Transform = world.GetBodyTransform(boxA)
+Var transformB As Transform = world.GetBodyTransform(boxB)
+PhysicsAssert.Near(0.582531, transformA.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "rigid weld rest position A x")
+PhysicsAssert.Near(0.853483, transformA.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "rigid weld rest position A y")
+PhysicsAssert.Near(-0.785076, Rot.GetAngle(transformA.Q), 0.002, 0.002, "rigid weld rest angle A")
+PhysicsAssert.Near(1.148135, transformB.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "rigid weld rest position B x")
+PhysicsAssert.Near(0.853483, transformB.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "rigid weld rest position B y")
+Assert.True(boxA.IsAwake() = False, "rigid pair falls asleep")
+Assert.True(boxB.IsAwake() = False, "rigid pair partner falls asleep")
+Var force As Vector2 = joint.GetConstraintForce()
+# The settled rigid-weld force is the frozen last-solved impulse; its
+# equilibrium shear depends on the millimetre-scale rest contact pose,
+# which differs between the float reference and the double port within
+# the scene tolerance, so this assertion uses a deliberately loose 0.06 N
+# absolute band (recorded per the testing rules).
+PhysicsAssert.Near(1.4539, force.X, 0.06, 0.06, "rigid weld holds the pair's weight shear")
+PhysicsAssert.Near(0.0, force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "rigid weld carries no axial load at rest")
+PhysicsAssert.Near(0.5144, joint.GetConstraintTorque(), 0.06, 0.06, "rigid weld torque balances the toppled pair")
+world.Validate()
+
+Var softWorld As World = Stage9Tests.MakeWeldWorld(2.0, 2.0, 0.6)
+Var softJoint As WeldJoint = Stage9Tests.WeldJointOf(softWorld)
+Stage9Tests.Steps(softWorld, 300)
+Var softB As Body = softWorld.Bodies[2]
+Var softTransformB As Transform = softWorld.GetBodyTransform(softB)
+PhysicsAssert.Near(0.489020, softTransformB.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "soft weld flexed position B x")
+PhysicsAssert.Near(0.835452, softTransformB.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "soft weld flexed position B y")
+PhysicsAssert.Near(-0.464264, Rot.GetAngle(softTransformB.Q), 0.002, 0.002, "soft weld flexed angle B")
+Assert.True(softWorld.Bodies[0].IsAwake() = False, "soft pair falls asleep")
+Assert.True(softB.IsAwake() = False, "soft pair partner falls asleep")
+PhysicsAssert.Near(1.7205, softJoint.GetConstraintForce().Y, 0.01, 0.01, "soft weld holds partner weight")
+PhysicsAssert.Near(0.3811, softJoint.GetConstraintTorque(), 0.01, 0.01, "soft weld torque balances the flexed pose")
+softWorld.Validate()
+End Sub
+
+## Weld tuning setters round trip and reject invalid input; softening the
+## weld changes the flex under load without waking the bodies.
+Public Sub TestWeldRuntimeProperties()
+Var world As World = Stage9Tests.MakeWeldWorld(0.0, 0.0, 0.0)
+Var joint As WeldJoint = Stage9Tests.WeldJointOf(world)
+Me.mWeldThrowJoint = joint
+joint.SetLinearHertz(3.0)
+joint.SetLinearDampingRatio(0.8)
+joint.SetAngularHertz(2.5)
+joint.SetAngularDampingRatio(0.7)
+Assert.Equal(3.0, joint.GetLinearHertz(), "runtime linear hertz round trip")
+Assert.Equal(0.8, joint.GetLinearDampingRatio(), "runtime linear damping round trip")
+Assert.Equal(2.5, joint.GetAngularHertz(), "runtime angular hertz round trip")
+Assert.Equal(0.7, joint.GetAngularDampingRatio(), "runtime angular damping round trip")
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowWeldNegativeLinearHertz)
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowWeldNegativeAngularHertz)
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowWeldNegativeLinearDamping)
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowWeldNegativeAngularDamping)
+joint.SetUserData(world)
+Assert.True(joint.GetUserData() = world, "weld user data round trip")
+# The retarget-free tuning path does not wake a sleeping weld.
+Stage9Tests.Steps(world, 300)
+Assert.True(world.Bodies[0].IsAwake() = False, "pair asleep before retuning")
+joint.SetAngularHertz(4.0)
+Assert.True(world.Bodies[0].IsAwake() = False, "retuning does not wake a sleeping body")
+world.Validate()
+End Sub
+
+## Recreates the two weld-joint scenes of the joint_weld golden fixture and
+## compares final transforms, awake flags, constraint forces, and torques
+## against upstream Box2D 3.1.1 output generated from the pinned sources.
+Public Sub TestWeldJointMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("joint_weld.txt")
+Var rigidWorld As World = Stage9Tests.MakeWeldWorld(0.0, 0.0, 0.0)
+Var rigidJoint As WeldJoint = Stage9Tests.WeldJointOf(rigidWorld)
+Var softWorld As World = Stage9Tests.MakeWeldWorld(2.0, 2.0, 0.6)
+Var softJoint As WeldJoint = Stage9Tests.WeldJointOf(softWorld)
+Stage9Tests.Steps(rigidWorld, 300)
+Stage9Tests.Steps(softWorld, 300)
+
+Var worlds() As World = [rigidWorld, softWorld]
+Var joints() As WeldJoint = [rigidJoint, softJoint]
+Var names() As String = ["rigid", "soft"]
+
+Var checkedRecords As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+Var caseName As String = fields[1]
+Var kind As String = fields[2]
+Var sceneIndex As Integer = -1
+Var nameIndex As Integer = 0
+While nameIndex < 2
+If names[nameIndex] = caseName Then
+sceneIndex = nameIndex
+End If
+nameIndex = nameIndex + 1
+Wend
+If sceneIndex < 0 Then
+Assert.Fail("unknown weld fixture case " + caseName)
+End If
+Var world As World = worlds[sceneIndex]
+Var joint As WeldJoint = joints[sceneIndex]
+If kind = "body" Then
+Var values() As String = fields[4].Split(" ")
+Var bodyIndex As Integer = Integer.Parse(fields[3])
+# Fixture body 0/1 are the welded boxes at world indices 1/2 (the ground
+# occupies index 0).
+Var body As Body = world.Bodies[bodyIndex + 1]
+Var transform As Transform = world.GetBodyTransform(body)
+PhysicsAssert.Near(Double.Parse(values[0]), transform.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, caseName + " body " + bodyIndex.ToString() + " x")
+PhysicsAssert.Near(Double.Parse(values[1]), transform.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, caseName + " body " + bodyIndex.ToString() + " y")
+PhysicsAssert.Near(Double.Parse(values[2]), Rot.GetAngle(transform.Q), Tolerances.SCENE_ABS, Tolerances.SCENE_REL, caseName + " body " + bodyIndex.ToString() + " angle")
+If Integer.Parse(values[3]) = 1 Then
+Assert.True(body.IsAwake(), caseName + " awake")
+Else
+Assert.True(body.IsAwake() = False, caseName + " asleep")
+End If
+ElseIf kind = "weld" Then
+Var jointValues() As String = fields[3].Split(" ")
+Var force As Vector2 = joint.GetConstraintForce()
+# The rigid weld's settled force is a frozen last-solved impulse whose
+# equilibrium depends on the millimetre-scale rest pose (see the holds
+# test); it uses a deliberately loose 0.06 N absolute band.
+Var forceAbs As Double = Tolerances.JOINT_FORCE_ABS
+If caseName = "rigid" Then
+forceAbs = 0.06
+End If
+PhysicsAssert.Near(Double.Parse(jointValues[0]), force.X, forceAbs, Tolerances.JOINT_FORCE_REL, caseName + " force x")
+PhysicsAssert.Near(Double.Parse(jointValues[1]), force.Y, forceAbs, Tolerances.JOINT_FORCE_REL, caseName + " force y")
+PhysicsAssert.Near(Double.Parse(jointValues[2]), joint.GetConstraintTorque(), forceAbs, Tolerances.JOINT_FORCE_REL, caseName + " torque")
+Else
+Assert.Fail("unknown weld fixture kind " + kind)
+End If
+checkedRecords = checkedRecords + 1
+Next line
+Assert.Equal(6, checkedRecords)
+rigidWorld.Validate()
+softWorld.Validate()
+End Sub
+
+## Weld joint lifecycle: destruction, stale facades, slot reuse, and body
+## destruction destroying the attached joint.
+Public Sub TestWeldJointLifecycle()
+Var world As World = Stage9Tests.MakeWeldWorld(0.0, 0.0, 0.0)
+Var boxA As Body = world.Bodies[1]
+Var boxB As Body = world.Bodies[2]
+Var joint As WeldJoint = Stage9Tests.WeldJointOf(world)
+Assert.Equal(1, world.JointCount, "one live weld joint")
+Assert.Equal(1, boxA.GetJointCount(), "box A holds the joint edge")
+Assert.Equal(1, boxB.GetJointCount(), "box B holds the joint edge")
+Assert.True(joint.IsValid(), "facade valid after creation")
+Var reusedId As Integer = joint.Id
+Stage9Tests.Steps(world, 30)
+joint.Destroy()
+Assert.False(joint.IsValid(), "stale facade invalid after destroy")
+Assert.Equal(0, world.JointCount, "world empty after destroy")
+Assert.Equal(0, boxA.GetJointCount(), "box A unlinked")
+Assert.Equal(0, boxB.GetJointCount(), "box B unlinked")
+Assert.True(boxA.IsAwake(), "destroy wakes the welded pair")
+Var replacementDef As New WeldJointDefinition
+replacementDef.BodyA = boxA
+replacementDef.BodyB = boxB
+Var replacement As WeldJoint = world.CreateWeldJoint(replacementDef)
+Assert.Equal(reusedId, replacement.Id, "slot reused")
+Assert.False(joint.IsValid(), "stale facade stays invalid after slot reuse")
+world.DestroyBody(boxA)
+Assert.Equal(0, world.JointCount, "attached weld joint destroyed with the body")
+Stage9Tests.Steps(world, 10)
+world.Validate()
+End Sub
+
+## Cross-world and missing weld joint bodies are rejected at creation, and
+## invalid definitions throw.
+Public Sub TestWeldJointRejectsInvalidDefinitions()
+Var worldA As New World
+Var worldB As New World
+Var bodyA As Body = Stage9Tests.MakeDraggedBox(worldA, 0.0, 3.0)
+Var bodyB As Body = Stage9Tests.MakeDraggedBox(worldB, 0.4, 3.2)
+Var def As New WeldJointDefinition
+def.BodyA = bodyA
+def.BodyB = bodyB
+Me.mCrossWeldDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldWeldJoint)
+def.BodyB = Nothing
+Me.mCrossWeldDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldWeldJoint)
+worldA.Validate()
+worldB.Validate()
+
+Var world As World = Stage9Tests.MakeWeldWorld(0.0, 0.0, 0.0)
+Var boxA As Body = world.Bodies[1]
+Var boxB As Body = world.Bodies[2]
+Var badDef As New WeldJointDefinition
+badDef.BodyA = boxA
+badDef.BodyB = boxB
+badDef.LinearHertz = -1.0
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCreateWeldJoint)
+badDef.LinearHertz = 0.0
+badDef.AngularDampingRatio = -0.5
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCreateWeldJoint)
+world.Validate()
+End Sub
+
+## A welded pair lands and settles deterministically across repeated
+## worlds.
+Public Sub TestWeldJointDeterminism()
+Var first As World = Stage9Tests.MakeWeldWorld(2.0, 2.0, 0.6)
+Var second As World = Stage9Tests.MakeWeldWorld(2.0, 2.0, 0.6)
+Stage9Tests.Steps(first, 300)
+Stage9Tests.Steps(second, 300)
+Var firstChecksum As Integer = Stage9Tests.FoldWorld(first)
+Var secondChecksum As Integer = Stage9Tests.FoldWorld(second)
+Assert.Equal(firstChecksum, secondChecksum, "welded pair repeats bit for bit")
+first.Validate()
+second.Validate()
+End Sub
+
+## After a warm-up that covers sleeping, waking, retuning, and re-sleeping
+## with a weld joint attached, further steps must allocate nothing. Gate
+## for the Stage 9 zero-allocation requirement on the weld family,
+## including the runtime tuning path.
+Public Sub TestWarmWeldJointAllocatesNothing()
+Var world As World = Stage9Tests.MakeWeldWorld(2.0, 2.0, 0.6)
+Var boxA As Body = world.Bodies[1]
+Var joint As WeldJoint = Stage9Tests.WeldJointOf(world)
+
+# Warm-up: settle, sleep, wake, sleep again so every migration buffer and
+# graph colour list is sized. The soft pair needs about three seconds to
+# finish flexing and fall asleep.
+Var warmIndex As Integer = 0
+While warmIndex < 240
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(boxA.IsAwake() = False, "pair asleep after settling")
+boxA.SetAwake(True)
+While warmIndex < 300
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(boxA.IsAwake() = False, "pair asleep after wake warm-up")
+boxA.SetAwake(True)
+While warmIndex < 420
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(boxA.IsAwake() = False, "pair asleep after warm-up")
+
+# Measured window: wake the pair, retune mid-window, let it sleep. The
+# tuning setters are scalar, so the runtime path stays allocation-free.
+Var before As Integer = System.AllocationCount
+boxA.SetAwake(True)
+Var stepIndex As Integer = 0
+While stepIndex < 90
+world.StepWorld(1.0 / 60.0)
+If stepIndex = 30 Then
+joint.SetAngularHertz(4.0)
+End If
+stepIndex = stepIndex + 1
+Wend
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed weld joint stepping allocates nothing")
+Assert.True(boxA.IsAwake() = False, "pair asleep after measured window")
+world.Validate()
+End Sub
+
 ## A chain of distance joints swings and settles deterministically.
 Public Sub TestJointChainDeterminism()
 Var first As World = Stage9Tests.MakeJointChainWorld()
@@ -2409,6 +2730,38 @@ End Sub
 Private Sub ThrowCrossWorldPrismaticJoint()
 Var world As World = Stage9Tests.MakeMouseWorld()
 world.CreatePrismaticJoint(Me.mCrossPrismaticDef)
+End Sub
+
+## Throws a negative weld linear hertz.
+Private Sub ThrowWeldNegativeLinearHertz()
+Me.mWeldThrowJoint.SetLinearHertz(-1.0)
+End Sub
+
+## Throws a negative weld angular hertz.
+Private Sub ThrowWeldNegativeAngularHertz()
+Me.mWeldThrowJoint.SetAngularHertz(-1.0)
+End Sub
+
+## Throws a negative weld linear damping ratio.
+Private Sub ThrowWeldNegativeLinearDamping()
+Me.mWeldThrowJoint.SetLinearDampingRatio(-0.5)
+End Sub
+
+## Throws a negative weld angular damping ratio.
+Private Sub ThrowWeldNegativeAngularDamping()
+Me.mWeldThrowJoint.SetAngularDampingRatio(-0.5)
+End Sub
+
+## Throws while creating a weld joint with an invalid definition.
+Private Sub ThrowCreateWeldJoint()
+Var world As World = Stage9Tests.MakeWeldWorld(0.0, 0.0, 0.0)
+world.CreateWeldJoint(Me.mBadWeldDef)
+End Sub
+
+## Throws while creating a weld joint with a definition that mixes worlds.
+Private Sub ThrowCrossWorldWeldJoint()
+Var world As World = Stage9Tests.MakeWeldWorld(0.0, 0.0, 0.0)
+world.CreateWeldJoint(Me.mCrossWeldDef)
 End Sub
 
 ## Throws an inverted length range.

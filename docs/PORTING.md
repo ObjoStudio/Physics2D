@@ -206,6 +206,16 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     (`k22 = 1` when both rotational inertias vanish) and the axial
     effective mass is prepared once per step from the anchor-line torque
     arms.
+36. **Weld joint softness fallback.** Upstream's `b2PrepareWeldJoint`
+    copies the base constraint softness into the weld's linear or angular
+    softness when the corresponding hertz is zero, so a rigid weld
+    inherits the solver's constraint tuning; Physics2D matches this by
+    copying the prepared base softness columns into the weld softness
+    columns at prepare time. The runtime tuning setters throw
+    `InvalidArgumentException` where upstream asserts finite non-negative
+    input, and the angular and linear bias blocks apply whenever the
+    solver asks for bias or the weld is softened, matching the upstream
+    `useBias || hertz > 0` condition.
 
 ## Public Symbol Inventory
 

@@ -26,6 +26,8 @@ ElseIf sims.Type.Items[index] = Integer(JointType.RevoluteJoint) Then
 PrepareRevoluteJoint(sims, index, context)
 ElseIf sims.Type.Items[index] = Integer(JointType.PrismaticJoint) Then
 PreparePrismaticJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.WeldJoint) Then
+PrepareWeldJoint(sims, index, context)
 End If
 End Sub
 
@@ -1677,6 +1679,296 @@ End Function
 ## b2GetPrismaticJointTorque: the angular part of the block impulse.
 Shared Function GetPrismaticJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
 Return invH * sims.PrismaticImpulseY.Items[index]
+End Function
+
+## Prepares one weld joint row, ported from b2PrepareWeldJoint. The weld
+## pins both anchor points and the relative angle. A zero hertz copies the
+## base constraint softness into the weld softness columns, matching the
+## upstream fallback; otherwise the softness comes from the definition's
+## hertz and damping ratio. A non-awake body stores a NULL_INDEX state row
+## that the kernels replace with an identity dummy.
+Private Shared Sub PrepareWeldJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyA As Body = world.Bodies[sims.BodyIdA.Items[index]]
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simA As BodySims = world.GetBodySim(bodyA)
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexA As Integer = bodyA.LocalIndex
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassA.Items[index] = simA.InvMass.Items[indexA]
+sims.InvIA.Items[index] = simA.InvInertia.Items[indexA]
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexA.Items[index] = indexA
+Else
+sims.IndexA.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+Var qcA As Double = simA.QC.Items[indexA]
+Var qsA As Double = simA.QS.Items[indexA]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+Var localDX As Double = sims.LocalOriginAnchorAX.Items[index] - simA.LCX.Items[indexA]
+Var localDY As Double = sims.LocalOriginAnchorAY.Items[index] - simA.LCY.Items[indexA]
+sims.AnchorAX.Items[index] = qcA * localDX - qsA * localDY
+sims.AnchorAY.Items[index] = qsA * localDX + qcA * localDY
+Var localEX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localEY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localEX - qsB * localEY
+sims.AnchorBY.Items[index] = qsB * localEX + qcB * localEY
+
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
+# Relative angle minus the reference angle, unwound, with scalar
+# components; see the motor prepare note.
+Var relS As Double = simB.QS.Items[indexB] * simA.QC.Items[indexA] - simB.QC.Items[indexB] * simA.QS.Items[indexA]
+Var relC As Double = simB.QC.Items[indexB] * simA.QC.Items[indexA] + simB.QS.Items[indexB] * simA.QS.Items[indexA]
+sims.WeldDeltaAngle.Items[index] = PhysicsMaths.UnwindAngle(PhysicsMaths.Atan2(relS, relC) - sims.WeldReferenceAngle.Items[index])
+
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var ka As Double = iA + iB
+If ka > 0.0 Then
+sims.WeldAxialMass.Items[index] = 1.0 / ka
+Else
+sims.WeldAxialMass.Items[index] = 0.0
+End If
+
+# Zero hertz falls back to the base constraint softness, matching the
+# upstream prepare exactly.
+If sims.WeldLinearHertz.Items[index] = 0.0 Then
+sims.WeldLinearSoftnessBiasRate.Items[index] = sims.SoftnessBiasRate.Items[index]
+sims.WeldLinearSoftnessMassScale.Items[index] = sims.SoftnessMassScale.Items[index]
+sims.WeldLinearSoftnessImpulseScale.Items[index] = sims.SoftnessImpulseScale.Items[index]
+Else
+Softness.MakeTo(sims.WeldLinearHertz.Items[index], sims.WeldLinearDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.WeldLinearSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.WeldLinearSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.WeldLinearSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+End If
+If sims.WeldAngularHertz.Items[index] = 0.0 Then
+sims.WeldAngularSoftnessBiasRate.Items[index] = sims.SoftnessBiasRate.Items[index]
+sims.WeldAngularSoftnessMassScale.Items[index] = sims.SoftnessMassScale.Items[index]
+sims.WeldAngularSoftnessImpulseScale.Items[index] = sims.SoftnessImpulseScale.Items[index]
+Else
+Softness.MakeTo(sims.WeldAngularHertz.Items[index], sims.WeldAngularDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.WeldAngularSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.WeldAngularSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.WeldAngularSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+End If
+
+If context.WarmStartScale = 0.0 Then
+sims.WeldLinearImpulseX.Items[index] = 0.0
+sims.WeldLinearImpulseY.Items[index] = 0.0
+sims.WeldAngularImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored weld joint impulses to both body states before
+## iterating, ported from b2WarmStartWeldJoint. Non-awake bodies use an
+## identity dummy state, matching the upstream static-body path.
+Shared Sub WarmStartWeldJoint(sims As JointSims, index As Integer, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var pX As Double = sims.WeldLinearImpulseX.Items[index]
+Var pY As Double = sims.WeldLinearImpulseY.Items[index]
+Var angularImpulse As Double = sims.WeldAngularImpulse.Items[index]
+
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (rAX * pY - rAY * pX + angularImpulse)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (rBX * pY - rBY * pX + angularImpulse)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Runs one velocity iteration for one weld joint row, ported from
+## b2SolveWeldJoint: the angular constraint, then the linear 2x2 block.
+## The soft bias applies whenever the solver asks for bias or the weld is
+## softened, matching the upstream condition.
+Shared Sub SolveWeldJoint(sims As JointSims, index As Integer, context As StepContext, useBias As Boolean)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+# Angular constraint.
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If useBias Or sims.WeldAngularHertz.Items[index] > 0.0 Then
+Var relS As Double = dqBS * dqAC - dqBC * dqAS
+Var relC As Double = dqBC * dqAC + dqBS * dqAS
+Var C As Double = PhysicsMaths.Atan2(relS, relC) + sims.WeldDeltaAngle.Items[index]
+bias = sims.WeldAngularSoftnessBiasRate.Items[index] * C
+massScale = sims.WeldAngularSoftnessMassScale.Items[index]
+impulseScale = sims.WeldAngularSoftnessImpulseScale.Items[index]
+End If
+Var Cdot As Double = wB - wA
+Var impulse As Double = -massScale * sims.WeldAxialMass.Items[index] * (Cdot + bias) - impulseScale * sims.WeldAngularImpulse.Items[index]
+sims.WeldAngularImpulse.Items[index] = sims.WeldAngularImpulse.Items[index] + impulse
+wA = wA - iA * impulse
+wB = wB + iB * impulse
+
+# Linear constraint. The combined matrix is symmetric by construction and
+# solved inline with the guarded inverse determinant of upstream
+# b2Solve22.
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var biasX As Double = 0.0
+Var biasY As Double = 0.0
+massScale = 1.0
+impulseScale = 0.0
+If useBias Or sims.WeldLinearHertz.Items[index] > 0.0 Then
+Var cx As Double = dpBX - dpAX + rBX - rAX + sims.DeltaCenterX.Items[index]
+Var cy As Double = dpBY - dpAY + rBY - rAY + sims.DeltaCenterY.Items[index]
+biasX = sims.WeldLinearSoftnessBiasRate.Items[index] * cx
+biasY = sims.WeldLinearSoftnessBiasRate.Items[index] * cy
+massScale = sims.WeldLinearSoftnessMassScale.Items[index]
+impulseScale = sims.WeldLinearSoftnessImpulseScale.Items[index]
+End If
+Var cdX As Double = vBX - wB * rBY - (vAX - wA * rAY)
+Var cdY As Double = vBY + wB * rBX - (vAY + wA * rAX)
+Var k11 As Double = mA + mB + rAY * rAY * iA + rBY * rBY * iB
+Var k12 As Double = -(rAY * rAX * iA + rBY * rBX * iB)
+Var k22 As Double = mA + mB + rAX * rAX * iA + rBX * rBX * iB
+Var rhsX As Double = cdX + biasX
+Var rhsY As Double = cdY + biasY
+Var det As Double = k11 * k22 - k12 * k12
+If det <> 0.0 Then
+det = 1.0 / det
+End If
+Var bX As Double = det * (k22 * rhsX - k12 * rhsY)
+Var bY As Double = det * (k11 * rhsY - k12 * rhsX)
+Var oldX As Double = sims.WeldLinearImpulseX.Items[index]
+Var oldY As Double = sims.WeldLinearImpulseY.Items[index]
+Var impX As Double = -massScale * bX - impulseScale * oldX
+Var impY As Double = -massScale * bY - impulseScale * oldY
+sims.WeldLinearImpulseX.Items[index] = oldX + impX
+sims.WeldLinearImpulseY.Items[index] = oldY + impY
+
+vAX = vAX - mA * impX
+vAY = vAY - mA * impY
+wA = wA - iA * (rAX * impY - rAY * impX)
+vBX = vBX + mB * impX
+vBY = vBY + mB * impY
+wB = wB + iB * (rBX * impY - rBY * impX)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Total force the weld joint row applied this step, ported from
+## b2GetWeldJointForce.
+Shared Function GetWeldJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var scale As Double = invH
+Return New Vector2(scale * sims.WeldLinearImpulseX.Items[index], scale * sims.WeldLinearImpulseY.Items[index])
+End Function
+
+## Torque the weld joint row applied this step, ported from
+## b2GetWeldJointTorque.
+Shared Function GetWeldJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * sims.WeldAngularImpulse.Items[index]
 End Function
 
 ## Total force the mouse joint row applied this step, ported from

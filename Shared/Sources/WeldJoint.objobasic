@@ -1,0 +1,87 @@
+# Public weld joint façade, ported from the b2WeldJoint_* surface in
+# weld_joint.c. The weld rigidly connects two bodies at one point and
+# angle; nonzero hertz values soften the weld so it can flex under load.
+# Tuning setters throw where upstream asserts (finite and non-negative)
+# and changes deliberately do not wake the bodies, matching upstream; the
+# solver picks up new values on the next step. The façade reads and writes
+# its row in the owning JointSims store.
+Class WeldJoint Inherits Joint
+## Linear stiffness in hertz, ported from b2WeldJoint_SetLinearHertz.
+## Negative or non-finite values throw where upstream asserts. Zero means
+## maximum stiffness. Changes apply from the next step and do not wake the
+## bodies.
+Sub SetLinearHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not hertz.IsFinite() Or hertz < 0.0 Then
+Throw New InvalidArgumentException("Weld joint linear hertz must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).WeldLinearHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Linear stiffness in hertz, ported from b2WeldJoint_GetLinearHertz.
+Function GetLinearHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WeldLinearHertz.Items[Me.LocalIndex]
+End Function
+
+## Linear damping ratio, ported from b2WeldJoint_SetLinearDampingRatio.
+## Negative or non-finite values throw where upstream asserts.
+Sub SetLinearDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not dampingRatio.IsFinite() Or dampingRatio < 0.0 Then
+Throw New InvalidArgumentException("Weld joint linear damping ratio must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).WeldLinearDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Linear damping ratio, ported from b2WeldJoint_GetLinearDampingRatio.
+Function GetLinearDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WeldLinearDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## Angular stiffness in hertz, ported from b2WeldJoint_SetAngularHertz.
+## Negative or non-finite values throw where upstream asserts. Zero means
+## maximum stiffness. Changes apply from the next step and do not wake the
+## bodies.
+Sub SetAngularHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not hertz.IsFinite() Or hertz < 0.0 Then
+Throw New InvalidArgumentException("Weld joint angular hertz must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).WeldAngularHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Angular stiffness in hertz, ported from b2WeldJoint_GetAngularHertz.
+Function GetAngularHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WeldAngularHertz.Items[Me.LocalIndex]
+End Function
+
+## Angular damping ratio, ported from b2WeldJoint_SetAngularDampingRatio.
+## Negative or non-finite values throw where upstream asserts.
+Sub SetAngularDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not dampingRatio.IsFinite() Or dampingRatio < 0.0 Then
+Throw New InvalidArgumentException("Weld joint angular damping ratio must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).WeldAngularDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Angular damping ratio, ported from b2WeldJoint_GetAngularDampingRatio.
+Function GetAngularDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WeldAngularDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## The constrained reference angle in radians, ported from
+## b2Joint_GetReferenceAngle for the weld family.
+Override Function GetReferenceAngle() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WeldReferenceAngle.Items[Me.LocalIndex]
+End Function
+End Class

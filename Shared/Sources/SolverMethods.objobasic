@@ -32,6 +32,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.RevoluteJoint) Then
 JointSolver.WarmStartRevoluteJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.PrismaticJoint) Then
 JointSolver.WarmStartPrismaticJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.WeldJoint) Then
+JointSolver.WarmStartWeldJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -54,6 +56,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.RevoluteJoint) Then
 JointSolver.SolveRevoluteJoint(sims, i, context, useBias)
 ElseIf sims.Type.Items[i] = Integer(JointType.PrismaticJoint) Then
 JointSolver.SolvePrismaticJoint(sims, i, context, useBias)
+ElseIf sims.Type.Items[i] = Integer(JointType.WeldJoint) Then
+JointSolver.SolveWeldJoint(sims, i, context, useBias)
 End If
 Next i
 End Sub

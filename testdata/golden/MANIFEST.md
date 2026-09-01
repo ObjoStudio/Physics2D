@@ -4,7 +4,7 @@
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (see docs/PORTING.md).
 #
 # Generation command (from the repository root, after building the tool):
-#   for f in maths hull distance raycast shapecast manifold mass scene_falling scene_pyramid scene_stack joint_distance joint_mouse joint_motor joint_revolute joint_prismatic; do
+#   for f in maths hull distance raycast shapecast manifold mass scene_falling scene_pyramid scene_stack joint_distance joint_mouse joint_motor joint_revolute joint_prismatic joint_weld; do
 #     ./build/tools/fixture_gen $f > testdata/golden/$f.txt
 #   done
 #
@@ -24,6 +24,7 @@ Generated on 2026-08-30.
 | `testdata/golden/joint_motor.txt` | ac82f90abaa938d38b3991adaee5de017ac4c0a267257e97042c6d9a6f4fe6c7 |
 | `testdata/golden/joint_revolute.txt` | e74b23d9e29316ce423e362841fd58bbc01ef0fe566feeeee6952ecaf4e178c6 |
 | `testdata/golden/joint_prismatic.txt` | 9a7687a0a883f696589f9f6401bb3716f5ec79738e13b48e937b8bd9cf755292 |
+| `testdata/golden/joint_weld.txt` | eee16c6a0fac545f198b8dbe90890db01ae16ffb28ad16ae8f460ce1b4457ec9 |
 | `testdata/golden/manifold.txt` | d3364d2db2bd598856668578b7910b44c9183245fafca1ccfb3e5db980c35701 |
 | `testdata/golden/mass.txt` | 880a0a41bb111488631f89e8864d9ee0c4f20df0d335cddd79a1a83422aad736 |
 | `testdata/golden/maths.txt` | b88060fa94260d4850309e753a72fb42cc02184d6931371def7ce708ad1e186f |
@@ -102,3 +103,13 @@ with exact equality. A trailing `1`/`0` integer encodes a Boolean.
   240 frames), `brake` (zero-speed motor as a 5 N force-clamped brake on a
   box kicked to 1.5 m/s at frame thirty, 240 frames). Every frame steps
   with the upstream default substep count of four.
+- `joint|case|body|index|positionx positiony angle awake` twice per case
+  (body 0 and 1), then one `joint|case|weld|forceX forceY torque` line per
+  weld joint case. Each case welds two 0.25 kg boxes together in the air
+  and drops the pair onto a static ground: `rigid` (zero hertz weld, the
+  pair topples and comes to rest, 300 frames), `soft` (2 Hz 0.5-damped
+  weld, the pair flexes and holds a bent pose, 300 frames). Every frame
+  steps with the upstream default substep count of four. The rigid case's
+  settled force is a frozen last-solved impulse sensitive to the
+  millimetre-scale rest pose; its test uses a documented 0.06 N absolute
+  band.

@@ -1267,11 +1267,74 @@ static void EmitPrismaticCases(void)
 	EmitPrismaticScene("brake", 0, 1, PrismaticConfigureBrake);
 }
 
+// --------------------------------------------------------- weld joints ----
+
+// Weld-joint scene fixture: two deterministic weld cases stepped with the
+// upstream default of four substeps. Each case welds two 0.25 kg boxes
+// together in the air and drops the pair onto a static ground; both cases
+// settle asleep, so the records are stable across float widths. The rigid
+// case topples and comes to rest; the soft case flexes and holds a bent
+// pose under gravity.
+static void EmitWeldScene(const char* name, float linearHertz, float angularHertz, float damping)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon groundBox = b2MakeBox(50.0f, 0.5f);
+	b2CreatePolygonShape(groundId, &shapeDef, &groundBox);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){0.0f, 3.0f};
+	b2BodyId boxAId = b2CreateBody(worldId, &bodyDef);
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(boxAId, &shapeDef, &box);
+	bodyDef.position = (b2Vec2){0.4f, 3.2f};
+	b2BodyId boxBId = b2CreateBody(worldId, &bodyDef);
+	b2CreatePolygonShape(boxBId, &shapeDef, &box);
+
+	b2WeldJointDef jointDef = b2DefaultWeldJointDef();
+	jointDef.bodyIdA = boxAId;
+	jointDef.bodyIdB = boxBId;
+	jointDef.localAnchorA = (b2Vec2){0.2f, 0.2f};
+	jointDef.localAnchorB = (b2Vec2){-0.2f, -0.2f};
+	jointDef.linearHertz = linearHertz;
+	jointDef.angularHertz = angularHertz;
+	jointDef.linearDampingRatio = damping;
+	jointDef.angularDampingRatio = damping;
+	b2JointId jointId = b2CreateWeldJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 300; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+	}
+
+	DumpJointBody(name, 0, boxAId);
+	DumpJointBody(name, 1, boxBId);
+	b2Vec2 force = b2Joint_GetConstraintForce(jointId);
+	float torque = b2Joint_GetConstraintTorque(jointId);
+	printf("joint|%s|weld|", name);
+	PrintNum(force.x); printf(" ");
+	PrintNum(force.y); printf(" ");
+	PrintNum(torque); printf("\n");
+	b2DestroyWorld(worldId);
+}
+
+static void EmitWeldCases(void)
+{
+	EmitWeldScene("rigid", 0.0f, 0.0f, 0.0f);
+	EmitWeldScene("soft", 2.0f, 2.0f, 0.6f);
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
 	{
-		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse|joint_motor|joint_revolute|joint_prismatic>\n");
+		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse|joint_motor|joint_revolute|joint_prismatic|joint_weld>\n");
 		return 2;
 	}
 
@@ -1291,6 +1354,7 @@ int main(int argc, char** argv)
 	else if (strcmp(name, "joint_motor") == 0) EmitMotorCases();
 	else if (strcmp(name, "joint_revolute") == 0) EmitRevoluteCases();
 	else if (strcmp(name, "joint_prismatic") == 0) EmitPrismaticCases();
+	else if (strcmp(name, "joint_weld") == 0) EmitWeldCases();
 	else
 	{
 		fprintf(stderr, "unknown fixture: %s\n", name);

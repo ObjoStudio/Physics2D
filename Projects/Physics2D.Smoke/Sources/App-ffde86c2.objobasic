@@ -1,11 +1,12 @@
 # Smoke application. It proves that the Physics2D module assembles from nested
 # Shared Code source items and compiles in a project-type-neutral program, and
-# doubles as the compact distance-, mouse-, motor-, revolute-, and prismatic-
-# joint examples: two boxes connected by a spring-loaded distance joint that
-# is stretched and released, a third box dragged to a target with a mouse
+# doubles as the compact distance-, mouse-, motor-, revolute-, prismatic-, and
+# weld-joint examples: two boxes connected by a spring-loaded distance joint
+# that is stretched and released, a third box dragged to a target with a mouse
 # joint, a fourth box driven to a position and angle pose with a motor joint,
-# a fifth box swinging on a revolute hinge held by a rotational spring, and a
-# sixth box shuttling along a prismatic rail under a sine-speed motor.
+# a fifth box swinging on a revolute hinge held by a rotational spring, a
+# sixth box shuttling along a prismatic rail under a sine-speed motor, and a
+# soft-welded pair dropped onto the ground that flexes and holds a bent pose.
 Import Physics2D
 
 Class App Inherits CommandLineApplication
@@ -152,6 +153,34 @@ For i As Integer = 1 To 240
   world.StepWorld(1.0 / 60.0)
 Next
 
+# Weld two boxes together softly and drop the pair: the weld flexes under
+# the landing and holds a bent pose, balancing the pair's weight.
+Var weldADef As New BodyDefinition()
+weldADef.Type = BodyType.DynamicBody
+weldADef.Position = New Vector2(-6.0, 3.0)
+Var weldA As Body = world.CreateBody(weldADef)
+weldA.CreatePolygon(New ShapeDefinition(), Polygon.MakeBox(0.25, 0.25))
+Var weldBDef As New BodyDefinition()
+weldBDef.Type = BodyType.DynamicBody
+weldBDef.Position = New Vector2(-5.6, 3.2)
+Var weldB As Body = world.CreateBody(weldBDef)
+weldB.CreatePolygon(New ShapeDefinition(), Polygon.MakeBox(0.25, 0.25))
+
+Var weldDef As New WeldJointDefinition()
+weldDef.BodyA = weldA
+weldDef.BodyB = weldB
+weldDef.LocalAnchorA = New Vector2(0.2, 0.2)
+weldDef.LocalAnchorB = New Vector2(-0.2, -0.2)
+weldDef.LinearHertz = 2.0
+weldDef.AngularHertz = 2.0
+weldDef.LinearDampingRatio = 0.5
+weldDef.AngularDampingRatio = 0.5
+Var weld As WeldJoint = world.CreateWeldJoint(weldDef)
+
+For i As Integer = 1 To 300
+  world.StepWorld(1.0 / 60.0)
+Next
+
 Print("Physics2D module imported successfully.")
 Print("Hanging box at (" + spring.GetBodyB().GetPosition().X.ToString() + ", " + spring.GetBodyB().GetPosition().Y.ToString() + ") after resting on the ground")
 Print("Rod force " + rod.GetConstraintForce().ToString() + " N")
@@ -159,6 +188,7 @@ Print("Dragged box at (" + dragged.GetPosition().X.ToString() + ", " + dragged.G
 Print("Driven box at (" + driven.GetPosition().X.ToString() + ", " + driven.GetPosition().Y.ToString() + ") angle " + Rot.GetAngle(driven.GetRotation()).ToString() + " rad after the motor joint drive")
 Print("Pendulum at angle " + hinge.GetAngle().ToString() + " rad held by the revolute spring")
 Print("Slider at translation " + rail.GetTranslation().ToString() + " m on the prismatic rail")
+Print("Welded pair at angle " + Rot.GetAngle(weldB.GetRotation()).ToString() + " rad held by the soft weld")
 Return 0
 End Event
 End Class

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9WeldWorkload",
+  "Id": "b4d98216-3a75-4c81-8e2f-9d6c05e7b3a1",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9WeldWorkload-b4d98216-3a75-4c81-8e2f-9d6c05e7b3a1.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9WeldScenario",
+  "Id": "e81f3c52-6d94-4a2b-b5c7-70893fa46b2d",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9WeldScenario-e81f3c52-6d94-4a2b-b5c7-70893fa46b2d.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

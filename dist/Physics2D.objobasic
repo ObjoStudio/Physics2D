@@ -58,9 +58,9 @@
 # Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
 # Input: Island.objobasic 44f9b035b888e2dbbec81e2c88390bd8081257a3f57a52efc6fffdddabb10fa4
 # Input: IslandMethods.objobasic 20833e02e72df2d6818e0ebd92de184099fb656f56a10b14b7df86353eda2f6d
-# Input: Joint.objobasic a0d7fdaefe8afbc48e56dbea8d2a7d4fc47c40ef12d1369e14ae230e2254fe6d
-# Input: JointSims.objobasic f6b13368d8d429ad62129a93934596f5bb31ca9bcc1fe56f3ab677b1d00b4c64
-# Input: JointSolver.objobasic 446d43f7ec29e2c66071df8cce677d9702fe350692f6522873389ca548555fbb
+# Input: Joint.objobasic 20b0d7dc9cdcc1de3b3e1c1495cc5cc26b00e7842367b88d08695e845534e209
+# Input: JointSims.objobasic fbc85b655f799cd5a22c653ffd09ef1b39904733b3ec2f2b5a9fc646b57ca733
+# Input: JointSolver.objobasic 72d5ffbe67d9df107ab0081c19104829bace4076daf02c42a4c6bbd6c61c7cb4
 # Input: JointType-856da3bd-dadf-41a2-af79-4e1fcc92c642.objobasic 595178f214846dc7716badeb118dfb5729356f738f99204ff34b849f6fd14838
 # Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 2204114b1a588c77c29b945afd4b19ad7c68f56bce9f68f6a6ee47f5e8463787
 # Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic dcebd68c0b3500bb6ab7688775a8056b75304728e39537252715a4309cc96402
@@ -104,7 +104,7 @@
 # Input: SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic 82bc4694e90f396c176e50cbe8196ea7c809da4842781d5f9750137a1d087314
 # Input: SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic 7c911da9871051f8580713a107d379e349bdc89cf9f9f0e9968f07c29e2f19da
 # Input: Softness.objobasic 06211852d8bbb70e4c5f5479756606be96bb2667bd617c4f635f76a661e47d4a
-# Input: SolverMethods.objobasic b98e3d21597d2fe694e88ba24466b1ade941e974676110d62d2de0d82c7a8798
+# Input: SolverMethods.objobasic e7ba26ea525deb53a1c332658c46f52653ded3afc7ea4a5f15f54d31a1febb34
 # Input: SolverSet.objobasic ae57d26036c92d75a660f380cae829c6ef353d45bbba3876779bf1689234a922
 # Input: StepContext.objobasic 0d6a04f453555a2ff4207c21b9cacba5f3f2103f22c2d8ac4dd8c449f7b67e12
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
@@ -121,7 +121,9 @@
 # Input: TreeScratch-3add8e75-acc6-4f27-996e-372dc4d98372.objobasic 35e077b5cec3caafcc6d334013421d7a9612c3ba18ecf97875019b87ac2f9f55
 # Input: TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic 2abd4a4ca724ab02daa1a476dd447403aea4c5d80a507691f770ed20469a832b
 # Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
-# Input: World.objobasic 3c4e7132108de29b32fad879730cfc5bfa8a9e3aab251c159a52b21d4af29a0d
+# Input: WeldJoint.objobasic f2b0d21970140a1f0b8a878650a93cb96f9e669fd2c8763e0d2889c3f024c830
+# Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
+# Input: World.objobasic 3a05e21fdb08de56a8c90bb4978525fb2161d8bf1dc5305194f4d97cf37eb75c
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
@@ -130,7 +132,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): c4cdbe0368b199aec9acec7afb1c51305e541a01c33cefa4f429354357abfd21
+# Source content checksum (SHA-256): 57be41b44c85b98fcc7972ab9320ae9e84a1c77230adecd21402b7ecc58d5a79
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -11768,6 +11770,9 @@ End If
 If Me.Type = JointType.PrismaticJoint Then
 Return JointSolver.GetPrismaticJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
+If Me.Type = JointType.WeldJoint Then
+Return JointSolver.GetWeldJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return New Vector2(0.0, 0.0)
 End Function
 
@@ -11786,6 +11791,9 @@ Return JointSolver.GetRevoluteJointTorque(Me.Owner.GetJointSims(Me), Me.LocalInd
 End If
 If Me.Type = JointType.PrismaticJoint Then
 Return JointSolver.GetPrismaticJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
+If Me.Type = JointType.WeldJoint Then
+Return JointSolver.GetWeldJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
 Return 0.0
 End Function
@@ -12105,6 +12113,46 @@ Property PrismaticSpringSoftnessBiasRate As DoubleList
 Property PrismaticSpringSoftnessMassScale As DoubleList
 ## Spring softness impulse scale.
 Property PrismaticSpringSoftnessImpulseScale As DoubleList
+
+# Weld joint family columns, ported from upstream b2WeldJoint in joint.h.
+# Valid only while Type = Integer(JointType.WeldJoint). The weld reuses the
+# base two-body columns (IndexA/IndexB, AnchorA/AnchorB, DeltaCenter,
+# inverse masses, LocalOriginAnchorA/B). A zero hertz copies the base
+# constraint softness into the weld softness columns at prepare time.
+## Reference angle in radians: body B angle minus body A angle in the
+## reference state.
+Property WeldReferenceAngle As DoubleList
+## Linear stiffness in hertz; zero means maximum stiffness.
+Property WeldLinearHertz As DoubleList
+## Linear damping ratio.
+Property WeldLinearDampingRatio As DoubleList
+## Angular stiffness in hertz; zero means maximum stiffness.
+Property WeldAngularHertz As DoubleList
+## Angular damping ratio.
+Property WeldAngularDampingRatio As DoubleList
+## X component of the accumulated linear impulse.
+Property WeldLinearImpulseX As DoubleList
+## Y component of the accumulated linear impulse.
+Property WeldLinearImpulseY As DoubleList
+## Accumulated angular impulse.
+Property WeldAngularImpulse As DoubleList
+## Inverse of the sum of both rotational inertias, zero when both are zero.
+Property WeldAxialMass As DoubleList
+## Angle of body B relative to body A at prepare time minus the reference
+## angle, unwound, ported from joint->deltaAngle.
+Property WeldDeltaAngle As DoubleList
+## Linear softness bias rate.
+Property WeldLinearSoftnessBiasRate As DoubleList
+## Linear softness mass scale.
+Property WeldLinearSoftnessMassScale As DoubleList
+## Linear softness impulse scale.
+Property WeldLinearSoftnessImpulseScale As DoubleList
+## Angular softness bias rate.
+Property WeldAngularSoftnessBiasRate As DoubleList
+## Angular softness mass scale.
+Property WeldAngularSoftnessMassScale As DoubleList
+## Angular softness impulse scale.
+Property WeldAngularSoftnessImpulseScale As DoubleList
 ## Spring softness mass scale.
 Property RevoluteSpringSoftnessMassScale As DoubleList
 ## Spring softness impulse scale.
@@ -12228,6 +12276,22 @@ Me.PrismaticDeltaAngle = New DoubleList
 Me.PrismaticSpringSoftnessBiasRate = New DoubleList
 Me.PrismaticSpringSoftnessMassScale = New DoubleList
 Me.PrismaticSpringSoftnessImpulseScale = New DoubleList
+Me.WeldReferenceAngle = New DoubleList
+Me.WeldLinearHertz = New DoubleList
+Me.WeldLinearDampingRatio = New DoubleList
+Me.WeldAngularHertz = New DoubleList
+Me.WeldAngularDampingRatio = New DoubleList
+Me.WeldLinearImpulseX = New DoubleList
+Me.WeldLinearImpulseY = New DoubleList
+Me.WeldAngularImpulse = New DoubleList
+Me.WeldAxialMass = New DoubleList
+Me.WeldDeltaAngle = New DoubleList
+Me.WeldLinearSoftnessBiasRate = New DoubleList
+Me.WeldLinearSoftnessMassScale = New DoubleList
+Me.WeldLinearSoftnessImpulseScale = New DoubleList
+Me.WeldAngularSoftnessBiasRate = New DoubleList
+Me.WeldAngularSoftnessMassScale = New DoubleList
+Me.WeldAngularSoftnessImpulseScale = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -12357,6 +12421,22 @@ Me.PrismaticDeltaAngle.Append(0.0)
 Me.PrismaticSpringSoftnessBiasRate.Append(0.0)
 Me.PrismaticSpringSoftnessMassScale.Append(1.0)
 Me.PrismaticSpringSoftnessImpulseScale.Append(0.0)
+Me.WeldReferenceAngle.Append(0.0)
+Me.WeldLinearHertz.Append(0.0)
+Me.WeldLinearDampingRatio.Append(0.0)
+Me.WeldAngularHertz.Append(0.0)
+Me.WeldAngularDampingRatio.Append(0.0)
+Me.WeldLinearImpulseX.Append(0.0)
+Me.WeldLinearImpulseY.Append(0.0)
+Me.WeldAngularImpulse.Append(0.0)
+Me.WeldAxialMass.Append(0.0)
+Me.WeldDeltaAngle.Append(0.0)
+Me.WeldLinearSoftnessBiasRate.Append(0.0)
+Me.WeldLinearSoftnessMassScale.Append(1.0)
+Me.WeldLinearSoftnessImpulseScale.Append(0.0)
+Me.WeldAngularSoftnessBiasRate.Append(0.0)
+Me.WeldAngularSoftnessMassScale.Append(1.0)
+Me.WeldAngularSoftnessImpulseScale.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -12486,6 +12566,22 @@ Me.PrismaticDeltaAngle.RemoveSwap(index)
 Me.PrismaticSpringSoftnessBiasRate.RemoveSwap(index)
 Me.PrismaticSpringSoftnessMassScale.RemoveSwap(index)
 Me.PrismaticSpringSoftnessImpulseScale.RemoveSwap(index)
+Me.WeldReferenceAngle.RemoveSwap(index)
+Me.WeldLinearHertz.RemoveSwap(index)
+Me.WeldLinearDampingRatio.RemoveSwap(index)
+Me.WeldAngularHertz.RemoveSwap(index)
+Me.WeldAngularDampingRatio.RemoveSwap(index)
+Me.WeldLinearImpulseX.RemoveSwap(index)
+Me.WeldLinearImpulseY.RemoveSwap(index)
+Me.WeldAngularImpulse.RemoveSwap(index)
+Me.WeldAxialMass.RemoveSwap(index)
+Me.WeldDeltaAngle.RemoveSwap(index)
+Me.WeldLinearSoftnessBiasRate.RemoveSwap(index)
+Me.WeldLinearSoftnessMassScale.RemoveSwap(index)
+Me.WeldLinearSoftnessImpulseScale.RemoveSwap(index)
+Me.WeldAngularSoftnessBiasRate.RemoveSwap(index)
+Me.WeldAngularSoftnessMassScale.RemoveSwap(index)
+Me.WeldAngularSoftnessImpulseScale.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -12609,6 +12705,22 @@ target.PrismaticDeltaAngle.Items[targetIndex] = Me.PrismaticDeltaAngle.Items[sou
 target.PrismaticSpringSoftnessBiasRate.Items[targetIndex] = Me.PrismaticSpringSoftnessBiasRate.Items[sourceIndex]
 target.PrismaticSpringSoftnessMassScale.Items[targetIndex] = Me.PrismaticSpringSoftnessMassScale.Items[sourceIndex]
 target.PrismaticSpringSoftnessImpulseScale.Items[targetIndex] = Me.PrismaticSpringSoftnessImpulseScale.Items[sourceIndex]
+target.WeldReferenceAngle.Items[targetIndex] = Me.WeldReferenceAngle.Items[sourceIndex]
+target.WeldLinearHertz.Items[targetIndex] = Me.WeldLinearHertz.Items[sourceIndex]
+target.WeldLinearDampingRatio.Items[targetIndex] = Me.WeldLinearDampingRatio.Items[sourceIndex]
+target.WeldAngularHertz.Items[targetIndex] = Me.WeldAngularHertz.Items[sourceIndex]
+target.WeldAngularDampingRatio.Items[targetIndex] = Me.WeldAngularDampingRatio.Items[sourceIndex]
+target.WeldLinearImpulseX.Items[targetIndex] = Me.WeldLinearImpulseX.Items[sourceIndex]
+target.WeldLinearImpulseY.Items[targetIndex] = Me.WeldLinearImpulseY.Items[sourceIndex]
+target.WeldAngularImpulse.Items[targetIndex] = Me.WeldAngularImpulse.Items[sourceIndex]
+target.WeldAxialMass.Items[targetIndex] = Me.WeldAxialMass.Items[sourceIndex]
+target.WeldDeltaAngle.Items[targetIndex] = Me.WeldDeltaAngle.Items[sourceIndex]
+target.WeldLinearSoftnessBiasRate.Items[targetIndex] = Me.WeldLinearSoftnessBiasRate.Items[sourceIndex]
+target.WeldLinearSoftnessMassScale.Items[targetIndex] = Me.WeldLinearSoftnessMassScale.Items[sourceIndex]
+target.WeldLinearSoftnessImpulseScale.Items[targetIndex] = Me.WeldLinearSoftnessImpulseScale.Items[sourceIndex]
+target.WeldAngularSoftnessBiasRate.Items[targetIndex] = Me.WeldAngularSoftnessBiasRate.Items[sourceIndex]
+target.WeldAngularSoftnessMassScale.Items[targetIndex] = Me.WeldAngularSoftnessMassScale.Items[sourceIndex]
+target.WeldAngularSoftnessImpulseScale.Items[targetIndex] = Me.WeldAngularSoftnessImpulseScale.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -12729,6 +12841,22 @@ Me.PrismaticDeltaAngle.Clear()
 Me.PrismaticSpringSoftnessBiasRate.Clear()
 Me.PrismaticSpringSoftnessMassScale.Clear()
 Me.PrismaticSpringSoftnessImpulseScale.Clear()
+Me.WeldReferenceAngle.Clear()
+Me.WeldLinearHertz.Clear()
+Me.WeldLinearDampingRatio.Clear()
+Me.WeldAngularHertz.Clear()
+Me.WeldAngularDampingRatio.Clear()
+Me.WeldLinearImpulseX.Clear()
+Me.WeldLinearImpulseY.Clear()
+Me.WeldAngularImpulse.Clear()
+Me.WeldAxialMass.Clear()
+Me.WeldDeltaAngle.Clear()
+Me.WeldLinearSoftnessBiasRate.Clear()
+Me.WeldLinearSoftnessMassScale.Clear()
+Me.WeldLinearSoftnessImpulseScale.Clear()
+Me.WeldAngularSoftnessBiasRate.Clear()
+Me.WeldAngularSoftnessMassScale.Clear()
+Me.WeldAngularSoftnessImpulseScale.Clear()
 End Sub
 End Class
 
@@ -12760,6 +12888,8 @@ ElseIf sims.Type.Items[index] = Integer(JointType.RevoluteJoint) Then
 PrepareRevoluteJoint(sims, index, context)
 ElseIf sims.Type.Items[index] = Integer(JointType.PrismaticJoint) Then
 PreparePrismaticJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.WeldJoint) Then
+PrepareWeldJoint(sims, index, context)
 End If
 End Sub
 
@@ -14411,6 +14541,296 @@ End Function
 ## b2GetPrismaticJointTorque: the angular part of the block impulse.
 Shared Function GetPrismaticJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
 Return invH * sims.PrismaticImpulseY.Items[index]
+End Function
+
+## Prepares one weld joint row, ported from b2PrepareWeldJoint. The weld
+## pins both anchor points and the relative angle. A zero hertz copies the
+## base constraint softness into the weld softness columns, matching the
+## upstream fallback; otherwise the softness comes from the definition's
+## hertz and damping ratio. A non-awake body stores a NULL_INDEX state row
+## that the kernels replace with an identity dummy.
+Private Shared Sub PrepareWeldJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyA As Body = world.Bodies[sims.BodyIdA.Items[index]]
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simA As BodySims = world.GetBodySim(bodyA)
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexA As Integer = bodyA.LocalIndex
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassA.Items[index] = simA.InvMass.Items[indexA]
+sims.InvIA.Items[index] = simA.InvInertia.Items[indexA]
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexA.Items[index] = indexA
+Else
+sims.IndexA.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+Var qcA As Double = simA.QC.Items[indexA]
+Var qsA As Double = simA.QS.Items[indexA]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+Var localDX As Double = sims.LocalOriginAnchorAX.Items[index] - simA.LCX.Items[indexA]
+Var localDY As Double = sims.LocalOriginAnchorAY.Items[index] - simA.LCY.Items[indexA]
+sims.AnchorAX.Items[index] = qcA * localDX - qsA * localDY
+sims.AnchorAY.Items[index] = qsA * localDX + qcA * localDY
+Var localEX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localEY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localEX - qsB * localEY
+sims.AnchorBY.Items[index] = qsB * localEX + qcB * localEY
+
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
+# Relative angle minus the reference angle, unwound, with scalar
+# components; see the motor prepare note.
+Var relS As Double = simB.QS.Items[indexB] * simA.QC.Items[indexA] - simB.QC.Items[indexB] * simA.QS.Items[indexA]
+Var relC As Double = simB.QC.Items[indexB] * simA.QC.Items[indexA] + simB.QS.Items[indexB] * simA.QS.Items[indexA]
+sims.WeldDeltaAngle.Items[index] = PhysicsMaths.UnwindAngle(PhysicsMaths.Atan2(relS, relC) - sims.WeldReferenceAngle.Items[index])
+
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var ka As Double = iA + iB
+If ka > 0.0 Then
+sims.WeldAxialMass.Items[index] = 1.0 / ka
+Else
+sims.WeldAxialMass.Items[index] = 0.0
+End If
+
+# Zero hertz falls back to the base constraint softness, matching the
+# upstream prepare exactly.
+If sims.WeldLinearHertz.Items[index] = 0.0 Then
+sims.WeldLinearSoftnessBiasRate.Items[index] = sims.SoftnessBiasRate.Items[index]
+sims.WeldLinearSoftnessMassScale.Items[index] = sims.SoftnessMassScale.Items[index]
+sims.WeldLinearSoftnessImpulseScale.Items[index] = sims.SoftnessImpulseScale.Items[index]
+Else
+Softness.MakeTo(sims.WeldLinearHertz.Items[index], sims.WeldLinearDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.WeldLinearSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.WeldLinearSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.WeldLinearSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+End If
+If sims.WeldAngularHertz.Items[index] = 0.0 Then
+sims.WeldAngularSoftnessBiasRate.Items[index] = sims.SoftnessBiasRate.Items[index]
+sims.WeldAngularSoftnessMassScale.Items[index] = sims.SoftnessMassScale.Items[index]
+sims.WeldAngularSoftnessImpulseScale.Items[index] = sims.SoftnessImpulseScale.Items[index]
+Else
+Softness.MakeTo(sims.WeldAngularHertz.Items[index], sims.WeldAngularDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.WeldAngularSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.WeldAngularSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.WeldAngularSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+End If
+
+If context.WarmStartScale = 0.0 Then
+sims.WeldLinearImpulseX.Items[index] = 0.0
+sims.WeldLinearImpulseY.Items[index] = 0.0
+sims.WeldAngularImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored weld joint impulses to both body states before
+## iterating, ported from b2WarmStartWeldJoint. Non-awake bodies use an
+## identity dummy state, matching the upstream static-body path.
+Shared Sub WarmStartWeldJoint(sims As JointSims, index As Integer, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var pX As Double = sims.WeldLinearImpulseX.Items[index]
+Var pY As Double = sims.WeldLinearImpulseY.Items[index]
+Var angularImpulse As Double = sims.WeldAngularImpulse.Items[index]
+
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (rAX * pY - rAY * pX + angularImpulse)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (rBX * pY - rBY * pX + angularImpulse)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Runs one velocity iteration for one weld joint row, ported from
+## b2SolveWeldJoint: the angular constraint, then the linear 2x2 block.
+## The soft bias applies whenever the solver asks for bias or the weld is
+## softened, matching the upstream condition.
+Shared Sub SolveWeldJoint(sims As JointSims, index As Integer, context As StepContext, useBias As Boolean)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+# Angular constraint.
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If useBias Or sims.WeldAngularHertz.Items[index] > 0.0 Then
+Var relS As Double = dqBS * dqAC - dqBC * dqAS
+Var relC As Double = dqBC * dqAC + dqBS * dqAS
+Var C As Double = PhysicsMaths.Atan2(relS, relC) + sims.WeldDeltaAngle.Items[index]
+bias = sims.WeldAngularSoftnessBiasRate.Items[index] * C
+massScale = sims.WeldAngularSoftnessMassScale.Items[index]
+impulseScale = sims.WeldAngularSoftnessImpulseScale.Items[index]
+End If
+Var Cdot As Double = wB - wA
+Var impulse As Double = -massScale * sims.WeldAxialMass.Items[index] * (Cdot + bias) - impulseScale * sims.WeldAngularImpulse.Items[index]
+sims.WeldAngularImpulse.Items[index] = sims.WeldAngularImpulse.Items[index] + impulse
+wA = wA - iA * impulse
+wB = wB + iB * impulse
+
+# Linear constraint. The combined matrix is symmetric by construction and
+# solved inline with the guarded inverse determinant of upstream
+# b2Solve22.
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var biasX As Double = 0.0
+Var biasY As Double = 0.0
+massScale = 1.0
+impulseScale = 0.0
+If useBias Or sims.WeldLinearHertz.Items[index] > 0.0 Then
+Var cx As Double = dpBX - dpAX + rBX - rAX + sims.DeltaCenterX.Items[index]
+Var cy As Double = dpBY - dpAY + rBY - rAY + sims.DeltaCenterY.Items[index]
+biasX = sims.WeldLinearSoftnessBiasRate.Items[index] * cx
+biasY = sims.WeldLinearSoftnessBiasRate.Items[index] * cy
+massScale = sims.WeldLinearSoftnessMassScale.Items[index]
+impulseScale = sims.WeldLinearSoftnessImpulseScale.Items[index]
+End If
+Var cdX As Double = vBX - wB * rBY - (vAX - wA * rAY)
+Var cdY As Double = vBY + wB * rBX - (vAY + wA * rAX)
+Var k11 As Double = mA + mB + rAY * rAY * iA + rBY * rBY * iB
+Var k12 As Double = -(rAY * rAX * iA + rBY * rBX * iB)
+Var k22 As Double = mA + mB + rAX * rAX * iA + rBX * rBX * iB
+Var rhsX As Double = cdX + biasX
+Var rhsY As Double = cdY + biasY
+Var det As Double = k11 * k22 - k12 * k12
+If det <> 0.0 Then
+det = 1.0 / det
+End If
+Var bX As Double = det * (k22 * rhsX - k12 * rhsY)
+Var bY As Double = det * (k11 * rhsY - k12 * rhsX)
+Var oldX As Double = sims.WeldLinearImpulseX.Items[index]
+Var oldY As Double = sims.WeldLinearImpulseY.Items[index]
+Var impX As Double = -massScale * bX - impulseScale * oldX
+Var impY As Double = -massScale * bY - impulseScale * oldY
+sims.WeldLinearImpulseX.Items[index] = oldX + impX
+sims.WeldLinearImpulseY.Items[index] = oldY + impY
+
+vAX = vAX - mA * impX
+vAY = vAY - mA * impY
+wA = wA - iA * (rAX * impY - rAY * impX)
+vBX = vBX + mB * impX
+vBY = vBY + mB * impY
+wB = wB + iB * (rBX * impY - rBY * impX)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Total force the weld joint row applied this step, ported from
+## b2GetWeldJointForce.
+Shared Function GetWeldJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var scale As Double = invH
+Return New Vector2(scale * sims.WeldLinearImpulseX.Items[index], scale * sims.WeldLinearImpulseY.Items[index])
+End Function
+
+## Torque the weld joint row applied this step, ported from
+## b2GetWeldJointTorque.
+Shared Function GetWeldJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * sims.WeldAngularImpulse.Items[index]
 End Function
 
 ## Total force the mouse joint row applied this step, ported from
@@ -18559,6 +18979,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.RevoluteJoint) Then
 JointSolver.WarmStartRevoluteJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.PrismaticJoint) Then
 JointSolver.WarmStartPrismaticJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.WeldJoint) Then
+JointSolver.WarmStartWeldJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -18581,6 +19003,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.RevoluteJoint) Then
 JointSolver.SolveRevoluteJoint(sims, i, context, useBias)
 ElseIf sims.Type.Items[i] = Integer(JointType.PrismaticJoint) Then
 JointSolver.SolvePrismaticJoint(sims, i, context, useBias)
+ElseIf sims.Type.Items[i] = Integer(JointType.WeldJoint) Then
+JointSolver.SolveWeldJoint(sims, i, context, useBias)
 End If
 Next i
 End Sub
@@ -19552,6 +19976,142 @@ Sub SetFrom(other As TreeStats)
 Me.NodeVisits = other.NodeVisits
 Me.LeafVisits = other.LeafVisits
 End Sub
+End Class
+
+# Public weld joint façade, ported from the b2WeldJoint_* surface in
+# weld_joint.c. The weld rigidly connects two bodies at one point and
+# angle; nonzero hertz values soften the weld so it can flex under load.
+# Tuning setters throw where upstream asserts (finite and non-negative)
+# and changes deliberately do not wake the bodies, matching upstream; the
+# solver picks up new values on the next step. The façade reads and writes
+# its row in the owning JointSims store.
+Class WeldJoint Inherits Joint
+## Linear stiffness in hertz, ported from b2WeldJoint_SetLinearHertz.
+## Negative or non-finite values throw where upstream asserts. Zero means
+## maximum stiffness. Changes apply from the next step and do not wake the
+## bodies.
+Sub SetLinearHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not hertz.IsFinite() Or hertz < 0.0 Then
+Throw New InvalidArgumentException("Weld joint linear hertz must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).WeldLinearHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Linear stiffness in hertz, ported from b2WeldJoint_GetLinearHertz.
+Function GetLinearHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WeldLinearHertz.Items[Me.LocalIndex]
+End Function
+
+## Linear damping ratio, ported from b2WeldJoint_SetLinearDampingRatio.
+## Negative or non-finite values throw where upstream asserts.
+Sub SetLinearDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not dampingRatio.IsFinite() Or dampingRatio < 0.0 Then
+Throw New InvalidArgumentException("Weld joint linear damping ratio must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).WeldLinearDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Linear damping ratio, ported from b2WeldJoint_GetLinearDampingRatio.
+Function GetLinearDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WeldLinearDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## Angular stiffness in hertz, ported from b2WeldJoint_SetAngularHertz.
+## Negative or non-finite values throw where upstream asserts. Zero means
+## maximum stiffness. Changes apply from the next step and do not wake the
+## bodies.
+Sub SetAngularHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not hertz.IsFinite() Or hertz < 0.0 Then
+Throw New InvalidArgumentException("Weld joint angular hertz must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).WeldAngularHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Angular stiffness in hertz, ported from b2WeldJoint_GetAngularHertz.
+Function GetAngularHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WeldAngularHertz.Items[Me.LocalIndex]
+End Function
+
+## Angular damping ratio, ported from b2WeldJoint_SetAngularDampingRatio.
+## Negative or non-finite values throw where upstream asserts.
+Sub SetAngularDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not dampingRatio.IsFinite() Or dampingRatio < 0.0 Then
+Throw New InvalidArgumentException("Weld joint angular damping ratio must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).WeldAngularDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Angular damping ratio, ported from b2WeldJoint_GetAngularDampingRatio.
+Function GetAngularDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WeldAngularDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## The constrained reference angle in radians, ported from
+## b2Joint_GetReferenceAngle for the weld family.
+Override Function GetReferenceAngle() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WeldReferenceAngle.Items[Me.LocalIndex]
+End Function
+End Class
+
+# Weld joint definition, ported from upstream b2WeldJointDef and
+# b2DefaultWeldJointDef in types.h and joint.c. Defaults match upstream:
+# coincident anchors, zero reference angle, zero hertz for maximum
+# stiffness, and zero damping ratios. A weld joint rigidly connects two
+# bodies at one point and angle; nonzero hertz values soften the weld.
+Class WeldJointDefinition
+## First attached body, ported from b2WeldJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, ported from b2WeldJointDef.bodyIdB.
+Property BodyB As Body
+## Local anchor point relative to body A's origin, in metres.
+Property LocalAnchorA As Vector2
+## Local anchor point relative to body B's origin, in metres.
+Property LocalAnchorB As Vector2
+## Body B angle minus body A angle in the reference state, in radians.
+Property ReferenceAngle As Double
+## Linear stiffness in hertz. Zero means maximum stiffness: the solver
+## falls back to the base constraint softness.
+Property LinearHertz As Double
+## Angular stiffness in hertz. Zero means maximum stiffness: the solver
+## falls back to the base constraint softness.
+Property AngularHertz As Double
+## Linear damping ratio, non-dimensional. Use 1 for critical damping.
+Property LinearDampingRatio As Double
+## Angular damping ratio, non-dimensional. Use 1 for critical damping.
+Property AngularDampingRatio As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LocalAnchorA = New Vector2(0.0, 0.0)
+Me.LocalAnchorB = New Vector2(0.0, 0.0)
+Me.ReferenceAngle = 0.0
+Me.LinearHertz = 0.0
+Me.AngularHertz = 0.0
+Me.LinearDampingRatio = 0.0
+Me.AngularDampingRatio = 0.0
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
 End Class
 
 # World façade, ported from upstream b2World in world.h plus the world and
@@ -21639,6 +22199,8 @@ ElseIf jointType = JointType.RevoluteJoint Then
 record = New RevoluteJoint
 ElseIf jointType = JointType.PrismaticJoint Then
 record = New PrismaticJoint
+ElseIf jointType = JointType.WeldJoint Then
+record = New WeldJoint
 Else
 record = New Joint
 End If
@@ -22137,6 +22699,71 @@ Me.DestroyContactsBetweenBodies(bodyA, bodyB)
 End If
 
 Var facade As PrismaticJoint = PrismaticJoint(joint)
+Return facade
+End Function
+
+## Creates a weld joint, ported from b2CreateWeldJoint. Throws on a missing
+## definition, missing or foreign bodies, non-finite anchors or tuning, or
+## negative hertz or damping ratios, matching the upstream assertions. Zero
+## hertz means maximum stiffness: the solver falls back to the base
+## constraint softness.
+Function CreateWeldJoint(def As WeldJointDefinition) As WeldJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "WeldJointDefinition")
+Me.CheckJointBody(def.BodyA, "WeldJointDefinition.BodyA")
+Me.CheckJointBody(def.BodyB, "WeldJointDefinition.BodyB")
+If Not def.LocalAnchorA.X.IsFinite() Or Not def.LocalAnchorA.Y.IsFinite() Then
+Throw New InvalidArgumentException("WeldJointDefinition local anchor A must be finite")
+End If
+If Not def.LocalAnchorB.X.IsFinite() Or Not def.LocalAnchorB.Y.IsFinite() Then
+Throw New InvalidArgumentException("WeldJointDefinition local anchor B must be finite")
+End If
+If Not def.ReferenceAngle.IsFinite() Then
+Throw New InvalidArgumentException("WeldJointDefinition reference angle must be finite")
+End If
+If Not def.LinearHertz.IsFinite() Or def.LinearHertz < 0.0 Then
+Throw New InvalidArgumentException("WeldJointDefinition linear hertz must be finite and non-negative")
+End If
+If Not def.LinearDampingRatio.IsFinite() Or def.LinearDampingRatio < 0.0 Then
+Throw New InvalidArgumentException("WeldJointDefinition linear damping ratio must be finite and non-negative")
+End If
+If Not def.AngularHertz.IsFinite() Or def.AngularHertz < 0.0 Then
+Throw New InvalidArgumentException("WeldJointDefinition angular hertz must be finite and non-negative")
+End If
+If Not def.AngularDampingRatio.IsFinite() Or def.AngularDampingRatio < 0.0 Then
+Throw New InvalidArgumentException("WeldJointDefinition angular damping ratio must be finite and non-negative")
+End If
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.WeldJoint, def.CollideConnected, 1.0)
+Var localIndex As Integer = Me.PlaceJointSim(joint, bodyA, bodyB)
+Var store As JointSims = Me.GetJointSims(joint)
+store.ConstraintHertz.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+store.ConstraintDampingRatio.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+store.LocalOriginAnchorAX.Items[localIndex] = def.LocalAnchorA.X
+store.LocalOriginAnchorAY.Items[localIndex] = def.LocalAnchorA.Y
+store.LocalOriginAnchorBX.Items[localIndex] = def.LocalAnchorB.X
+store.LocalOriginAnchorBY.Items[localIndex] = def.LocalAnchorB.Y
+store.WeldReferenceAngle.Items[localIndex] = def.ReferenceAngle
+store.WeldLinearHertz.Items[localIndex] = def.LinearHertz
+store.WeldLinearDampingRatio.Items[localIndex] = def.LinearDampingRatio
+store.WeldAngularHertz.Items[localIndex] = def.AngularHertz
+store.WeldAngularDampingRatio.Items[localIndex] = def.AngularDampingRatio
+joint.UserData = def.UserData
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# If the joint prevents collisions, destroy all contacts between the
+# attached bodies.
+If def.CollideConnected = False Then
+Me.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+
+Var facade As WeldJoint = WeldJoint(joint)
 Return facade
 End Function
 
