@@ -294,6 +294,9 @@ Me.CheckValid()
 If Me.Type = JointType.DistanceJoint Then
 Return JointSolver.GetDistanceJointForce(Me.Owner, Me.Owner.GetJointSims(Me), Me.LocalIndex)
 End If
+If Me.Type = JointType.MouseJoint Then
+Return JointSolver.GetMouseJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return New Vector2(0.0, 0.0)
 End Function
 
@@ -301,6 +304,9 @@ End Function
 ## b2Joint_GetConstraintTorque.
 Function GetConstraintTorque() As Double
 Me.CheckValid()
+If Me.Type = JointType.MouseJoint Then
+Return JointSolver.GetMouseJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return 0.0
 End Function
 

@@ -738,11 +738,174 @@ static void EmitJointDistance(void)
 	EmitJointMotor();
 }
 
+// --------------------------------------------------------- mouse joints ----
+
+// Mouse-joint scene fixture: three deterministic dragging cases stepped with
+// the upstream default of four substeps. Every case anchors the joint at the
+// body centre (target equals the initial body position) so the constraint
+// stays a pure damped point-mass spring: offset-anchor targets make the body
+// orbit the target in a chaotic limit cycle that no cross-float comparison
+// can pin. The drag and stiff cases retarget after one second and wake the
+// body explicitly, matching the upstream sample's drag flow, then re-converge
+// and re-sleep. The weak case clamps at one newton below the 2.5 newton
+// weight and falls at a constant 6 m/s^2 with the impulse clamp saturated.
+static void DumpMouseJoint(const char* name, b2JointId jointId)
+{
+	b2Vec2 force = b2Joint_GetConstraintForce(jointId);
+	float torque = b2Joint_GetConstraintTorque(jointId);
+	printf("joint|%s|mouse|", name);
+	PrintNum(force.x); printf(" ");
+	PrintNum(force.y); printf(" ");
+	PrintNum(torque); printf("\n");
+}
+
+static void EmitMouseDrag(void)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	groundDef.position = (b2Vec2){0.0f, -1.0f};
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon groundBox = b2MakeBox(50.0f, 1.0f);
+	b2CreatePolygonShape(groundId, &shapeDef, &groundBox);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){0.0f, 5.0f};
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	b2MouseJointDef jointDef = b2DefaultMouseJointDef();
+	jointDef.bodyIdA = groundId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.target = (b2Vec2){0.0f, 5.0f};
+	jointDef.hertz = 5.0f;
+	jointDef.dampingRatio = 0.7f;
+	jointDef.maxForce = 1000.0f;
+	b2JointId jointId = b2CreateMouseJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 180; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+		if (frame == 60)
+		{
+			// Exercise the runtime target setter mid-scene. Upstream does
+			// not wake the body, so the sample's wake call is replicated.
+			b2MouseJoint_SetTarget(jointId, (b2Vec2){2.0f, 5.5f});
+			b2Body_SetAwake(bodyId, true);
+		}
+	}
+
+	DumpJointBody("drag", 0, bodyId);
+	DumpMouseJoint("drag", jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitMouseWeak(void)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	groundDef.position = (b2Vec2){0.0f, -1.0f};
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon groundBox = b2MakeBox(50.0f, 1.0f);
+	b2CreatePolygonShape(groundId, &shapeDef, &groundBox);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){0.0f, 5.0f};
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	// A one-newton maximum force cannot hold the 0.25 kg box (2.5 N
+	// weight): the impulse clamp saturates and the body falls at a constant
+	// 6 m/s^2. Contacts with the jointed ground are suppressed by the
+	// default collideConnected = false, matching upstream.
+	b2MouseJointDef jointDef = b2DefaultMouseJointDef();
+	jointDef.bodyIdA = groundId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.target = (b2Vec2){0.0f, 5.0f};
+	jointDef.hertz = 5.0f;
+	jointDef.dampingRatio = 0.7f;
+	jointDef.maxForce = 1.0f;
+	b2JointId jointId = b2CreateMouseJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 150; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+	}
+
+	DumpJointBody("weak", 0, bodyId);
+	DumpMouseJoint("weak", jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitMouseStiff(void)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	groundDef.position = (b2Vec2){0.0f, -1.0f};
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon groundBox = b2MakeBox(50.0f, 1.0f);
+	b2CreatePolygonShape(groundId, &shapeDef, &groundBox);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){0.0f, 5.0f};
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	// A stiff, well-damped spring snaps the box to the retargeted pose
+	// with a sub-millimetre sag.
+	b2MouseJointDef jointDef = b2DefaultMouseJointDef();
+	jointDef.bodyIdA = groundId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.target = (b2Vec2){0.0f, 5.0f};
+	jointDef.hertz = 20.0f;
+	jointDef.dampingRatio = 1.0f;
+	jointDef.maxForce = 5000.0f;
+	b2JointId jointId = b2CreateMouseJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 180; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+		if (frame == 60)
+		{
+			b2MouseJoint_SetTarget(jointId, (b2Vec2){2.0f, 5.5f});
+			b2Body_SetAwake(bodyId, true);
+		}
+	}
+
+	DumpJointBody("stiff", 0, bodyId);
+	DumpMouseJoint("stiff", jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitJointMouse(void)
+{
+	EmitMouseDrag();
+	EmitMouseWeak();
+	EmitMouseStiff();
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
 	{
-		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance>\n");
+		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse>\n");
 		return 2;
 	}
 
@@ -758,6 +921,7 @@ int main(int argc, char** argv)
 	else if (strcmp(name, "scene_pyramid") == 0) EmitScene("pyramid", 120, 10, 64);
 	else if (strcmp(name, "scene_stack") == 0) EmitScene("stack", 240, 8, 64);
 	else if (strcmp(name, "joint_distance") == 0) EmitJointDistance();
+	else if (strcmp(name, "joint_mouse") == 0) EmitJointMouse();
 	else
 	{
 		fprintf(stderr, "unknown fixture: %s\n", name);

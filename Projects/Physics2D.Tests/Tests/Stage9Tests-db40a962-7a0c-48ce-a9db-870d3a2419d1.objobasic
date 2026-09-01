@@ -1,6 +1,7 @@
-# Stage 9 tests: distance joints, covering constraint satisfaction, spring,
-# limits, motor, collide-connected toggling, joint placement across solver
-# sets, destruction, validation, and determinism.
+# Stage 9 tests: distance and mouse joints, covering constraint
+# satisfaction, spring, limits, motor, collide-connected toggling, joint
+# placement across solver sets, destruction, validation, determinism, and
+# golden fixtures for both families.
 Import Physics2D
 
 Class Stage9Tests Inherits TestCase
@@ -10,6 +11,12 @@ Private Property mTuningJoint As DistanceJoint
 
 ## Definition reused by the cross-world throwers.
 Private Property mCrossWorldDef As DistanceJointDefinition
+
+## Mouse definition reused by the cross-world throwers.
+Private Property mCrossMouseDef As MouseJointDefinition
+
+## Mouse joint used by the validation throwers.
+Private Property mMouseThrowJoint As MouseJoint
 
 ## Builds a world with a wide static ground box whose top surface is y=0.
 Shared Function MakeWorld() As World
@@ -51,6 +58,43 @@ def.BodyA = bodyA
 def.BodyB = bodyB
 def.Length = length
 Return world.CreateDistanceJoint(def)
+End Function
+
+## Builds a world matching the golden mouse-joint fixture: a wide static
+## ground box whose top surface is y=0.
+Shared Function MakeMouseWorld() As World
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -1.0)
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(50.0, 1.0))
+Return world
+End Function
+
+## Builds the 0.25 kg dragged box used by the mouse-joint tests.
+Shared Function MakeDraggedBox(world As World, x As Double, y As Double) As Body
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(x, y)
+Var body As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Return body
+End Function
+
+## Builds a mouse joint dragging the box toward the target with the given
+## spring tuning and force clamp.
+Shared Function MakeMouseJoint(world As World, ground As Body, box As Body, target As Vector2, hertz As Double, dampingRatio As Double, maxForce As Double) As MouseJoint
+Var def As New MouseJointDefinition
+def.BodyA = ground
+def.BodyB = box
+def.Target = target
+def.Hertz = hertz
+def.DampingRatio = dampingRatio
+def.MaxForce = maxForce
+Return world.CreateMouseJoint(def)
 End Function
 
 ## A rigid distance joint holds two hanging boxes at the rest length.
@@ -576,6 +620,353 @@ Assert.True(boxB.IsAwake() = False, "box B asleep after measured window")
 world.Validate()
 End Sub
 
+## A soft mouse joint drags the body to the target and holds it against
+## gravity with the expected equilibrium force. The joint is created with
+## the target at the body centre so the constraint is a pure damped point
+## pull, then retargeted and woken like the upstream sample's drag flow.
+Public Sub TestMouseJointDragsBodyToTarget()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 0.0, 5.0)
+Var joint As MouseJoint = Stage9Tests.MakeMouseJoint(world, ground, box, New Vector2(0.0, 5.0), 5.0, 0.7, 1000.0)
+Assert.Equal(JointType.MouseJoint, joint.GetJointType(), "mouse joint type")
+PhysicsAssert.Near(0.0, joint.GetTarget().X, 0.0, 0.0, "target x round trip")
+PhysicsAssert.Near(5.0, joint.GetTarget().Y, 0.0, 0.0, "target y round trip")
+Assert.Equal(5.0, joint.GetSpringHertz(), "hertz round trip")
+Assert.Equal(0.7, joint.GetSpringDampingRatio(), "damping ratio round trip")
+Assert.Equal(1000.0, joint.GetMaxForce(), "max force round trip")
+Stage9Tests.Steps(world, 120)
+Var transform As Transform = world.GetBodyTransform(box)
+PhysicsAssert.Near(0.0, transform.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "held at target x")
+PhysicsAssert.Near(5.0, transform.P.Y, 0.012, 0.012, "held at target y with spring sag")
+Assert.True(box.IsAwake() = False, "dragged body falls asleep at the target")
+Var force As Vector2 = joint.GetConstraintForce()
+PhysicsAssert.Near(0.0, force.X, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "settled force x")
+PhysicsAssert.Near(2.5, force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "settled force holds the 0.25 kg weight")
+PhysicsAssert.Near(0.0, joint.GetConstraintTorque(), Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "settled torque")
+# Retarget two metres away and wake; the body re-converges and re-sleeps.
+joint.SetTarget(2.0, 5.5)
+box.SetAwake(True)
+Stage9Tests.Steps(world, 180)
+Var moved As Transform = world.GetBodyTransform(box)
+PhysicsAssert.Near(2.0, moved.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "dragged to retarget x")
+PhysicsAssert.Near(5.5, moved.P.Y, 0.012, 0.012, "dragged to retarget y with spring sag")
+Assert.True(box.IsAwake() = False, "body sleeps at the new target")
+Var anchor As Vector2 = joint.GetAnchorB()
+PhysicsAssert.Near(2.0, anchor.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "drag anchor tracks the body")
+world.Validate()
+End Sub
+
+## A mouse joint whose maximum force cannot hold the weight saturates its
+## impulse clamp: the reported force magnitude never exceeds the clamp and
+## the body falls at the expected reduced acceleration.
+Public Sub TestMouseJointMaxForceClamps()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 0.0, 5.0)
+Var joint As MouseJoint = Stage9Tests.MakeMouseJoint(world, ground, box, New Vector2(0.0, 5.0), 5.0, 0.7, 1.0)
+Stage9Tests.Steps(world, 150)
+Var force As Vector2 = joint.GetConstraintForce()
+Var magnitude As Double = Maths.Sqrt(force.X * force.X + force.Y * force.Y)
+Assert.True(magnitude <= 1.0 + 0.01, "clamped force stays within the maximum")
+PhysicsAssert.Near(1.0, force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "clamp saturates upward pull")
+# Recorded upstream endpoint of the same scene: the 1 N clamp against the
+# 2.5 N weight yields the constant 6 m/s^2 fall (see joint_mouse.txt).
+PhysicsAssert.Near(-13.8108187, world.GetBodyTransform(box).P.Y, 0.02, 0.02, "clamped body falls at 6 m/s^2")
+Assert.True(box.IsAwake(), "clamped falling body stays awake")
+world.Validate()
+End Sub
+
+## Mouse joint tuning setters round trip and validate their inputs; the
+## target setter does not wake a sleeping body, matching upstream.
+Public Sub TestMouseJointRuntimeProperties()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 0.0, 5.0)
+Var joint As MouseJoint = Stage9Tests.MakeMouseJoint(world, ground, box, New Vector2(0.0, 5.0), 5.0, 0.7, 1000.0)
+Me.mMouseThrowJoint = joint
+joint.SetSpringHertz(12.0)
+joint.SetSpringDampingRatio(0.9)
+joint.SetMaxForce(250.0)
+Assert.Equal(12.0, joint.GetSpringHertz(), "runtime hertz round trip")
+Assert.Equal(0.9, joint.GetSpringDampingRatio(), "runtime damping round trip")
+Assert.Equal(250.0, joint.GetMaxForce(), "runtime max force round trip")
+joint.SetTarget(New Vector2(1.0, 6.0))
+PhysicsAssert.Near(1.0, joint.GetTarget().X, 0.0, 0.0, "runtime target x")
+PhysicsAssert.Near(6.0, joint.GetTarget().Y, 0.0, 0.0, "runtime target y")
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowMouseNegativeHertz)
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowMouseNegativeDamping)
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowMouseNegativeMaxForce)
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowMouseNonFiniteTarget)
+joint.SetUserData(box)
+Assert.True(joint.GetUserData() = box, "mouse user data round trip")
+# A sleeping body stays asleep across a target change.
+Stage9Tests.Steps(world, 120)
+Assert.True(box.IsAwake() = False, "body asleep before retarget")
+Var frozen As Transform = world.GetBodyTransform(box)
+joint.SetTarget(New Vector2(3.0, 5.0))
+Assert.True(box.IsAwake() = False, "retarget does not wake a sleeping body")
+Stage9Tests.Steps(world, 30)
+Var still As Transform = world.GetBodyTransform(box)
+PhysicsAssert.Near(frozen.P.X, still.P.X, 0.001, 0.001, "sleeping body ignores the retarget")
+PhysicsAssert.Near(frozen.P.Y, still.P.Y, 0.001, 0.001, "sleeping body ignores the retarget vertically")
+box.SetAwake(True)
+Stage9Tests.Steps(world, 180)
+PhysicsAssert.Near(3.0, world.GetBodyTransform(box).P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, "woken body chases the new target")
+world.Validate()
+End Sub
+
+## Recreates the three mouse-joint scenes of the joint_mouse golden fixture
+## and compares final transforms, awake flags, and constraint forces against
+## upstream Box2D 3.1.1 output generated from the pinned sources.
+Public Sub TestMouseJointMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("joint_mouse.txt")
+
+Var dragWorld As World = Stage9Tests.MakeMouseWorld()
+Var dragGround As Body = dragWorld.Bodies[0]
+Var dragBody As Body = Stage9Tests.MakeDraggedBox(dragWorld, 0.0, 5.0)
+Var dragJoint As MouseJoint = Stage9Tests.MakeMouseJoint(dragWorld, dragGround, dragBody, New Vector2(0.0, 5.0), 5.0, 0.7, 1000.0)
+Var weakWorld As World = Stage9Tests.MakeMouseWorld()
+Var weakGround As Body = weakWorld.Bodies[0]
+Var weakBody As Body = Stage9Tests.MakeDraggedBox(weakWorld, 0.0, 5.0)
+Var weakJoint As MouseJoint = Stage9Tests.MakeMouseJoint(weakWorld, weakGround, weakBody, New Vector2(0.0, 5.0), 5.0, 0.7, 1.0)
+Var stiffWorld As World = Stage9Tests.MakeMouseWorld()
+Var stiffGround As Body = stiffWorld.Bodies[0]
+Var stiffBody As Body = Stage9Tests.MakeDraggedBox(stiffWorld, 0.0, 5.0)
+Var stiffJoint As MouseJoint = Stage9Tests.MakeMouseJoint(stiffWorld, stiffGround, stiffBody, New Vector2(0.0, 5.0), 20.0, 1.0, 5000.0)
+
+Var frameIndex As Integer = 0
+While frameIndex < 180
+Stage9Tests.StepFrame(dragWorld, dragJoint, dragBody, frameIndex)
+Stage9Tests.StepFrame(stiffWorld, stiffJoint, stiffBody, frameIndex)
+If frameIndex < 150 Then
+weakWorld.StepWorld(1.0 / 60.0)
+End If
+frameIndex = frameIndex + 1
+Wend
+
+Var checkedRecords As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+Var caseName As String = fields[1]
+Var kind As String = fields[2]
+If kind = "body" Then
+Var values() As String = fields[4].Split(" ")
+Var expectedX As Double = Double.Parse(values[0])
+Var expectedY As Double = Double.Parse(values[1])
+Var expectedAngle As Double = Double.Parse(values[2])
+Var expectedAwake As Integer = Integer.Parse(values[3])
+Var label As String = caseName + " body"
+Var world As World = Nothing
+Var body As Body = Nothing
+If caseName = "drag" Then
+world = dragWorld
+body = dragBody
+ElseIf caseName = "weak" Then
+world = weakWorld
+body = weakBody
+ElseIf caseName = "stiff" Then
+world = stiffWorld
+body = stiffBody
+Else
+Assert.Fail("unknown mouse fixture body " + caseName)
+End If
+Var transform As Transform = world.GetBodyTransform(body)
+PhysicsAssert.Near(expectedX, transform.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, label + " x")
+PhysicsAssert.Near(expectedY, transform.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, label + " y")
+PhysicsAssert.Near(expectedAngle, Rot.GetAngle(transform.Q), Tolerances.SCENE_ABS, Tolerances.SCENE_REL, label + " angle")
+If expectedAwake = 1 Then
+Assert.True(body.IsAwake(), label + " awake")
+Else
+Assert.True(body.IsAwake() = False, label + " asleep")
+End If
+ElseIf kind = "mouse" Then
+Var jointValues() As String = fields[3].Split(" ")
+Var joint As MouseJoint = Nothing
+If caseName = "drag" Then
+joint = dragJoint
+ElseIf caseName = "weak" Then
+joint = weakJoint
+ElseIf caseName = "stiff" Then
+joint = stiffJoint
+Else
+Assert.Fail("unknown mouse fixture joint " + caseName)
+End If
+Var force As Vector2 = joint.GetConstraintForce()
+PhysicsAssert.Near(Double.Parse(jointValues[0]), force.X, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, caseName + " force x")
+PhysicsAssert.Near(Double.Parse(jointValues[1]), force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, caseName + " force y")
+PhysicsAssert.Near(Double.Parse(jointValues[2]), joint.GetConstraintTorque(), Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, caseName + " torque")
+Else
+Assert.Fail("unknown mouse fixture kind " + kind)
+End If
+checkedRecords = checkedRecords + 1
+Next line
+Assert.Equal(6, checkedRecords)
+dragWorld.Validate()
+weakWorld.Validate()
+stiffWorld.Validate()
+End Sub
+
+## Steps one frame of a golden mouse scene, applying the mid-scene
+## retarget-and-wake at frame sixty.
+Shared Sub StepFrame(world As World, joint As MouseJoint, body As Body, frameIndex As Integer)
+world.StepWorld(1.0 / 60.0)
+If frameIndex = 60 Then
+joint.SetTarget(New Vector2(2.0, 5.5))
+body.SetAwake(True)
+End If
+End Sub
+
+## Mouse joint lifecycle: destruction, stale facades, slot reuse, and body
+## destruction destroying the attached joint.
+Public Sub TestMouseJointLifecycle()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 0.0, 5.0)
+Var joint As MouseJoint = Stage9Tests.MakeMouseJoint(world, ground, box, New Vector2(0.0, 5.0), 5.0, 0.7, 1000.0)
+Assert.Equal(1, world.JointCount, "one live mouse joint")
+Assert.Equal(1, ground.GetJointCount(), "ground holds the joint edge")
+Assert.Equal(1, box.GetJointCount(), "box holds the joint edge")
+Assert.True(joint.IsValid(), "facade valid after creation")
+Var reusedId As Integer = joint.Id
+Stage9Tests.Steps(world, 30)
+joint.Destroy()
+Assert.False(joint.IsValid(), "stale facade invalid after destroy")
+Assert.Equal(0, world.JointCount, "world empty after destroy")
+Assert.Equal(0, ground.GetJointCount(), "ground unlinked")
+Assert.Equal(0, box.GetJointCount(), "box unlinked")
+Assert.True(box.IsAwake(), "destroy wakes the dragged body")
+Var replacement As MouseJoint = Stage9Tests.MakeMouseJoint(world, ground, box, New Vector2(1.0, 5.0), 5.0, 0.7, 1000.0)
+Assert.Equal(reusedId, replacement.Id, "slot reused")
+Assert.False(joint.IsValid(), "stale facade stays invalid after slot reuse")
+world.DestroyBody(box)
+Assert.Equal(0, world.JointCount, "attached mouse joint destroyed with the body")
+Stage9Tests.Steps(world, 10)
+world.Validate()
+End Sub
+
+## Cross-world and missing mouse joint bodies are rejected at creation.
+Public Sub TestMouseJointRejectsCrossWorldBodies()
+Var worldA As New World
+Var worldB As New World
+Var bodyA As Body = Stage9Tests.MakeDraggedBox(worldA, 0.0, 5.0)
+Var bodyB As Body = Stage9Tests.MakeDraggedBox(worldB, 0.0, 5.0)
+Var def As New MouseJointDefinition
+def.BodyA = bodyA
+def.BodyB = bodyB
+Me.mCrossMouseDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldMouseJoint)
+def.BodyB = Nothing
+Me.mCrossMouseDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldMouseJoint)
+def.BodyA = Nothing
+def.BodyB = bodyB
+Me.mCrossMouseDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldMouseJoint)
+worldA.Validate()
+worldB.Validate()
+End Sub
+
+## A mouse joint whose body B is static carries zero constraint mass and
+## applies no impulse, matching upstream's singular inverse-mass handling.
+Public Sub TestMouseJointOnStaticBodyBAppliesNothing()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var moverDef As New BodyDefinition
+moverDef.Type = BodyType.DynamicBody
+moverDef.Position = New Vector2(-4.0, 5.0)
+Var mover As Body = world.CreateBody(moverDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+mover.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var staticDef As New BodyDefinition
+staticDef.Position = New Vector2(0.0, 5.0)
+Var block As Body = world.CreateBody(staticDef)
+block.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(0.25, 0.25))
+Var joint As MouseJoint = Stage9Tests.MakeMouseJoint(world, mover, block, New Vector2(3.0, 5.0), 5.0, 0.7, 1000.0)
+Stage9Tests.Steps(world, 60)
+Var force As Vector2 = joint.GetConstraintForce()
+PhysicsAssert.Near(0.0, force.X, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "static body B force x")
+PhysicsAssert.Near(0.0, force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "static body B force y")
+PhysicsAssert.Near(-4.0, world.GetBodyTransform(mover).P.X, 0.05, 0.05, "dynamic body A falls freely")
+world.Validate()
+End Sub
+
+## A mouse joint drags the body deterministically across repeated worlds.
+Public Sub TestMouseJointDeterminism()
+Var first As World = Stage9Tests.MakeMouseDragWorld()
+Var second As World = Stage9Tests.MakeMouseDragWorld()
+Stage9Tests.Steps(first, 180)
+Stage9Tests.Steps(second, 180)
+Var firstChecksum As Integer = Stage9Tests.FoldWorld(first)
+Var secondChecksum As Integer = Stage9Tests.FoldWorld(second)
+Assert.Equal(firstChecksum, secondChecksum, "mouse drag repeats bit for bit")
+first.Validate()
+second.Validate()
+End Sub
+
+## Builds a three-body drag scene with staggered targets and tunings.
+Shared Function MakeMouseDragWorld() As World
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var boxA As Body = Stage9Tests.MakeDraggedBox(world, -1.0, 5.0)
+Var boxB As Body = Stage9Tests.MakeDraggedBox(world, 0.0, 4.0)
+Var boxC As Body = Stage9Tests.MakeDraggedBox(world, 1.0, 5.0)
+Stage9Tests.MakeMouseJoint(world, ground, boxA, New Vector2(1.0, 6.0), 5.0, 0.7, 500.0)
+Stage9Tests.MakeMouseJoint(world, ground, boxB, New Vector2(0.0, 6.0), 10.0, 1.0, 100.0)
+Stage9Tests.MakeMouseJoint(world, ground, boxC, New Vector2(-1.0, 6.0), 20.0, 1.0, 2000.0)
+Return world
+End Function
+
+## After a warm-up that covers sleeping, waking, retargeting, and
+## re-sleeping with a mouse joint attached, further steps must allocate
+## nothing. Gate for the Stage 9 zero-allocation requirement on the mouse
+## family, including the runtime target-change path.
+Public Sub TestWarmMouseJointAllocatesNothing()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 0.0, 5.0)
+Var joint As MouseJoint = Stage9Tests.MakeMouseJoint(world, ground, box, New Vector2(0.0, 5.0), 5.0, 0.7, 1000.0)
+
+# Warm-up: settle, sleep, wake with a retarget, sleep again so every
+# migration buffer and graph colour list is sized.
+Var warmIndex As Integer = 0
+While warmIndex < 120
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+joint.SetTarget(New Vector2(1.0, 5.0))
+box.SetAwake(True)
+While warmIndex < 240
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(box.IsAwake() = False, "box asleep after first retarget warm-up")
+box.SetAwake(True)
+While warmIndex < 360
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(box.IsAwake() = False, "box asleep after warm-up")
+
+# Measured window: wake the body, retarget mid-window, let it sleep. The
+# scalar SetTarget overload keeps the runtime tuning path allocation-free.
+Var before As Integer = System.AllocationCount
+box.SetAwake(True)
+Var stepIndex As Integer = 0
+While stepIndex < 90
+world.StepWorld(1.0 / 60.0)
+If stepIndex = 30 Then
+joint.SetTarget(2.0, 5.0)
+End If
+stepIndex = stepIndex + 1
+Wend
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed mouse joint stepping allocates nothing")
+Assert.True(box.IsAwake() = False, "box asleep after measured window")
+world.Validate()
+End Sub
+
 ## A chain of distance joints swings and settles deterministically.
 Public Sub TestJointChainDeterminism()
 Var first As World = Stage9Tests.MakeJointChainWorld()
@@ -669,6 +1060,32 @@ End Sub
 Private Sub ThrowCrossWorldJoint()
 Var world As World = Stage9Tests.MakeWorld()
 world.CreateDistanceJoint(Me.mCrossWorldDef)
+End Sub
+
+## Throws a negative mouse spring hertz.
+Private Sub ThrowMouseNegativeHertz()
+Me.mMouseThrowJoint.SetSpringHertz(-1.0)
+End Sub
+
+## Throws a negative mouse spring damping ratio.
+Private Sub ThrowMouseNegativeDamping()
+Me.mMouseThrowJoint.SetSpringDampingRatio(-0.5)
+End Sub
+
+## Throws a negative mouse maximum force.
+Private Sub ThrowMouseNegativeMaxForce()
+Me.mMouseThrowJoint.SetMaxForce(-1.0)
+End Sub
+
+## Throws a non-finite mouse target.
+Private Sub ThrowMouseNonFiniteTarget()
+Me.mMouseThrowJoint.SetTarget(New Vector2(Double.Infinity, 0.0))
+End Sub
+
+## Throws while creating a mouse joint with a definition that mixes worlds.
+Private Sub ThrowCrossWorldMouseJoint()
+Var world As World = Stage9Tests.MakeMouseWorld()
+world.CreateMouseJoint(Me.mCrossMouseDef)
 End Sub
 
 ## Throws an inverted length range.

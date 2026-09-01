@@ -103,6 +103,47 @@ Property EnableLimit As IntegerList
 ## Enables the motor: 1 true, 0 false.
 Property EnableMotor As IntegerList
 
+# Mouse joint family columns, ported from upstream b2MouseJoint in joint.h.
+# Valid only while Type = Integer(JointType.MouseJoint). The mouse joint
+# reuses the base IndexB, AnchorB, DeltaCenter, InvMassB, and InvIB columns
+# for its single moving body; only the mouse-specific state is stored here.
+## X component of the world-space drag target.
+Property MouseTargetX As DoubleList
+## Y component of the world-space drag target.
+Property MouseTargetY As DoubleList
+## Spring stiffness in hertz.
+Property MouseHertz As DoubleList
+## Spring damping ratio.
+Property MouseDampingRatio As DoubleList
+## Maximum force magnitude applied to body B.
+Property MouseMaxForce As DoubleList
+## X component of the accumulated linear impulse on body B.
+Property MouseLinearImpulseX As DoubleList
+## Y component of the accumulated linear impulse on body B.
+Property MouseLinearImpulseY As DoubleList
+## Accumulated angular impulse damping body B's spin.
+Property MouseAngularImpulse As DoubleList
+## Linear spring softness: bias rate, mass scale, impulse scale.
+Property MouseLinearSoftnessBiasRate As DoubleList
+## Linear spring softness mass scale.
+Property MouseLinearSoftnessMassScale As DoubleList
+## Linear spring softness impulse scale.
+Property MouseLinearSoftnessImpulseScale As DoubleList
+## Fixed angular softness bias rate, ported from the upstream constants
+## (0.5 Hz, 0.1 damping ratio) that damp the dragged body's spin.
+Property MouseAngularSoftnessBiasRate As DoubleList
+## Fixed angular softness mass scale.
+Property MouseAngularSoftnessMassScale As DoubleList
+## Fixed angular softness impulse scale.
+Property MouseAngularSoftnessImpulseScale As DoubleList
+## Upper-left entry of the symmetric 2x2 linear effective mass. The matrix
+## is symmetric by construction, so only three entries are stored.
+Property MouseLinearMassXX As DoubleList
+## Off-diagonal entry of the symmetric linear effective mass.
+Property MouseLinearMassXY As DoubleList
+## Lower-right entry of the symmetric linear effective mass.
+Property MouseLinearMassYY As DoubleList
+
 ## Creates an empty store.
 Constructor()
 Me.JointId = New IntegerList
@@ -148,6 +189,23 @@ Me.AxialMass = New DoubleList
 Me.EnableSpring = New IntegerList
 Me.EnableLimit = New IntegerList
 Me.EnableMotor = New IntegerList
+Me.MouseTargetX = New DoubleList
+Me.MouseTargetY = New DoubleList
+Me.MouseHertz = New DoubleList
+Me.MouseDampingRatio = New DoubleList
+Me.MouseMaxForce = New DoubleList
+Me.MouseLinearImpulseX = New DoubleList
+Me.MouseLinearImpulseY = New DoubleList
+Me.MouseAngularImpulse = New DoubleList
+Me.MouseLinearSoftnessBiasRate = New DoubleList
+Me.MouseLinearSoftnessMassScale = New DoubleList
+Me.MouseLinearSoftnessImpulseScale = New DoubleList
+Me.MouseAngularSoftnessBiasRate = New DoubleList
+Me.MouseAngularSoftnessMassScale = New DoubleList
+Me.MouseAngularSoftnessImpulseScale = New DoubleList
+Me.MouseLinearMassXX = New DoubleList
+Me.MouseLinearMassXY = New DoubleList
+Me.MouseLinearMassYY = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -204,6 +262,23 @@ Me.AxialMass.Append(0.0)
 Me.EnableSpring.Append(0)
 Me.EnableLimit.Append(0)
 Me.EnableMotor.Append(0)
+Me.MouseTargetX.Append(0.0)
+Me.MouseTargetY.Append(0.0)
+Me.MouseHertz.Append(0.0)
+Me.MouseDampingRatio.Append(0.0)
+Me.MouseMaxForce.Append(0.0)
+Me.MouseLinearImpulseX.Append(0.0)
+Me.MouseLinearImpulseY.Append(0.0)
+Me.MouseAngularImpulse.Append(0.0)
+Me.MouseLinearSoftnessBiasRate.Append(0.0)
+Me.MouseLinearSoftnessMassScale.Append(1.0)
+Me.MouseLinearSoftnessImpulseScale.Append(0.0)
+Me.MouseAngularSoftnessBiasRate.Append(0.0)
+Me.MouseAngularSoftnessMassScale.Append(1.0)
+Me.MouseAngularSoftnessImpulseScale.Append(0.0)
+Me.MouseLinearMassXX.Append(0.0)
+Me.MouseLinearMassXY.Append(0.0)
+Me.MouseLinearMassYY.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -260,6 +335,23 @@ Me.AxialMass.RemoveSwap(index)
 Me.EnableSpring.RemoveSwap(index)
 Me.EnableLimit.RemoveSwap(index)
 Me.EnableMotor.RemoveSwap(index)
+Me.MouseTargetX.RemoveSwap(index)
+Me.MouseTargetY.RemoveSwap(index)
+Me.MouseHertz.RemoveSwap(index)
+Me.MouseDampingRatio.RemoveSwap(index)
+Me.MouseMaxForce.RemoveSwap(index)
+Me.MouseLinearImpulseX.RemoveSwap(index)
+Me.MouseLinearImpulseY.RemoveSwap(index)
+Me.MouseAngularImpulse.RemoveSwap(index)
+Me.MouseLinearSoftnessBiasRate.RemoveSwap(index)
+Me.MouseLinearSoftnessMassScale.RemoveSwap(index)
+Me.MouseLinearSoftnessImpulseScale.RemoveSwap(index)
+Me.MouseAngularSoftnessBiasRate.RemoveSwap(index)
+Me.MouseAngularSoftnessMassScale.RemoveSwap(index)
+Me.MouseAngularSoftnessImpulseScale.RemoveSwap(index)
+Me.MouseLinearMassXX.RemoveSwap(index)
+Me.MouseLinearMassXY.RemoveSwap(index)
+Me.MouseLinearMassYY.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -310,6 +402,23 @@ target.AxialMass.Items[targetIndex] = Me.AxialMass.Items[sourceIndex]
 target.EnableSpring.Items[targetIndex] = Me.EnableSpring.Items[sourceIndex]
 target.EnableLimit.Items[targetIndex] = Me.EnableLimit.Items[sourceIndex]
 target.EnableMotor.Items[targetIndex] = Me.EnableMotor.Items[sourceIndex]
+target.MouseTargetX.Items[targetIndex] = Me.MouseTargetX.Items[sourceIndex]
+target.MouseTargetY.Items[targetIndex] = Me.MouseTargetY.Items[sourceIndex]
+target.MouseHertz.Items[targetIndex] = Me.MouseHertz.Items[sourceIndex]
+target.MouseDampingRatio.Items[targetIndex] = Me.MouseDampingRatio.Items[sourceIndex]
+target.MouseMaxForce.Items[targetIndex] = Me.MouseMaxForce.Items[sourceIndex]
+target.MouseLinearImpulseX.Items[targetIndex] = Me.MouseLinearImpulseX.Items[sourceIndex]
+target.MouseLinearImpulseY.Items[targetIndex] = Me.MouseLinearImpulseY.Items[sourceIndex]
+target.MouseAngularImpulse.Items[targetIndex] = Me.MouseAngularImpulse.Items[sourceIndex]
+target.MouseLinearSoftnessBiasRate.Items[targetIndex] = Me.MouseLinearSoftnessBiasRate.Items[sourceIndex]
+target.MouseLinearSoftnessMassScale.Items[targetIndex] = Me.MouseLinearSoftnessMassScale.Items[sourceIndex]
+target.MouseLinearSoftnessImpulseScale.Items[targetIndex] = Me.MouseLinearSoftnessImpulseScale.Items[sourceIndex]
+target.MouseAngularSoftnessBiasRate.Items[targetIndex] = Me.MouseAngularSoftnessBiasRate.Items[sourceIndex]
+target.MouseAngularSoftnessMassScale.Items[targetIndex] = Me.MouseAngularSoftnessMassScale.Items[sourceIndex]
+target.MouseAngularSoftnessImpulseScale.Items[targetIndex] = Me.MouseAngularSoftnessImpulseScale.Items[sourceIndex]
+target.MouseLinearMassXX.Items[targetIndex] = Me.MouseLinearMassXX.Items[sourceIndex]
+target.MouseLinearMassXY.Items[targetIndex] = Me.MouseLinearMassXY.Items[sourceIndex]
+target.MouseLinearMassYY.Items[targetIndex] = Me.MouseLinearMassYY.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -357,5 +466,22 @@ Me.AxialMass.Clear()
 Me.EnableSpring.Clear()
 Me.EnableLimit.Clear()
 Me.EnableMotor.Clear()
+Me.MouseTargetX.Clear()
+Me.MouseTargetY.Clear()
+Me.MouseHertz.Clear()
+Me.MouseDampingRatio.Clear()
+Me.MouseMaxForce.Clear()
+Me.MouseLinearImpulseX.Clear()
+Me.MouseLinearImpulseY.Clear()
+Me.MouseAngularImpulse.Clear()
+Me.MouseLinearSoftnessBiasRate.Clear()
+Me.MouseLinearSoftnessMassScale.Clear()
+Me.MouseLinearSoftnessImpulseScale.Clear()
+Me.MouseAngularSoftnessBiasRate.Clear()
+Me.MouseAngularSoftnessMassScale.Clear()
+Me.MouseAngularSoftnessImpulseScale.Clear()
+Me.MouseLinearMassXX.Clear()
+Me.MouseLinearMassXY.Clear()
+Me.MouseLinearMassYY.Clear()
 End Sub
 End Class

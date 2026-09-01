@@ -1,7 +1,8 @@
 # Smoke application. It proves that the Physics2D module assembles from nested
 # Shared Code source items and compiles in a project-type-neutral program, and
-# doubles as the compact distance-joint example: two boxes connected by a
-# spring-loaded distance joint that is stretched and released.
+# doubles as the compact distance- and mouse-joint examples: two boxes
+# connected by a spring-loaded distance joint that is stretched and released,
+# then a third box dragged to a target with a mouse joint.
 Import Physics2D
 
 Class App Inherits CommandLineApplication
@@ -45,9 +46,37 @@ For i As Integer = 1 To 120
   world.StepWorld(1.0 / 60.0)
 Next
 
+# Drag a box with a mouse joint: settle at the grab point, then retarget
+# and wake like an interactive drag. The scalar overload keeps the
+# per-frame retarget allocation-free.
+Var dragDef As New BodyDefinition()
+dragDef.Type = BodyType.DynamicBody
+dragDef.Position = New Vector2(5.0, 4.0)
+Var dragged As Body = world.CreateBody(dragDef)
+dragged.CreateCircle(New ShapeDefinition(), New Circle(New Vector2(0.0, 0.0), 0.5))
+
+Var mouseDef As New MouseJointDefinition()
+mouseDef.BodyA = ground
+mouseDef.BodyB = dragged
+mouseDef.Target = New Vector2(5.0, 4.0)
+mouseDef.Hertz = 5.0
+mouseDef.DampingRatio = 0.7
+mouseDef.MaxForce = 1000.0
+Var drag As MouseJoint = world.CreateMouseJoint(mouseDef)
+
+For i As Integer = 1 To 60
+  world.StepWorld(1.0 / 60.0)
+Next
+drag.SetTarget(7.0, 5.0)
+dragged.SetAwake(True)
+For i As Integer = 1 To 180
+  world.StepWorld(1.0 / 60.0)
+Next
+
 Print("Physics2D module imported successfully.")
 Print("Hanging box at (" + spring.GetBodyB().GetPosition().X.ToString() + ", " + spring.GetBodyB().GetPosition().Y.ToString() + ") after resting on the ground")
 Print("Rod force " + rod.GetConstraintForce().ToString() + " N")
+Print("Dragged box at (" + dragged.GetPosition().X.ToString() + ", " + dragged.GetPosition().Y.ToString() + ") after the mouse joint drag")
 Return 0
 End Event
 End Class

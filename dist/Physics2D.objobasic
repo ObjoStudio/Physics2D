@@ -58,13 +58,15 @@
 # Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
 # Input: Island.objobasic 44f9b035b888e2dbbec81e2c88390bd8081257a3f57a52efc6fffdddabb10fa4
 # Input: IslandMethods.objobasic 20833e02e72df2d6818e0ebd92de184099fb656f56a10b14b7df86353eda2f6d
-# Input: Joint.objobasic 960953c51219ed0afbb81159c92fbc856a16aab9b8d8a7094118b09d5427f8a7
-# Input: JointSims.objobasic 4d0033cddf099e8ee1474b80a04a999e6274ac1b74d8d98e55cef522c4ea3d02
-# Input: JointSolver.objobasic 8e76b002d526f56821fec12a890bb83cb6696563acd4f499c3aef9de7d17e349
+# Input: Joint.objobasic 2bde5fa098c4e52536289d25e3af7ccdc79dfb3687ec6bd384384443d4f5a7ad
+# Input: JointSims.objobasic 660d7a899d40d573083a0ee27f7bf4e9a7bc1fad4df79683d84ebb4b1244261b
+# Input: JointSolver.objobasic 30e9c3beec7269abbfcd08000b96ae1214039897cd385e9e28f2a7fcc923df22
 # Input: JointType-856da3bd-dadf-41a2-af79-4e1fcc92c642.objobasic 595178f214846dc7716badeb118dfb5729356f738f99204ff34b849f6fd14838
 # Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 2204114b1a588c77c29b945afd4b19ad7c68f56bce9f68f6a6ee47f5e8463787
 # Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic dcebd68c0b3500bb6ab7688775a8056b75304728e39537252715a4309cc96402
 # Input: MassData-cd26f83f-962d-4695-aa00-893f86fd1099.objobasic 954cf89f8f01ac0ba9e4d378506536bbb64de2e1630351bf9373731366488987
+# Input: MouseJoint.objobasic 148e02225783bf7128a2c67af99a94264b0e4e59e9e7bcf141fe38b44e66b0ab
+# Input: MouseJointDefinition.objobasic 28be646a98699dbd233dba1bc466b171d372095f1a5b0ad6c34412916b34d655
 # Input: Mover-89f8b58a-a5cb-43a1-bb4e-216fd2e79a45.objobasic a0bd07eed0ced42bc9789f0e0b4df2d56c8dc159f7df92c4ba3c75068e33f576
 # Input: PairKeySet-7d0b7f56-d56b-4fa5-a84f-5f9f8e86c8b1.objobasic e9ed9cfcac78bbfa2b440fbcc2b61d7c2ad25393624cd226b00a22f274b068b0
 # Input: Physics2D-7e9c2aae.objobasic a482a18a11941d5220f84b085c0175ac07d421ba3760abd25e67ef39e73d443d
@@ -96,7 +98,7 @@
 # Input: SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic 82bc4694e90f396c176e50cbe8196ea7c809da4842781d5f9750137a1d087314
 # Input: SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic 7c911da9871051f8580713a107d379e349bdc89cf9f9f0e9968f07c29e2f19da
 # Input: Softness.objobasic 06211852d8bbb70e4c5f5479756606be96bb2667bd617c4f635f76a661e47d4a
-# Input: SolverMethods.objobasic 8573054d10dd7e6dc317f4102f1207b51520ea664fdb2268f1fdd7874221cbf6
+# Input: SolverMethods.objobasic f4f1ac6f9014e62cee73915f7da65b8168b505d2b895e188a9b3a865d458795e
 # Input: SolverSet.objobasic ae57d26036c92d75a660f380cae829c6ef353d45bbba3876779bf1689234a922
 # Input: StepContext.objobasic 0d6a04f453555a2ff4207c21b9cacba5f3f2103f22c2d8ac4dd8c449f7b67e12
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
@@ -113,7 +115,7 @@
 # Input: TreeScratch-3add8e75-acc6-4f27-996e-372dc4d98372.objobasic 35e077b5cec3caafcc6d334013421d7a9612c3ba18ecf97875019b87ac2f9f55
 # Input: TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic 2abd4a4ca724ab02daa1a476dd447403aea4c5d80a507691f770ed20469a832b
 # Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
-# Input: World.objobasic 5f57ac60a041b8773ea86706c81fe75f3a5718fb5a5ea0fd946e980a3bace73a
+# Input: World.objobasic 7bc656b8aed81f7972c18b0d9ab718fbfc96beb6266125c9bbea50dac9182792
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
@@ -122,7 +124,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 5791d6585dd9f5c62b9821901a86c661cefd310afa4d939a0cf8dcfc3c96b697
+# Source content checksum (SHA-256): affa757b1552a627c3d06635488f09ea19b7915c363e0ed216f8fd75eca04550
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -11748,6 +11750,9 @@ Me.CheckValid()
 If Me.Type = JointType.DistanceJoint Then
 Return JointSolver.GetDistanceJointForce(Me.Owner, Me.Owner.GetJointSims(Me), Me.LocalIndex)
 End If
+If Me.Type = JointType.MouseJoint Then
+Return JointSolver.GetMouseJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return New Vector2(0.0, 0.0)
 End Function
 
@@ -11755,6 +11760,9 @@ End Function
 ## b2Joint_GetConstraintTorque.
 Function GetConstraintTorque() As Double
 Me.CheckValid()
+If Me.Type = JointType.MouseJoint Then
+Return JointSolver.GetMouseJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return 0.0
 End Function
 
@@ -11898,6 +11906,47 @@ Property EnableLimit As IntegerList
 ## Enables the motor: 1 true, 0 false.
 Property EnableMotor As IntegerList
 
+# Mouse joint family columns, ported from upstream b2MouseJoint in joint.h.
+# Valid only while Type = Integer(JointType.MouseJoint). The mouse joint
+# reuses the base IndexB, AnchorB, DeltaCenter, InvMassB, and InvIB columns
+# for its single moving body; only the mouse-specific state is stored here.
+## X component of the world-space drag target.
+Property MouseTargetX As DoubleList
+## Y component of the world-space drag target.
+Property MouseTargetY As DoubleList
+## Spring stiffness in hertz.
+Property MouseHertz As DoubleList
+## Spring damping ratio.
+Property MouseDampingRatio As DoubleList
+## Maximum force magnitude applied to body B.
+Property MouseMaxForce As DoubleList
+## X component of the accumulated linear impulse on body B.
+Property MouseLinearImpulseX As DoubleList
+## Y component of the accumulated linear impulse on body B.
+Property MouseLinearImpulseY As DoubleList
+## Accumulated angular impulse damping body B's spin.
+Property MouseAngularImpulse As DoubleList
+## Linear spring softness: bias rate, mass scale, impulse scale.
+Property MouseLinearSoftnessBiasRate As DoubleList
+## Linear spring softness mass scale.
+Property MouseLinearSoftnessMassScale As DoubleList
+## Linear spring softness impulse scale.
+Property MouseLinearSoftnessImpulseScale As DoubleList
+## Fixed angular softness bias rate, ported from the upstream constants
+## (0.5 Hz, 0.1 damping ratio) that damp the dragged body's spin.
+Property MouseAngularSoftnessBiasRate As DoubleList
+## Fixed angular softness mass scale.
+Property MouseAngularSoftnessMassScale As DoubleList
+## Fixed angular softness impulse scale.
+Property MouseAngularSoftnessImpulseScale As DoubleList
+## Upper-left entry of the symmetric 2x2 linear effective mass. The matrix
+## is symmetric by construction, so only three entries are stored.
+Property MouseLinearMassXX As DoubleList
+## Off-diagonal entry of the symmetric linear effective mass.
+Property MouseLinearMassXY As DoubleList
+## Lower-right entry of the symmetric linear effective mass.
+Property MouseLinearMassYY As DoubleList
+
 ## Creates an empty store.
 Constructor()
 Me.JointId = New IntegerList
@@ -11943,6 +11992,23 @@ Me.AxialMass = New DoubleList
 Me.EnableSpring = New IntegerList
 Me.EnableLimit = New IntegerList
 Me.EnableMotor = New IntegerList
+Me.MouseTargetX = New DoubleList
+Me.MouseTargetY = New DoubleList
+Me.MouseHertz = New DoubleList
+Me.MouseDampingRatio = New DoubleList
+Me.MouseMaxForce = New DoubleList
+Me.MouseLinearImpulseX = New DoubleList
+Me.MouseLinearImpulseY = New DoubleList
+Me.MouseAngularImpulse = New DoubleList
+Me.MouseLinearSoftnessBiasRate = New DoubleList
+Me.MouseLinearSoftnessMassScale = New DoubleList
+Me.MouseLinearSoftnessImpulseScale = New DoubleList
+Me.MouseAngularSoftnessBiasRate = New DoubleList
+Me.MouseAngularSoftnessMassScale = New DoubleList
+Me.MouseAngularSoftnessImpulseScale = New DoubleList
+Me.MouseLinearMassXX = New DoubleList
+Me.MouseLinearMassXY = New DoubleList
+Me.MouseLinearMassYY = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -11999,6 +12065,23 @@ Me.AxialMass.Append(0.0)
 Me.EnableSpring.Append(0)
 Me.EnableLimit.Append(0)
 Me.EnableMotor.Append(0)
+Me.MouseTargetX.Append(0.0)
+Me.MouseTargetY.Append(0.0)
+Me.MouseHertz.Append(0.0)
+Me.MouseDampingRatio.Append(0.0)
+Me.MouseMaxForce.Append(0.0)
+Me.MouseLinearImpulseX.Append(0.0)
+Me.MouseLinearImpulseY.Append(0.0)
+Me.MouseAngularImpulse.Append(0.0)
+Me.MouseLinearSoftnessBiasRate.Append(0.0)
+Me.MouseLinearSoftnessMassScale.Append(1.0)
+Me.MouseLinearSoftnessImpulseScale.Append(0.0)
+Me.MouseAngularSoftnessBiasRate.Append(0.0)
+Me.MouseAngularSoftnessMassScale.Append(1.0)
+Me.MouseAngularSoftnessImpulseScale.Append(0.0)
+Me.MouseLinearMassXX.Append(0.0)
+Me.MouseLinearMassXY.Append(0.0)
+Me.MouseLinearMassYY.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -12055,6 +12138,23 @@ Me.AxialMass.RemoveSwap(index)
 Me.EnableSpring.RemoveSwap(index)
 Me.EnableLimit.RemoveSwap(index)
 Me.EnableMotor.RemoveSwap(index)
+Me.MouseTargetX.RemoveSwap(index)
+Me.MouseTargetY.RemoveSwap(index)
+Me.MouseHertz.RemoveSwap(index)
+Me.MouseDampingRatio.RemoveSwap(index)
+Me.MouseMaxForce.RemoveSwap(index)
+Me.MouseLinearImpulseX.RemoveSwap(index)
+Me.MouseLinearImpulseY.RemoveSwap(index)
+Me.MouseAngularImpulse.RemoveSwap(index)
+Me.MouseLinearSoftnessBiasRate.RemoveSwap(index)
+Me.MouseLinearSoftnessMassScale.RemoveSwap(index)
+Me.MouseLinearSoftnessImpulseScale.RemoveSwap(index)
+Me.MouseAngularSoftnessBiasRate.RemoveSwap(index)
+Me.MouseAngularSoftnessMassScale.RemoveSwap(index)
+Me.MouseAngularSoftnessImpulseScale.RemoveSwap(index)
+Me.MouseLinearMassXX.RemoveSwap(index)
+Me.MouseLinearMassXY.RemoveSwap(index)
+Me.MouseLinearMassYY.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -12105,6 +12205,23 @@ target.AxialMass.Items[targetIndex] = Me.AxialMass.Items[sourceIndex]
 target.EnableSpring.Items[targetIndex] = Me.EnableSpring.Items[sourceIndex]
 target.EnableLimit.Items[targetIndex] = Me.EnableLimit.Items[sourceIndex]
 target.EnableMotor.Items[targetIndex] = Me.EnableMotor.Items[sourceIndex]
+target.MouseTargetX.Items[targetIndex] = Me.MouseTargetX.Items[sourceIndex]
+target.MouseTargetY.Items[targetIndex] = Me.MouseTargetY.Items[sourceIndex]
+target.MouseHertz.Items[targetIndex] = Me.MouseHertz.Items[sourceIndex]
+target.MouseDampingRatio.Items[targetIndex] = Me.MouseDampingRatio.Items[sourceIndex]
+target.MouseMaxForce.Items[targetIndex] = Me.MouseMaxForce.Items[sourceIndex]
+target.MouseLinearImpulseX.Items[targetIndex] = Me.MouseLinearImpulseX.Items[sourceIndex]
+target.MouseLinearImpulseY.Items[targetIndex] = Me.MouseLinearImpulseY.Items[sourceIndex]
+target.MouseAngularImpulse.Items[targetIndex] = Me.MouseAngularImpulse.Items[sourceIndex]
+target.MouseLinearSoftnessBiasRate.Items[targetIndex] = Me.MouseLinearSoftnessBiasRate.Items[sourceIndex]
+target.MouseLinearSoftnessMassScale.Items[targetIndex] = Me.MouseLinearSoftnessMassScale.Items[sourceIndex]
+target.MouseLinearSoftnessImpulseScale.Items[targetIndex] = Me.MouseLinearSoftnessImpulseScale.Items[sourceIndex]
+target.MouseAngularSoftnessBiasRate.Items[targetIndex] = Me.MouseAngularSoftnessBiasRate.Items[sourceIndex]
+target.MouseAngularSoftnessMassScale.Items[targetIndex] = Me.MouseAngularSoftnessMassScale.Items[sourceIndex]
+target.MouseAngularSoftnessImpulseScale.Items[targetIndex] = Me.MouseAngularSoftnessImpulseScale.Items[sourceIndex]
+target.MouseLinearMassXX.Items[targetIndex] = Me.MouseLinearMassXX.Items[sourceIndex]
+target.MouseLinearMassXY.Items[targetIndex] = Me.MouseLinearMassXY.Items[sourceIndex]
+target.MouseLinearMassYY.Items[targetIndex] = Me.MouseLinearMassYY.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -12152,6 +12269,23 @@ Me.AxialMass.Clear()
 Me.EnableSpring.Clear()
 Me.EnableLimit.Clear()
 Me.EnableMotor.Clear()
+Me.MouseTargetX.Clear()
+Me.MouseTargetY.Clear()
+Me.MouseHertz.Clear()
+Me.MouseDampingRatio.Clear()
+Me.MouseMaxForce.Clear()
+Me.MouseLinearImpulseX.Clear()
+Me.MouseLinearImpulseY.Clear()
+Me.MouseAngularImpulse.Clear()
+Me.MouseLinearSoftnessBiasRate.Clear()
+Me.MouseLinearSoftnessMassScale.Clear()
+Me.MouseLinearSoftnessImpulseScale.Clear()
+Me.MouseAngularSoftnessBiasRate.Clear()
+Me.MouseAngularSoftnessMassScale.Clear()
+Me.MouseAngularSoftnessImpulseScale.Clear()
+Me.MouseLinearMassXX.Clear()
+Me.MouseLinearMassXY.Clear()
+Me.MouseLinearMassYY.Clear()
 End Sub
 End Class
 
@@ -12175,6 +12309,8 @@ sims.SoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
 sims.SoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
 If sims.Type.Items[index] = Integer(JointType.DistanceJoint) Then
 PrepareDistanceJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.MouseJoint) Then
+PrepareMouseJoint(sims, index, context)
 End If
 End Sub
 
@@ -12582,6 +12718,176 @@ scratch.VBY = scratch.VBY + mB * motorPY
 scratch.WB = scratch.WB + iB * (scratch.RBX * motorPY - scratch.RBY * motorPX)
 End Sub
 
+## Prepares one mouse joint row, ported from b2PrepareMouseJoint. Only body
+## B matters: body A is assumed static and is never touched by the solver.
+## The linear mass is the inverse of the symmetric 2x2 body-B constraint
+## matrix, stored as three scalars because the matrix is symmetric by
+## construction. Upstream asserts body B is awake; rows outside the graph
+## are never prepared in this port, and a non-awake body B yields a
+## NULL_INDEX state row that the warm-start and solve kernels skip.
+Private Shared Sub PrepareMouseJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+Var localDX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localDY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localDX - qsB * localDY
+sims.AnchorBY.Items[index] = qsB * localDX + qcB * localDY
+
+Softness.MakeTo(sims.MouseHertz.Items[index], sims.MouseDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.MouseLinearSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.MouseLinearSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.MouseLinearSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+
+# Upstream fixes the angular softness at 0.5 Hz with a 0.1 damping ratio
+# to reduce the dragged body's spin without fighting user torque.
+Softness.MakeTo(0.5, 0.1, context.H, context.SoftnessScratch)
+sims.MouseAngularSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.MouseAngularSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.MouseAngularSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+
+Var rBX As Double = sims.AnchorBX.Items[index]
+Var rBY As Double = sims.AnchorBY.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var k11 As Double = mB + iB * rBY * rBY
+Var k12 As Double = -iB * rBX * rBY
+Var k22 As Double = mB + iB * rBX * rBX
+Var det As Double = k11 * k22 - k12 * k12
+If det <> 0.0 Then
+det = 1.0 / det
+End If
+sims.MouseLinearMassXX.Items[index] = det * k22
+sims.MouseLinearMassXY.Items[index] = -det * k12
+sims.MouseLinearMassYY.Items[index] = det * k11
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - sims.MouseTargetX.Items[index]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - sims.MouseTargetY.Items[index]
+
+If context.WarmStartScale = 0.0 Then
+sims.MouseLinearImpulseX.Items[index] = 0.0
+sims.MouseLinearImpulseY.Items[index] = 0.0
+sims.MouseAngularImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored mouse joint impulses to body B before iterating, ported
+## from b2WarmStartMouseJoint.
+Shared Sub WarmStartMouseJoint(sims As JointSims, index As Integer, context As StepContext)
+Var indexB As Integer = sims.IndexB.Items[index]
+If indexB = PhysicsConstants.NULL_INDEX Then
+Return
+End If
+Var states As BodyStates = context.States
+Var mB As Double = sims.InvMassB.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var dqBC As Double = states.DRC.Items[indexB]
+Var dqBS As Double = states.DRS.Items[indexB]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var pX As Double = sims.MouseLinearImpulseX.Items[index]
+Var pY As Double = sims.MouseLinearImpulseY.Items[index]
+states.LVX.Items[indexB] = states.LVX.Items[indexB] + mB * pX
+states.LVY.Items[indexB] = states.LVY.Items[indexB] + mB * pY
+states.AngularVelocity.Items[indexB] = states.AngularVelocity.Items[indexB] + iB * (rBX * pY - rBY * pX + sims.MouseAngularImpulse.Items[index])
+End Sub
+
+## Runs one velocity iteration for one mouse joint row, ported from
+## b2SolveMouseJoint. Upstream ignores the bias flag: the mouse joint is a
+## soft constraint whose bias comes from its own spring softness.
+Shared Sub SolveMouseJoint(sims As JointSims, index As Integer, context As StepContext)
+Var indexB As Integer = sims.IndexB.Items[index]
+If indexB = PhysicsConstants.NULL_INDEX Then
+Return
+End If
+Var states As BodyStates = context.States
+Var mB As Double = sims.InvMassB.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var vBX As Double = states.LVX.Items[indexB]
+Var vBY As Double = states.LVY.Items[indexB]
+Var wB As Double = states.AngularVelocity.Items[indexB]
+
+# Soft angular damping with no bias term to reduce rotation speed.
+Var angularImpulse As Double = 0.0
+If iB > 0.0 Then
+angularImpulse = -wB / iB
+End If
+angularImpulse = sims.MouseAngularSoftnessMassScale.Items[index] * angularImpulse - sims.MouseAngularSoftnessImpulseScale.Items[index] * sims.MouseAngularImpulse.Items[index]
+sims.MouseAngularImpulse.Items[index] = sims.MouseAngularImpulse.Items[index] + angularImpulse
+wB = wB + iB * angularImpulse
+
+Var maxImpulse As Double = sims.MouseMaxForce.Items[index] * context.H
+Var dqBC As Double = states.DRC.Items[indexB]
+Var dqBS As Double = states.DRS.Items[indexB]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var cdotX As Double = vBX - wB * rBY
+Var cdotY As Double = vBY + wB * rBX
+Var sepX As Double = states.DPX.Items[indexB] + rBX + sims.DeltaCenterX.Items[index]
+Var sepY As Double = states.DPY.Items[indexB] + rBY + sims.DeltaCenterY.Items[index]
+Var biasRate As Double = sims.MouseLinearSoftnessBiasRate.Items[index]
+Var rhsX As Double = cdotX + biasRate * sepX
+Var rhsY As Double = cdotY + biasRate * sepY
+Var bX As Double = sims.MouseLinearMassXX.Items[index] * rhsX + sims.MouseLinearMassXY.Items[index] * rhsY
+Var bY As Double = sims.MouseLinearMassXY.Items[index] * rhsX + sims.MouseLinearMassYY.Items[index] * rhsY
+Var massScale As Double = sims.MouseLinearSoftnessMassScale.Items[index]
+Var impulseScale As Double = sims.MouseLinearSoftnessImpulseScale.Items[index]
+Var oldX As Double = sims.MouseLinearImpulseX.Items[index]
+Var oldY As Double = sims.MouseLinearImpulseY.Items[index]
+Var totalX As Double = oldX - massScale * bX - impulseScale * oldX
+Var totalY As Double = oldY - massScale * bY - impulseScale * oldY
+
+# Clamp the accumulated impulse magnitude, porting b2Normalize's
+# degenerate branch: below the float epsilon the upstream normalization
+# returns zero rather than a unit direction.
+Var mag As Double = Maths.Sqrt(totalX * totalX + totalY * totalY)
+If mag > maxImpulse Then
+If mag >= PhysicsConstants.FLT_EPSILON Then
+Var scale As Double = maxImpulse / mag
+totalX = scale * totalX
+totalY = scale * totalY
+Else
+totalX = 0.0
+totalY = 0.0
+End If
+End If
+sims.MouseLinearImpulseX.Items[index] = totalX
+sims.MouseLinearImpulseY.Items[index] = totalY
+
+Var deltaX As Double = totalX - oldX
+Var deltaY As Double = totalY - oldY
+vBX = vBX + mB * deltaX
+vBY = vBY + mB * deltaY
+wB = wB + iB * (rBX * deltaY - rBY * deltaX)
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End Sub
+
+## Total force the mouse joint row applied this step, ported from
+## b2GetMouseJointForce.
+Shared Function GetMouseJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var scale As Double = invH
+Return New Vector2(scale * sims.MouseLinearImpulseX.Items[index], scale * sims.MouseLinearImpulseY.Items[index])
+End Function
+
+## Torque the mouse joint row applied this step, ported from
+## b2GetMouseJointTorque.
+Shared Function GetMouseJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * sims.MouseAngularImpulse.Items[index]
+End Function
+
 ## Total force the distance joint row applied this step, ported from
 ## b2GetDistanceJointForce.
 Shared Function GetDistanceJointForce(world As World, sims As JointSims, index As Integer) As Vector2
@@ -12820,6 +13126,139 @@ Me.Center.Set(other.Center.X, other.Center.Y)
 Me.RotationalInertia = other.RotationalInertia
 Return Me
 End Function
+End Class
+
+# Public mouse joint façade, ported from the b2MouseJoint_* surface in
+# mouse_joint.c. The mouse joint is a soft constraint that drags body B's
+# anchor point toward a world-space target; body A is assumed static, as
+# upstream documents. Tuning changes deliberately do not wake the bodies,
+# matching upstream; the solver picks up new values on the next step, and a
+# sleeping body B keeps sleeping until the application wakes it (the sample
+# app wakes the dragged body explicitly). The façade reads and writes its
+# row in the owning JointSims store.
+Class MouseJoint Inherits Joint
+## Moves the world-space drag target, ported from b2MouseJoint_SetTarget.
+## The target is a tuning value: changing it does not wake the attached
+## bodies, so wake body B explicitly when dragging a sleeping body.
+Sub SetTarget(target As Vector2)
+Me.SetTarget(target.X, target.Y)
+End Sub
+
+## Scalar form of SetTarget. Prefer this overload in per-frame drag loops:
+## the vector form constructs a Vector2 argument, which allocates one
+## object at the call site, while this form allocates nothing.
+Sub SetTarget(x As Double, y As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not x.IsFinite() Or Not y.IsFinite() Then
+Throw New InvalidArgumentException("Mouse joint target must be finite")
+End If
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+store.MouseTargetX.Items[Me.LocalIndex] = x
+store.MouseTargetY.Items[Me.LocalIndex] = y
+End Sub
+
+## World-space drag target, ported from b2MouseJoint_GetTarget. Returns a
+## new Vector2 copy; safe to retain.
+Function GetTarget() As Vector2
+Me.CheckValid()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return New Vector2(store.MouseTargetX.Items[Me.LocalIndex], store.MouseTargetY.Items[Me.LocalIndex])
+End Function
+
+## Spring stiffness in hertz, ported from b2MouseJoint_SetSpringHertz.
+Sub SetSpringHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not hertz.IsFinite() Or hertz < 0.0 Then
+Throw New InvalidArgumentException("Mouse joint hertz must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).MouseHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Spring stiffness in hertz, ported from b2MouseJoint_GetSpringHertz.
+Function GetSpringHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MouseHertz.Items[Me.LocalIndex]
+End Function
+
+## Spring damping ratio, ported from b2MouseJoint_SetSpringDampingRatio.
+Sub SetSpringDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not dampingRatio.IsFinite() Or dampingRatio < 0.0 Then
+Throw New InvalidArgumentException("Mouse joint damping ratio must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).MouseDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Spring damping ratio, ported from b2MouseJoint_GetSpringDampingRatio.
+Function GetSpringDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MouseDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## Maximum force magnitude in newtons, ported from b2MouseJoint_SetMaxForce.
+Sub SetMaxForce(maxForce As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not maxForce.IsFinite() Or maxForce < 0.0 Then
+Throw New InvalidArgumentException("Mouse joint max force must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).MouseMaxForce.Items[Me.LocalIndex] = maxForce
+End Sub
+
+## Maximum force magnitude in newtons, ported from b2MouseJoint_GetMaxForce.
+Function GetMaxForce() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MouseMaxForce.Items[Me.LocalIndex]
+End Function
+
+## Current world-space position of the dragged anchor on body B. Physics2D
+## addition: upstream samples compute this from body transforms directly.
+## Allocation note: returns a new Vector2 copy each call.
+Function GetAnchorB() As Vector2
+Me.CheckValid()
+Var transformB As Transform = Me.Owner.GetBodyTransformById(Me.Edge1BodyId)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return Transform.TransformPoint(transformB, New Vector2(store.LocalOriginAnchorBX.Items[Me.LocalIndex], store.LocalOriginAnchorBY.Items[Me.LocalIndex]))
+End Function
+End Class
+
+# Mouse joint definition, ported from upstream b2MouseJointDef and
+# b2DefaultMouseJointDef in types.h and joint.c. Defaults match upstream:
+# four hertz spring, unit damping ratio, one newton maximum force. The first
+# body is assumed static, as upstream documents; only body B moves.
+Class MouseJointDefinition
+## First attached body. Assumed static, ported from b2MouseJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, dragged toward the target.
+Property BodyB As Body
+## Initial target point in world space, in metres.
+Property Target As Vector2
+## Spring stiffness in hertz.
+Property Hertz As Double
+## Spring damping ratio, non-dimensional.
+Property DampingRatio As Double
+## Maximum force magnitude, typically in newtons.
+Property MaxForce As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.Target = New Vector2(0.0, 0.0)
+Me.Hertz = 4.0
+Me.DampingRatio = 1.0
+Me.MaxForce = 1.0
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
 End Class
 
 # Character-mover plane geometry, ported from upstream mover.c. The plane
@@ -15789,6 +16228,8 @@ Var count As Integer = sims.Count()
 For i As Integer = 0 To count - 1
 If sims.Type.Items[i] = Integer(JointType.DistanceJoint) Then
 JointSolver.WarmStartDistanceJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
+JointSolver.WarmStartMouseJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -15803,6 +16244,8 @@ Var count As Integer = sims.Count()
 For i As Integer = 0 To count - 1
 If sims.Type.Items[i] = Integer(JointType.DistanceJoint) Then
 JointSolver.SolveDistanceJoint(sims, i, context, useBias)
+ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
+JointSolver.SolveMouseJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -18853,6 +19296,8 @@ Var jointId As Integer = Me.JointIdPool.AllocId()
 Var record As Joint
 If jointType = JointType.DistanceJoint Then
 record = New DistanceJoint
+ElseIf jointType = JointType.MouseJoint Then
+record = New MouseJoint
 Else
 record = New Joint
 End If
@@ -19023,6 +19468,72 @@ Me.DestroyContactsBetweenBodies(bodyA, bodyB)
 End If
 
 Var facade As DistanceJoint = DistanceJoint(joint)
+Return facade
+End Function
+
+## Creates a mouse joint, ported from b2CreateMouseJoint. Throws on a
+## missing definition, missing or foreign bodies, or non-finite or negative
+## tuning values. Body A is assumed static, as upstream documents; a moving
+## body B drives the constraint, and a non-dynamic body B simply receives
+## no impulse (its constraint mass is zero), matching upstream's singular
+## inverse-mass handling. The mouse joint anchors both bodies at the target
+## point: localOriginAnchorA and localOriginAnchorB are both the target
+## transformed into each body's local frame.
+Function CreateMouseJoint(def As MouseJointDefinition) As MouseJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "MouseJointDefinition")
+Me.CheckJointBody(def.BodyA, "MouseJointDefinition.BodyA")
+Me.CheckJointBody(def.BodyB, "MouseJointDefinition.BodyB")
+If Not def.Target.X.IsFinite() Or Not def.Target.Y.IsFinite() Then
+Throw New InvalidArgumentException("MouseJointDefinition target must be finite")
+End If
+If Not def.Hertz.IsFinite() Or def.Hertz < 0.0 Then
+Throw New InvalidArgumentException("MouseJointDefinition hertz must be finite and non-negative")
+End If
+If Not def.DampingRatio.IsFinite() Or def.DampingRatio < 0.0 Then
+Throw New InvalidArgumentException("MouseJointDefinition damping ratio must be finite and non-negative")
+End If
+If Not def.MaxForce.IsFinite() Or def.MaxForce < 0.0 Then
+Throw New InvalidArgumentException("MouseJointDefinition max force must be finite and non-negative")
+End If
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.MouseJoint, def.CollideConnected, 1.0)
+Var localIndex As Integer = Me.PlaceJointSim(joint, bodyA, bodyB)
+Var store As JointSims = Me.GetJointSims(joint)
+store.ConstraintHertz.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+store.ConstraintDampingRatio.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+Var transformA As Transform = Me.GetBodyTransformById(joint.Edge0BodyId)
+Var transformB As Transform = Me.GetBodyTransformById(joint.Edge1BodyId)
+Var localAnchorA As Vector2 = Transform.InvTransformPoint(transformA, def.Target)
+Var localAnchorB As Vector2 = Transform.InvTransformPoint(transformB, def.Target)
+store.LocalOriginAnchorAX.Items[localIndex] = localAnchorA.X
+store.LocalOriginAnchorAY.Items[localIndex] = localAnchorA.Y
+store.LocalOriginAnchorBX.Items[localIndex] = localAnchorB.X
+store.LocalOriginAnchorBY.Items[localIndex] = localAnchorB.Y
+store.MouseTargetX.Items[localIndex] = def.Target.X
+store.MouseTargetY.Items[localIndex] = def.Target.Y
+store.MouseHertz.Items[localIndex] = def.Hertz
+store.MouseDampingRatio.Items[localIndex] = def.DampingRatio
+store.MouseMaxForce.Items[localIndex] = def.MaxForce
+store.MouseLinearImpulseX.Items[localIndex] = 0.0
+store.MouseLinearImpulseY.Items[localIndex] = 0.0
+store.MouseAngularImpulse.Items[localIndex] = 0.0
+joint.UserData = def.UserData
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# If the joint prevents collisions, destroy all contacts between the
+# attached bodies.
+If def.CollideConnected = False Then
+Me.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+
+Var facade As MouseJoint = MouseJoint(joint)
 Return facade
 End Function
 

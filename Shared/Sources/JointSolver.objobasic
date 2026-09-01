@@ -18,6 +18,8 @@ sims.SoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
 sims.SoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
 If sims.Type.Items[index] = Integer(JointType.DistanceJoint) Then
 PrepareDistanceJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.MouseJoint) Then
+PrepareMouseJoint(sims, index, context)
 End If
 End Sub
 
@@ -424,6 +426,176 @@ scratch.VBX = scratch.VBX + mB * motorPX
 scratch.VBY = scratch.VBY + mB * motorPY
 scratch.WB = scratch.WB + iB * (scratch.RBX * motorPY - scratch.RBY * motorPX)
 End Sub
+
+## Prepares one mouse joint row, ported from b2PrepareMouseJoint. Only body
+## B matters: body A is assumed static and is never touched by the solver.
+## The linear mass is the inverse of the symmetric 2x2 body-B constraint
+## matrix, stored as three scalars because the matrix is symmetric by
+## construction. Upstream asserts body B is awake; rows outside the graph
+## are never prepared in this port, and a non-awake body B yields a
+## NULL_INDEX state row that the warm-start and solve kernels skip.
+Private Shared Sub PrepareMouseJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+Var localDX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localDY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localDX - qsB * localDY
+sims.AnchorBY.Items[index] = qsB * localDX + qcB * localDY
+
+Softness.MakeTo(sims.MouseHertz.Items[index], sims.MouseDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.MouseLinearSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.MouseLinearSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.MouseLinearSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+
+# Upstream fixes the angular softness at 0.5 Hz with a 0.1 damping ratio
+# to reduce the dragged body's spin without fighting user torque.
+Softness.MakeTo(0.5, 0.1, context.H, context.SoftnessScratch)
+sims.MouseAngularSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.MouseAngularSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.MouseAngularSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+
+Var rBX As Double = sims.AnchorBX.Items[index]
+Var rBY As Double = sims.AnchorBY.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var k11 As Double = mB + iB * rBY * rBY
+Var k12 As Double = -iB * rBX * rBY
+Var k22 As Double = mB + iB * rBX * rBX
+Var det As Double = k11 * k22 - k12 * k12
+If det <> 0.0 Then
+det = 1.0 / det
+End If
+sims.MouseLinearMassXX.Items[index] = det * k22
+sims.MouseLinearMassXY.Items[index] = -det * k12
+sims.MouseLinearMassYY.Items[index] = det * k11
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - sims.MouseTargetX.Items[index]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - sims.MouseTargetY.Items[index]
+
+If context.WarmStartScale = 0.0 Then
+sims.MouseLinearImpulseX.Items[index] = 0.0
+sims.MouseLinearImpulseY.Items[index] = 0.0
+sims.MouseAngularImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored mouse joint impulses to body B before iterating, ported
+## from b2WarmStartMouseJoint.
+Shared Sub WarmStartMouseJoint(sims As JointSims, index As Integer, context As StepContext)
+Var indexB As Integer = sims.IndexB.Items[index]
+If indexB = PhysicsConstants.NULL_INDEX Then
+Return
+End If
+Var states As BodyStates = context.States
+Var mB As Double = sims.InvMassB.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var dqBC As Double = states.DRC.Items[indexB]
+Var dqBS As Double = states.DRS.Items[indexB]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var pX As Double = sims.MouseLinearImpulseX.Items[index]
+Var pY As Double = sims.MouseLinearImpulseY.Items[index]
+states.LVX.Items[indexB] = states.LVX.Items[indexB] + mB * pX
+states.LVY.Items[indexB] = states.LVY.Items[indexB] + mB * pY
+states.AngularVelocity.Items[indexB] = states.AngularVelocity.Items[indexB] + iB * (rBX * pY - rBY * pX + sims.MouseAngularImpulse.Items[index])
+End Sub
+
+## Runs one velocity iteration for one mouse joint row, ported from
+## b2SolveMouseJoint. Upstream ignores the bias flag: the mouse joint is a
+## soft constraint whose bias comes from its own spring softness.
+Shared Sub SolveMouseJoint(sims As JointSims, index As Integer, context As StepContext)
+Var indexB As Integer = sims.IndexB.Items[index]
+If indexB = PhysicsConstants.NULL_INDEX Then
+Return
+End If
+Var states As BodyStates = context.States
+Var mB As Double = sims.InvMassB.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var vBX As Double = states.LVX.Items[indexB]
+Var vBY As Double = states.LVY.Items[indexB]
+Var wB As Double = states.AngularVelocity.Items[indexB]
+
+# Soft angular damping with no bias term to reduce rotation speed.
+Var angularImpulse As Double = 0.0
+If iB > 0.0 Then
+angularImpulse = -wB / iB
+End If
+angularImpulse = sims.MouseAngularSoftnessMassScale.Items[index] * angularImpulse - sims.MouseAngularSoftnessImpulseScale.Items[index] * sims.MouseAngularImpulse.Items[index]
+sims.MouseAngularImpulse.Items[index] = sims.MouseAngularImpulse.Items[index] + angularImpulse
+wB = wB + iB * angularImpulse
+
+Var maxImpulse As Double = sims.MouseMaxForce.Items[index] * context.H
+Var dqBC As Double = states.DRC.Items[indexB]
+Var dqBS As Double = states.DRS.Items[indexB]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var cdotX As Double = vBX - wB * rBY
+Var cdotY As Double = vBY + wB * rBX
+Var sepX As Double = states.DPX.Items[indexB] + rBX + sims.DeltaCenterX.Items[index]
+Var sepY As Double = states.DPY.Items[indexB] + rBY + sims.DeltaCenterY.Items[index]
+Var biasRate As Double = sims.MouseLinearSoftnessBiasRate.Items[index]
+Var rhsX As Double = cdotX + biasRate * sepX
+Var rhsY As Double = cdotY + biasRate * sepY
+Var bX As Double = sims.MouseLinearMassXX.Items[index] * rhsX + sims.MouseLinearMassXY.Items[index] * rhsY
+Var bY As Double = sims.MouseLinearMassXY.Items[index] * rhsX + sims.MouseLinearMassYY.Items[index] * rhsY
+Var massScale As Double = sims.MouseLinearSoftnessMassScale.Items[index]
+Var impulseScale As Double = sims.MouseLinearSoftnessImpulseScale.Items[index]
+Var oldX As Double = sims.MouseLinearImpulseX.Items[index]
+Var oldY As Double = sims.MouseLinearImpulseY.Items[index]
+Var totalX As Double = oldX - massScale * bX - impulseScale * oldX
+Var totalY As Double = oldY - massScale * bY - impulseScale * oldY
+
+# Clamp the accumulated impulse magnitude, porting b2Normalize's
+# degenerate branch: below the float epsilon the upstream normalization
+# returns zero rather than a unit direction.
+Var mag As Double = Maths.Sqrt(totalX * totalX + totalY * totalY)
+If mag > maxImpulse Then
+If mag >= PhysicsConstants.FLT_EPSILON Then
+Var scale As Double = maxImpulse / mag
+totalX = scale * totalX
+totalY = scale * totalY
+Else
+totalX = 0.0
+totalY = 0.0
+End If
+End If
+sims.MouseLinearImpulseX.Items[index] = totalX
+sims.MouseLinearImpulseY.Items[index] = totalY
+
+Var deltaX As Double = totalX - oldX
+Var deltaY As Double = totalY - oldY
+vBX = vBX + mB * deltaX
+vBY = vBY + mB * deltaY
+wB = wB + iB * (rBX * deltaY - rBY * deltaX)
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End Sub
+
+## Total force the mouse joint row applied this step, ported from
+## b2GetMouseJointForce.
+Shared Function GetMouseJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var scale As Double = invH
+Return New Vector2(scale * sims.MouseLinearImpulseX.Items[index], scale * sims.MouseLinearImpulseY.Items[index])
+End Function
+
+## Torque the mouse joint row applied this step, ported from
+## b2GetMouseJointTorque.
+Shared Function GetMouseJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * sims.MouseAngularImpulse.Items[index]
+End Function
 
 ## Total force the distance joint row applied this step, ported from
 ## b2GetDistanceJointForce.

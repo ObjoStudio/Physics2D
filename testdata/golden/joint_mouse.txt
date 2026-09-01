@@ -1,0 +1,6 @@
+joint|drag|body|0|1.99999988 5.48986816 0 0
+joint|drag|mouse|-2.56674343e-06 2.5000062 0
+joint|weak|body|0|0 -13.8108187 0 1
+joint|weak|mouse|0 1 0
+joint|stiff|body|0|2 5.49936676 0 0
+joint|stiff|mouse|6.66280399e-29 2.50000525 0

@@ -1,0 +1,35 @@
+# Mouse joint definition, ported from upstream b2MouseJointDef and
+# b2DefaultMouseJointDef in types.h and joint.c. Defaults match upstream:
+# four hertz spring, unit damping ratio, one newton maximum force. The first
+# body is assumed static, as upstream documents; only body B moves.
+Class MouseJointDefinition
+## First attached body. Assumed static, ported from b2MouseJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, dragged toward the target.
+Property BodyB As Body
+## Initial target point in world space, in metres.
+Property Target As Vector2
+## Spring stiffness in hertz.
+Property Hertz As Double
+## Spring damping ratio, non-dimensional.
+Property DampingRatio As Double
+## Maximum force magnitude, typically in newtons.
+Property MaxForce As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.Target = New Vector2(0.0, 0.0)
+Me.Hertz = 4.0
+Me.DampingRatio = 1.0
+Me.MaxForce = 1.0
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
+End Class

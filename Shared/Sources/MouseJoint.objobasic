@@ -1,0 +1,96 @@
+# Public mouse joint façade, ported from the b2MouseJoint_* surface in
+# mouse_joint.c. The mouse joint is a soft constraint that drags body B's
+# anchor point toward a world-space target; body A is assumed static, as
+# upstream documents. Tuning changes deliberately do not wake the bodies,
+# matching upstream; the solver picks up new values on the next step, and a
+# sleeping body B keeps sleeping until the application wakes it (the sample
+# app wakes the dragged body explicitly). The façade reads and writes its
+# row in the owning JointSims store.
+Class MouseJoint Inherits Joint
+## Moves the world-space drag target, ported from b2MouseJoint_SetTarget.
+## The target is a tuning value: changing it does not wake the attached
+## bodies, so wake body B explicitly when dragging a sleeping body.
+Sub SetTarget(target As Vector2)
+Me.SetTarget(target.X, target.Y)
+End Sub
+
+## Scalar form of SetTarget. Prefer this overload in per-frame drag loops:
+## the vector form constructs a Vector2 argument, which allocates one
+## object at the call site, while this form allocates nothing.
+Sub SetTarget(x As Double, y As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not x.IsFinite() Or Not y.IsFinite() Then
+Throw New InvalidArgumentException("Mouse joint target must be finite")
+End If
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+store.MouseTargetX.Items[Me.LocalIndex] = x
+store.MouseTargetY.Items[Me.LocalIndex] = y
+End Sub
+
+## World-space drag target, ported from b2MouseJoint_GetTarget. Returns a
+## new Vector2 copy; safe to retain.
+Function GetTarget() As Vector2
+Me.CheckValid()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return New Vector2(store.MouseTargetX.Items[Me.LocalIndex], store.MouseTargetY.Items[Me.LocalIndex])
+End Function
+
+## Spring stiffness in hertz, ported from b2MouseJoint_SetSpringHertz.
+Sub SetSpringHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not hertz.IsFinite() Or hertz < 0.0 Then
+Throw New InvalidArgumentException("Mouse joint hertz must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).MouseHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Spring stiffness in hertz, ported from b2MouseJoint_GetSpringHertz.
+Function GetSpringHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MouseHertz.Items[Me.LocalIndex]
+End Function
+
+## Spring damping ratio, ported from b2MouseJoint_SetSpringDampingRatio.
+Sub SetSpringDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not dampingRatio.IsFinite() Or dampingRatio < 0.0 Then
+Throw New InvalidArgumentException("Mouse joint damping ratio must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).MouseDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Spring damping ratio, ported from b2MouseJoint_GetSpringDampingRatio.
+Function GetSpringDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MouseDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## Maximum force magnitude in newtons, ported from b2MouseJoint_SetMaxForce.
+Sub SetMaxForce(maxForce As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not maxForce.IsFinite() Or maxForce < 0.0 Then
+Throw New InvalidArgumentException("Mouse joint max force must be finite and non-negative")
+End If
+Me.Owner.GetJointSims(Me).MouseMaxForce.Items[Me.LocalIndex] = maxForce
+End Sub
+
+## Maximum force magnitude in newtons, ported from b2MouseJoint_GetMaxForce.
+Function GetMaxForce() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).MouseMaxForce.Items[Me.LocalIndex]
+End Function
+
+## Current world-space position of the dragged anchor on body B. Physics2D
+## addition: upstream samples compute this from body transforms directly.
+## Allocation note: returns a new Vector2 copy each call.
+Function GetAnchorB() As Vector2
+Me.CheckValid()
+Var transformB As Transform = Me.Owner.GetBodyTransformById(Me.Edge1BodyId)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return Transform.TransformPoint(transformB, New Vector2(store.LocalOriginAnchorBX.Items[Me.LocalIndex], store.LocalOriginAnchorBY.Items[Me.LocalIndex]))
+End Function
+End Class

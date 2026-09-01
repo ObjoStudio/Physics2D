@@ -24,6 +24,8 @@ Var count As Integer = sims.Count()
 For i As Integer = 0 To count - 1
 If sims.Type.Items[i] = Integer(JointType.DistanceJoint) Then
 JointSolver.WarmStartDistanceJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
+JointSolver.WarmStartMouseJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -38,6 +40,8 @@ Var count As Integer = sims.Count()
 For i As Integer = 0 To count - 1
 If sims.Type.Items[i] = Integer(JointType.DistanceJoint) Then
 JointSolver.SolveDistanceJoint(sims, i, context, useBias)
+ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
+JointSolver.SolveMouseJoint(sims, i, context)
 End If
 Next i
 End Sub

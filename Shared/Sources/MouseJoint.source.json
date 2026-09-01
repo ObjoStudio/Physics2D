@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "MouseJoint",
+  "Id": "9b0420d6-92e0-4e7a-bd8f-c1b260b52797",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "MouseJoint.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

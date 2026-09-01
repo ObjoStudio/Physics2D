@@ -126,10 +126,13 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     because reused scratch outputs made the stale fields observable.
 27. **Scalar joint store.** Upstream keeps one `b2JointSim` object per joint
     per solver set; Physics2D keeps parallel scalar columns in `JointSims`
-    (base columns shared by every joint family plus distance-family
-    columns), matching the Stage 2 representation decision. The step's
-    distance-joint scratch lives in one reused `DistanceJointScratch`
-    record on `StepContext` instead of a per-sim struct.
+    (base columns shared by every joint family plus one column block per
+    implemented family), matching the Stage 2 representation decision. The
+    step's distance-joint scratch lives in one reused `DistanceJointScratch`
+    record on `StepContext` instead of a per-sim struct. The mouse joint
+    reuses the base `IndexB`, `AnchorB`, `DeltaCenter`, `InvMassB`, and
+    `InvIB` columns for its single moving body and stores its symmetric
+    2x2 linear mass as three scalars.
 28. **Cross-world joints are rejected.** Upstream `b2CreateJoint` asserts
     when the two bodies come from different worlds (and asserts on null
     bodies); Physics2D throws `InvalidArgumentException` from
@@ -142,6 +145,23 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
 30. **Joint user data.** Upstream stores `void*` user data on joints;
     Physics2D `Joint.UserData` holds any Objo object reference and is
     never read by the solver.
+31. **Mouse joint non-awake body B.** Upstream `b2PrepareMouseJoint`
+    asserts body B is awake and `b2WarmStartMouseJoint`/`b2SolveMouseJoint`
+    index the body-state array through `joint->indexB` unguarded, so a
+    mouse joint whose body B is not awake (for example a static body B in
+    the awake graph) is undefined behaviour in upstream release builds.
+    Physics2D stores `NULL_INDEX` for a non-awake body B and the warm-start
+    and solve kernels return without applying impulses; a zero-mass body B
+    therefore receives nothing, matching the singular inverse-mass result
+    upstream produces for dynamic body A/static body B.
+32. **Mouse joint drag ergonomics.** Upstream `b2MouseJoint_SetTarget`
+    takes `b2Vec2` by value; Physics2D adds the scalar overload
+    `MouseJoint.SetTarget(x, y)` because constructing a `Vector2` argument
+    allocates, and a per-frame drag loop must stay allocation-free. The
+    `MouseJointDefinition` tuning setters throw `InvalidArgumentException`
+    where upstream only asserts. `MouseJoint.GetAnchorB` returns the
+    dragged body's world anchor point as a documented Physics2D addition
+    for drag rendering.
 
 ## Public Symbol Inventory
 
