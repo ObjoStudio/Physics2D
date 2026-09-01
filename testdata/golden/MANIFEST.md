@@ -4,7 +4,7 @@
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (see docs/PORTING.md).
 #
 # Generation command (from the repository root, after building the tool):
-#   for f in maths hull distance raycast shapecast manifold mass scene_falling scene_pyramid scene_stack joint_distance joint_mouse joint_motor joint_revolute; do
+#   for f in maths hull distance raycast shapecast manifold mass scene_falling scene_pyramid scene_stack joint_distance joint_mouse joint_motor joint_revolute joint_prismatic; do
 #     ./build/tools/fixture_gen $f > testdata/golden/$f.txt
 #   done
 #
@@ -23,6 +23,7 @@ Generated on 2026-08-30.
 | `testdata/golden/joint_mouse.txt` | 87312b76153d92d69dcdd690d192143faeaaa334f3f426b5a973a92ace197c72 |
 | `testdata/golden/joint_motor.txt` | ac82f90abaa938d38b3991adaee5de017ac4c0a267257e97042c6d9a6f4fe6c7 |
 | `testdata/golden/joint_revolute.txt` | e74b23d9e29316ce423e362841fd58bbc01ef0fe566feeeee6952ecaf4e178c6 |
+| `testdata/golden/joint_prismatic.txt` | 9a7687a0a883f696589f9f6401bb3716f5ec79738e13b48e937b8bd9cf755292 |
 | `testdata/golden/manifold.txt` | d3364d2db2bd598856668578b7910b44c9183245fafca1ccfb3e5db980c35701 |
 | `testdata/golden/mass.txt` | 880a0a41bb111488631f89e8864d9ee0c4f20df0d335cddd79a1a83422aad736 |
 | `testdata/golden/maths.txt` | b88060fa94260d4850309e753a72fb42cc02184d6931371def7ce708ad1e186f |
@@ -90,3 +91,14 @@ with exact equality. A trailing `1`/`0` integer encodes a Boolean.
   (limits [0.5, 0.9] holding the box at the lower limit against gravity,
   240 frames). Every frame steps with the upstream default substep count of
   four.
+- `joint|case|body|index|positionx positiony angle awake`, then one
+  `joint|case|prismatic|forceX forceY torque translation` line per
+  prismatic joint case. Every case pins a 0.25 kg box to a static ground
+  through a slider anchored at (0, -0.5) and ends asleep: `limits` (X-axis
+  rail, kicked to 1.5 m/s at frame thirty, upper limit stops the box at
+  translation 1, 240 frames), `tilted` (diagonal (1, 1) rail carrying a
+  gravity component, lower limit holds the box at translation -0.5, 240
+  frames), `spring` (3 Hz 0.7-damped spring driving to translation 0.5,
+  240 frames), `brake` (zero-speed motor as a 5 N force-clamped brake on a
+  box kicked to 1.5 m/s at frame thirty, 240 frames). Every frame steps
+  with the upstream default substep count of four.

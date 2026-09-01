@@ -24,6 +24,8 @@ ElseIf sims.Type.Items[index] = Integer(JointType.MotorJoint) Then
 PrepareMotorJoint(sims, index, context)
 ElseIf sims.Type.Items[index] = Integer(JointType.RevoluteJoint) Then
 PrepareRevoluteJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.PrismaticJoint) Then
+PreparePrismaticJoint(sims, index, context)
 End If
 End Sub
 
@@ -1229,6 +1231,452 @@ End Function
 ## b2GetRevoluteJointTorque: the motor and limit impulses combined.
 Shared Function GetRevoluteJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
 Return invH * (sims.RevoluteMotorImpulse.Items[index] + sims.RevoluteLowerImpulse.Items[index] - sims.RevoluteUpperImpulse.Items[index])
+End Function
+
+## Prepares one prismatic joint row, ported from b2PreparePrismaticJoint.
+## The slider allows translation along one body-A axis and pins the
+## relative angle, so both bodies contribute to every block. The axis and
+## anchors rotate with body A's transform; the axial effective mass uses
+## the torque arms about the anchor line, computed once per step. A
+## non-awake body stores a NULL_INDEX state row that the kernels replace
+## with an identity dummy.
+Private Shared Sub PreparePrismaticJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyA As Body = world.Bodies[sims.BodyIdA.Items[index]]
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simA As BodySims = world.GetBodySim(bodyA)
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexA As Integer = bodyA.LocalIndex
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassA.Items[index] = simA.InvMass.Items[indexA]
+sims.InvIA.Items[index] = simA.InvInertia.Items[indexA]
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexA.Items[index] = indexA
+Else
+sims.IndexA.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+Var qcA As Double = simA.QC.Items[indexA]
+Var qsA As Double = simA.QS.Items[indexA]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+
+# Anchors and axis in world space from the definition's local values.
+Var localDX As Double = sims.LocalOriginAnchorAX.Items[index] - simA.LCX.Items[indexA]
+Var localDY As Double = sims.LocalOriginAnchorAY.Items[index] - simA.LCY.Items[indexA]
+sims.AnchorAX.Items[index] = qcA * localDX - qsA * localDY
+sims.AnchorAY.Items[index] = qsA * localDX + qcA * localDY
+Var localEX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localEY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localEX - qsB * localEY
+sims.AnchorBY.Items[index] = qsB * localEX + qcB * localEY
+Var axisLX As Double = sims.PrismaticLocalAxisX.Items[index]
+Var axisLY As Double = sims.PrismaticLocalAxisY.Items[index]
+Var axisX As Double = qcA * axisLX - qsA * axisLY
+Var axisY As Double = qsA * axisLX + qcA * axisLY
+sims.PrismaticAxisX.Items[index] = axisX
+sims.PrismaticAxisY.Items[index] = axisY
+
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
+# Relative angle minus the reference angle, unwound, with scalar
+# components; see the motor prepare note.
+Var relS As Double = simB.QS.Items[indexB] * simA.QC.Items[indexA] - simB.QC.Items[indexB] * simA.QS.Items[indexA]
+Var relC As Double = simB.QC.Items[indexB] * simA.QC.Items[indexA] + simB.QS.Items[indexB] * simA.QS.Items[indexA]
+sims.PrismaticDeltaAngle.Items[index] = PhysicsMaths.UnwindAngle(PhysicsMaths.Atan2(relS, relC) - sims.PrismaticReferenceAngle.Items[index])
+
+# Axial effective mass from the torque arms about the anchor line.
+Var rAX As Double = sims.AnchorAX.Items[index]
+Var rAY As Double = sims.AnchorAY.Items[index]
+Var rBX As Double = sims.AnchorBX.Items[index]
+Var rBY As Double = sims.AnchorBY.Items[index]
+Var dX As Double = sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = sims.DeltaCenterY.Items[index] + rBY - rAY
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var k As Double = mA + mB + iA * a1 * a1 + iB * a2 * a2
+If k > 0.0 Then
+sims.PrismaticAxialMass.Items[index] = 1.0 / k
+Else
+sims.PrismaticAxialMass.Items[index] = 0.0
+End If
+
+Softness.MakeTo(sims.PrismaticHertz.Items[index], sims.PrismaticDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.PrismaticSpringSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.PrismaticSpringSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.PrismaticSpringSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+
+If context.WarmStartScale = 0.0 Then
+sims.PrismaticImpulseX.Items[index] = 0.0
+sims.PrismaticImpulseY.Items[index] = 0.0
+sims.PrismaticSpringImpulse.Items[index] = 0.0
+sims.PrismaticMotorImpulse.Items[index] = 0.0
+sims.PrismaticLowerImpulse.Items[index] = 0.0
+sims.PrismaticUpperImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored prismatic joint impulses to both body states before
+## iterating, ported from b2WarmStartPrismaticJoint. The axial impulse
+## bundles the spring, motor, and limit impulses; the perpendicular and
+## angular impulses apply through the anchor-line torque arms.
+Shared Sub WarmStartPrismaticJoint(sims As JointSims, index As Integer, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var dX As Double = dpBX - dpAX + sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = dpBY - dpAY + sims.DeltaCenterY.Items[index] + rBY - rAY
+Var axisLX As Double = sims.PrismaticAxisX.Items[index]
+Var axisLY As Double = sims.PrismaticAxisY.Items[index]
+Var axisX As Double = dqAC * axisLX - dqAS * axisLY
+Var axisY As Double = dqAS * axisLX + dqAC * axisLY
+
+# Impulse is applied at the anchor point on body B.
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+Var axialImpulse As Double = sims.PrismaticSpringImpulse.Items[index] + sims.PrismaticMotorImpulse.Items[index] + sims.PrismaticLowerImpulse.Items[index] - sims.PrismaticUpperImpulse.Items[index]
+
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var s1 As Double = (dX + rAX) * perpY - (dY + rAY) * perpX
+Var s2 As Double = rBX * perpY - rBY * perpX
+Var perpImpulse As Double = sims.PrismaticImpulseX.Items[index]
+Var angleImpulse As Double = sims.PrismaticImpulseY.Items[index]
+
+Var pX As Double = axialImpulse * axisX + perpImpulse * perpX
+Var pY As Double = axialImpulse * axisY + perpImpulse * perpY
+Var la As Double = axialImpulse * a1 + perpImpulse * s1 + angleImpulse
+Var lb As Double = axialImpulse * a2 + perpImpulse * s2 + angleImpulse
+
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * la
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * lb
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Runs one velocity iteration for one prismatic joint row, ported from
+## b2SolvePrismaticJoint: axial spring, motor, and limits, then the
+## perpendicular-plus-angular block solve.
+Shared Sub SolvePrismaticJoint(sims As JointSims, index As Integer, context As StepContext, useBias As Boolean)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var dX As Double = dpBX - dpAX + sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = dpBY - dpAY + sims.DeltaCenterY.Items[index] + rBY - rAY
+Var axisLX As Double = sims.PrismaticAxisX.Items[index]
+Var axisLY As Double = sims.PrismaticAxisY.Items[index]
+Var axisX As Double = dqAC * axisLX - dqAS * axisLY
+Var axisY As Double = dqAS * axisLX + dqAC * axisLY
+Var translation As Double = axisX * dX + axisY * dY
+
+# Torque arms for axial forces.
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+Var axialMass As Double = sims.PrismaticAxialMass.Items[index]
+
+# Spring constraint: applied even during relax.
+If sims.EnableSpring.Items[index] <> 0 Then
+Var C As Double = translation - sims.PrismaticTargetTranslation.Items[index]
+Var bias As Double = sims.PrismaticSpringSoftnessBiasRate.Items[index] * C
+Var massScale As Double = sims.PrismaticSpringSoftnessMassScale.Items[index]
+Var impulseScale As Double = sims.PrismaticSpringSoftnessImpulseScale.Items[index]
+Var Cdot As Double = axisX * (vBX - vAX) + axisY * (vBY - vAY) + a2 * wB - a1 * wA
+Var deltaImpulse As Double = -massScale * axialMass * (Cdot + bias) - impulseScale * sims.PrismaticSpringImpulse.Items[index]
+sims.PrismaticSpringImpulse.Items[index] = sims.PrismaticSpringImpulse.Items[index] + deltaImpulse
+Var pX As Double = deltaImpulse * axisX
+Var pY As Double = deltaImpulse * axisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (deltaImpulse * a1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (deltaImpulse * a2)
+End If
+
+# Motor constraint.
+If sims.EnableMotor.Items[index] <> 0 Then
+Var Cdot As Double = axisX * (vBX - vAX) + axisY * (vBY - vAY) + a2 * wB - a1 * wA
+Var impulse As Double = axialMass * (sims.PrismaticMotorSpeed.Items[index] - Cdot)
+Var oldImpulse As Double = sims.PrismaticMotorImpulse.Items[index]
+Var maxImpulse As Double = context.H * sims.PrismaticMaxMotorForce.Items[index]
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse > maxImpulse Then
+newImpulse = maxImpulse
+ElseIf newImpulse < -maxImpulse Then
+newImpulse = -maxImpulse
+End If
+sims.PrismaticMotorImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+Var pX As Double = impulse * axisX
+Var pY As Double = impulse * axisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (impulse * a1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (impulse * a2)
+End If
+
+If sims.EnableLimit.Items[index] <> 0 Then
+# Lower limit.
+Var C As Double = translation - sims.PrismaticLowerTranslation.Items[index]
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If C > 0.0 Then
+# Speculation.
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var oldImpulse As Double = sims.PrismaticLowerImpulse.Items[index]
+Var Cdot As Double = axisX * (vBX - vAX) + axisY * (vBY - vAY) + a2 * wB - a1 * wA
+Var impulse As Double = -axialMass * massScale * (Cdot + bias) - impulseScale * oldImpulse
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.PrismaticLowerImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+Var pX As Double = impulse * axisX
+Var pY As Double = impulse * axisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (impulse * a1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (impulse * a2)
+
+# Upper limit: signs flipped to keep C positive when satisfied.
+C = sims.PrismaticUpperTranslation.Items[index] - translation
+bias = 0.0
+massScale = 1.0
+impulseScale = 0.0
+If C > 0.0 Then
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+oldImpulse = sims.PrismaticUpperImpulse.Items[index]
+# Sign flipped.
+Cdot = axisX * (vAX - vBX) + axisY * (vAY - vBY) + a1 * wA - a2 * wB
+impulse = -axialMass * massScale * (Cdot + bias) - impulseScale * oldImpulse
+newImpulse = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.PrismaticUpperImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+pX = impulse * axisX
+pY = impulse * axisY
+# Sign flipped.
+vAX = vAX + mA * pX
+vAY = vAY + mA * pY
+wA = wA + iA * (impulse * a1)
+vBX = vBX - mB * pX
+vBY = vBY - mB * pY
+wB = wB - iB * (impulse * a2)
+End If
+
+# Perpendicular-plus-angular block solve. The combined matrix is
+# symmetric by construction and solved inline with the guarded inverse
+# determinant of upstream b2Solve22.
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var s1 As Double = (dX + rAX) * perpY - (dY + rAY) * perpX
+Var s2 As Double = rBX * perpY - rBY * perpX
+Var cdX As Double = perpX * (vBX - vAX) + perpY * (vBY - vAY) + s2 * wB - s1 * wA
+Var cdY As Double = wB - wA
+Var biasX As Double = 0.0
+Var biasY As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If useBias Then
+Var cX As Double = perpX * dX + perpY * dY
+Var relS As Double = dqBS * dqAC - dqBC * dqAS
+Var relC As Double = dqBC * dqAC + dqBS * dqAS
+Var cY As Double = PhysicsMaths.Atan2(relS, relC) + sims.PrismaticDeltaAngle.Items[index]
+biasX = sims.SoftnessBiasRate.Items[index] * cX
+biasY = sims.SoftnessBiasRate.Items[index] * cY
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var k11 As Double = mA + mB + iA * s1 * s1 + iB * s2 * s2
+Var k12 As Double = iA * s1 + iB * s2
+Var k22 As Double = iA + iB
+If k22 = 0.0 Then
+# For bodies with fixed rotation.
+k22 = 1.0
+End If
+Var rhsX As Double = cdX + biasX
+Var rhsY As Double = cdY + biasY
+Var det As Double = k11 * k22 - k12 * k12
+If det <> 0.0 Then
+det = 1.0 / det
+End If
+Var bX As Double = det * (k22 * rhsX - k12 * rhsY)
+Var bY As Double = det * (k11 * rhsY - k12 * rhsX)
+Var oldX As Double = sims.PrismaticImpulseX.Items[index]
+Var oldY As Double = sims.PrismaticImpulseY.Items[index]
+Var impX As Double = -massScale * bX - impulseScale * oldX
+Var impY As Double = -massScale * bY - impulseScale * oldY
+sims.PrismaticImpulseX.Items[index] = oldX + impX
+sims.PrismaticImpulseY.Items[index] = oldY + impY
+
+Var pX As Double = impX * perpX
+Var pY As Double = impX * perpY
+Var la As Double = impX * s1 + impY
+Var lb As Double = impX * s2 + impY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * la
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * lb
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Total force the prismatic joint row applied this step, ported from
+## b2GetPrismaticJointForce: the perpendicular and axial components
+## combined in world space.
+Shared Function GetPrismaticJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var axisX As Double = sims.PrismaticAxisX.Items[index]
+Var axisY As Double = sims.PrismaticAxisY.Items[index]
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var perpForce As Double = invH * sims.PrismaticImpulseX.Items[index]
+Var axialForce As Double = invH * (sims.PrismaticMotorImpulse.Items[index] + sims.PrismaticLowerImpulse.Items[index] - sims.PrismaticUpperImpulse.Items[index])
+Return New Vector2(perpForce * perpX + axialForce * axisX, perpForce * perpY + axialForce * axisY)
+End Function
+
+## Torque the prismatic joint row applied this step, ported from
+## b2GetPrismaticJointTorque: the angular part of the block impulse.
+Shared Function GetPrismaticJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * sims.PrismaticImpulseY.Items[index]
 End Function
 
 ## Total force the mouse joint row applied this step, ported from

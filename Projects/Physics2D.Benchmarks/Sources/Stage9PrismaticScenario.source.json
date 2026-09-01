@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9PrismaticScenario",
+  "Id": "c92e57b4-8d16-4c39-b7a8-5f2e903d18c6",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9PrismaticScenario-c92e57b4-8d16-4c39-b7a8-5f2e903d18c6.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

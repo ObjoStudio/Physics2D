@@ -58,9 +58,9 @@
 # Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
 # Input: Island.objobasic 44f9b035b888e2dbbec81e2c88390bd8081257a3f57a52efc6fffdddabb10fa4
 # Input: IslandMethods.objobasic 20833e02e72df2d6818e0ebd92de184099fb656f56a10b14b7df86353eda2f6d
-# Input: Joint.objobasic 402bb00abdde2823025c85155f76533c06625d66ead69391b2f7d013ac8771bc
-# Input: JointSims.objobasic 804ccbd865b43e4e43fe584093f433bec4fe7ce7ecacda069737d80b10ebf2f2
-# Input: JointSolver.objobasic 559d489bc06463f945c7cbd5dad6ffdb40718f0b873cd4d3f819d1350e7ae692
+# Input: Joint.objobasic a0d7fdaefe8afbc48e56dbea8d2a7d4fc47c40ef12d1369e14ae230e2254fe6d
+# Input: JointSims.objobasic f6b13368d8d429ad62129a93934596f5bb31ca9bcc1fe56f3ab677b1d00b4c64
+# Input: JointSolver.objobasic 446d43f7ec29e2c66071df8cce677d9702fe350692f6522873389ca548555fbb
 # Input: JointType-856da3bd-dadf-41a2-af79-4e1fcc92c642.objobasic 595178f214846dc7716badeb118dfb5729356f738f99204ff34b849f6fd14838
 # Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 2204114b1a588c77c29b945afd4b19ad7c68f56bce9f68f6a6ee47f5e8463787
 # Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic dcebd68c0b3500bb6ab7688775a8056b75304728e39537252715a4309cc96402
@@ -78,6 +78,8 @@
 # Input: PlaneResult-0a50cbbc-2c28-4672-9ac2-2a7ab494729e.objobasic 7d3bd58e3b238f98a2115f26f16ce0cb50e40ec02dae1326f548a6134f68fcdf
 # Input: PlaneSolverResult-16f2d027-5199-456a-a7dd-b6936ba3fe6e.objobasic 21dc41da8b97e9e898db0aed73d94c225a5651bc9fc88d2046d630c15e72670b
 # Input: Polygon-6d788a74-dfbe-4b6d-b326-69d534146832.objobasic 821cd0c644b08fe1e78527a07539de40563c3de58bdd4185a71ba6f89449372f
+# Input: PrismaticJoint.objobasic fa6437e0b9c11d3493f374f2d775d8fcb7fd336d510bce2be0c1fd28887e7ce6
+# Input: PrismaticJointDefinition.objobasic a6c0dc733835394f69c067f0e259651dddd85201c1dcce549acc9cb9fb963faa
 # Input: QueryFilter.objobasic b56993380ec09b5b254986ee63893334703107c64fccb48c3906ad35b71194ac
 # Input: RayCastInput-44d63d82-6439-4bee-999f-fb4af3feeaa7.objobasic 9414527d1813c1444d203033d1ffc67cc4676c10bf3820db998d0a877309341b
 # Input: RevoluteJoint.objobasic 2dc2d3b342b4b21efc960c2c12a5c96232cffa550b943555916fd9adc26ec72b
@@ -102,7 +104,7 @@
 # Input: SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic 82bc4694e90f396c176e50cbe8196ea7c809da4842781d5f9750137a1d087314
 # Input: SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic 7c911da9871051f8580713a107d379e349bdc89cf9f9f0e9968f07c29e2f19da
 # Input: Softness.objobasic 06211852d8bbb70e4c5f5479756606be96bb2667bd617c4f635f76a661e47d4a
-# Input: SolverMethods.objobasic 28190b5d07f4ed0800cc1e8e0b7206614cdeedca652ff0c0cf7376f8f378ef55
+# Input: SolverMethods.objobasic b98e3d21597d2fe694e88ba24466b1ade941e974676110d62d2de0d82c7a8798
 # Input: SolverSet.objobasic ae57d26036c92d75a660f380cae829c6ef353d45bbba3876779bf1689234a922
 # Input: StepContext.objobasic 0d6a04f453555a2ff4207c21b9cacba5f3f2103f22c2d8ac4dd8c449f7b67e12
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
@@ -119,7 +121,7 @@
 # Input: TreeScratch-3add8e75-acc6-4f27-996e-372dc4d98372.objobasic 35e077b5cec3caafcc6d334013421d7a9612c3ba18ecf97875019b87ac2f9f55
 # Input: TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic 2abd4a4ca724ab02daa1a476dd447403aea4c5d80a507691f770ed20469a832b
 # Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
-# Input: World.objobasic e82dfcb2800b9a38b8af4744f486c95e333360f28bd510fdec1d2b5fdc078fac
+# Input: World.objobasic 3c4e7132108de29b32fad879730cfc5bfa8a9e3aab251c159a52b21d4af29a0d
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
@@ -128,7 +130,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 21e25d0f07b25681bfc12e3c7e69bad2c6eb26eeb5db8c7223d078348620a12e
+# Source content checksum (SHA-256): c4cdbe0368b199aec9acec7afb1c51305e541a01c33cefa4f429354357abfd21
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -11763,6 +11765,9 @@ End If
 If Me.Type = JointType.RevoluteJoint Then
 Return JointSolver.GetRevoluteJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
+If Me.Type = JointType.PrismaticJoint Then
+Return JointSolver.GetPrismaticJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return New Vector2(0.0, 0.0)
 End Function
 
@@ -11778,6 +11783,9 @@ Return JointSolver.GetMotorJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex,
 End If
 If Me.Type = JointType.RevoluteJoint Then
 Return JointSolver.GetRevoluteJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
+If Me.Type = JointType.PrismaticJoint Then
+Return JointSolver.GetPrismaticJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
 Return 0.0
 End Function
@@ -12042,6 +12050,61 @@ Property RevoluteAxialMass As DoubleList
 Property RevoluteDeltaAngle As DoubleList
 ## Spring softness bias rate prepared from hertz and damping ratio.
 Property RevoluteSpringSoftnessBiasRate As DoubleList
+
+# Prismatic joint family columns, ported from upstream b2PrismaticJoint in
+# joint.h. Valid only while Type = Integer(JointType.PrismaticJoint). The
+# slider reuses the base two-body columns (IndexA/IndexB, AnchorA/AnchorB,
+# DeltaCenter, inverse masses, LocalOriginAnchorA/B) and the base
+# EnableSpring/EnableLimit/EnableMotor flag columns.
+## X component of the normalized local translation axis in body A's frame.
+Property PrismaticLocalAxisX As DoubleList
+## Y component of the normalized local translation axis.
+Property PrismaticLocalAxisY As DoubleList
+## X component of the translation axis rotated into body A's world frame
+## at prepare time, ported from joint->axisA.
+Property PrismaticAxisX As DoubleList
+## Y component of the prepared world-frame translation axis.
+Property PrismaticAxisY As DoubleList
+## X component of the accumulated constraint impulse; x is the
+## perpendicular force and y the angular impulse.
+Property PrismaticImpulseX As DoubleList
+## Y component of the accumulated constraint impulse.
+Property PrismaticImpulseY As DoubleList
+## Accumulated spring impulse.
+Property PrismaticSpringImpulse As DoubleList
+## Accumulated motor impulse.
+Property PrismaticMotorImpulse As DoubleList
+## Accumulated lower-limit impulse, always non-negative.
+Property PrismaticLowerImpulse As DoubleList
+## Accumulated upper-limit impulse, always non-negative.
+Property PrismaticUpperImpulse As DoubleList
+## Spring stiffness in hertz.
+Property PrismaticHertz As DoubleList
+## Spring damping ratio.
+Property PrismaticDampingRatio As DoubleList
+## Spring target translation in metres.
+Property PrismaticTargetTranslation As DoubleList
+## Maximum motor force.
+Property PrismaticMaxMotorForce As DoubleList
+## Desired motor speed in metres per second.
+Property PrismaticMotorSpeed As DoubleList
+## Reference angle in radians.
+Property PrismaticReferenceAngle As DoubleList
+## Lower translation limit in metres.
+Property PrismaticLowerTranslation As DoubleList
+## Upper translation limit in metres.
+Property PrismaticUpperTranslation As DoubleList
+## Inverse of the axial effective mass, zero when singular.
+Property PrismaticAxialMass As DoubleList
+## Angle of body B relative to body A at prepare time minus the reference
+## angle, unwound, ported from joint->deltaAngle.
+Property PrismaticDeltaAngle As DoubleList
+## Spring softness bias rate prepared from hertz and damping ratio.
+Property PrismaticSpringSoftnessBiasRate As DoubleList
+## Spring softness mass scale.
+Property PrismaticSpringSoftnessMassScale As DoubleList
+## Spring softness impulse scale.
+Property PrismaticSpringSoftnessImpulseScale As DoubleList
 ## Spring softness mass scale.
 Property RevoluteSpringSoftnessMassScale As DoubleList
 ## Spring softness impulse scale.
@@ -12142,6 +12205,29 @@ Me.RevoluteDeltaAngle = New DoubleList
 Me.RevoluteSpringSoftnessBiasRate = New DoubleList
 Me.RevoluteSpringSoftnessMassScale = New DoubleList
 Me.RevoluteSpringSoftnessImpulseScale = New DoubleList
+Me.PrismaticLocalAxisX = New DoubleList
+Me.PrismaticLocalAxisY = New DoubleList
+Me.PrismaticAxisX = New DoubleList
+Me.PrismaticAxisY = New DoubleList
+Me.PrismaticImpulseX = New DoubleList
+Me.PrismaticImpulseY = New DoubleList
+Me.PrismaticSpringImpulse = New DoubleList
+Me.PrismaticMotorImpulse = New DoubleList
+Me.PrismaticLowerImpulse = New DoubleList
+Me.PrismaticUpperImpulse = New DoubleList
+Me.PrismaticHertz = New DoubleList
+Me.PrismaticDampingRatio = New DoubleList
+Me.PrismaticTargetTranslation = New DoubleList
+Me.PrismaticMaxMotorForce = New DoubleList
+Me.PrismaticMotorSpeed = New DoubleList
+Me.PrismaticReferenceAngle = New DoubleList
+Me.PrismaticLowerTranslation = New DoubleList
+Me.PrismaticUpperTranslation = New DoubleList
+Me.PrismaticAxialMass = New DoubleList
+Me.PrismaticDeltaAngle = New DoubleList
+Me.PrismaticSpringSoftnessBiasRate = New DoubleList
+Me.PrismaticSpringSoftnessMassScale = New DoubleList
+Me.PrismaticSpringSoftnessImpulseScale = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -12248,6 +12334,29 @@ Me.RevoluteDeltaAngle.Append(0.0)
 Me.RevoluteSpringSoftnessBiasRate.Append(0.0)
 Me.RevoluteSpringSoftnessMassScale.Append(1.0)
 Me.RevoluteSpringSoftnessImpulseScale.Append(0.0)
+Me.PrismaticLocalAxisX.Append(0.0)
+Me.PrismaticLocalAxisY.Append(0.0)
+Me.PrismaticAxisX.Append(0.0)
+Me.PrismaticAxisY.Append(0.0)
+Me.PrismaticImpulseX.Append(0.0)
+Me.PrismaticImpulseY.Append(0.0)
+Me.PrismaticSpringImpulse.Append(0.0)
+Me.PrismaticMotorImpulse.Append(0.0)
+Me.PrismaticLowerImpulse.Append(0.0)
+Me.PrismaticUpperImpulse.Append(0.0)
+Me.PrismaticHertz.Append(0.0)
+Me.PrismaticDampingRatio.Append(0.0)
+Me.PrismaticTargetTranslation.Append(0.0)
+Me.PrismaticMaxMotorForce.Append(0.0)
+Me.PrismaticMotorSpeed.Append(0.0)
+Me.PrismaticReferenceAngle.Append(0.0)
+Me.PrismaticLowerTranslation.Append(0.0)
+Me.PrismaticUpperTranslation.Append(0.0)
+Me.PrismaticAxialMass.Append(0.0)
+Me.PrismaticDeltaAngle.Append(0.0)
+Me.PrismaticSpringSoftnessBiasRate.Append(0.0)
+Me.PrismaticSpringSoftnessMassScale.Append(1.0)
+Me.PrismaticSpringSoftnessImpulseScale.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -12354,6 +12463,29 @@ Me.RevoluteDeltaAngle.RemoveSwap(index)
 Me.RevoluteSpringSoftnessBiasRate.RemoveSwap(index)
 Me.RevoluteSpringSoftnessMassScale.RemoveSwap(index)
 Me.RevoluteSpringSoftnessImpulseScale.RemoveSwap(index)
+Me.PrismaticLocalAxisX.RemoveSwap(index)
+Me.PrismaticLocalAxisY.RemoveSwap(index)
+Me.PrismaticAxisX.RemoveSwap(index)
+Me.PrismaticAxisY.RemoveSwap(index)
+Me.PrismaticImpulseX.RemoveSwap(index)
+Me.PrismaticImpulseY.RemoveSwap(index)
+Me.PrismaticSpringImpulse.RemoveSwap(index)
+Me.PrismaticMotorImpulse.RemoveSwap(index)
+Me.PrismaticLowerImpulse.RemoveSwap(index)
+Me.PrismaticUpperImpulse.RemoveSwap(index)
+Me.PrismaticHertz.RemoveSwap(index)
+Me.PrismaticDampingRatio.RemoveSwap(index)
+Me.PrismaticTargetTranslation.RemoveSwap(index)
+Me.PrismaticMaxMotorForce.RemoveSwap(index)
+Me.PrismaticMotorSpeed.RemoveSwap(index)
+Me.PrismaticReferenceAngle.RemoveSwap(index)
+Me.PrismaticLowerTranslation.RemoveSwap(index)
+Me.PrismaticUpperTranslation.RemoveSwap(index)
+Me.PrismaticAxialMass.RemoveSwap(index)
+Me.PrismaticDeltaAngle.RemoveSwap(index)
+Me.PrismaticSpringSoftnessBiasRate.RemoveSwap(index)
+Me.PrismaticSpringSoftnessMassScale.RemoveSwap(index)
+Me.PrismaticSpringSoftnessImpulseScale.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -12454,6 +12586,29 @@ target.RevoluteDeltaAngle.Items[targetIndex] = Me.RevoluteDeltaAngle.Items[sourc
 target.RevoluteSpringSoftnessBiasRate.Items[targetIndex] = Me.RevoluteSpringSoftnessBiasRate.Items[sourceIndex]
 target.RevoluteSpringSoftnessMassScale.Items[targetIndex] = Me.RevoluteSpringSoftnessMassScale.Items[sourceIndex]
 target.RevoluteSpringSoftnessImpulseScale.Items[targetIndex] = Me.RevoluteSpringSoftnessImpulseScale.Items[sourceIndex]
+target.PrismaticLocalAxisX.Items[targetIndex] = Me.PrismaticLocalAxisX.Items[sourceIndex]
+target.PrismaticLocalAxisY.Items[targetIndex] = Me.PrismaticLocalAxisY.Items[sourceIndex]
+target.PrismaticAxisX.Items[targetIndex] = Me.PrismaticAxisX.Items[sourceIndex]
+target.PrismaticAxisY.Items[targetIndex] = Me.PrismaticAxisY.Items[sourceIndex]
+target.PrismaticImpulseX.Items[targetIndex] = Me.PrismaticImpulseX.Items[sourceIndex]
+target.PrismaticImpulseY.Items[targetIndex] = Me.PrismaticImpulseY.Items[sourceIndex]
+target.PrismaticSpringImpulse.Items[targetIndex] = Me.PrismaticSpringImpulse.Items[sourceIndex]
+target.PrismaticMotorImpulse.Items[targetIndex] = Me.PrismaticMotorImpulse.Items[sourceIndex]
+target.PrismaticLowerImpulse.Items[targetIndex] = Me.PrismaticLowerImpulse.Items[sourceIndex]
+target.PrismaticUpperImpulse.Items[targetIndex] = Me.PrismaticUpperImpulse.Items[sourceIndex]
+target.PrismaticHertz.Items[targetIndex] = Me.PrismaticHertz.Items[sourceIndex]
+target.PrismaticDampingRatio.Items[targetIndex] = Me.PrismaticDampingRatio.Items[sourceIndex]
+target.PrismaticTargetTranslation.Items[targetIndex] = Me.PrismaticTargetTranslation.Items[sourceIndex]
+target.PrismaticMaxMotorForce.Items[targetIndex] = Me.PrismaticMaxMotorForce.Items[sourceIndex]
+target.PrismaticMotorSpeed.Items[targetIndex] = Me.PrismaticMotorSpeed.Items[sourceIndex]
+target.PrismaticReferenceAngle.Items[targetIndex] = Me.PrismaticReferenceAngle.Items[sourceIndex]
+target.PrismaticLowerTranslation.Items[targetIndex] = Me.PrismaticLowerTranslation.Items[sourceIndex]
+target.PrismaticUpperTranslation.Items[targetIndex] = Me.PrismaticUpperTranslation.Items[sourceIndex]
+target.PrismaticAxialMass.Items[targetIndex] = Me.PrismaticAxialMass.Items[sourceIndex]
+target.PrismaticDeltaAngle.Items[targetIndex] = Me.PrismaticDeltaAngle.Items[sourceIndex]
+target.PrismaticSpringSoftnessBiasRate.Items[targetIndex] = Me.PrismaticSpringSoftnessBiasRate.Items[sourceIndex]
+target.PrismaticSpringSoftnessMassScale.Items[targetIndex] = Me.PrismaticSpringSoftnessMassScale.Items[sourceIndex]
+target.PrismaticSpringSoftnessImpulseScale.Items[targetIndex] = Me.PrismaticSpringSoftnessImpulseScale.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -12551,6 +12706,29 @@ Me.RevoluteDeltaAngle.Clear()
 Me.RevoluteSpringSoftnessBiasRate.Clear()
 Me.RevoluteSpringSoftnessMassScale.Clear()
 Me.RevoluteSpringSoftnessImpulseScale.Clear()
+Me.PrismaticLocalAxisX.Clear()
+Me.PrismaticLocalAxisY.Clear()
+Me.PrismaticAxisX.Clear()
+Me.PrismaticAxisY.Clear()
+Me.PrismaticImpulseX.Clear()
+Me.PrismaticImpulseY.Clear()
+Me.PrismaticSpringImpulse.Clear()
+Me.PrismaticMotorImpulse.Clear()
+Me.PrismaticLowerImpulse.Clear()
+Me.PrismaticUpperImpulse.Clear()
+Me.PrismaticHertz.Clear()
+Me.PrismaticDampingRatio.Clear()
+Me.PrismaticTargetTranslation.Clear()
+Me.PrismaticMaxMotorForce.Clear()
+Me.PrismaticMotorSpeed.Clear()
+Me.PrismaticReferenceAngle.Clear()
+Me.PrismaticLowerTranslation.Clear()
+Me.PrismaticUpperTranslation.Clear()
+Me.PrismaticAxialMass.Clear()
+Me.PrismaticDeltaAngle.Clear()
+Me.PrismaticSpringSoftnessBiasRate.Clear()
+Me.PrismaticSpringSoftnessMassScale.Clear()
+Me.PrismaticSpringSoftnessImpulseScale.Clear()
 End Sub
 End Class
 
@@ -12580,6 +12758,8 @@ ElseIf sims.Type.Items[index] = Integer(JointType.MotorJoint) Then
 PrepareMotorJoint(sims, index, context)
 ElseIf sims.Type.Items[index] = Integer(JointType.RevoluteJoint) Then
 PrepareRevoluteJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.PrismaticJoint) Then
+PreparePrismaticJoint(sims, index, context)
 End If
 End Sub
 
@@ -13785,6 +13965,452 @@ End Function
 ## b2GetRevoluteJointTorque: the motor and limit impulses combined.
 Shared Function GetRevoluteJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
 Return invH * (sims.RevoluteMotorImpulse.Items[index] + sims.RevoluteLowerImpulse.Items[index] - sims.RevoluteUpperImpulse.Items[index])
+End Function
+
+## Prepares one prismatic joint row, ported from b2PreparePrismaticJoint.
+## The slider allows translation along one body-A axis and pins the
+## relative angle, so both bodies contribute to every block. The axis and
+## anchors rotate with body A's transform; the axial effective mass uses
+## the torque arms about the anchor line, computed once per step. A
+## non-awake body stores a NULL_INDEX state row that the kernels replace
+## with an identity dummy.
+Private Shared Sub PreparePrismaticJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyA As Body = world.Bodies[sims.BodyIdA.Items[index]]
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simA As BodySims = world.GetBodySim(bodyA)
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexA As Integer = bodyA.LocalIndex
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassA.Items[index] = simA.InvMass.Items[indexA]
+sims.InvIA.Items[index] = simA.InvInertia.Items[indexA]
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexA.Items[index] = indexA
+Else
+sims.IndexA.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+Var qcA As Double = simA.QC.Items[indexA]
+Var qsA As Double = simA.QS.Items[indexA]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+
+# Anchors and axis in world space from the definition's local values.
+Var localDX As Double = sims.LocalOriginAnchorAX.Items[index] - simA.LCX.Items[indexA]
+Var localDY As Double = sims.LocalOriginAnchorAY.Items[index] - simA.LCY.Items[indexA]
+sims.AnchorAX.Items[index] = qcA * localDX - qsA * localDY
+sims.AnchorAY.Items[index] = qsA * localDX + qcA * localDY
+Var localEX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localEY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localEX - qsB * localEY
+sims.AnchorBY.Items[index] = qsB * localEX + qcB * localEY
+Var axisLX As Double = sims.PrismaticLocalAxisX.Items[index]
+Var axisLY As Double = sims.PrismaticLocalAxisY.Items[index]
+Var axisX As Double = qcA * axisLX - qsA * axisLY
+Var axisY As Double = qsA * axisLX + qcA * axisLY
+sims.PrismaticAxisX.Items[index] = axisX
+sims.PrismaticAxisY.Items[index] = axisY
+
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
+# Relative angle minus the reference angle, unwound, with scalar
+# components; see the motor prepare note.
+Var relS As Double = simB.QS.Items[indexB] * simA.QC.Items[indexA] - simB.QC.Items[indexB] * simA.QS.Items[indexA]
+Var relC As Double = simB.QC.Items[indexB] * simA.QC.Items[indexA] + simB.QS.Items[indexB] * simA.QS.Items[indexA]
+sims.PrismaticDeltaAngle.Items[index] = PhysicsMaths.UnwindAngle(PhysicsMaths.Atan2(relS, relC) - sims.PrismaticReferenceAngle.Items[index])
+
+# Axial effective mass from the torque arms about the anchor line.
+Var rAX As Double = sims.AnchorAX.Items[index]
+Var rAY As Double = sims.AnchorAY.Items[index]
+Var rBX As Double = sims.AnchorBX.Items[index]
+Var rBY As Double = sims.AnchorBY.Items[index]
+Var dX As Double = sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = sims.DeltaCenterY.Items[index] + rBY - rAY
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var k As Double = mA + mB + iA * a1 * a1 + iB * a2 * a2
+If k > 0.0 Then
+sims.PrismaticAxialMass.Items[index] = 1.0 / k
+Else
+sims.PrismaticAxialMass.Items[index] = 0.0
+End If
+
+Softness.MakeTo(sims.PrismaticHertz.Items[index], sims.PrismaticDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.PrismaticSpringSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.PrismaticSpringSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.PrismaticSpringSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+
+If context.WarmStartScale = 0.0 Then
+sims.PrismaticImpulseX.Items[index] = 0.0
+sims.PrismaticImpulseY.Items[index] = 0.0
+sims.PrismaticSpringImpulse.Items[index] = 0.0
+sims.PrismaticMotorImpulse.Items[index] = 0.0
+sims.PrismaticLowerImpulse.Items[index] = 0.0
+sims.PrismaticUpperImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored prismatic joint impulses to both body states before
+## iterating, ported from b2WarmStartPrismaticJoint. The axial impulse
+## bundles the spring, motor, and limit impulses; the perpendicular and
+## angular impulses apply through the anchor-line torque arms.
+Shared Sub WarmStartPrismaticJoint(sims As JointSims, index As Integer, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var dX As Double = dpBX - dpAX + sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = dpBY - dpAY + sims.DeltaCenterY.Items[index] + rBY - rAY
+Var axisLX As Double = sims.PrismaticAxisX.Items[index]
+Var axisLY As Double = sims.PrismaticAxisY.Items[index]
+Var axisX As Double = dqAC * axisLX - dqAS * axisLY
+Var axisY As Double = dqAS * axisLX + dqAC * axisLY
+
+# Impulse is applied at the anchor point on body B.
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+Var axialImpulse As Double = sims.PrismaticSpringImpulse.Items[index] + sims.PrismaticMotorImpulse.Items[index] + sims.PrismaticLowerImpulse.Items[index] - sims.PrismaticUpperImpulse.Items[index]
+
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var s1 As Double = (dX + rAX) * perpY - (dY + rAY) * perpX
+Var s2 As Double = rBX * perpY - rBY * perpX
+Var perpImpulse As Double = sims.PrismaticImpulseX.Items[index]
+Var angleImpulse As Double = sims.PrismaticImpulseY.Items[index]
+
+Var pX As Double = axialImpulse * axisX + perpImpulse * perpX
+Var pY As Double = axialImpulse * axisY + perpImpulse * perpY
+Var la As Double = axialImpulse * a1 + perpImpulse * s1 + angleImpulse
+Var lb As Double = axialImpulse * a2 + perpImpulse * s2 + angleImpulse
+
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * la
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * lb
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Runs one velocity iteration for one prismatic joint row, ported from
+## b2SolvePrismaticJoint: axial spring, motor, and limits, then the
+## perpendicular-plus-angular block solve.
+Shared Sub SolvePrismaticJoint(sims As JointSims, index As Integer, context As StepContext, useBias As Boolean)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var dX As Double = dpBX - dpAX + sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = dpBY - dpAY + sims.DeltaCenterY.Items[index] + rBY - rAY
+Var axisLX As Double = sims.PrismaticAxisX.Items[index]
+Var axisLY As Double = sims.PrismaticAxisY.Items[index]
+Var axisX As Double = dqAC * axisLX - dqAS * axisLY
+Var axisY As Double = dqAS * axisLX + dqAC * axisLY
+Var translation As Double = axisX * dX + axisY * dY
+
+# Torque arms for axial forces.
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+Var axialMass As Double = sims.PrismaticAxialMass.Items[index]
+
+# Spring constraint: applied even during relax.
+If sims.EnableSpring.Items[index] <> 0 Then
+Var C As Double = translation - sims.PrismaticTargetTranslation.Items[index]
+Var bias As Double = sims.PrismaticSpringSoftnessBiasRate.Items[index] * C
+Var massScale As Double = sims.PrismaticSpringSoftnessMassScale.Items[index]
+Var impulseScale As Double = sims.PrismaticSpringSoftnessImpulseScale.Items[index]
+Var Cdot As Double = axisX * (vBX - vAX) + axisY * (vBY - vAY) + a2 * wB - a1 * wA
+Var deltaImpulse As Double = -massScale * axialMass * (Cdot + bias) - impulseScale * sims.PrismaticSpringImpulse.Items[index]
+sims.PrismaticSpringImpulse.Items[index] = sims.PrismaticSpringImpulse.Items[index] + deltaImpulse
+Var pX As Double = deltaImpulse * axisX
+Var pY As Double = deltaImpulse * axisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (deltaImpulse * a1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (deltaImpulse * a2)
+End If
+
+# Motor constraint.
+If sims.EnableMotor.Items[index] <> 0 Then
+Var Cdot As Double = axisX * (vBX - vAX) + axisY * (vBY - vAY) + a2 * wB - a1 * wA
+Var impulse As Double = axialMass * (sims.PrismaticMotorSpeed.Items[index] - Cdot)
+Var oldImpulse As Double = sims.PrismaticMotorImpulse.Items[index]
+Var maxImpulse As Double = context.H * sims.PrismaticMaxMotorForce.Items[index]
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse > maxImpulse Then
+newImpulse = maxImpulse
+ElseIf newImpulse < -maxImpulse Then
+newImpulse = -maxImpulse
+End If
+sims.PrismaticMotorImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+Var pX As Double = impulse * axisX
+Var pY As Double = impulse * axisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (impulse * a1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (impulse * a2)
+End If
+
+If sims.EnableLimit.Items[index] <> 0 Then
+# Lower limit.
+Var C As Double = translation - sims.PrismaticLowerTranslation.Items[index]
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If C > 0.0 Then
+# Speculation.
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var oldImpulse As Double = sims.PrismaticLowerImpulse.Items[index]
+Var Cdot As Double = axisX * (vBX - vAX) + axisY * (vBY - vAY) + a2 * wB - a1 * wA
+Var impulse As Double = -axialMass * massScale * (Cdot + bias) - impulseScale * oldImpulse
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.PrismaticLowerImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+Var pX As Double = impulse * axisX
+Var pY As Double = impulse * axisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (impulse * a1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (impulse * a2)
+
+# Upper limit: signs flipped to keep C positive when satisfied.
+C = sims.PrismaticUpperTranslation.Items[index] - translation
+bias = 0.0
+massScale = 1.0
+impulseScale = 0.0
+If C > 0.0 Then
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+oldImpulse = sims.PrismaticUpperImpulse.Items[index]
+# Sign flipped.
+Cdot = axisX * (vAX - vBX) + axisY * (vAY - vBY) + a1 * wA - a2 * wB
+impulse = -axialMass * massScale * (Cdot + bias) - impulseScale * oldImpulse
+newImpulse = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.PrismaticUpperImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+pX = impulse * axisX
+pY = impulse * axisY
+# Sign flipped.
+vAX = vAX + mA * pX
+vAY = vAY + mA * pY
+wA = wA + iA * (impulse * a1)
+vBX = vBX - mB * pX
+vBY = vBY - mB * pY
+wB = wB - iB * (impulse * a2)
+End If
+
+# Perpendicular-plus-angular block solve. The combined matrix is
+# symmetric by construction and solved inline with the guarded inverse
+# determinant of upstream b2Solve22.
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var s1 As Double = (dX + rAX) * perpY - (dY + rAY) * perpX
+Var s2 As Double = rBX * perpY - rBY * perpX
+Var cdX As Double = perpX * (vBX - vAX) + perpY * (vBY - vAY) + s2 * wB - s1 * wA
+Var cdY As Double = wB - wA
+Var biasX As Double = 0.0
+Var biasY As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If useBias Then
+Var cX As Double = perpX * dX + perpY * dY
+Var relS As Double = dqBS * dqAC - dqBC * dqAS
+Var relC As Double = dqBC * dqAC + dqBS * dqAS
+Var cY As Double = PhysicsMaths.Atan2(relS, relC) + sims.PrismaticDeltaAngle.Items[index]
+biasX = sims.SoftnessBiasRate.Items[index] * cX
+biasY = sims.SoftnessBiasRate.Items[index] * cY
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var k11 As Double = mA + mB + iA * s1 * s1 + iB * s2 * s2
+Var k12 As Double = iA * s1 + iB * s2
+Var k22 As Double = iA + iB
+If k22 = 0.0 Then
+# For bodies with fixed rotation.
+k22 = 1.0
+End If
+Var rhsX As Double = cdX + biasX
+Var rhsY As Double = cdY + biasY
+Var det As Double = k11 * k22 - k12 * k12
+If det <> 0.0 Then
+det = 1.0 / det
+End If
+Var bX As Double = det * (k22 * rhsX - k12 * rhsY)
+Var bY As Double = det * (k11 * rhsY - k12 * rhsX)
+Var oldX As Double = sims.PrismaticImpulseX.Items[index]
+Var oldY As Double = sims.PrismaticImpulseY.Items[index]
+Var impX As Double = -massScale * bX - impulseScale * oldX
+Var impY As Double = -massScale * bY - impulseScale * oldY
+sims.PrismaticImpulseX.Items[index] = oldX + impX
+sims.PrismaticImpulseY.Items[index] = oldY + impY
+
+Var pX As Double = impX * perpX
+Var pY As Double = impX * perpY
+Var la As Double = impX * s1 + impY
+Var lb As Double = impX * s2 + impY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * la
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * lb
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Total force the prismatic joint row applied this step, ported from
+## b2GetPrismaticJointForce: the perpendicular and axial components
+## combined in world space.
+Shared Function GetPrismaticJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var axisX As Double = sims.PrismaticAxisX.Items[index]
+Var axisY As Double = sims.PrismaticAxisY.Items[index]
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var perpForce As Double = invH * sims.PrismaticImpulseX.Items[index]
+Var axialForce As Double = invH * (sims.PrismaticMotorImpulse.Items[index] + sims.PrismaticLowerImpulse.Items[index] - sims.PrismaticUpperImpulse.Items[index])
+Return New Vector2(perpForce * perpX + axialForce * axisX, perpForce * perpY + axialForce * axisY)
+End Function
+
+## Torque the prismatic joint row applied this step, ported from
+## b2GetPrismaticJointTorque: the angular part of the block impulse.
+Shared Function GetPrismaticJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * sims.PrismaticImpulseY.Items[index]
 End Function
 
 ## Total force the mouse joint row applied this step, ported from
@@ -15508,6 +16134,346 @@ Var cache As New SimplexCache
 Var output As DistanceOutput = Distance.ShapeDistance(input, cache)
 Return output.Distance <= Me.Radius
 End Function
+End Class
+
+# Public prismatic joint façade, ported from the b2PrismaticJoint_* surface
+# in prismatic_joint.c. The joint lets two bodies slide along one axis; a
+# spring, limits, and a motor optionally act on that translation. Tuning
+# changes deliberately do not wake the bodies, matching upstream; the
+# solver picks up new values on the next step. Enabling or disabling the
+# spring, limits, or motor clears the corresponding accumulated impulses
+# exactly like the upstream toggles. Setters store plain values where
+# upstream stores plain values and throw where upstream asserts. The façade
+# reads and writes its row in the owning JointSims store.
+Class PrismaticJoint Inherits Joint
+## Enables the linear spring, ported from b2PrismaticJoint_EnableSpring.
+## Toggling clears the accumulated spring impulse.
+Sub EnableSpring(enableSpring As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableSpring Then
+flag = 1
+End If
+If flag <> store.EnableSpring.Items[Me.LocalIndex] Then
+store.EnableSpring.Items[Me.LocalIndex] = flag
+store.PrismaticSpringImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the linear spring is active, ported from
+## b2PrismaticJoint_IsSpringEnabled.
+Function IsSpringEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableSpring.Items[Me.LocalIndex] <> 0
+End Function
+
+## Spring stiffness in hertz, ported from b2PrismaticJoint_SetSpringHertz.
+Sub SetSpringHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).PrismaticHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Spring stiffness in hertz, ported from b2PrismaticJoint_GetSpringHertz.
+Function GetSpringHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticHertz.Items[Me.LocalIndex]
+End Function
+
+## Spring damping ratio, ported from
+## b2PrismaticJoint_SetSpringDampingRatio.
+Sub SetSpringDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).PrismaticDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Spring damping ratio, ported from
+## b2PrismaticJoint_GetSpringDampingRatio.
+Function GetSpringDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## Target translation in metres, ported from
+## b2PrismaticJoint_SetTargetTranslation. Changes apply from the next step
+## and do not wake the bodies.
+Sub SetTargetTranslation(translation As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).PrismaticTargetTranslation.Items[Me.LocalIndex] = translation
+End Sub
+
+## Target translation in metres, ported from
+## b2PrismaticJoint_GetTargetTranslation.
+Function GetTargetTranslation() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticTargetTranslation.Items[Me.LocalIndex]
+End Function
+
+## Current translation in metres along the axis, ported from
+## b2PrismaticJoint_GetTranslation: the body B anchor point minus the
+## body A anchor point projected on the live axis. Allocates the returned
+## query vectors.
+Function GetTranslation() As Double
+Me.CheckValid()
+Var transformA As Transform = Me.Owner.GetBodyTransform(Me.GetBodyA())
+Var transformB As Transform = Me.Owner.GetBodyTransform(Me.GetBodyB())
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var axisX As Double = transformA.Q.C * store.PrismaticLocalAxisX.Items[Me.LocalIndex] - transformA.Q.S * store.PrismaticLocalAxisY.Items[Me.LocalIndex]
+Var axisY As Double = transformA.Q.S * store.PrismaticLocalAxisX.Items[Me.LocalIndex] + transformA.Q.C * store.PrismaticLocalAxisY.Items[Me.LocalIndex]
+# Anchor points in world space.
+Var localA As Vector2 = Me.GetLocalAnchorA()
+Var localB As Vector2 = Me.GetLocalAnchorB()
+Var pAX As Double = transformA.P.X + transformA.Q.C * localA.X - transformA.Q.S * localA.Y
+Var pAY As Double = transformA.P.Y + transformA.Q.S * localA.X + transformA.Q.C * localA.Y
+Var pBX As Double = transformB.P.X + transformB.Q.C * localB.X - transformB.Q.S * localB.Y
+Var pBY As Double = transformB.P.Y + transformB.Q.S * localB.X + transformB.Q.C * localB.Y
+Return (pBX - pAX) * axisX + (pBY - pAY) * axisY
+End Function
+
+## Current translation speed in metres per second, ported from
+## b2PrismaticJoint_GetSpeed. Allocates the returned query vectors.
+Function GetSpeed() As Double
+Me.CheckValid()
+Var bodyA As Body = Me.GetBodyA()
+Var bodyB As Body = Me.GetBodyB()
+Var transformA As Transform = Me.Owner.GetBodyTransform(bodyA)
+Var transformB As Transform = Me.Owner.GetBodyTransform(bodyB)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var axisX As Double = transformA.Q.C * store.PrismaticLocalAxisX.Items[Me.LocalIndex] - transformA.Q.S * store.PrismaticLocalAxisY.Items[Me.LocalIndex]
+Var axisY As Double = transformA.Q.S * store.PrismaticLocalAxisX.Items[Me.LocalIndex] + transformA.Q.C * store.PrismaticLocalAxisY.Items[Me.LocalIndex]
+# Anchor offsets from the centres of mass in world space.
+Var localA As Vector2 = Me.GetLocalAnchorA()
+Var localB As Vector2 = Me.GetLocalAnchorB()
+Var centerLocalA As Vector2 = bodyA.GetLocalCenterOfMass()
+Var centerLocalB As Vector2 = bodyB.GetLocalCenterOfMass()
+Var rAX As Double = transformA.Q.C * (localA.X - centerLocalA.X) - transformA.Q.S * (localA.Y - centerLocalA.Y)
+Var rAY As Double = transformA.Q.S * (localA.X - centerLocalA.X) + transformA.Q.C * (localA.Y - centerLocalA.Y)
+Var rBX As Double = transformB.Q.C * (localB.X - centerLocalB.X) - transformB.Q.S * (localB.Y - centerLocalB.Y)
+Var rBY As Double = transformB.Q.S * (localB.X - centerLocalB.X) + transformB.Q.C * (localB.Y - centerLocalB.Y)
+Var centerA As Vector2 = Me.Owner.GetBodyWorldCenterOfMass(bodyA)
+Var centerB As Vector2 = Me.Owner.GetBodyWorldCenterOfMass(bodyB)
+Var dX As Double = centerB.X - centerA.X + rBX - rAX
+Var dY As Double = centerB.Y - centerA.Y + rBY - rAY
+Var vA As Vector2 = Me.Owner.GetBodyLinearVelocity(bodyA)
+Var vB As Vector2 = Me.Owner.GetBodyLinearVelocity(bodyB)
+Var wA As Double = Me.Owner.GetBodyAngularVelocity(bodyA)
+Var wB As Double = Me.Owner.GetBodyAngularVelocity(bodyB)
+Var vRelX As Double = vB.X - wB * rBY - (vA.X - wA * rAY)
+Var vRelY As Double = vB.Y + wB * rBX - (vA.Y + wA * rAX)
+Return dX * (wA * axisY) - dY * (wA * axisX) + axisX * vRelX + axisY * vRelY
+End Function
+
+## Enables the translation limits, ported from
+## b2PrismaticJoint_EnableLimit. Toggling clears both accumulated limit
+## impulses.
+Sub EnableLimit(enableLimit As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableLimit Then
+flag = 1
+End If
+If flag <> store.EnableLimit.Items[Me.LocalIndex] Then
+store.EnableLimit.Items[Me.LocalIndex] = flag
+store.PrismaticLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.PrismaticUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the translation limits are active, ported from
+## b2PrismaticJoint_IsLimitEnabled.
+Function IsLimitEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableLimit.Items[Me.LocalIndex] <> 0
+End Function
+
+## Lower translation limit in metres, ported from
+## b2PrismaticJoint_GetLowerLimit.
+Function GetLowerLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticLowerTranslation.Items[Me.LocalIndex]
+End Function
+
+## Upper translation limit in metres, ported from
+## b2PrismaticJoint_GetUpperLimit.
+Function GetUpperLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticUpperTranslation.Items[Me.LocalIndex]
+End Function
+
+## Sets both translation limits in metres, ported from
+## b2PrismaticJoint_SetLimits. The lower limit must not exceed the upper
+## limit, matching the upstream assertion; changing the values clears both
+## accumulated limit impulses.
+Sub SetLimits(lower As Double, upper As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not lower.IsFinite() Or Not upper.IsFinite() Then
+Throw New InvalidArgumentException("Prismatic joint limits must be finite")
+End If
+If lower > upper Then
+Throw New InvalidArgumentException("Prismatic joint lower limit must not exceed the upper limit")
+End If
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+If lower <> store.PrismaticLowerTranslation.Items[Me.LocalIndex] Or upper <> store.PrismaticUpperTranslation.Items[Me.LocalIndex] Then
+store.PrismaticLowerTranslation.Items[Me.LocalIndex] = lower
+store.PrismaticUpperTranslation.Items[Me.LocalIndex] = upper
+store.PrismaticLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.PrismaticUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## Enables the translation motor, ported from
+## b2PrismaticJoint_EnableMotor. Toggling clears the accumulated motor
+## impulse.
+Sub EnableMotor(enableMotor As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableMotor Then
+flag = 1
+End If
+If flag <> store.EnableMotor.Items[Me.LocalIndex] Then
+store.EnableMotor.Items[Me.LocalIndex] = flag
+store.PrismaticMotorImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the translation motor is active, ported from
+## b2PrismaticJoint_IsMotorEnabled.
+Function IsMotorEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableMotor.Items[Me.LocalIndex] <> 0
+End Function
+
+## Desired motor speed in metres per second, ported from
+## b2PrismaticJoint_SetMotorSpeed. Changes apply from the next step.
+Sub SetMotorSpeed(motorSpeed As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).PrismaticMotorSpeed.Items[Me.LocalIndex] = motorSpeed
+End Sub
+
+## Desired motor speed in metres per second, ported from
+## b2PrismaticJoint_GetMotorSpeed.
+Function GetMotorSpeed() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticMotorSpeed.Items[Me.LocalIndex]
+End Function
+
+## Maximum motor force in newtons, ported from
+## b2PrismaticJoint_SetMaxMotorForce. Changes apply from the next step.
+Sub SetMaxMotorForce(force As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).PrismaticMaxMotorForce.Items[Me.LocalIndex] = force
+End Sub
+
+## Maximum motor force in newtons, ported from
+## b2PrismaticJoint_GetMaxMotorForce.
+Function GetMaxMotorForce() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticMaxMotorForce.Items[Me.LocalIndex]
+End Function
+
+## Force the motor applied this step in newtons, ported from
+## b2PrismaticJoint_GetMotorForce.
+Function GetMotorForce() As Double
+Me.CheckValid()
+Return Me.Owner.InvH * Me.Owner.GetJointSims(Me).PrismaticMotorImpulse.Items[Me.LocalIndex]
+End Function
+
+## The constrained reference angle in radians, ported from
+## b2Joint_GetReferenceAngle for the prismatic family.
+Override Function GetReferenceAngle() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticReferenceAngle.Items[Me.LocalIndex]
+End Function
+
+## The local axis in body A's frame, ported from b2Joint_GetLocalAxisA for
+## the prismatic family. Returns a new Vector2 copy; safe to retain.
+Override Function GetLocalAxisA() As Vector2
+Me.CheckValid()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return New Vector2(store.PrismaticLocalAxisX.Items[Me.LocalIndex], store.PrismaticLocalAxisY.Items[Me.LocalIndex])
+End Function
+End Class
+
+# Prismatic joint definition, ported from upstream b2PrismaticJointDef and
+# b2DefaultPrismaticJointDef in types.h and joint.c. Defaults match
+# upstream: coincident local anchors, unit Y axis, zero reference angle,
+# target, tuning, limits, and motor, with all three features disabled.
+# A prismatic joint allows two bodies to translate along one axis and
+# optionally drives or limits that translation.
+Class PrismaticJointDefinition
+## First attached body, ported from b2PrismaticJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, ported from b2PrismaticJointDef.bodyIdB.
+Property BodyB As Body
+## Local anchor point relative to body A's origin, in metres.
+Property LocalAnchorA As Vector2
+## Local anchor point relative to body B's origin, in metres.
+Property LocalAnchorB As Vector2
+## Local translation unit axis in body A's frame. Defaults to the world X
+## axis like upstream; normalized at creation.
+Property LocalAxisA As Vector2
+## The constrained angle between the bodies in the reference state:
+## body B angle minus body A angle, in radians.
+Property ReferenceAngle As Double
+## Target translation for the spring in metres. The spring-damper drives
+## toward this translation.
+Property TargetTranslation As Double
+## True when the linear spring along the axis is active.
+Property EnableSpring As Boolean
+## Spring stiffness in hertz.
+Property Hertz As Double
+## Spring damping ratio, non-dimensional.
+Property DampingRatio As Double
+## True when the translation limits are active.
+Property EnableLimit As Boolean
+## Lower translation limit in metres.
+Property LowerTranslation As Double
+## Upper translation limit in metres.
+Property UpperTranslation As Double
+## True when the translation motor is active.
+Property EnableMotor As Boolean
+## Maximum motor force, typically in newtons.
+Property MaxMotorForce As Double
+## Desired motor speed in metres per second.
+Property MotorSpeed As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LocalAnchorA = New Vector2(0.0, 0.0)
+Me.LocalAnchorB = New Vector2(0.0, 0.0)
+Me.LocalAxisA = New Vector2(1.0, 0.0)
+Me.ReferenceAngle = 0.0
+Me.TargetTranslation = 0.0
+Me.EnableSpring = False
+Me.Hertz = 0.0
+Me.DampingRatio = 0.0
+Me.EnableLimit = False
+Me.LowerTranslation = 0.0
+Me.UpperTranslation = 0.0
+Me.EnableMotor = False
+Me.MaxMotorForce = 0.0
+Me.MotorSpeed = 0.0
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
 End Class
 
 # Query filtering for world queries, ported from upstream b2QueryFilter in
@@ -17591,6 +18557,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.MotorJoint) Then
 JointSolver.WarmStartMotorJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.RevoluteJoint) Then
 JointSolver.WarmStartRevoluteJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.PrismaticJoint) Then
+JointSolver.WarmStartPrismaticJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -17611,6 +18579,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.MotorJoint) Then
 JointSolver.SolveMotorJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.RevoluteJoint) Then
 JointSolver.SolveRevoluteJoint(sims, i, context, useBias)
+ElseIf sims.Type.Items[i] = Integer(JointType.PrismaticJoint) Then
+JointSolver.SolvePrismaticJoint(sims, i, context, useBias)
 End If
 Next i
 End Sub
@@ -20667,6 +21637,8 @@ ElseIf jointType = JointType.MotorJoint Then
 record = New MotorJoint
 ElseIf jointType = JointType.RevoluteJoint Then
 record = New RevoluteJoint
+ElseIf jointType = JointType.PrismaticJoint Then
+record = New PrismaticJoint
 Else
 record = New Joint
 End If
@@ -21069,6 +22041,102 @@ Me.DestroyContactsBetweenBodies(bodyA, bodyB)
 End If
 
 Var facade As RevoluteJoint = RevoluteJoint(joint)
+Return facade
+End Function
+
+## Creates a prismatic joint, ported from b2CreatePrismaticJoint. Throws on
+## a missing definition, missing or foreign bodies, non-finite anchors,
+## axis, or tuning, or a lower translation limit above the upper limit,
+## matching the upstream assertions. The local axis normalizes at creation
+## like upstream b2Normalize, and a zero axis stays zero.
+Function CreatePrismaticJoint(def As PrismaticJointDefinition) As PrismaticJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "PrismaticJointDefinition")
+Me.CheckJointBody(def.BodyA, "PrismaticJointDefinition.BodyA")
+Me.CheckJointBody(def.BodyB, "PrismaticJointDefinition.BodyB")
+If Not def.LocalAnchorA.X.IsFinite() Or Not def.LocalAnchorA.Y.IsFinite() Then
+Throw New InvalidArgumentException("PrismaticJointDefinition local anchor A must be finite")
+End If
+If Not def.LocalAnchorB.X.IsFinite() Or Not def.LocalAnchorB.Y.IsFinite() Then
+Throw New InvalidArgumentException("PrismaticJointDefinition local anchor B must be finite")
+End If
+If Not def.LocalAxisA.X.IsFinite() Or Not def.LocalAxisA.Y.IsFinite() Then
+Throw New InvalidArgumentException("PrismaticJointDefinition local axis must be finite")
+End If
+If Not def.ReferenceAngle.IsFinite() Or Not def.TargetTranslation.IsFinite() Then
+Throw New InvalidArgumentException("PrismaticJointDefinition reference angle and target translation must be finite")
+End If
+If Not def.Hertz.IsFinite() Or def.Hertz < 0.0 Then
+Throw New InvalidArgumentException("PrismaticJointDefinition hertz must be finite and non-negative")
+End If
+If Not def.DampingRatio.IsFinite() Or def.DampingRatio < 0.0 Then
+Throw New InvalidArgumentException("PrismaticJointDefinition damping ratio must be finite and non-negative")
+End If
+If Not def.MaxMotorForce.IsFinite() Or def.MaxMotorForce < 0.0 Then
+Throw New InvalidArgumentException("PrismaticJointDefinition max motor force must be finite and non-negative")
+End If
+If Not def.MotorSpeed.IsFinite() Then
+Throw New InvalidArgumentException("PrismaticJointDefinition motor speed must be finite")
+End If
+If Not def.LowerTranslation.IsFinite() Or Not def.UpperTranslation.IsFinite() Then
+Throw New InvalidArgumentException("PrismaticJointDefinition limits must be finite")
+End If
+If def.LowerTranslation > def.UpperTranslation Then
+Throw New InvalidArgumentException("PrismaticJointDefinition lower limit must not exceed the upper limit")
+End If
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.PrismaticJoint, def.CollideConnected, 1.0)
+Var localIndex As Integer = Me.PlaceJointSim(joint, bodyA, bodyB)
+Var store As JointSims = Me.GetJointSims(joint)
+store.ConstraintHertz.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+store.ConstraintDampingRatio.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+store.LocalOriginAnchorAX.Items[localIndex] = def.LocalAnchorA.X
+store.LocalOriginAnchorAY.Items[localIndex] = def.LocalAnchorA.Y
+store.LocalOriginAnchorBX.Items[localIndex] = def.LocalAnchorB.X
+store.LocalOriginAnchorBY.Items[localIndex] = def.LocalAnchorB.Y
+# Normalize the local axis like upstream b2Normalize, including the
+# degenerate zero branch.
+Var axisLength As Double = Maths.Sqrt(def.LocalAxisA.X * def.LocalAxisA.X + def.LocalAxisA.Y * def.LocalAxisA.Y)
+If axisLength >= PhysicsConstants.FLT_EPSILON Then
+store.PrismaticLocalAxisX.Items[localIndex] = def.LocalAxisA.X / axisLength
+store.PrismaticLocalAxisY.Items[localIndex] = def.LocalAxisA.Y / axisLength
+End If
+store.PrismaticReferenceAngle.Items[localIndex] = def.ReferenceAngle
+store.PrismaticTargetTranslation.Items[localIndex] = def.TargetTranslation
+store.PrismaticHertz.Items[localIndex] = def.Hertz
+store.PrismaticDampingRatio.Items[localIndex] = def.DampingRatio
+store.PrismaticLowerTranslation.Items[localIndex] = def.LowerTranslation
+store.PrismaticUpperTranslation.Items[localIndex] = def.UpperTranslation
+store.PrismaticMaxMotorForce.Items[localIndex] = def.MaxMotorForce
+store.PrismaticMotorSpeed.Items[localIndex] = def.MotorSpeed
+store.EnableSpring.Items[localIndex] = 0
+store.EnableLimit.Items[localIndex] = 0
+store.EnableMotor.Items[localIndex] = 0
+If def.EnableSpring Then
+store.EnableSpring.Items[localIndex] = 1
+End If
+If def.EnableLimit Then
+store.EnableLimit.Items[localIndex] = 1
+End If
+If def.EnableMotor Then
+store.EnableMotor.Items[localIndex] = 1
+End If
+joint.UserData = def.UserData
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# If the joint prevents collisions, destroy all contacts between the
+# attached bodies.
+If def.CollideConnected = False Then
+Me.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+
+Var facade As PrismaticJoint = PrismaticJoint(joint)
 Return facade
 End Function
 

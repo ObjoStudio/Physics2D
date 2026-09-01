@@ -1,0 +1,37 @@
+# Stage 9 benchmark scenario wrapping the prismatic drive workload.
+Import Physics2D
+
+Class Stage9PrismaticScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As PrismaticDriveWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage9-prismatic-drive-30"
+Me.Description = "Shuttles 30 motor-driven sliders with per-frame speed retargets through the full Stage 9 solver four times per iteration."
+Me.WarmupIterations = 3
+Me.MeasuredIterations = 8
+Me.mWorkload = New PrismaticDriveWorkload
+End Constructor
+
+## Describes the drive parameters.
+Override Function Parameters() As String
+Return "boxes=30,joints=30,steps=4,retargets=30/frame,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class

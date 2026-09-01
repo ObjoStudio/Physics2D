@@ -1,0 +1,70 @@
+# Prismatic joint definition, ported from upstream b2PrismaticJointDef and
+# b2DefaultPrismaticJointDef in types.h and joint.c. Defaults match
+# upstream: coincident local anchors, unit Y axis, zero reference angle,
+# target, tuning, limits, and motor, with all three features disabled.
+# A prismatic joint allows two bodies to translate along one axis and
+# optionally drives or limits that translation.
+Class PrismaticJointDefinition
+## First attached body, ported from b2PrismaticJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, ported from b2PrismaticJointDef.bodyIdB.
+Property BodyB As Body
+## Local anchor point relative to body A's origin, in metres.
+Property LocalAnchorA As Vector2
+## Local anchor point relative to body B's origin, in metres.
+Property LocalAnchorB As Vector2
+## Local translation unit axis in body A's frame. Defaults to the world X
+## axis like upstream; normalized at creation.
+Property LocalAxisA As Vector2
+## The constrained angle between the bodies in the reference state:
+## body B angle minus body A angle, in radians.
+Property ReferenceAngle As Double
+## Target translation for the spring in metres. The spring-damper drives
+## toward this translation.
+Property TargetTranslation As Double
+## True when the linear spring along the axis is active.
+Property EnableSpring As Boolean
+## Spring stiffness in hertz.
+Property Hertz As Double
+## Spring damping ratio, non-dimensional.
+Property DampingRatio As Double
+## True when the translation limits are active.
+Property EnableLimit As Boolean
+## Lower translation limit in metres.
+Property LowerTranslation As Double
+## Upper translation limit in metres.
+Property UpperTranslation As Double
+## True when the translation motor is active.
+Property EnableMotor As Boolean
+## Maximum motor force, typically in newtons.
+Property MaxMotorForce As Double
+## Desired motor speed in metres per second.
+Property MotorSpeed As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LocalAnchorA = New Vector2(0.0, 0.0)
+Me.LocalAnchorB = New Vector2(0.0, 0.0)
+Me.LocalAxisA = New Vector2(1.0, 0.0)
+Me.ReferenceAngle = 0.0
+Me.TargetTranslation = 0.0
+Me.EnableSpring = False
+Me.Hertz = 0.0
+Me.DampingRatio = 0.0
+Me.EnableLimit = False
+Me.LowerTranslation = 0.0
+Me.UpperTranslation = 0.0
+Me.EnableMotor = False
+Me.MaxMotorForce = 0.0
+Me.MotorSpeed = 0.0
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
+End Class

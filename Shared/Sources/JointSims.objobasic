@@ -223,6 +223,61 @@ Property RevoluteAxialMass As DoubleList
 Property RevoluteDeltaAngle As DoubleList
 ## Spring softness bias rate prepared from hertz and damping ratio.
 Property RevoluteSpringSoftnessBiasRate As DoubleList
+
+# Prismatic joint family columns, ported from upstream b2PrismaticJoint in
+# joint.h. Valid only while Type = Integer(JointType.PrismaticJoint). The
+# slider reuses the base two-body columns (IndexA/IndexB, AnchorA/AnchorB,
+# DeltaCenter, inverse masses, LocalOriginAnchorA/B) and the base
+# EnableSpring/EnableLimit/EnableMotor flag columns.
+## X component of the normalized local translation axis in body A's frame.
+Property PrismaticLocalAxisX As DoubleList
+## Y component of the normalized local translation axis.
+Property PrismaticLocalAxisY As DoubleList
+## X component of the translation axis rotated into body A's world frame
+## at prepare time, ported from joint->axisA.
+Property PrismaticAxisX As DoubleList
+## Y component of the prepared world-frame translation axis.
+Property PrismaticAxisY As DoubleList
+## X component of the accumulated constraint impulse; x is the
+## perpendicular force and y the angular impulse.
+Property PrismaticImpulseX As DoubleList
+## Y component of the accumulated constraint impulse.
+Property PrismaticImpulseY As DoubleList
+## Accumulated spring impulse.
+Property PrismaticSpringImpulse As DoubleList
+## Accumulated motor impulse.
+Property PrismaticMotorImpulse As DoubleList
+## Accumulated lower-limit impulse, always non-negative.
+Property PrismaticLowerImpulse As DoubleList
+## Accumulated upper-limit impulse, always non-negative.
+Property PrismaticUpperImpulse As DoubleList
+## Spring stiffness in hertz.
+Property PrismaticHertz As DoubleList
+## Spring damping ratio.
+Property PrismaticDampingRatio As DoubleList
+## Spring target translation in metres.
+Property PrismaticTargetTranslation As DoubleList
+## Maximum motor force.
+Property PrismaticMaxMotorForce As DoubleList
+## Desired motor speed in metres per second.
+Property PrismaticMotorSpeed As DoubleList
+## Reference angle in radians.
+Property PrismaticReferenceAngle As DoubleList
+## Lower translation limit in metres.
+Property PrismaticLowerTranslation As DoubleList
+## Upper translation limit in metres.
+Property PrismaticUpperTranslation As DoubleList
+## Inverse of the axial effective mass, zero when singular.
+Property PrismaticAxialMass As DoubleList
+## Angle of body B relative to body A at prepare time minus the reference
+## angle, unwound, ported from joint->deltaAngle.
+Property PrismaticDeltaAngle As DoubleList
+## Spring softness bias rate prepared from hertz and damping ratio.
+Property PrismaticSpringSoftnessBiasRate As DoubleList
+## Spring softness mass scale.
+Property PrismaticSpringSoftnessMassScale As DoubleList
+## Spring softness impulse scale.
+Property PrismaticSpringSoftnessImpulseScale As DoubleList
 ## Spring softness mass scale.
 Property RevoluteSpringSoftnessMassScale As DoubleList
 ## Spring softness impulse scale.
@@ -323,6 +378,29 @@ Me.RevoluteDeltaAngle = New DoubleList
 Me.RevoluteSpringSoftnessBiasRate = New DoubleList
 Me.RevoluteSpringSoftnessMassScale = New DoubleList
 Me.RevoluteSpringSoftnessImpulseScale = New DoubleList
+Me.PrismaticLocalAxisX = New DoubleList
+Me.PrismaticLocalAxisY = New DoubleList
+Me.PrismaticAxisX = New DoubleList
+Me.PrismaticAxisY = New DoubleList
+Me.PrismaticImpulseX = New DoubleList
+Me.PrismaticImpulseY = New DoubleList
+Me.PrismaticSpringImpulse = New DoubleList
+Me.PrismaticMotorImpulse = New DoubleList
+Me.PrismaticLowerImpulse = New DoubleList
+Me.PrismaticUpperImpulse = New DoubleList
+Me.PrismaticHertz = New DoubleList
+Me.PrismaticDampingRatio = New DoubleList
+Me.PrismaticTargetTranslation = New DoubleList
+Me.PrismaticMaxMotorForce = New DoubleList
+Me.PrismaticMotorSpeed = New DoubleList
+Me.PrismaticReferenceAngle = New DoubleList
+Me.PrismaticLowerTranslation = New DoubleList
+Me.PrismaticUpperTranslation = New DoubleList
+Me.PrismaticAxialMass = New DoubleList
+Me.PrismaticDeltaAngle = New DoubleList
+Me.PrismaticSpringSoftnessBiasRate = New DoubleList
+Me.PrismaticSpringSoftnessMassScale = New DoubleList
+Me.PrismaticSpringSoftnessImpulseScale = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -429,6 +507,29 @@ Me.RevoluteDeltaAngle.Append(0.0)
 Me.RevoluteSpringSoftnessBiasRate.Append(0.0)
 Me.RevoluteSpringSoftnessMassScale.Append(1.0)
 Me.RevoluteSpringSoftnessImpulseScale.Append(0.0)
+Me.PrismaticLocalAxisX.Append(0.0)
+Me.PrismaticLocalAxisY.Append(0.0)
+Me.PrismaticAxisX.Append(0.0)
+Me.PrismaticAxisY.Append(0.0)
+Me.PrismaticImpulseX.Append(0.0)
+Me.PrismaticImpulseY.Append(0.0)
+Me.PrismaticSpringImpulse.Append(0.0)
+Me.PrismaticMotorImpulse.Append(0.0)
+Me.PrismaticLowerImpulse.Append(0.0)
+Me.PrismaticUpperImpulse.Append(0.0)
+Me.PrismaticHertz.Append(0.0)
+Me.PrismaticDampingRatio.Append(0.0)
+Me.PrismaticTargetTranslation.Append(0.0)
+Me.PrismaticMaxMotorForce.Append(0.0)
+Me.PrismaticMotorSpeed.Append(0.0)
+Me.PrismaticReferenceAngle.Append(0.0)
+Me.PrismaticLowerTranslation.Append(0.0)
+Me.PrismaticUpperTranslation.Append(0.0)
+Me.PrismaticAxialMass.Append(0.0)
+Me.PrismaticDeltaAngle.Append(0.0)
+Me.PrismaticSpringSoftnessBiasRate.Append(0.0)
+Me.PrismaticSpringSoftnessMassScale.Append(1.0)
+Me.PrismaticSpringSoftnessImpulseScale.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -535,6 +636,29 @@ Me.RevoluteDeltaAngle.RemoveSwap(index)
 Me.RevoluteSpringSoftnessBiasRate.RemoveSwap(index)
 Me.RevoluteSpringSoftnessMassScale.RemoveSwap(index)
 Me.RevoluteSpringSoftnessImpulseScale.RemoveSwap(index)
+Me.PrismaticLocalAxisX.RemoveSwap(index)
+Me.PrismaticLocalAxisY.RemoveSwap(index)
+Me.PrismaticAxisX.RemoveSwap(index)
+Me.PrismaticAxisY.RemoveSwap(index)
+Me.PrismaticImpulseX.RemoveSwap(index)
+Me.PrismaticImpulseY.RemoveSwap(index)
+Me.PrismaticSpringImpulse.RemoveSwap(index)
+Me.PrismaticMotorImpulse.RemoveSwap(index)
+Me.PrismaticLowerImpulse.RemoveSwap(index)
+Me.PrismaticUpperImpulse.RemoveSwap(index)
+Me.PrismaticHertz.RemoveSwap(index)
+Me.PrismaticDampingRatio.RemoveSwap(index)
+Me.PrismaticTargetTranslation.RemoveSwap(index)
+Me.PrismaticMaxMotorForce.RemoveSwap(index)
+Me.PrismaticMotorSpeed.RemoveSwap(index)
+Me.PrismaticReferenceAngle.RemoveSwap(index)
+Me.PrismaticLowerTranslation.RemoveSwap(index)
+Me.PrismaticUpperTranslation.RemoveSwap(index)
+Me.PrismaticAxialMass.RemoveSwap(index)
+Me.PrismaticDeltaAngle.RemoveSwap(index)
+Me.PrismaticSpringSoftnessBiasRate.RemoveSwap(index)
+Me.PrismaticSpringSoftnessMassScale.RemoveSwap(index)
+Me.PrismaticSpringSoftnessImpulseScale.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -635,6 +759,29 @@ target.RevoluteDeltaAngle.Items[targetIndex] = Me.RevoluteDeltaAngle.Items[sourc
 target.RevoluteSpringSoftnessBiasRate.Items[targetIndex] = Me.RevoluteSpringSoftnessBiasRate.Items[sourceIndex]
 target.RevoluteSpringSoftnessMassScale.Items[targetIndex] = Me.RevoluteSpringSoftnessMassScale.Items[sourceIndex]
 target.RevoluteSpringSoftnessImpulseScale.Items[targetIndex] = Me.RevoluteSpringSoftnessImpulseScale.Items[sourceIndex]
+target.PrismaticLocalAxisX.Items[targetIndex] = Me.PrismaticLocalAxisX.Items[sourceIndex]
+target.PrismaticLocalAxisY.Items[targetIndex] = Me.PrismaticLocalAxisY.Items[sourceIndex]
+target.PrismaticAxisX.Items[targetIndex] = Me.PrismaticAxisX.Items[sourceIndex]
+target.PrismaticAxisY.Items[targetIndex] = Me.PrismaticAxisY.Items[sourceIndex]
+target.PrismaticImpulseX.Items[targetIndex] = Me.PrismaticImpulseX.Items[sourceIndex]
+target.PrismaticImpulseY.Items[targetIndex] = Me.PrismaticImpulseY.Items[sourceIndex]
+target.PrismaticSpringImpulse.Items[targetIndex] = Me.PrismaticSpringImpulse.Items[sourceIndex]
+target.PrismaticMotorImpulse.Items[targetIndex] = Me.PrismaticMotorImpulse.Items[sourceIndex]
+target.PrismaticLowerImpulse.Items[targetIndex] = Me.PrismaticLowerImpulse.Items[sourceIndex]
+target.PrismaticUpperImpulse.Items[targetIndex] = Me.PrismaticUpperImpulse.Items[sourceIndex]
+target.PrismaticHertz.Items[targetIndex] = Me.PrismaticHertz.Items[sourceIndex]
+target.PrismaticDampingRatio.Items[targetIndex] = Me.PrismaticDampingRatio.Items[sourceIndex]
+target.PrismaticTargetTranslation.Items[targetIndex] = Me.PrismaticTargetTranslation.Items[sourceIndex]
+target.PrismaticMaxMotorForce.Items[targetIndex] = Me.PrismaticMaxMotorForce.Items[sourceIndex]
+target.PrismaticMotorSpeed.Items[targetIndex] = Me.PrismaticMotorSpeed.Items[sourceIndex]
+target.PrismaticReferenceAngle.Items[targetIndex] = Me.PrismaticReferenceAngle.Items[sourceIndex]
+target.PrismaticLowerTranslation.Items[targetIndex] = Me.PrismaticLowerTranslation.Items[sourceIndex]
+target.PrismaticUpperTranslation.Items[targetIndex] = Me.PrismaticUpperTranslation.Items[sourceIndex]
+target.PrismaticAxialMass.Items[targetIndex] = Me.PrismaticAxialMass.Items[sourceIndex]
+target.PrismaticDeltaAngle.Items[targetIndex] = Me.PrismaticDeltaAngle.Items[sourceIndex]
+target.PrismaticSpringSoftnessBiasRate.Items[targetIndex] = Me.PrismaticSpringSoftnessBiasRate.Items[sourceIndex]
+target.PrismaticSpringSoftnessMassScale.Items[targetIndex] = Me.PrismaticSpringSoftnessMassScale.Items[sourceIndex]
+target.PrismaticSpringSoftnessImpulseScale.Items[targetIndex] = Me.PrismaticSpringSoftnessImpulseScale.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -732,5 +879,28 @@ Me.RevoluteDeltaAngle.Clear()
 Me.RevoluteSpringSoftnessBiasRate.Clear()
 Me.RevoluteSpringSoftnessMassScale.Clear()
 Me.RevoluteSpringSoftnessImpulseScale.Clear()
+Me.PrismaticLocalAxisX.Clear()
+Me.PrismaticLocalAxisY.Clear()
+Me.PrismaticAxisX.Clear()
+Me.PrismaticAxisY.Clear()
+Me.PrismaticImpulseX.Clear()
+Me.PrismaticImpulseY.Clear()
+Me.PrismaticSpringImpulse.Clear()
+Me.PrismaticMotorImpulse.Clear()
+Me.PrismaticLowerImpulse.Clear()
+Me.PrismaticUpperImpulse.Clear()
+Me.PrismaticHertz.Clear()
+Me.PrismaticDampingRatio.Clear()
+Me.PrismaticTargetTranslation.Clear()
+Me.PrismaticMaxMotorForce.Clear()
+Me.PrismaticMotorSpeed.Clear()
+Me.PrismaticReferenceAngle.Clear()
+Me.PrismaticLowerTranslation.Clear()
+Me.PrismaticUpperTranslation.Clear()
+Me.PrismaticAxialMass.Clear()
+Me.PrismaticDeltaAngle.Clear()
+Me.PrismaticSpringSoftnessBiasRate.Clear()
+Me.PrismaticSpringSoftnessMassScale.Clear()
+Me.PrismaticSpringSoftnessImpulseScale.Clear()
 End Sub
 End Class

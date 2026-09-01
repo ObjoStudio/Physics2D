@@ -303,6 +303,9 @@ End If
 If Me.Type = JointType.RevoluteJoint Then
 Return JointSolver.GetRevoluteJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
+If Me.Type = JointType.PrismaticJoint Then
+Return JointSolver.GetPrismaticJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return New Vector2(0.0, 0.0)
 End Function
 
@@ -318,6 +321,9 @@ Return JointSolver.GetMotorJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex,
 End If
 If Me.Type = JointType.RevoluteJoint Then
 Return JointSolver.GetRevoluteJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
+If Me.Type = JointType.PrismaticJoint Then
+Return JointSolver.GetPrismaticJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
 Return 0.0
 End Function

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9PrismaticWorkload",
+  "Id": "a6c41d9e-2f83-4b57-9e2d-8c5b7a1f60d4",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9PrismaticWorkload-a6c41d9e-2f83-4b57-9e2d-8c5b7a1f60d4.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

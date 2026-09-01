@@ -1,0 +1,268 @@
+# Public prismatic joint façade, ported from the b2PrismaticJoint_* surface
+# in prismatic_joint.c. The joint lets two bodies slide along one axis; a
+# spring, limits, and a motor optionally act on that translation. Tuning
+# changes deliberately do not wake the bodies, matching upstream; the
+# solver picks up new values on the next step. Enabling or disabling the
+# spring, limits, or motor clears the corresponding accumulated impulses
+# exactly like the upstream toggles. Setters store plain values where
+# upstream stores plain values and throw where upstream asserts. The façade
+# reads and writes its row in the owning JointSims store.
+Class PrismaticJoint Inherits Joint
+## Enables the linear spring, ported from b2PrismaticJoint_EnableSpring.
+## Toggling clears the accumulated spring impulse.
+Sub EnableSpring(enableSpring As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableSpring Then
+flag = 1
+End If
+If flag <> store.EnableSpring.Items[Me.LocalIndex] Then
+store.EnableSpring.Items[Me.LocalIndex] = flag
+store.PrismaticSpringImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the linear spring is active, ported from
+## b2PrismaticJoint_IsSpringEnabled.
+Function IsSpringEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableSpring.Items[Me.LocalIndex] <> 0
+End Function
+
+## Spring stiffness in hertz, ported from b2PrismaticJoint_SetSpringHertz.
+Sub SetSpringHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).PrismaticHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Spring stiffness in hertz, ported from b2PrismaticJoint_GetSpringHertz.
+Function GetSpringHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticHertz.Items[Me.LocalIndex]
+End Function
+
+## Spring damping ratio, ported from
+## b2PrismaticJoint_SetSpringDampingRatio.
+Sub SetSpringDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).PrismaticDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Spring damping ratio, ported from
+## b2PrismaticJoint_GetSpringDampingRatio.
+Function GetSpringDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## Target translation in metres, ported from
+## b2PrismaticJoint_SetTargetTranslation. Changes apply from the next step
+## and do not wake the bodies.
+Sub SetTargetTranslation(translation As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).PrismaticTargetTranslation.Items[Me.LocalIndex] = translation
+End Sub
+
+## Target translation in metres, ported from
+## b2PrismaticJoint_GetTargetTranslation.
+Function GetTargetTranslation() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticTargetTranslation.Items[Me.LocalIndex]
+End Function
+
+## Current translation in metres along the axis, ported from
+## b2PrismaticJoint_GetTranslation: the body B anchor point minus the
+## body A anchor point projected on the live axis. Allocates the returned
+## query vectors.
+Function GetTranslation() As Double
+Me.CheckValid()
+Var transformA As Transform = Me.Owner.GetBodyTransform(Me.GetBodyA())
+Var transformB As Transform = Me.Owner.GetBodyTransform(Me.GetBodyB())
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var axisX As Double = transformA.Q.C * store.PrismaticLocalAxisX.Items[Me.LocalIndex] - transformA.Q.S * store.PrismaticLocalAxisY.Items[Me.LocalIndex]
+Var axisY As Double = transformA.Q.S * store.PrismaticLocalAxisX.Items[Me.LocalIndex] + transformA.Q.C * store.PrismaticLocalAxisY.Items[Me.LocalIndex]
+# Anchor points in world space.
+Var localA As Vector2 = Me.GetLocalAnchorA()
+Var localB As Vector2 = Me.GetLocalAnchorB()
+Var pAX As Double = transformA.P.X + transformA.Q.C * localA.X - transformA.Q.S * localA.Y
+Var pAY As Double = transformA.P.Y + transformA.Q.S * localA.X + transformA.Q.C * localA.Y
+Var pBX As Double = transformB.P.X + transformB.Q.C * localB.X - transformB.Q.S * localB.Y
+Var pBY As Double = transformB.P.Y + transformB.Q.S * localB.X + transformB.Q.C * localB.Y
+Return (pBX - pAX) * axisX + (pBY - pAY) * axisY
+End Function
+
+## Current translation speed in metres per second, ported from
+## b2PrismaticJoint_GetSpeed. Allocates the returned query vectors.
+Function GetSpeed() As Double
+Me.CheckValid()
+Var bodyA As Body = Me.GetBodyA()
+Var bodyB As Body = Me.GetBodyB()
+Var transformA As Transform = Me.Owner.GetBodyTransform(bodyA)
+Var transformB As Transform = Me.Owner.GetBodyTransform(bodyB)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var axisX As Double = transformA.Q.C * store.PrismaticLocalAxisX.Items[Me.LocalIndex] - transformA.Q.S * store.PrismaticLocalAxisY.Items[Me.LocalIndex]
+Var axisY As Double = transformA.Q.S * store.PrismaticLocalAxisX.Items[Me.LocalIndex] + transformA.Q.C * store.PrismaticLocalAxisY.Items[Me.LocalIndex]
+# Anchor offsets from the centres of mass in world space.
+Var localA As Vector2 = Me.GetLocalAnchorA()
+Var localB As Vector2 = Me.GetLocalAnchorB()
+Var centerLocalA As Vector2 = bodyA.GetLocalCenterOfMass()
+Var centerLocalB As Vector2 = bodyB.GetLocalCenterOfMass()
+Var rAX As Double = transformA.Q.C * (localA.X - centerLocalA.X) - transformA.Q.S * (localA.Y - centerLocalA.Y)
+Var rAY As Double = transformA.Q.S * (localA.X - centerLocalA.X) + transformA.Q.C * (localA.Y - centerLocalA.Y)
+Var rBX As Double = transformB.Q.C * (localB.X - centerLocalB.X) - transformB.Q.S * (localB.Y - centerLocalB.Y)
+Var rBY As Double = transformB.Q.S * (localB.X - centerLocalB.X) + transformB.Q.C * (localB.Y - centerLocalB.Y)
+Var centerA As Vector2 = Me.Owner.GetBodyWorldCenterOfMass(bodyA)
+Var centerB As Vector2 = Me.Owner.GetBodyWorldCenterOfMass(bodyB)
+Var dX As Double = centerB.X - centerA.X + rBX - rAX
+Var dY As Double = centerB.Y - centerA.Y + rBY - rAY
+Var vA As Vector2 = Me.Owner.GetBodyLinearVelocity(bodyA)
+Var vB As Vector2 = Me.Owner.GetBodyLinearVelocity(bodyB)
+Var wA As Double = Me.Owner.GetBodyAngularVelocity(bodyA)
+Var wB As Double = Me.Owner.GetBodyAngularVelocity(bodyB)
+Var vRelX As Double = vB.X - wB * rBY - (vA.X - wA * rAY)
+Var vRelY As Double = vB.Y + wB * rBX - (vA.Y + wA * rAX)
+Return dX * (wA * axisY) - dY * (wA * axisX) + axisX * vRelX + axisY * vRelY
+End Function
+
+## Enables the translation limits, ported from
+## b2PrismaticJoint_EnableLimit. Toggling clears both accumulated limit
+## impulses.
+Sub EnableLimit(enableLimit As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableLimit Then
+flag = 1
+End If
+If flag <> store.EnableLimit.Items[Me.LocalIndex] Then
+store.EnableLimit.Items[Me.LocalIndex] = flag
+store.PrismaticLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.PrismaticUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the translation limits are active, ported from
+## b2PrismaticJoint_IsLimitEnabled.
+Function IsLimitEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableLimit.Items[Me.LocalIndex] <> 0
+End Function
+
+## Lower translation limit in metres, ported from
+## b2PrismaticJoint_GetLowerLimit.
+Function GetLowerLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticLowerTranslation.Items[Me.LocalIndex]
+End Function
+
+## Upper translation limit in metres, ported from
+## b2PrismaticJoint_GetUpperLimit.
+Function GetUpperLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticUpperTranslation.Items[Me.LocalIndex]
+End Function
+
+## Sets both translation limits in metres, ported from
+## b2PrismaticJoint_SetLimits. The lower limit must not exceed the upper
+## limit, matching the upstream assertion; changing the values clears both
+## accumulated limit impulses.
+Sub SetLimits(lower As Double, upper As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not lower.IsFinite() Or Not upper.IsFinite() Then
+Throw New InvalidArgumentException("Prismatic joint limits must be finite")
+End If
+If lower > upper Then
+Throw New InvalidArgumentException("Prismatic joint lower limit must not exceed the upper limit")
+End If
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+If lower <> store.PrismaticLowerTranslation.Items[Me.LocalIndex] Or upper <> store.PrismaticUpperTranslation.Items[Me.LocalIndex] Then
+store.PrismaticLowerTranslation.Items[Me.LocalIndex] = lower
+store.PrismaticUpperTranslation.Items[Me.LocalIndex] = upper
+store.PrismaticLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.PrismaticUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## Enables the translation motor, ported from
+## b2PrismaticJoint_EnableMotor. Toggling clears the accumulated motor
+## impulse.
+Sub EnableMotor(enableMotor As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableMotor Then
+flag = 1
+End If
+If flag <> store.EnableMotor.Items[Me.LocalIndex] Then
+store.EnableMotor.Items[Me.LocalIndex] = flag
+store.PrismaticMotorImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the translation motor is active, ported from
+## b2PrismaticJoint_IsMotorEnabled.
+Function IsMotorEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableMotor.Items[Me.LocalIndex] <> 0
+End Function
+
+## Desired motor speed in metres per second, ported from
+## b2PrismaticJoint_SetMotorSpeed. Changes apply from the next step.
+Sub SetMotorSpeed(motorSpeed As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).PrismaticMotorSpeed.Items[Me.LocalIndex] = motorSpeed
+End Sub
+
+## Desired motor speed in metres per second, ported from
+## b2PrismaticJoint_GetMotorSpeed.
+Function GetMotorSpeed() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticMotorSpeed.Items[Me.LocalIndex]
+End Function
+
+## Maximum motor force in newtons, ported from
+## b2PrismaticJoint_SetMaxMotorForce. Changes apply from the next step.
+Sub SetMaxMotorForce(force As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).PrismaticMaxMotorForce.Items[Me.LocalIndex] = force
+End Sub
+
+## Maximum motor force in newtons, ported from
+## b2PrismaticJoint_GetMaxMotorForce.
+Function GetMaxMotorForce() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticMaxMotorForce.Items[Me.LocalIndex]
+End Function
+
+## Force the motor applied this step in newtons, ported from
+## b2PrismaticJoint_GetMotorForce.
+Function GetMotorForce() As Double
+Me.CheckValid()
+Return Me.Owner.InvH * Me.Owner.GetJointSims(Me).PrismaticMotorImpulse.Items[Me.LocalIndex]
+End Function
+
+## The constrained reference angle in radians, ported from
+## b2Joint_GetReferenceAngle for the prismatic family.
+Override Function GetReferenceAngle() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).PrismaticReferenceAngle.Items[Me.LocalIndex]
+End Function
+
+## The local axis in body A's frame, ported from b2Joint_GetLocalAxisA for
+## the prismatic family. Returns a new Vector2 copy; safe to retain.
+Override Function GetLocalAxisA() As Vector2
+Me.CheckValid()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return New Vector2(store.PrismaticLocalAxisX.Items[Me.LocalIndex], store.PrismaticLocalAxisY.Items[Me.LocalIndex])
+End Function
+End Class

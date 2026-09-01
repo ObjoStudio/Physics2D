@@ -195,6 +195,17 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     the base `EnableSpring`/`EnableLimit`/`EnableMotor` flag columns and
     stores its symmetric 2x2 point-to-point solve inline because the
     combined matrix changes every iteration with the delta rotations.
+35. **Prismatic joint axis and defaults.** The upstream prismatic default
+    axis is the world X axis (`b2DefaultPrismaticJointDef`), and
+    `b2CreatePrismaticJoint` normalizes `localAxisA` through `b2Normalize`,
+    whose degenerate branch leaves a zero axis zero; Physics2D matches
+    both. `b2PrismaticJoint_SetLimits` asserts only lower not above upper
+    (translations have no pi range) and Physics2D throws instead; the
+    remaining validation and plain-setter policy matches difference 34. The
+    block solve keeps the upstream fixed-rotation substitution
+    (`k22 = 1` when both rotational inertias vanish) and the axial
+    effective mass is prepared once per step from the anchor-line torque
+    arms.
 
 ## Public Symbol Inventory
 

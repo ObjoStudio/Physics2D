@@ -1,10 +1,11 @@
 # Smoke application. It proves that the Physics2D module assembles from nested
 # Shared Code source items and compiles in a project-type-neutral program, and
-# doubles as the compact distance-, mouse-, motor-, and revolute-joint
-# examples: two boxes connected by a spring-loaded distance joint that is
-# stretched and released, a third box dragged to a target with a mouse joint,
-# a fourth box driven to a position and angle pose with a motor joint, and a
-# fifth box swinging on a revolute hinge held by a rotational spring.
+# doubles as the compact distance-, mouse-, motor-, revolute-, and prismatic-
+# joint examples: two boxes connected by a spring-loaded distance joint that
+# is stretched and released, a third box dragged to a target with a mouse
+# joint, a fourth box driven to a position and angle pose with a motor joint,
+# a fifth box swinging on a revolute hinge held by a rotational spring, and a
+# sixth box shuttling along a prismatic rail under a sine-speed motor.
 Import Physics2D
 
 Class App Inherits CommandLineApplication
@@ -128,12 +129,36 @@ For i As Integer = 1 To 240
   world.StepWorld(1.0 / 60.0)
 Next
 
+# Slide a box on a rail: a motor-driven prismatic joint shuttles the box
+# along the axis with a sine speed profile.
+Var sliderDef As New BodyDefinition()
+sliderDef.Type = BodyType.DynamicBody
+sliderDef.Position = New Vector2(4.0, 1.5)
+Var slider As Body = world.CreateBody(sliderDef)
+slider.CreatePolygon(New ShapeDefinition(), Polygon.MakeBox(0.25, 0.25))
+
+Var railDef As New PrismaticJointDefinition()
+railDef.BodyA = ground
+railDef.BodyB = slider
+railDef.LocalAnchorA = New Vector2(4.0, 1.5)
+railDef.LocalAnchorB = New Vector2(0.0, 0.0)
+railDef.LocalAxisA = New Vector2(1.0, 0.0)
+railDef.EnableMotor = True
+railDef.MaxMotorForce = 20.0
+Var rail As PrismaticJoint = world.CreatePrismaticJoint(railDef)
+
+For i As Integer = 1 To 240
+  rail.SetMotorSpeed(0.75 * Maths.Sin(0.1 * i))
+  world.StepWorld(1.0 / 60.0)
+Next
+
 Print("Physics2D module imported successfully.")
 Print("Hanging box at (" + spring.GetBodyB().GetPosition().X.ToString() + ", " + spring.GetBodyB().GetPosition().Y.ToString() + ") after resting on the ground")
 Print("Rod force " + rod.GetConstraintForce().ToString() + " N")
 Print("Dragged box at (" + dragged.GetPosition().X.ToString() + ", " + dragged.GetPosition().Y.ToString() + ") after the mouse joint drag")
 Print("Driven box at (" + driven.GetPosition().X.ToString() + ", " + driven.GetPosition().Y.ToString() + ") angle " + Rot.GetAngle(driven.GetRotation()).ToString() + " rad after the motor joint drive")
 Print("Pendulum at angle " + hinge.GetAngle().ToString() + " rad held by the revolute spring")
+Print("Slider at translation " + rail.GetTranslation().ToString() + " m on the prismatic rail")
 Return 0
 End Event
 End Class

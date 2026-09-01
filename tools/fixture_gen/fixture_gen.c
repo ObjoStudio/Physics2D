@@ -1155,11 +1155,123 @@ static void EmitRevoluteCases(void)
 	EmitRevoluteScene("limits", 2.0f, 0, RevoluteConfigureLimits);
 }
 
+// ---------------------------------------------------- prismatic joints ----
+
+// Prismatic-joint scene fixture: four deterministic slider cases stepped
+// with the upstream default of four substeps. Every case pins a 0.25 kg
+// box to a static ground through a slider anchored at (0, -0.5) and ends
+// asleep, so the records are stable across float widths. The joint line
+// carries the final constraint force, torque, and translation.
+static void DumpPrismaticJoint(const char* name, b2JointId jointId)
+{
+	b2Vec2 force = b2Joint_GetConstraintForce(jointId);
+	float torque = b2Joint_GetConstraintTorque(jointId);
+	float translation = b2PrismaticJoint_GetTranslation(jointId);
+	printf("joint|%s|prismatic|", name);
+	PrintNum(force.x); printf(" ");
+	PrintNum(force.y); printf(" ");
+	PrintNum(torque); printf(" ");
+	PrintNum(translation); printf("\n");
+}
+
+static void EmitPrismaticScene(const char* name, int tilted, int kickAt30, void (*configure)(b2JointId jointId))
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	groundDef.position = (b2Vec2){0.0f, -1.0f};
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){0.0f, -0.5f};
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	b2PrismaticJointDef jointDef = b2DefaultPrismaticJointDef();
+	jointDef.bodyIdA = groundId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.localAnchorA = (b2Vec2){0.0f, 0.5f};
+	jointDef.localAnchorB = (b2Vec2){0.0f, 0.0f};
+	if (tilted)
+	{
+		// A diagonal rail loads the axis with a gravity component.
+		jointDef.localAxisA = (b2Vec2){1.0f, 1.0f};
+	}
+	b2JointId jointId = b2CreatePrismaticJoint(worldId, &jointDef);
+	configure(jointId);
+
+	for (int frame = 0; frame < 240; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+		if (frame == 30 && kickAt30)
+		{
+			if (tilted)
+			{
+				b2Body_SetLinearVelocity(bodyId, (b2Vec2){0.0f, -2.0f});
+			}
+			else
+			{
+				b2Body_SetLinearVelocity(bodyId, (b2Vec2){1.5f, 0.0f});
+			}
+		}
+	}
+
+	DumpJointBody(name, 0, bodyId);
+	DumpPrismaticJoint(name, jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void PrismaticConfigureLimits(b2JointId jointId)
+{
+	// The kicked box slides along the axis until the upper limit stops it.
+	b2PrismaticJoint_EnableLimit(jointId, true);
+	b2PrismaticJoint_SetLimits(jointId, -1.0f, 1.0f);
+}
+
+static void PrismaticConfigureTiltedLimits(b2JointId jointId)
+{
+	// The diagonal rail carries a gravity component, so the lower limit
+	// holds the box against part of its weight.
+	b2PrismaticJoint_EnableLimit(jointId, true);
+	b2PrismaticJoint_SetLimits(jointId, -0.5f, 0.5f);
+}
+
+static void PrismaticConfigureSpring(b2JointId jointId)
+{
+	// A damped 3 Hz spring drives the box to half a metre along the axis;
+	// gravity is perpendicular, so the settled translation matches the
+	// target.
+	b2PrismaticJoint_EnableSpring(jointId, true);
+	b2PrismaticJoint_SetSpringHertz(jointId, 3.0f);
+	b2PrismaticJoint_SetSpringDampingRatio(jointId, 0.7f);
+	b2PrismaticJoint_SetTargetTranslation(jointId, 0.5f);
+}
+
+static void PrismaticConfigureBrake(b2JointId jointId)
+{
+	// A zero-speed motor acts as a force-clamped brake on the kicked box.
+	b2PrismaticJoint_EnableMotor(jointId, true);
+	b2PrismaticJoint_SetMaxMotorForce(jointId, 5.0f);
+}
+
+static void EmitPrismaticCases(void)
+{
+	EmitPrismaticScene("limits", 0, 1, PrismaticConfigureLimits);
+	EmitPrismaticScene("tilted", 1, 0, PrismaticConfigureTiltedLimits);
+	EmitPrismaticScene("spring", 0, 0, PrismaticConfigureSpring);
+	EmitPrismaticScene("brake", 0, 1, PrismaticConfigureBrake);
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
 	{
-		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse|joint_motor|joint_revolute>\n");
+		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse|joint_motor|joint_revolute|joint_prismatic>\n");
 		return 2;
 	}
 
@@ -1178,6 +1290,7 @@ int main(int argc, char** argv)
 	else if (strcmp(name, "joint_mouse") == 0) EmitJointMouse();
 	else if (strcmp(name, "joint_motor") == 0) EmitMotorCases();
 	else if (strcmp(name, "joint_revolute") == 0) EmitRevoluteCases();
+	else if (strcmp(name, "joint_prismatic") == 0) EmitPrismaticCases();
 	else
 	{
 		fprintf(stderr, "unknown fixture: %s\n", name);
