@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "WorldMoverCastContext",
+  "Id": "586ec8b1-817e-47d4-ba74-8f390a4e59a1",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "WorldMoverCastContext.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

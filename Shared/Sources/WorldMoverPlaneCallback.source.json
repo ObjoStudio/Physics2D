@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "WorldMoverPlaneCallback",
+  "Id": "3138eed4-e53a-4994-9ccd-61949a44641e",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "WorldMoverPlaneCallback.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

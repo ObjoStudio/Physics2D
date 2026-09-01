@@ -25,6 +25,14 @@ Var rounded As Double = Maths.Round(quotient, RoundingMode.ToEven)
 Return radians - rounded * TWO_PI
 End Function
 
+## True when the vector is a unit vector within the upstream tolerance,
+## ported from b2IsNormalized: the squared length differs from one by less
+## than 100 float epsilons.
+Shared Function IsNormalized(a As Vector2) As Boolean
+Var aa As Double = a.X * a.X + a.Y * a.Y
+Return Maths.Abs(1.0 - aa) < 100.0 * PhysicsConstants.FLT_EPSILON
+End Function
+
 ## Deterministic arctangent ported from upstream b2Atan2. The minimax
 ## polynomial was tuned for 32-bit floats; Physics2D keeps the same formula
 ## and constants so angle results follow upstream behaviour.

@@ -106,6 +106,12 @@ Private Property mOverlapContext As WorldOverlapContext
 Private Property mRayCastContext As WorldRayCastContext
 ## Reused shape cast query adapter.
 Private Property mShapeCastContext As WorldShapeCastContext
+
+## Reusable mover cast context; engine-internal.
+Property mMoverCastContext As WorldMoverCastContext
+
+## Reusable mover collide context; engine-internal.
+Property mMoverCollideContext As WorldMoverCollideContext
 ## Reused local ray cast input for shape casts.
 Private Property mLocalRayInput As RayCastInput
 ## Reused local shape cast input for shape casts.
@@ -254,6 +260,88 @@ Me.CheckNotLocked()
 Me.BroadPhase.RebuildStaticTree()
 End Sub
 
+## Sweeps a capsule mover through the world and returns the earliest
+## impact fraction, ported from b2World_CastMover. The mover starts
+## encroaching: shapes it already overlaps are ignored, matching the
+## upstream can-encroach behaviour, and shapes whose filters reject the
+## query filter are skipped. Returns 1 when the mover reaches the full
+## translation and 0 when it starts blocked. Throws while the world is
+## locked, on non-finite translations, or when the mover radius is not
+## above twice the linear slop.
+Function CastMover(mover As Capsule, translation As Vector2, filter As QueryFilter) As Double
+Me.CheckNotLocked()
+Me.CheckDefinition(filter, "QueryFilter")
+If Not translation.X.IsFinite() Or Not translation.Y.IsFinite() Then
+Throw New InvalidArgumentException("Mover translation must be finite")
+End If
+If Not mover.Radius.IsFinite() Or mover.Radius <= 2.0 * PhysicsConstants.LINEAR_SLOP Then
+Throw New InvalidArgumentException("Mover radius must be finite and above twice the linear slop")
+End If
+If Not mover.Center1.X.IsFinite() Or Not mover.Center1.Y.IsFinite() Or Not mover.Center2.X.IsFinite() Or Not mover.Center2.Y.IsFinite() Then
+Throw New InvalidArgumentException("Mover centres must be finite")
+End If
+Var moverPoints() As Vector2 = [mover.Center1, mover.Center2]
+Var moverProxy As ShapeProxy = ShapeProxy.Make(moverPoints, 2, mover.Radius)
+Var fraction As Double = 1.0
+Var treeIndex As Integer = 0
+While treeIndex < 3
+Var tree As DynamicTree = Me.BroadPhase.Trees[treeIndex]
+# Walk the tree candidates and run the exact pair cast per shape. The
+# tree callback protocol narrows with the running fraction; a zero
+# fraction terminates.
+Var cast As New ShapeCastInput
+cast.Proxy = moverProxy
+cast.Translation = New Vector2(translation.X, translation.Y)
+cast.MaxFraction = fraction
+cast.CanEncroach = True
+Me.mMoverCastContext.Owner = Me
+Me.mMoverCastContext.Filter = filter
+Me.mMoverCastContext.Fraction = fraction
+tree.ShapeCastTo(cast, filter.MaskBits, Me.mMoverCastContext, New TreeStats)
+If Me.mMoverCastContext.Fraction = 0.0 Then
+Return 0.0
+End If
+fraction = Me.mMoverCastContext.Fraction
+treeIndex = treeIndex + 1
+Wend
+Return fraction
+End Function
+
+## Collides a capsule mover against the world and registers one collision
+## plane per overlapping shape, ported from b2World_CollideMover. The
+## callback receives each hit shape and its world-space plane result and
+## returns True to continue or False to stop early. Throws while the
+## world is locked or when the mover radius is not above twice the linear
+## slop. Allocates nothing in the traversal; the caller callback owns any
+## accumulation.
+Sub CollideMover(mover As Capsule, filter As QueryFilter, callback As WorldMoverPlaneCallback)
+Me.CheckNotLocked()
+Me.CheckDefinition(filter, "QueryFilter")
+If Not mover.Radius.IsFinite() Or mover.Radius <= 2.0 * PhysicsConstants.LINEAR_SLOP Then
+Throw New InvalidArgumentException("Mover radius must be finite and above twice the linear slop")
+End If
+If Not mover.Center1.X.IsFinite() Or Not mover.Center1.Y.IsFinite() Or Not mover.Center2.X.IsFinite() Or Not mover.Center2.Y.IsFinite() Then
+Throw New InvalidArgumentException("Mover centres must be finite")
+End If
+# Swept bounds of the mover at rest, inflated by the radius.
+Var minX As Double = Maths.Min(mover.Center1.X, mover.Center2.X)
+Var minY As Double = Maths.Min(mover.Center1.Y, mover.Center2.Y)
+Var maxX As Double = Maths.Max(mover.Center1.X, mover.Center2.X)
+Var maxY As Double = Maths.Max(mover.Center1.Y, mover.Center2.Y)
+Var aabb As New AABB
+aabb.LowerBound.Set(minX - mover.Radius, minY - mover.Radius)
+aabb.UpperBound.Set(maxX + mover.Radius, maxY + mover.Radius)
+Me.mMoverCollideContext.Owner = Me
+Me.mMoverCollideContext.Filter = filter
+Me.mMoverCollideContext.Mover = mover
+Me.mMoverCollideContext.UserCallback = callback
+Var treeIndex As Integer = 0
+While treeIndex < 3
+Me.BroadPhase.Trees[treeIndex].QueryTo(aabb, filter.MaskBits, Me.mMoverCollideContext, New TreeStats)
+treeIndex = treeIndex + 1
+Wend
+End Sub
+
 ## Returns the batched event views for the most recent step. Contact
 ## begin/end, sensor begin/end, hit, and body-move events stay valid until
 ## the next step begins or ends respectively; see WorldEvents for the
@@ -376,6 +464,8 @@ Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), True))
 Me.mOverlapContext = New WorldOverlapContext
 Me.mRayCastContext = New WorldRayCastContext
 Me.mShapeCastContext = New WorldShapeCastContext
+Me.mMoverCastContext = New WorldMoverCastContext
+Me.mMoverCollideContext = New WorldMoverCollideContext
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
 Me.mTransformScratchB = New Transform
@@ -3320,7 +3410,10 @@ End Function
 
 ## Returns the world transform for a shape's owning body, for query
 ## adapters.
-Private Function GetShapeTransform(shape As Shape) As Transform
+## Engine-internal shape transform (body transform composed with the
+## shape's local offset), callable by the world's reusable query context
+## classes like ContinuousHitTest.
+Function GetShapeTransform(shape As Shape) As Transform
 Return Me.GetBodyTransform(Me.Bodies[shape.BodyId])
 End Function
 

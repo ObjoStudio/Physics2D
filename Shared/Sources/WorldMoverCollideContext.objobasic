@@ -1,0 +1,49 @@
+# Engine-internal tree query adapter for world mover collisions, ported from
+# upstream WorldMoverContext and TreeCollideCallback in world.c. One instance
+# is owned by the World and reused across queries. Per candidate shape it
+# runs the mover collide and forwards normalized hit planes to the client
+# callback.
+Class WorldMoverCollideContext Inherits TreeQueryCallback
+## The world driving the query.
+Property Owner As World
+## Query filter applied to candidate shapes.
+Property Filter As QueryFilter
+## The colliding mover capsule.
+Property Mover As Capsule
+## Client callback receiving the registered planes.
+Property UserCallback As WorldMoverPlaneCallback
+
+## Creates an unbound context; the world fills the fields per query.
+Constructor()
+Me.Owner = Nothing
+Me.Filter = New QueryFilter()
+Me.Mover = New Capsule(New Vector2(0.0, 0.0), New Vector2(0.0, 0.0), 0.0)
+Me.UserCallback = Nothing
+End Constructor
+
+## Tree leaf visit: filter, mover collide, then dispatch to the client.
+## Returns True to continue traversal, False to stop early, matching the
+## upstream TreeCollideCallback contract.
+Override Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Var shape As Shape = Me.Owner.Shapes[userData]
+If Not shape.Live Then
+Return True
+End If
+If Not QueryFilter.ShouldCollide(shape.Filter, Me.Filter) Then
+Return True
+End If
+
+Var transform As Transform = Me.Owner.GetShapeTransform(shape)
+Var result As PlaneResult = shape.CollideMover(transform, Me.Mover)
+
+# Ignore degenerate normals exactly like upstream.
+If result.Hit And PhysicsMaths.IsNormalized(result.Plane.Normal) = False Then
+Return True
+End If
+If result.Hit Then
+Return Me.UserCallback.VisitPlane(shape, result)
+End If
+Return True
+End Function
+End Class

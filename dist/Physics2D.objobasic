@@ -71,11 +71,11 @@
 # Input: MotorJointDefinition.objobasic d39fe2e5443b6898e9f6d8d16bded2692c3c8483496be6dbdbe6363b589788d7
 # Input: MouseJoint.objobasic 148e02225783bf7128a2c67af99a94264b0e4e59e9e7bcf141fe38b44e66b0ab
 # Input: MouseJointDefinition.objobasic 28be646a98699dbd233dba1bc466b171d372095f1a5b0ad6c34412916b34d655
-# Input: Mover-89f8b58a-a5cb-43a1-bb4e-216fd2e79a45.objobasic a0bd07eed0ced42bc9789f0e0b4df2d56c8dc159f7df92c4ba3c75068e33f576
+# Input: Mover-89f8b58a-a5cb-43a1-bb4e-216fd2e79a45.objobasic 30b498c55b884371019b1c0f9d080b7185e30ba3aea0a305b083efb2fbb50a1e
 # Input: PairKeySet-7d0b7f56-d56b-4fa5-a84f-5f9f8e86c8b1.objobasic e9ed9cfcac78bbfa2b440fbcc2b61d7c2ad25393624cd226b00a22f274b068b0
 # Input: Physics2D-7e9c2aae.objobasic a482a18a11941d5220f84b085c0175ac07d421ba3760abd25e67ef39e73d443d
 # Input: PhysicsConstants-cc1468ea-13f1-45de-b144-e417e51bf847.objobasic 40d6c1e2b2eaa11a3e599e4e2b09ff29058ba0dcdb22d69143dad2e0612f97a2
-# Input: PhysicsMaths-907a0865-dfe0-466e-92d2-dc339e472d3a.objobasic 8a4d23cd5753583595fa4a535638351b18ea673d1a1667d81fcd7429f6a181a5
+# Input: PhysicsMaths-907a0865-dfe0-466e-92d2-dc339e472d3a.objobasic 475acbcbb6d39a8143a5f8381b071f8c13859989dc22dfda817990971543ffbe
 # Input: Plane-611e5a3a-dc4a-476b-9289-e6bec1dbe7a1.objobasic c8afffbec196c1cdbc82c22286eae1965bc8ead71573f533542997b0ac2afb5f
 # Input: PlaneResult-0a50cbbc-2c28-4672-9ac2-2a7ab494729e.objobasic 7d3bd58e3b238f98a2115f26f16ce0cb50e40ec02dae1326f548a6134f68fcdf
 # Input: PlaneSolverResult-16f2d027-5199-456a-a7dd-b6936ba3fe6e.objobasic 21dc41da8b97e9e898db0aed73d94c225a5651bc9fc88d2046d630c15e72670b
@@ -93,7 +93,7 @@
 # Input: SensorQueryCallback.objobasic 419aeb60aeeaaee029240315f1970e6cac053f1fa122c0e0e3c813747925f7a2
 # Input: SeparationFunction-78667a17-ba12-4e7f-b4fc-428ba678f723.objobasic 3a6d53e6b65a027206033facf93260dc8646353be1597a95cdf3e4bf4f3a314f
 # Input: SeparationResult-964acaa7-f5ff-4e39-a198-75a81617b5e5.objobasic f52de0aa4c122914a799622d4168094f9562db60f8888a899d12c6d03515243d
-# Input: Shape.objobasic accc2adb14b39b419faf13496944c85f8f25d135fde1492a4225c425b42a131e
+# Input: Shape.objobasic 32d5fdf848f5ac67724276b7e90fa0e52dc8673e626bfdb23c723133b13e0ff0
 # Input: ShapeCastInput-1caa227b-308f-4d01-88d3-d97ae90833dc.objobasic b0cab8c32335ec5bafa703389d6b064c00a9f4e7338dace825f8adca9569022c
 # Input: ShapeCastPairInput-3da16779-2b4f-4b54-9941-b9cc5c4abe83.objobasic d6fcaa7682240746180999cc686ab888b181aa106aed40c55d3aa75a825e6776
 # Input: ShapeDefinition.objobasic 9e7748c2d8275ea381c79bbe3c8ee70e674fa6fa61895db63beabec20919617f
@@ -127,16 +127,19 @@
 # Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
 # Input: WheelJoint.objobasic 063db7c796ee6df9b2ed0d4db36d51dec921e3a61ec1b001cd6ab07308136b4d
 # Input: WheelJointDefinition.objobasic 1ae60874c31b501cb219d8af36f26398fea1ad6a74eb924c08d53b70109e0641
-# Input: World.objobasic 73557a52e76525946dd95703931cb965b50a0f38cecf31fa132cd731ad54c276
+# Input: World.objobasic 9aaad5a03cb786d7440a01801c149352080f39ffef204456ef5fb2c5b85d0aeb
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
+# Input: WorldMoverCastContext.objobasic 8fc345845092d5e3be521532ba4c2f3689ae87e4e28788620145307bc88c80b7
+# Input: WorldMoverCollideContext.objobasic 852413232a33ce66c6abbb3cebe1f62b55710e2f5a2fb75dbc13b1db58f5d641
+# Input: WorldMoverPlaneCallback.objobasic 6083e6e711ac09d6c3f5366294b90be6701b858be4d97e421abc1efbe3e0af8f
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
 # Input: WorldOverlapContext.objobasic d6427a128c7da4c7c28607ce9ce2938ee735594398b6d8bddeaffa2f0f678585
 # Input: WorldRayCastContext.objobasic 7c4264d0297661dbf4824b319ee8829160c85017c99cd14f565d93c505c22614
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 9f0499ecd75a6c7d54c0bf3413532f192db6a0b43d3ffb4cf605ae70c4c1d4b9
+# Source content checksum (SHA-256): 7e41cf1062fc48a4aeaeab621c358e208d90dffc821a15b27133e231478f04a3
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -16076,7 +16079,66 @@ End Class
 # Character-mover plane geometry, ported from upstream mover.c. The plane
 # solver relaxes a desired translation against collision planes; the
 # vector clipper removes velocity into planes that registered push.
+# The collide helpers port upstream b2CollideMoverAndCircle/Capsule/
+# Polygon/Segment in geometry.c: GJK shape distance between the shape and
+# the mover capsule with the shape radius excluded from the proxy, and a
+# hit plane when the distance reaches the total radius.
 Class Mover
+## Collides a circle with a mover capsule in local space, ported from
+## b2CollideMoverAndCircle.
+Shared Function CollideCircle(shape As Circle, mover As Capsule) As PlaneResult
+Var points() As Vector2 = [shape.Center]
+Var proxyA As ShapeProxy = ShapeProxy.Make(points, 1, 0.0)
+Return CollideProxy(proxyA, mover.Radius + shape.Radius, mover)
+End Function
+
+## Collides a capsule with a mover capsule in local space, ported from
+## b2CollideMoverAndCapsule.
+Shared Function CollideCapsule(shape As Capsule, mover As Capsule) As PlaneResult
+Var points() As Vector2 = [shape.Center1, shape.Center2]
+Var proxyA As ShapeProxy = ShapeProxy.Make(points, 2, 0.0)
+Return CollideProxy(proxyA, mover.Radius + shape.Radius, mover)
+End Function
+
+## Collides a polygon with a mover capsule in local space, ported from
+## b2CollideMoverAndPolygon.
+Shared Function CollidePolygon(shape As Polygon, mover As Capsule) As PlaneResult
+Var proxyA As ShapeProxy = ShapeProxy.Make(shape.Vertices, shape.Count, shape.Radius)
+Return CollideProxy(proxyA, mover.Radius + shape.Radius, mover)
+End Function
+
+## Collides a segment with a mover capsule in local space, ported from
+## b2CollideMoverAndSegment. The segment radius is excluded from the total
+## radius exactly like upstream, keeping chain ghost behaviour.
+Shared Function CollideSegment(shape As Segment, mover As Capsule) As PlaneResult
+Var points() As Vector2 = [shape.Point1, shape.Point2]
+Var proxyA As ShapeProxy = ShapeProxy.Make(points, 2, 0.0)
+Return CollideProxy(proxyA, mover.Radius, mover)
+End Function
+
+## Shared collide body: shape distance between the shape proxy and the
+## mover capsule (radii excluded from the distance query), then a hit
+## plane when the distance reaches the total radius.
+Private Shared Function CollideProxy(proxyA As ShapeProxy, totalRadius As Double, mover As Capsule) As PlaneResult
+Var input As New DistanceInput
+input.ProxyA = proxyA
+Var moverPoints() As Vector2 = [mover.Center1, mover.Center2]
+input.ProxyB = ShapeProxy.Make(moverPoints, 2, mover.Radius)
+input.TransformA = New Transform(New Vector2(0.0, 0.0), New Rot(1.0, 0.0))
+input.TransformB = New Transform(New Vector2(0.0, 0.0), New Rot(1.0, 0.0))
+input.UseRadii = False
+Var cache As New SimplexCache
+Var output As DistanceOutput = Distance.ShapeDistance(input, cache)
+If output.Distance <= totalRadius Then
+Var result As New PlaneResult
+result.Plane = New Plane(output.Normal.X, output.Normal.Y, totalRadius - output.Distance)
+result.Point = New Vector2(output.PointA.X, output.PointA.Y)
+result.Hit = True
+Return result
+End If
+Return New PlaneResult
+End Function
+
 ## Solves the position of a mover that satisfies the given collision
 ## planes into a new result. The planes' Push values are updated in place,
 ## matching upstream b2SolvePlanes.
@@ -16520,6 +16582,14 @@ Shared Function UnwindAngle(radians As Double) As Double
 Var quotient As Double = radians / TWO_PI
 Var rounded As Double = Maths.Round(quotient, RoundingMode.ToEven)
 Return radians - rounded * TWO_PI
+End Function
+
+## True when the vector is a unit vector within the upstream tolerance,
+## ported from b2IsNormalized: the squared length differs from one by less
+## than 100 float epsilons.
+Shared Function IsNormalized(a As Vector2) As Boolean
+Var aa As Double = a.X * a.X + a.Y * a.Y
+Return Maths.Abs(1.0 - aa) < 100.0 * PhysicsConstants.FLT_EPSILON
 End Function
 
 ## Deterministic arctangent ported from upstream b2Atan2. The minimax
@@ -19165,6 +19235,49 @@ Var c2y As Double = p2y - centroid.Y
 out.MaxExtent = Maths.Sqrt(Maths.Max(c1x * c1x + c1y * c1y, c2x * c2x + c2y * c2y))
 End If
 End Sub
+
+## Collides a capsule mover against this shape, ported from b2CollideMover
+## in shape.c. The mover is transformed into the shape's local frame, the
+## type-dispatched collide runs there, and the hit plane normal rotates
+## back into world space. Returns a result with Hit False when the mover
+## does not reach the shape. Allocates the returned result and the local
+## capsule; a cold-path query convenience.
+Function CollideMover(transform As Transform, moverCapsule As Capsule) As PlaneResult
+Me.Validate()
+# Transform the mover into the shape's local frame.
+Var invC As Double = transform.Q.C
+Var invS As Double = -transform.Q.S
+Var dx As Double = moverCapsule.Center1.X - transform.P.X
+Var dy As Double = moverCapsule.Center1.Y - transform.P.Y
+Var local1 As New Vector2(invC * dx - invS * dy, invS * dx + invC * dy)
+dx = moverCapsule.Center2.X - transform.P.X
+dy = moverCapsule.Center2.Y - transform.P.Y
+Var local2 As New Vector2(invC * dx - invS * dy, invS * dx + invC * dy)
+Var localMover As New Capsule(local1, local2, moverCapsule.Radius)
+Var result As PlaneResult
+If Me.Type = ShapeType.CircleShape Then
+result = Mover.CollideCircle(Me.Circle, localMover)
+ElseIf Me.Type = ShapeType.CapsuleShape Then
+result = Mover.CollideCapsule(Me.Capsule, localMover)
+ElseIf Me.Type = ShapeType.PolygonShape Then
+result = Mover.CollidePolygon(Me.Polygon, localMover)
+ElseIf Me.Type = ShapeType.SegmentShape Then
+result = Mover.CollideSegment(Me.Segment, localMover)
+ElseIf Me.Type = ShapeType.ChainSegmentShape Then
+result = Mover.CollideSegment(Me.ChainSegment.Segment, localMover)
+Else
+Return New PlaneResult
+End If
+If result.Hit = False Then
+Return result
+End If
+# Rotate the plane normal back into world space.
+Var normal As Vector2 = result.Plane.Normal
+Var worldNX As Double = transform.Q.C * normal.X - transform.Q.S * normal.Y
+Var worldNY As Double = transform.Q.S * normal.X + transform.Q.C * normal.Y
+result.Plane.Normal = New Vector2(worldNX, worldNY)
+Return result
+End Function
 End Class
 
 # Input for casting a shape along a translation, ported from upstream
@@ -21226,6 +21339,12 @@ Private Property mOverlapContext As WorldOverlapContext
 Private Property mRayCastContext As WorldRayCastContext
 ## Reused shape cast query adapter.
 Private Property mShapeCastContext As WorldShapeCastContext
+
+## Reusable mover cast context; engine-internal.
+Property mMoverCastContext As WorldMoverCastContext
+
+## Reusable mover collide context; engine-internal.
+Property mMoverCollideContext As WorldMoverCollideContext
 ## Reused local ray cast input for shape casts.
 Private Property mLocalRayInput As RayCastInput
 ## Reused local shape cast input for shape casts.
@@ -21374,6 +21493,88 @@ Me.CheckNotLocked()
 Me.BroadPhase.RebuildStaticTree()
 End Sub
 
+## Sweeps a capsule mover through the world and returns the earliest
+## impact fraction, ported from b2World_CastMover. The mover starts
+## encroaching: shapes it already overlaps are ignored, matching the
+## upstream can-encroach behaviour, and shapes whose filters reject the
+## query filter are skipped. Returns 1 when the mover reaches the full
+## translation and 0 when it starts blocked. Throws while the world is
+## locked, on non-finite translations, or when the mover radius is not
+## above twice the linear slop.
+Function CastMover(mover As Capsule, translation As Vector2, filter As QueryFilter) As Double
+Me.CheckNotLocked()
+Me.CheckDefinition(filter, "QueryFilter")
+If Not translation.X.IsFinite() Or Not translation.Y.IsFinite() Then
+Throw New InvalidArgumentException("Mover translation must be finite")
+End If
+If Not mover.Radius.IsFinite() Or mover.Radius <= 2.0 * PhysicsConstants.LINEAR_SLOP Then
+Throw New InvalidArgumentException("Mover radius must be finite and above twice the linear slop")
+End If
+If Not mover.Center1.X.IsFinite() Or Not mover.Center1.Y.IsFinite() Or Not mover.Center2.X.IsFinite() Or Not mover.Center2.Y.IsFinite() Then
+Throw New InvalidArgumentException("Mover centres must be finite")
+End If
+Var moverPoints() As Vector2 = [mover.Center1, mover.Center2]
+Var moverProxy As ShapeProxy = ShapeProxy.Make(moverPoints, 2, mover.Radius)
+Var fraction As Double = 1.0
+Var treeIndex As Integer = 0
+While treeIndex < 3
+Var tree As DynamicTree = Me.BroadPhase.Trees[treeIndex]
+# Walk the tree candidates and run the exact pair cast per shape. The
+# tree callback protocol narrows with the running fraction; a zero
+# fraction terminates.
+Var cast As New ShapeCastInput
+cast.Proxy = moverProxy
+cast.Translation = New Vector2(translation.X, translation.Y)
+cast.MaxFraction = fraction
+cast.CanEncroach = True
+Me.mMoverCastContext.Owner = Me
+Me.mMoverCastContext.Filter = filter
+Me.mMoverCastContext.Fraction = fraction
+tree.ShapeCastTo(cast, filter.MaskBits, Me.mMoverCastContext, New TreeStats)
+If Me.mMoverCastContext.Fraction = 0.0 Then
+Return 0.0
+End If
+fraction = Me.mMoverCastContext.Fraction
+treeIndex = treeIndex + 1
+Wend
+Return fraction
+End Function
+
+## Collides a capsule mover against the world and registers one collision
+## plane per overlapping shape, ported from b2World_CollideMover. The
+## callback receives each hit shape and its world-space plane result and
+## returns True to continue or False to stop early. Throws while the
+## world is locked or when the mover radius is not above twice the linear
+## slop. Allocates nothing in the traversal; the caller callback owns any
+## accumulation.
+Sub CollideMover(mover As Capsule, filter As QueryFilter, callback As WorldMoverPlaneCallback)
+Me.CheckNotLocked()
+Me.CheckDefinition(filter, "QueryFilter")
+If Not mover.Radius.IsFinite() Or mover.Radius <= 2.0 * PhysicsConstants.LINEAR_SLOP Then
+Throw New InvalidArgumentException("Mover radius must be finite and above twice the linear slop")
+End If
+If Not mover.Center1.X.IsFinite() Or Not mover.Center1.Y.IsFinite() Or Not mover.Center2.X.IsFinite() Or Not mover.Center2.Y.IsFinite() Then
+Throw New InvalidArgumentException("Mover centres must be finite")
+End If
+# Swept bounds of the mover at rest, inflated by the radius.
+Var minX As Double = Maths.Min(mover.Center1.X, mover.Center2.X)
+Var minY As Double = Maths.Min(mover.Center1.Y, mover.Center2.Y)
+Var maxX As Double = Maths.Max(mover.Center1.X, mover.Center2.X)
+Var maxY As Double = Maths.Max(mover.Center1.Y, mover.Center2.Y)
+Var aabb As New AABB
+aabb.LowerBound.Set(minX - mover.Radius, minY - mover.Radius)
+aabb.UpperBound.Set(maxX + mover.Radius, maxY + mover.Radius)
+Me.mMoverCollideContext.Owner = Me
+Me.mMoverCollideContext.Filter = filter
+Me.mMoverCollideContext.Mover = mover
+Me.mMoverCollideContext.UserCallback = callback
+Var treeIndex As Integer = 0
+While treeIndex < 3
+Me.BroadPhase.Trees[treeIndex].QueryTo(aabb, filter.MaskBits, Me.mMoverCollideContext, New TreeStats)
+treeIndex = treeIndex + 1
+Wend
+End Sub
+
 ## Returns the batched event views for the most recent step. Contact
 ## begin/end, sensor begin/end, hit, and body-move events stay valid until
 ## the next step begins or ends respectively; see WorldEvents for the
@@ -21496,6 +21697,8 @@ Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), True))
 Me.mOverlapContext = New WorldOverlapContext
 Me.mRayCastContext = New WorldRayCastContext
 Me.mShapeCastContext = New WorldShapeCastContext
+Me.mMoverCastContext = New WorldMoverCastContext
+Me.mMoverCollideContext = New WorldMoverCollideContext
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
 Me.mTransformScratchB = New Transform
@@ -24440,7 +24643,10 @@ End Function
 
 ## Returns the world transform for a shape's owning body, for query
 ## adapters.
-Private Function GetShapeTransform(shape As Shape) As Transform
+## Engine-internal shape transform (body transform composed with the
+## shape's local offset), callable by the world's reusable query context
+## classes like ContinuousHitTest.
+Function GetShapeTransform(shape As Shape) As Transform
 Return Me.GetBodyTransform(Me.Bodies[shape.BodyId])
 End Function
 
@@ -26765,6 +26971,109 @@ End Function
 Function BodyMoveFellAsleep(index As Integer) As Boolean
 Return Me.mWorld.MoveEventFellAsleep.Items[index] <> 0
 End Function
+End Class
+
+# Engine-internal tree shape cast adapter for world mover casts, ported from
+# upstream WorldMoverCastContext and MoverCastCallback in world.c. One
+# instance is owned by the World and reused across queries. The mover
+# starts encroaching: overlapping shapes are ignored and only exact hits
+# narrow the running fraction.
+Class WorldMoverCastContext Inherits TreeShapeCastCallback
+## The world driving the query.
+Property Owner As World
+## Query filter applied to candidate shapes.
+Property Filter As QueryFilter
+## Running minimum fraction carried across trees.
+Property Fraction As Double
+
+## Creates an unbound context; the world fills the fields per query.
+Constructor()
+Me.Owner = Nothing
+Me.Filter = New QueryFilter()
+Me.Fraction = 1.0
+End Constructor
+
+## Tree leaf visit: filter, exact pair cast, then narrow. Overlapping
+## shapes (zero fraction) are ignored, matching the upstream callback.
+## Returns the new clipping fraction, matching the tree callback protocol.
+Override Function VisitLeaf(input As ShapeCastInput, proxyId As Integer, userData As Integer) As Double
+Pragma Unused proxyId
+Var shape As Shape = Me.Owner.Shapes[userData]
+If Not shape.Live Then
+Return Me.Fraction
+End If
+If Not QueryFilter.ShouldCollide(shape.Filter, Me.Filter) Then
+Return Me.Fraction
+End If
+
+Var output As CastOutput = Me.Owner.ShapeCastShape(input, shape)
+If output.Hit = False Or output.Fraction = 0.0 Then
+# Ignore overlapping shapes.
+Return Me.Fraction
+End If
+
+Me.Fraction = output.Fraction
+Return output.Fraction
+End Function
+End Class
+
+# Engine-internal tree query adapter for world mover collisions, ported from
+# upstream WorldMoverContext and TreeCollideCallback in world.c. One instance
+# is owned by the World and reused across queries. Per candidate shape it
+# runs the mover collide and forwards normalized hit planes to the client
+# callback.
+Class WorldMoverCollideContext Inherits TreeQueryCallback
+## The world driving the query.
+Property Owner As World
+## Query filter applied to candidate shapes.
+Property Filter As QueryFilter
+## The colliding mover capsule.
+Property Mover As Capsule
+## Client callback receiving the registered planes.
+Property UserCallback As WorldMoverPlaneCallback
+
+## Creates an unbound context; the world fills the fields per query.
+Constructor()
+Me.Owner = Nothing
+Me.Filter = New QueryFilter()
+Me.Mover = New Capsule(New Vector2(0.0, 0.0), New Vector2(0.0, 0.0), 0.0)
+Me.UserCallback = Nothing
+End Constructor
+
+## Tree leaf visit: filter, mover collide, then dispatch to the client.
+## Returns True to continue traversal, False to stop early, matching the
+## upstream TreeCollideCallback contract.
+Override Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Var shape As Shape = Me.Owner.Shapes[userData]
+If Not shape.Live Then
+Return True
+End If
+If Not QueryFilter.ShouldCollide(shape.Filter, Me.Filter) Then
+Return True
+End If
+
+Var transform As Transform = Me.Owner.GetShapeTransform(shape)
+Var result As PlaneResult = shape.CollideMover(transform, Me.Mover)
+
+# Ignore degenerate normals exactly like upstream.
+If result.Hit And PhysicsMaths.IsNormalized(result.Plane.Normal) = False Then
+Return True
+End If
+If result.Hit Then
+Return Me.UserCallback.VisitPlane(shape, result)
+End If
+Return True
+End Function
+End Class
+
+# Client callback receiving the collision planes a capsule mover registers
+# against world shapes, ported from upstream b2PlaneResultFcn in box2d.h.
+# Return True to continue traversal or False to stop it early.
+Abstract Class WorldMoverPlaneCallback
+## Called for every shape the mover collides with. Returning True
+## continues the query; False terminates it early.
+Abstract Function VisitPlane(shape As Shape, result As PlaneResult) As Boolean
 End Class
 
 # Client callback receiving the shapes of a world overlap query, ported from

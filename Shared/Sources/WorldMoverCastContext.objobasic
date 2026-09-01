@@ -1,0 +1,43 @@
+# Engine-internal tree shape cast adapter for world mover casts, ported from
+# upstream WorldMoverCastContext and MoverCastCallback in world.c. One
+# instance is owned by the World and reused across queries. The mover
+# starts encroaching: overlapping shapes are ignored and only exact hits
+# narrow the running fraction.
+Class WorldMoverCastContext Inherits TreeShapeCastCallback
+## The world driving the query.
+Property Owner As World
+## Query filter applied to candidate shapes.
+Property Filter As QueryFilter
+## Running minimum fraction carried across trees.
+Property Fraction As Double
+
+## Creates an unbound context; the world fills the fields per query.
+Constructor()
+Me.Owner = Nothing
+Me.Filter = New QueryFilter()
+Me.Fraction = 1.0
+End Constructor
+
+## Tree leaf visit: filter, exact pair cast, then narrow. Overlapping
+## shapes (zero fraction) are ignored, matching the upstream callback.
+## Returns the new clipping fraction, matching the tree callback protocol.
+Override Function VisitLeaf(input As ShapeCastInput, proxyId As Integer, userData As Integer) As Double
+Pragma Unused proxyId
+Var shape As Shape = Me.Owner.Shapes[userData]
+If Not shape.Live Then
+Return Me.Fraction
+End If
+If Not QueryFilter.ShouldCollide(shape.Filter, Me.Filter) Then
+Return Me.Fraction
+End If
+
+Var output As CastOutput = Me.Owner.ShapeCastShape(input, shape)
+If output.Hit = False Or output.Fraction = 0.0 Then
+# Ignore overlapping shapes.
+Return Me.Fraction
+End If
+
+Me.Fraction = output.Fraction
+Return output.Fraction
+End Function
+End Class

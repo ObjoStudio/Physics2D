@@ -86,4 +86,127 @@ world.StepWorld(1.0 / 60.0)
 i = i + 1
 Wend
 End Sub
+
+## CastMover sweeps a capsule through the world: the fraction shrinks at
+## walls, overlapping starts are ignored (encroachment), and filters are
+## honoured, ported from b2World_CastMover.
+Public Sub TestCastMover()
+Var world As World = Stage10Tests.MakeMoverWorld()
+# A vertical capsule sweeping right hits the wall's left face at
+# x = 2.5: the leading edge starts at 1.2, so the contact fraction is
+# (2.5 - 1.2 - 0.2 radius start...) = 1.3 / 4 = 0.325.
+Var mover As New Capsule(New Vector2(1.0, 1.0), New Vector2(1.0, 1.2), 0.2)
+Var fraction As Double = world.CastMover(mover, New Vector2(4.0, 0.0), New QueryFilter)
+PhysicsAssert.Near(0.325, fraction, 0.01, 0.01, "mover hits the wall face at the expected fraction")
+# Sweeping left from the open side reaches the full translation.
+fraction = world.CastMover(mover, New Vector2(-4.0, 0.0), New QueryFilter)
+Assert.Equal(1.0, fraction, "open side reaches the full translation")
+# A filter that rejects the wall also reaches the full translation.
+Var filter As New QueryFilter
+filter.CategoryBits = 2
+filter.MaskBits = 4
+fraction = world.CastMover(mover, New Vector2(4.0, 0.0), filter)
+Assert.Equal(1.0, fraction, "rejected wall does not block the mover")
+# Starting overlapped with the wall: encroachment ignores it.
+Var overlapped As New Capsule(New Vector2(2.9, 1.0), New Vector2(2.9, 1.2), 0.2)
+fraction = world.CastMover(overlapped, New Vector2(4.0, 0.0), New QueryFilter)
+Assert.Equal(1.0, fraction, "overlapping shapes are ignored on start")
+# Downward sweep onto the floor.
+Var faller As New Capsule(New Vector2(1.0, 3.0), New Vector2(1.2, 3.0), 0.2)
+fraction = world.CastMover(faller, New Vector2(0.0, -4.0), New QueryFilter)
+# The capsule bottom starts at 2.8 of a 4 m sweep: contact at fraction 0.7
+# plus the small encroachment allowance.
+PhysicsAssert.Near(0.7, fraction, 0.02, 0.02, "mover lands on the floor")
+world.Validate()
+End Sub
+
+## CollideMover registers one world-space collision plane per overlapping
+## shape, ported from b2World_CollideMover.
+Public Sub TestCollideMoverRegistersPlanes()
+Var world As World = Stage10Tests.MakeMoverWorld()
+Var callback As MoverPlaneRecorder = New MoverPlaneRecorder
+# A mover slightly sunk into the floor registers an upward plane: the
+# centre-line distance 0.15 against the 0.2 radius leaves a 0.05 plane
+# offset.
+Var mover As New Capsule(New Vector2(1.0, 0.15), New Vector2(1.4, 0.15), 0.2)
+world.CollideMover(mover, New QueryFilter, callback)
+Assert.Equal(1, callback.Shapes.Count, "floor registers one plane")
+Var floor As Shape = callback.Shapes[0]
+Var result As PlaneResult = callback.Results[0]
+Assert.True(result.Hit, "floor plane hit")
+PhysicsAssert.Near(0.0, result.Plane.Normal.X, 1e-9, 1e-9, "floor plane normal x")
+PhysicsAssert.Near(1.0, result.Plane.Normal.Y, 1e-9, 1e-9, "floor plane normal y")
+PhysicsAssert.Near(0.05, result.Plane.Offset, 0.01, 0.01, "floor plane offset from the sink depth")
+Assert.True(callback.KeepGoing, "callback continued the traversal")
+# A mover pressed against the wall registers its leftward plane: the
+# centre line ends at x = 2.35, leaving a 0.15 centre-line distance
+# against the 0.2 radius.
+Var recorder As MoverPlaneRecorder = New MoverPlaneRecorder
+Var corridor As New Capsule(New Vector2(2.15, 1.0), New Vector2(2.35, 1.0), 0.2)
+world.CollideMover(corridor, New QueryFilter, recorder)
+Assert.Equal(1, recorder.Shapes.Count, "wall registers one plane")
+Assert.True(recorder.Results[0].Plane.Normal.X < 0.0, "wall plane pushes left")
+world.Validate()
+End Sub
+
+## The collision callback can stop the traversal early.
+Public Sub TestCollideMoverCallbackStops()
+Var world As World = Stage10Tests.MakeMoverWorld()
+Var callback As MoverPlaneRecorder = New MoverPlaneRecorder
+callback.StopAfterFirst = True
+Var mover As New Capsule(New Vector2(1.0, 0.15), New Vector2(1.4, 0.15), 0.2)
+world.CollideMover(mover, New QueryFilter, callback)
+Assert.True(callback.KeepGoing = False, "callback stopped the traversal")
+Assert.Equal(1, callback.Shapes.Count, "only the first plane is reported")
+world.Validate()
+End Sub
+
+## Builds the mover test world: a floor and a vertical wall at x = 3.
+Shared Function MakeMoverWorld() As World
+Var world As New World
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-20.0, 0.0, 20.0, 0.0))
+Var wallDef As New BodyDefinition
+wallDef.Position = New Vector2(3.0, 2.0)
+Var wall As Body = world.CreateBody(wallDef)
+wall.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(0.5, 2.0))
+world.UpdateBroadPhasePairs()
+Return world
+End Function
+End Class
+
+# Records mover collision planes for the Stage 10 tests. StopAfterFirst
+# makes VisitPlane return False after the first plane.
+Class MoverPlaneRecorder Inherits WorldMoverPlaneCallback
+## The shapes whose planes were reported.
+Property Shapes As Array(Of Shape)
+
+## The plane results in report order.
+Property Results As Array(Of PlaneResult)
+
+## True while the traversal should continue.
+Property KeepGoing As Boolean
+
+## When True, the first reported plane stops the traversal.
+Property StopAfterFirst As Boolean
+
+## Creates an empty recorder.
+Constructor()
+Me.Shapes = New Array(Of Shape)
+Me.Results = New Array(Of PlaneResult)
+Me.KeepGoing = True
+Me.StopAfterFirst = False
+End Constructor
+
+## Records the plane and honours the stop switch.
+Override Function VisitPlane(shape As Shape, result As PlaneResult) As Boolean
+Me.Shapes.Append(shape)
+Me.Results.Append(result)
+If Me.StopAfterFirst Then
+Me.KeepGoing = False
+Return False
+End If
+Return True
+End Function
 End Class

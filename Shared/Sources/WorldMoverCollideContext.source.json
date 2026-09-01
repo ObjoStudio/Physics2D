@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "WorldMoverCollideContext",
+  "Id": "002a9b6a-8de0-47cf-90c1-f02764bf0c5a",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "WorldMoverCollideContext.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

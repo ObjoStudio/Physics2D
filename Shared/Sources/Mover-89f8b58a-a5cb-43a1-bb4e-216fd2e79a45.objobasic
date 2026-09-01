@@ -1,7 +1,66 @@
 # Character-mover plane geometry, ported from upstream mover.c. The plane
 # solver relaxes a desired translation against collision planes; the
 # vector clipper removes velocity into planes that registered push.
+# The collide helpers port upstream b2CollideMoverAndCircle/Capsule/
+# Polygon/Segment in geometry.c: GJK shape distance between the shape and
+# the mover capsule with the shape radius excluded from the proxy, and a
+# hit plane when the distance reaches the total radius.
 Class Mover
+## Collides a circle with a mover capsule in local space, ported from
+## b2CollideMoverAndCircle.
+Shared Function CollideCircle(shape As Circle, mover As Capsule) As PlaneResult
+Var points() As Vector2 = [shape.Center]
+Var proxyA As ShapeProxy = ShapeProxy.Make(points, 1, 0.0)
+Return CollideProxy(proxyA, mover.Radius + shape.Radius, mover)
+End Function
+
+## Collides a capsule with a mover capsule in local space, ported from
+## b2CollideMoverAndCapsule.
+Shared Function CollideCapsule(shape As Capsule, mover As Capsule) As PlaneResult
+Var points() As Vector2 = [shape.Center1, shape.Center2]
+Var proxyA As ShapeProxy = ShapeProxy.Make(points, 2, 0.0)
+Return CollideProxy(proxyA, mover.Radius + shape.Radius, mover)
+End Function
+
+## Collides a polygon with a mover capsule in local space, ported from
+## b2CollideMoverAndPolygon.
+Shared Function CollidePolygon(shape As Polygon, mover As Capsule) As PlaneResult
+Var proxyA As ShapeProxy = ShapeProxy.Make(shape.Vertices, shape.Count, shape.Radius)
+Return CollideProxy(proxyA, mover.Radius + shape.Radius, mover)
+End Function
+
+## Collides a segment with a mover capsule in local space, ported from
+## b2CollideMoverAndSegment. The segment radius is excluded from the total
+## radius exactly like upstream, keeping chain ghost behaviour.
+Shared Function CollideSegment(shape As Segment, mover As Capsule) As PlaneResult
+Var points() As Vector2 = [shape.Point1, shape.Point2]
+Var proxyA As ShapeProxy = ShapeProxy.Make(points, 2, 0.0)
+Return CollideProxy(proxyA, mover.Radius, mover)
+End Function
+
+## Shared collide body: shape distance between the shape proxy and the
+## mover capsule (radii excluded from the distance query), then a hit
+## plane when the distance reaches the total radius.
+Private Shared Function CollideProxy(proxyA As ShapeProxy, totalRadius As Double, mover As Capsule) As PlaneResult
+Var input As New DistanceInput
+input.ProxyA = proxyA
+Var moverPoints() As Vector2 = [mover.Center1, mover.Center2]
+input.ProxyB = ShapeProxy.Make(moverPoints, 2, mover.Radius)
+input.TransformA = New Transform(New Vector2(0.0, 0.0), New Rot(1.0, 0.0))
+input.TransformB = New Transform(New Vector2(0.0, 0.0), New Rot(1.0, 0.0))
+input.UseRadii = False
+Var cache As New SimplexCache
+Var output As DistanceOutput = Distance.ShapeDistance(input, cache)
+If output.Distance <= totalRadius Then
+Var result As New PlaneResult
+result.Plane = New Plane(output.Normal.X, output.Normal.Y, totalRadius - output.Distance)
+result.Point = New Vector2(output.PointA.X, output.PointA.Y)
+result.Hit = True
+Return result
+End If
+Return New PlaneResult
+End Function
+
 ## Solves the position of a mover that satisfies the given collision
 ## planes into a new result. The planes' Push values are updated in place,
 ## matching upstream b2SolvePlanes.

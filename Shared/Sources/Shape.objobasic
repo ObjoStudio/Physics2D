@@ -551,4 +551,47 @@ Var c2y As Double = p2y - centroid.Y
 out.MaxExtent = Maths.Sqrt(Maths.Max(c1x * c1x + c1y * c1y, c2x * c2x + c2y * c2y))
 End If
 End Sub
+
+## Collides a capsule mover against this shape, ported from b2CollideMover
+## in shape.c. The mover is transformed into the shape's local frame, the
+## type-dispatched collide runs there, and the hit plane normal rotates
+## back into world space. Returns a result with Hit False when the mover
+## does not reach the shape. Allocates the returned result and the local
+## capsule; a cold-path query convenience.
+Function CollideMover(transform As Transform, moverCapsule As Capsule) As PlaneResult
+Me.Validate()
+# Transform the mover into the shape's local frame.
+Var invC As Double = transform.Q.C
+Var invS As Double = -transform.Q.S
+Var dx As Double = moverCapsule.Center1.X - transform.P.X
+Var dy As Double = moverCapsule.Center1.Y - transform.P.Y
+Var local1 As New Vector2(invC * dx - invS * dy, invS * dx + invC * dy)
+dx = moverCapsule.Center2.X - transform.P.X
+dy = moverCapsule.Center2.Y - transform.P.Y
+Var local2 As New Vector2(invC * dx - invS * dy, invS * dx + invC * dy)
+Var localMover As New Capsule(local1, local2, moverCapsule.Radius)
+Var result As PlaneResult
+If Me.Type = ShapeType.CircleShape Then
+result = Mover.CollideCircle(Me.Circle, localMover)
+ElseIf Me.Type = ShapeType.CapsuleShape Then
+result = Mover.CollideCapsule(Me.Capsule, localMover)
+ElseIf Me.Type = ShapeType.PolygonShape Then
+result = Mover.CollidePolygon(Me.Polygon, localMover)
+ElseIf Me.Type = ShapeType.SegmentShape Then
+result = Mover.CollideSegment(Me.Segment, localMover)
+ElseIf Me.Type = ShapeType.ChainSegmentShape Then
+result = Mover.CollideSegment(Me.ChainSegment.Segment, localMover)
+Else
+Return New PlaneResult
+End If
+If result.Hit = False Then
+Return result
+End If
+# Rotate the plane normal back into world space.
+Var normal As Vector2 = result.Plane.Normal
+Var worldNX As Double = transform.Q.C * normal.X - transform.Q.S * normal.Y
+Var worldNY As Double = transform.Q.S * normal.X + transform.Q.C * normal.Y
+result.Plane.Normal = New Vector2(worldNX, worldNY)
+Return result
+End Function
 End Class

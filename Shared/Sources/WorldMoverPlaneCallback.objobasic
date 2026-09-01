@@ -1,0 +1,8 @@
+# Client callback receiving the collision planes a capsule mover registers
+# against world shapes, ported from upstream b2PlaneResultFcn in box2d.h.
+# Return True to continue traversal or False to stop it early.
+Abstract Class WorldMoverPlaneCallback
+## Called for every shape the mover collides with. Returning True
+## continues the query; False terminates it early.
+Abstract Function VisitPlane(shape As Shape, result As PlaneResult) As Boolean
+End Class
