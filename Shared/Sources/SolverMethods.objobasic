@@ -28,6 +28,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
 JointSolver.WarmStartMouseJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.MotorJoint) Then
 JointSolver.WarmStartMotorJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.RevoluteJoint) Then
+JointSolver.WarmStartRevoluteJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -46,6 +48,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
 JointSolver.SolveMouseJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.MotorJoint) Then
 JointSolver.SolveMotorJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.RevoluteJoint) Then
+JointSolver.SolveRevoluteJoint(sims, i, context, useBias)
 End If
 Next i
 End Sub

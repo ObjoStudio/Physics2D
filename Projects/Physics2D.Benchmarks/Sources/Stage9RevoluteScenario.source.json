@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9RevoluteScenario",
+  "Id": "3f8a92d1-5c67-4e2b-9d84-6a1b0c5e72fd",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9RevoluteScenario-3f8a92d1-5c67-4e2b-9d84-6a1b0c5e72fd.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

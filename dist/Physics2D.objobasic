@@ -58,9 +58,9 @@
 # Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
 # Input: Island.objobasic 44f9b035b888e2dbbec81e2c88390bd8081257a3f57a52efc6fffdddabb10fa4
 # Input: IslandMethods.objobasic 20833e02e72df2d6818e0ebd92de184099fb656f56a10b14b7df86353eda2f6d
-# Input: Joint.objobasic 0e26039d3ba2b50955401804b38d2b27663b29f4560e51ea720339558e17618b
-# Input: JointSims.objobasic d56ef34ff56e1c602522325738d480b4c1e71e87fda20c7fb4be59cea2fed4e5
-# Input: JointSolver.objobasic ffac754557b346065ccf21cbdad44cc65bf5dbeeafa9c232537e5f101679fec4
+# Input: Joint.objobasic 402bb00abdde2823025c85155f76533c06625d66ead69391b2f7d013ac8771bc
+# Input: JointSims.objobasic 804ccbd865b43e4e43fe584093f433bec4fe7ce7ecacda069737d80b10ebf2f2
+# Input: JointSolver.objobasic 559d489bc06463f945c7cbd5dad6ffdb40718f0b873cd4d3f819d1350e7ae692
 # Input: JointType-856da3bd-dadf-41a2-af79-4e1fcc92c642.objobasic 595178f214846dc7716badeb118dfb5729356f738f99204ff34b849f6fd14838
 # Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 2204114b1a588c77c29b945afd4b19ad7c68f56bce9f68f6a6ee47f5e8463787
 # Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic dcebd68c0b3500bb6ab7688775a8056b75304728e39537252715a4309cc96402
@@ -80,6 +80,8 @@
 # Input: Polygon-6d788a74-dfbe-4b6d-b326-69d534146832.objobasic 821cd0c644b08fe1e78527a07539de40563c3de58bdd4185a71ba6f89449372f
 # Input: QueryFilter.objobasic b56993380ec09b5b254986ee63893334703107c64fccb48c3906ad35b71194ac
 # Input: RayCastInput-44d63d82-6439-4bee-999f-fb4af3feeaa7.objobasic 9414527d1813c1444d203033d1ffc67cc4676c10bf3820db998d0a877309341b
+# Input: RevoluteJoint.objobasic 2dc2d3b342b4b21efc960c2c12a5c96232cffa550b943555916fd9adc26ec72b
+# Input: RevoluteJointDefinition.objobasic 32c8e271f7be3ffabca3b763ecb0f53a5f0401bc0fe4fc562cd6ba69f7c4f5d9
 # Input: Rot-e55b6716-f6ac-48d7-90e7-36c4c5a6a40a.objobasic ef4570b5b720c0b4d0726d643c25031ceb40d5ba6ad5a93390b090cfb53f27a1
 # Input: Segment-246ee640-6a60-413a-80c5-c3ed4fc1a7ef.objobasic 16c262058b84fcd3cc8018b731c57537ff5d1508b847a855b356f73ce7173751
 # Input: SegmentDistanceResult-742ba2ff-a0dc-4cc5-af76-2abcc14085e9.objobasic a6f9b50d52382f5dfbf73057443425e2e552298ebe679792936998ecd5ed45eb
@@ -100,7 +102,7 @@
 # Input: SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic 82bc4694e90f396c176e50cbe8196ea7c809da4842781d5f9750137a1d087314
 # Input: SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic 7c911da9871051f8580713a107d379e349bdc89cf9f9f0e9968f07c29e2f19da
 # Input: Softness.objobasic 06211852d8bbb70e4c5f5479756606be96bb2667bd617c4f635f76a661e47d4a
-# Input: SolverMethods.objobasic 0a2cdd3831837354aa38dee6df838cee2fdcdb23435f74a62eea13815a4ea7aa
+# Input: SolverMethods.objobasic 28190b5d07f4ed0800cc1e8e0b7206614cdeedca652ff0c0cf7376f8f378ef55
 # Input: SolverSet.objobasic ae57d26036c92d75a660f380cae829c6ef353d45bbba3876779bf1689234a922
 # Input: StepContext.objobasic 0d6a04f453555a2ff4207c21b9cacba5f3f2103f22c2d8ac4dd8c449f7b67e12
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
@@ -117,7 +119,7 @@
 # Input: TreeScratch-3add8e75-acc6-4f27-996e-372dc4d98372.objobasic 35e077b5cec3caafcc6d334013421d7a9612c3ba18ecf97875019b87ac2f9f55
 # Input: TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic 2abd4a4ca724ab02daa1a476dd447403aea4c5d80a507691f770ed20469a832b
 # Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
-# Input: World.objobasic c3cedc1be0b812ca81db0b8b0413b7f533e5c3cd5a767cf227256b7715867b45
+# Input: World.objobasic e82dfcb2800b9a38b8af4744f486c95e333360f28bd510fdec1d2b5fdc078fac
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
@@ -126,7 +128,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 10d16b283a5fa7e2f3a882b5b8dd0c48b2aefa836d6d02805b451b99931aaeba
+# Source content checksum (SHA-256): 21e25d0f07b25681bfc12e3c7e69bad2c6eb26eeb5db8c7223d078348620a12e
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -11758,6 +11760,9 @@ End If
 If Me.Type = JointType.MotorJoint Then
 Return JointSolver.GetMotorJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
+If Me.Type = JointType.RevoluteJoint Then
+Return JointSolver.GetRevoluteJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return New Vector2(0.0, 0.0)
 End Function
 
@@ -11770,6 +11775,9 @@ Return JointSolver.GetMouseJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex,
 End If
 If Me.Type = JointType.MotorJoint Then
 Return JointSolver.GetMotorJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
+If Me.Type = JointType.RevoluteJoint Then
+Return JointSolver.GetRevoluteJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
 Return 0.0
 End Function
@@ -11991,6 +11999,54 @@ Property MotorAngularMass As DoubleList
 ## offset, ported from joint->deltaAngle.
 Property MotorDeltaAngle As DoubleList
 
+# Revolute joint family columns, ported from upstream b2RevoluteJoint in
+# joint.h. Valid only while Type = Integer(JointType.RevoluteJoint). The
+# hinge reuses the base two-body columns (IndexA/IndexB, AnchorA/AnchorB,
+# DeltaCenter, inverse masses, LocalOriginAnchorA/B) and the base
+# EnableSpring/EnableLimit/EnableMotor flag columns, which are per-row and
+# therefore unambiguous across joint types.
+## X component of the accumulated point-to-point impulse.
+Property RevoluteLinearImpulseX As DoubleList
+## Y component of the accumulated point-to-point impulse.
+Property RevoluteLinearImpulseY As DoubleList
+## Accumulated spring impulse.
+Property RevoluteSpringImpulse As DoubleList
+## Accumulated motor impulse.
+Property RevoluteMotorImpulse As DoubleList
+## Accumulated lower-limit impulse, always non-negative.
+Property RevoluteLowerImpulse As DoubleList
+## Accumulated upper-limit impulse, always non-negative.
+Property RevoluteUpperImpulse As DoubleList
+## Rotational spring stiffness in hertz.
+Property RevoluteHertz As DoubleList
+## Rotational spring damping ratio.
+Property RevoluteDampingRatio As DoubleList
+## Spring target angle in radians.
+Property RevoluteTargetAngle As DoubleList
+## Maximum motor torque.
+Property RevoluteMaxMotorTorque As DoubleList
+## Desired motor speed in radians per second.
+Property RevoluteMotorSpeed As DoubleList
+## Reference angle in radians: body B angle minus body A angle in the
+## reference state.
+Property RevoluteReferenceAngle As DoubleList
+## Lower angle limit in radians.
+Property RevoluteLowerAngle As DoubleList
+## Upper angle limit in radians.
+Property RevoluteUpperAngle As DoubleList
+## Inverse of the sum of both rotational inertias, zero when both are zero.
+Property RevoluteAxialMass As DoubleList
+## Angle of body B relative to body A at prepare time, ported from
+## joint->deltaAngle; the spring, limits, and angle queries offset this by
+## the target or reference angle.
+Property RevoluteDeltaAngle As DoubleList
+## Spring softness bias rate prepared from hertz and damping ratio.
+Property RevoluteSpringSoftnessBiasRate As DoubleList
+## Spring softness mass scale.
+Property RevoluteSpringSoftnessMassScale As DoubleList
+## Spring softness impulse scale.
+Property RevoluteSpringSoftnessImpulseScale As DoubleList
+
 ## Creates an empty store.
 Constructor()
 Me.JointId = New IntegerList
@@ -12067,6 +12123,25 @@ Me.MotorLinearMassXY = New DoubleList
 Me.MotorLinearMassYY = New DoubleList
 Me.MotorAngularMass = New DoubleList
 Me.MotorDeltaAngle = New DoubleList
+Me.RevoluteLinearImpulseX = New DoubleList
+Me.RevoluteLinearImpulseY = New DoubleList
+Me.RevoluteSpringImpulse = New DoubleList
+Me.RevoluteMotorImpulse = New DoubleList
+Me.RevoluteLowerImpulse = New DoubleList
+Me.RevoluteUpperImpulse = New DoubleList
+Me.RevoluteHertz = New DoubleList
+Me.RevoluteDampingRatio = New DoubleList
+Me.RevoluteTargetAngle = New DoubleList
+Me.RevoluteMaxMotorTorque = New DoubleList
+Me.RevoluteMotorSpeed = New DoubleList
+Me.RevoluteReferenceAngle = New DoubleList
+Me.RevoluteLowerAngle = New DoubleList
+Me.RevoluteUpperAngle = New DoubleList
+Me.RevoluteAxialMass = New DoubleList
+Me.RevoluteDeltaAngle = New DoubleList
+Me.RevoluteSpringSoftnessBiasRate = New DoubleList
+Me.RevoluteSpringSoftnessMassScale = New DoubleList
+Me.RevoluteSpringSoftnessImpulseScale = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -12154,6 +12229,25 @@ Me.MotorLinearMassXY.Append(0.0)
 Me.MotorLinearMassYY.Append(0.0)
 Me.MotorAngularMass.Append(0.0)
 Me.MotorDeltaAngle.Append(0.0)
+Me.RevoluteLinearImpulseX.Append(0.0)
+Me.RevoluteLinearImpulseY.Append(0.0)
+Me.RevoluteSpringImpulse.Append(0.0)
+Me.RevoluteMotorImpulse.Append(0.0)
+Me.RevoluteLowerImpulse.Append(0.0)
+Me.RevoluteUpperImpulse.Append(0.0)
+Me.RevoluteHertz.Append(0.0)
+Me.RevoluteDampingRatio.Append(0.0)
+Me.RevoluteTargetAngle.Append(0.0)
+Me.RevoluteMaxMotorTorque.Append(0.0)
+Me.RevoluteMotorSpeed.Append(0.0)
+Me.RevoluteReferenceAngle.Append(0.0)
+Me.RevoluteLowerAngle.Append(0.0)
+Me.RevoluteUpperAngle.Append(0.0)
+Me.RevoluteAxialMass.Append(0.0)
+Me.RevoluteDeltaAngle.Append(0.0)
+Me.RevoluteSpringSoftnessBiasRate.Append(0.0)
+Me.RevoluteSpringSoftnessMassScale.Append(1.0)
+Me.RevoluteSpringSoftnessImpulseScale.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -12241,6 +12335,25 @@ Me.MotorLinearMassXY.RemoveSwap(index)
 Me.MotorLinearMassYY.RemoveSwap(index)
 Me.MotorAngularMass.RemoveSwap(index)
 Me.MotorDeltaAngle.RemoveSwap(index)
+Me.RevoluteLinearImpulseX.RemoveSwap(index)
+Me.RevoluteLinearImpulseY.RemoveSwap(index)
+Me.RevoluteSpringImpulse.RemoveSwap(index)
+Me.RevoluteMotorImpulse.RemoveSwap(index)
+Me.RevoluteLowerImpulse.RemoveSwap(index)
+Me.RevoluteUpperImpulse.RemoveSwap(index)
+Me.RevoluteHertz.RemoveSwap(index)
+Me.RevoluteDampingRatio.RemoveSwap(index)
+Me.RevoluteTargetAngle.RemoveSwap(index)
+Me.RevoluteMaxMotorTorque.RemoveSwap(index)
+Me.RevoluteMotorSpeed.RemoveSwap(index)
+Me.RevoluteReferenceAngle.RemoveSwap(index)
+Me.RevoluteLowerAngle.RemoveSwap(index)
+Me.RevoluteUpperAngle.RemoveSwap(index)
+Me.RevoluteAxialMass.RemoveSwap(index)
+Me.RevoluteDeltaAngle.RemoveSwap(index)
+Me.RevoluteSpringSoftnessBiasRate.RemoveSwap(index)
+Me.RevoluteSpringSoftnessMassScale.RemoveSwap(index)
+Me.RevoluteSpringSoftnessImpulseScale.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -12322,6 +12435,25 @@ target.MotorLinearMassXY.Items[targetIndex] = Me.MotorLinearMassXY.Items[sourceI
 target.MotorLinearMassYY.Items[targetIndex] = Me.MotorLinearMassYY.Items[sourceIndex]
 target.MotorAngularMass.Items[targetIndex] = Me.MotorAngularMass.Items[sourceIndex]
 target.MotorDeltaAngle.Items[targetIndex] = Me.MotorDeltaAngle.Items[sourceIndex]
+target.RevoluteLinearImpulseX.Items[targetIndex] = Me.RevoluteLinearImpulseX.Items[sourceIndex]
+target.RevoluteLinearImpulseY.Items[targetIndex] = Me.RevoluteLinearImpulseY.Items[sourceIndex]
+target.RevoluteSpringImpulse.Items[targetIndex] = Me.RevoluteSpringImpulse.Items[sourceIndex]
+target.RevoluteMotorImpulse.Items[targetIndex] = Me.RevoluteMotorImpulse.Items[sourceIndex]
+target.RevoluteLowerImpulse.Items[targetIndex] = Me.RevoluteLowerImpulse.Items[sourceIndex]
+target.RevoluteUpperImpulse.Items[targetIndex] = Me.RevoluteUpperImpulse.Items[sourceIndex]
+target.RevoluteHertz.Items[targetIndex] = Me.RevoluteHertz.Items[sourceIndex]
+target.RevoluteDampingRatio.Items[targetIndex] = Me.RevoluteDampingRatio.Items[sourceIndex]
+target.RevoluteTargetAngle.Items[targetIndex] = Me.RevoluteTargetAngle.Items[sourceIndex]
+target.RevoluteMaxMotorTorque.Items[targetIndex] = Me.RevoluteMaxMotorTorque.Items[sourceIndex]
+target.RevoluteMotorSpeed.Items[targetIndex] = Me.RevoluteMotorSpeed.Items[sourceIndex]
+target.RevoluteReferenceAngle.Items[targetIndex] = Me.RevoluteReferenceAngle.Items[sourceIndex]
+target.RevoluteLowerAngle.Items[targetIndex] = Me.RevoluteLowerAngle.Items[sourceIndex]
+target.RevoluteUpperAngle.Items[targetIndex] = Me.RevoluteUpperAngle.Items[sourceIndex]
+target.RevoluteAxialMass.Items[targetIndex] = Me.RevoluteAxialMass.Items[sourceIndex]
+target.RevoluteDeltaAngle.Items[targetIndex] = Me.RevoluteDeltaAngle.Items[sourceIndex]
+target.RevoluteSpringSoftnessBiasRate.Items[targetIndex] = Me.RevoluteSpringSoftnessBiasRate.Items[sourceIndex]
+target.RevoluteSpringSoftnessMassScale.Items[targetIndex] = Me.RevoluteSpringSoftnessMassScale.Items[sourceIndex]
+target.RevoluteSpringSoftnessImpulseScale.Items[targetIndex] = Me.RevoluteSpringSoftnessImpulseScale.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -12400,6 +12532,25 @@ Me.MotorLinearMassXY.Clear()
 Me.MotorLinearMassYY.Clear()
 Me.MotorAngularMass.Clear()
 Me.MotorDeltaAngle.Clear()
+Me.RevoluteLinearImpulseX.Clear()
+Me.RevoluteLinearImpulseY.Clear()
+Me.RevoluteSpringImpulse.Clear()
+Me.RevoluteMotorImpulse.Clear()
+Me.RevoluteLowerImpulse.Clear()
+Me.RevoluteUpperImpulse.Clear()
+Me.RevoluteHertz.Clear()
+Me.RevoluteDampingRatio.Clear()
+Me.RevoluteTargetAngle.Clear()
+Me.RevoluteMaxMotorTorque.Clear()
+Me.RevoluteMotorSpeed.Clear()
+Me.RevoluteReferenceAngle.Clear()
+Me.RevoluteLowerAngle.Clear()
+Me.RevoluteUpperAngle.Clear()
+Me.RevoluteAxialMass.Clear()
+Me.RevoluteDeltaAngle.Clear()
+Me.RevoluteSpringSoftnessBiasRate.Clear()
+Me.RevoluteSpringSoftnessMassScale.Clear()
+Me.RevoluteSpringSoftnessImpulseScale.Clear()
 End Sub
 End Class
 
@@ -12427,6 +12578,8 @@ ElseIf sims.Type.Items[index] = Integer(JointType.MouseJoint) Then
 PrepareMouseJoint(sims, index, context)
 ElseIf sims.Type.Items[index] = Integer(JointType.MotorJoint) Then
 PrepareMotorJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.RevoluteJoint) Then
+PrepareRevoluteJoint(sims, index, context)
 End If
 End Sub
 
@@ -13279,6 +13432,359 @@ End Function
 ## b2GetMotorJointTorque.
 Shared Function GetMotorJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
 Return invH * sims.MotorAngularImpulse.Items[index]
+End Function
+
+## Prepares one revolute joint row, ported from b2PrepareRevoluteJoint.
+## The hinge pins the two anchor points together and measures the relative
+## angle against the reference angle, so both bodies contribute to every
+## block. Anchors come from the definition's local anchors. The spring
+## softness is prepared from the definition hertz and damping ratio; the
+## base constraint softness (used by the limits and the point-to-point
+## block) is prepared by the common joint prepare. A non-awake body stores
+## a NULL_INDEX state row that the kernels replace with an identity dummy.
+Private Shared Sub PrepareRevoluteJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyA As Body = world.Bodies[sims.BodyIdA.Items[index]]
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simA As BodySims = world.GetBodySim(bodyA)
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexA As Integer = bodyA.LocalIndex
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassA.Items[index] = simA.InvMass.Items[indexA]
+sims.InvIA.Items[index] = simA.InvInertia.Items[indexA]
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexA.Items[index] = indexA
+Else
+sims.IndexA.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+# Initial anchors in world space from the definition's local anchors.
+Var localDX As Double = sims.LocalOriginAnchorAX.Items[index] - simA.LCX.Items[indexA]
+Var localDY As Double = sims.LocalOriginAnchorAY.Items[index] - simA.LCY.Items[indexA]
+Var qcA As Double = simA.QC.Items[indexA]
+Var qsA As Double = simA.QS.Items[indexA]
+sims.AnchorAX.Items[index] = qcA * localDX - qsA * localDY
+sims.AnchorAY.Items[index] = qsA * localDX + qcA * localDY
+Var localEX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localEY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localEX - qsB * localEY
+sims.AnchorBY.Items[index] = qsB * localEX + qcB * localEY
+
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
+# Relative angle with scalar components; see the motor prepare note.
+Var relS As Double = simB.QS.Items[indexB] * simA.QC.Items[indexA] - simB.QC.Items[indexB] * simA.QS.Items[indexA]
+Var relC As Double = simB.QC.Items[indexB] * simA.QC.Items[indexA] + simB.QS.Items[indexB] * simA.QS.Items[indexA]
+sims.RevoluteDeltaAngle.Items[index] = PhysicsMaths.Atan2(relS, relC)
+
+Var ka As Double = sims.InvIA.Items[index] + sims.InvIB.Items[index]
+If ka > 0.0 Then
+sims.RevoluteAxialMass.Items[index] = 1.0 / ka
+Else
+sims.RevoluteAxialMass.Items[index] = 0.0
+End If
+
+Softness.MakeTo(sims.RevoluteHertz.Items[index], sims.RevoluteDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.RevoluteSpringSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.RevoluteSpringSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.RevoluteSpringSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+
+If context.WarmStartScale = 0.0 Then
+sims.RevoluteLinearImpulseX.Items[index] = 0.0
+sims.RevoluteLinearImpulseY.Items[index] = 0.0
+sims.RevoluteSpringImpulse.Items[index] = 0.0
+sims.RevoluteMotorImpulse.Items[index] = 0.0
+sims.RevoluteLowerImpulse.Items[index] = 0.0
+sims.RevoluteUpperImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored revolute joint impulses to both body states before
+## iterating, ported from b2WarmStartRevoluteJoint. The axial impulse
+## bundles the spring, motor, and limit contributions.
+Shared Sub WarmStartRevoluteJoint(sims As JointSims, index As Integer, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var pX As Double = sims.RevoluteLinearImpulseX.Items[index]
+Var pY As Double = sims.RevoluteLinearImpulseY.Items[index]
+Var axialImpulse As Double = sims.RevoluteSpringImpulse.Items[index] + sims.RevoluteMotorImpulse.Items[index] + sims.RevoluteLowerImpulse.Items[index] - sims.RevoluteUpperImpulse.Items[index]
+
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (rAX * pY - rAY * pX + axialImpulse)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (rBX * pY - rBY * pX + axialImpulse)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Runs one velocity iteration for one revolute joint row, ported from
+## b2SolveRevoluteJoint: spring, motor, lower and upper limits, then the
+## point-to-point block. The fixed-rotation guard skips the axial blocks
+## exactly like upstream; the point-to-point block always runs.
+Shared Sub SolveRevoluteJoint(sims As JointSims, index As Integer, context As StepContext, useBias As Boolean)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var fixedRotation As Boolean = (iA + iB = 0.0)
+
+# Solve spring.
+If sims.EnableSpring.Items[index] <> 0 And fixedRotation = False Then
+Var relS As Double = dqBS * dqAC - dqBC * dqAS
+Var relC As Double = dqBC * dqAC + dqBS * dqAS
+Var jointAngle As Double = PhysicsMaths.Atan2(relS, relC) + sims.RevoluteDeltaAngle.Items[index]
+Var C As Double = PhysicsMaths.UnwindAngle(jointAngle - sims.RevoluteTargetAngle.Items[index])
+Var bias As Double = sims.RevoluteSpringSoftnessBiasRate.Items[index] * C
+Var massScale As Double = sims.RevoluteSpringSoftnessMassScale.Items[index]
+Var impulseScale As Double = sims.RevoluteSpringSoftnessImpulseScale.Items[index]
+Var Cdot As Double = wB - wA
+Var impulse As Double = -massScale * sims.RevoluteAxialMass.Items[index] * (Cdot + bias) - impulseScale * sims.RevoluteSpringImpulse.Items[index]
+sims.RevoluteSpringImpulse.Items[index] = sims.RevoluteSpringImpulse.Items[index] + impulse
+wA = wA - iA * impulse
+wB = wB + iB * impulse
+End If
+
+# Solve motor constraint.
+If sims.EnableMotor.Items[index] <> 0 And fixedRotation = False Then
+Var Cdot As Double = wB - wA - sims.RevoluteMotorSpeed.Items[index]
+Var impulse As Double = -sims.RevoluteAxialMass.Items[index] * Cdot
+Var oldImpulse As Double = sims.RevoluteMotorImpulse.Items[index]
+Var maxImpulse As Double = context.H * sims.RevoluteMaxMotorTorque.Items[index]
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse > maxImpulse Then
+newImpulse = maxImpulse
+ElseIf newImpulse < -maxImpulse Then
+newImpulse = -maxImpulse
+End If
+sims.RevoluteMotorImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+wA = wA - iA * impulse
+wB = wB + iB * impulse
+End If
+
+If sims.EnableLimit.Items[index] <> 0 And fixedRotation = False Then
+Var relS As Double = dqBS * dqAC - dqBC * dqAS
+Var relC As Double = dqBC * dqAC + dqBS * dqAS
+Var jointAngle As Double = PhysicsMaths.UnwindAngle(PhysicsMaths.Atan2(relS, relC) + sims.RevoluteDeltaAngle.Items[index] - sims.RevoluteReferenceAngle.Items[index])
+
+# Lower limit.
+Var C As Double = jointAngle - sims.RevoluteLowerAngle.Items[index]
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If C > 0.0 Then
+# Speculation.
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var Cdot As Double = wB - wA
+Var oldImpulse As Double = sims.RevoluteLowerImpulse.Items[index]
+Var impulse As Double = -massScale * sims.RevoluteAxialMass.Items[index] * (Cdot + bias) - impulseScale * oldImpulse
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.RevoluteLowerImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+wA = wA - iA * impulse
+wB = wB + iB * impulse
+
+# Upper limit: signs are flipped to keep C positive when the constraint
+# is satisfied, which also keeps the impulse positive when active.
+C = sims.RevoluteUpperAngle.Items[index] - jointAngle
+bias = 0.0
+massScale = 1.0
+impulseScale = 0.0
+If C > 0.0 Then
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+
+# Sign flipped on Cdot.
+Cdot = wA - wB
+oldImpulse = sims.RevoluteUpperImpulse.Items[index]
+impulse = -massScale * sims.RevoluteAxialMass.Items[index] * (Cdot + bias) - impulseScale * oldImpulse
+newImpulse = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.RevoluteUpperImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+
+# Sign flipped on applied impulse.
+wA = wA + iA * impulse
+wB = wB - iB * impulse
+End If
+
+# Solve point-to-point constraint. The 2x2 combined matrix is symmetric
+# by construction and solved inline with the guarded inverse determinant
+# of upstream b2Solve22.
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var cdX As Double = vBX - wB * rBY - (vAX - wA * rAY)
+Var cdY As Double = vBY + wB * rBX - (vAY + wA * rAX)
+Var biasX As Double = 0.0
+Var biasY As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If useBias Then
+Var sepX As Double = dpBX - dpAX + rBX - rAX + sims.DeltaCenterX.Items[index]
+Var sepY As Double = dpBY - dpAY + rBY - rAY + sims.DeltaCenterY.Items[index]
+biasX = sims.SoftnessBiasRate.Items[index] * sepX
+biasY = sims.SoftnessBiasRate.Items[index] * sepY
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var k11 As Double = mA + mB + rAY * rAY * iA + rBY * rBY * iB
+Var k12 As Double = -(rAY * rAX * iA + rBY * rBX * iB)
+Var k22 As Double = mA + mB + rAX * rAX * iA + rBX * rBX * iB
+Var rhsX As Double = cdX + biasX
+Var rhsY As Double = cdY + biasY
+Var det As Double = k11 * k22 - k12 * k12
+If det <> 0.0 Then
+det = 1.0 / det
+End If
+Var bX As Double = det * (k22 * rhsX - k12 * rhsY)
+Var bY As Double = det * (k11 * rhsY - k12 * rhsX)
+Var oldX As Double = sims.RevoluteLinearImpulseX.Items[index]
+Var oldY As Double = sims.RevoluteLinearImpulseY.Items[index]
+Var impX As Double = -massScale * bX - impulseScale * oldX
+Var impY As Double = -massScale * bY - impulseScale * oldY
+sims.RevoluteLinearImpulseX.Items[index] = oldX + impX
+sims.RevoluteLinearImpulseY.Items[index] = oldY + impY
+
+vAX = vAX - mA * impX
+vAY = vAY - mA * impY
+wA = wA - iA * (rAX * impY - rAY * impX)
+vBX = vBX + mB * impX
+vBY = vBY + mB * impY
+wB = wB + iB * (rBX * impY - rBY * impX)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Total force the revolute joint row applied this step, ported from
+## b2GetRevoluteJointForce.
+Shared Function GetRevoluteJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var scale As Double = invH
+Return New Vector2(scale * sims.RevoluteLinearImpulseX.Items[index], scale * sims.RevoluteLinearImpulseY.Items[index])
+End Function
+
+## Torque the revolute joint row applied this step, ported from
+## b2GetRevoluteJointTorque: the motor and limit impulses combined.
+Shared Function GetRevoluteJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * (sims.RevoluteMotorImpulse.Items[index] + sims.RevoluteLowerImpulse.Items[index] - sims.RevoluteUpperImpulse.Items[index])
 End Function
 
 ## Total force the mouse joint row applied this step, ported from
@@ -15080,6 +15586,287 @@ Return 0.0 <= input.MaxFraction And input.MaxFraction < PhysicsConstants.POSITIO
 End Function
 End Class
 
+# Public revolute joint façade, ported from the b2RevoluteJoint_* surface in
+# revolute_joint.c. The joint pins two bodies at a hinge point; a spring,
+# limits, and a motor optionally act on the relative angle. Tuning changes
+# deliberately do not wake the bodies, matching upstream; the solver picks
+# up new values on the next step. Enabling or disabling the spring, limits,
+# or motor clears the corresponding accumulated impulses exactly like the
+# upstream toggles. Setters store plain values where upstream stores plain
+# values and throw where upstream asserts. The façade reads and writes its
+# row in the owning JointSims store.
+Class RevoluteJoint Inherits Joint
+## Enables the rotational spring, ported from b2RevoluteJoint_EnableSpring.
+## Toggling clears the accumulated spring impulse.
+Sub EnableSpring(enableSpring As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableSpring Then
+flag = 1
+End If
+If flag <> store.EnableSpring.Items[Me.LocalIndex] Then
+store.EnableSpring.Items[Me.LocalIndex] = flag
+store.RevoluteSpringImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the rotational spring is active, ported from
+## b2RevoluteJoint_IsSpringEnabled.
+Function IsSpringEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableSpring.Items[Me.LocalIndex] <> 0
+End Function
+
+## Rotational spring stiffness in hertz, ported from
+## b2RevoluteJoint_SetSpringHertz. Changes apply from the next step.
+Sub SetSpringHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).RevoluteHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Rotational spring stiffness in hertz, ported from
+## b2RevoluteJoint_GetSpringHertz.
+Function GetSpringHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteHertz.Items[Me.LocalIndex]
+End Function
+
+## Rotational spring damping ratio, ported from
+## b2RevoluteJoint_SetSpringDampingRatio. Changes apply from the next step.
+Sub SetSpringDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).RevoluteDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Rotational spring damping ratio, ported from
+## b2RevoluteJoint_GetSpringDampingRatio.
+Function GetSpringDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## Target angle of the rotational spring in radians, ported from
+## b2RevoluteJoint_SetTargetAngle. Changes apply from the next step and do
+## not wake the bodies.
+Sub SetTargetAngle(angle As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).RevoluteTargetAngle.Items[Me.LocalIndex] = angle
+End Sub
+
+## Target angle of the rotational spring in radians, ported from
+## b2RevoluteJoint_GetTargetAngle.
+Function GetTargetAngle() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteTargetAngle.Items[Me.LocalIndex]
+End Function
+
+## Current joint angle in radians, ported from b2RevoluteJoint_GetAngle:
+## the live relative body angle minus the reference angle, wrapped into
+## [-pi, pi].
+Function GetAngle() As Double
+Me.CheckValid()
+Var transformA As Transform = Me.Owner.GetBodyTransform(Me.GetBodyA())
+Var transformB As Transform = Me.Owner.GetBodyTransform(Me.GetBodyB())
+Var angle As Double = Rot.RelativeAngle(transformB.Q, transformA.Q) - Me.Owner.GetJointSims(Me).RevoluteReferenceAngle.Items[Me.LocalIndex]
+Return PhysicsMaths.UnwindAngle(angle)
+End Function
+
+## Enables the angle limits, ported from b2RevoluteJoint_EnableLimit.
+## Toggling clears both accumulated limit impulses.
+Sub EnableLimit(enableLimit As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableLimit Then
+flag = 1
+End If
+If flag <> store.EnableLimit.Items[Me.LocalIndex] Then
+store.EnableLimit.Items[Me.LocalIndex] = flag
+store.RevoluteLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.RevoluteUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the angle limits are active, ported from
+## b2RevoluteJoint_IsLimitEnabled.
+Function IsLimitEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableLimit.Items[Me.LocalIndex] <> 0
+End Function
+
+## Lower angle limit in radians, ported from
+## b2RevoluteJoint_GetLowerLimit.
+Function GetLowerLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteLowerAngle.Items[Me.LocalIndex]
+End Function
+
+## Upper angle limit in radians, ported from
+## b2RevoluteJoint_GetUpperLimit.
+Function GetUpperLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteUpperAngle.Items[Me.LocalIndex]
+End Function
+
+## Sets both angle limits in radians, ported from
+## b2RevoluteJoint_SetLimits. The lower limit must not exceed the upper
+## limit and both must lie within [-0.99 pi, 0.99 pi], matching the
+## upstream assertions; changing the values clears both accumulated limit
+## impulses.
+Sub SetLimits(lower As Double, upper As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not lower.IsFinite() Or Not upper.IsFinite() Then
+Throw New InvalidArgumentException("Revolute joint limits must be finite")
+End If
+If lower > upper Then
+Throw New InvalidArgumentException("Revolute joint lower limit must not exceed the upper limit")
+End If
+If lower < -0.99 * PhysicsConstants.PI Or upper > 0.99 * PhysicsConstants.PI Then
+Throw New InvalidArgumentException("Revolute joint limits must lie within [-0.99 pi, 0.99 pi]")
+End If
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+If lower <> store.RevoluteLowerAngle.Items[Me.LocalIndex] Or upper <> store.RevoluteUpperAngle.Items[Me.LocalIndex] Then
+store.RevoluteLowerAngle.Items[Me.LocalIndex] = lower
+store.RevoluteUpperAngle.Items[Me.LocalIndex] = upper
+store.RevoluteLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.RevoluteUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## Enables the rotational motor, ported from b2RevoluteJoint_EnableMotor.
+## Toggling clears the accumulated motor impulse.
+Sub EnableMotor(enableMotor As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableMotor Then
+flag = 1
+End If
+If flag <> store.EnableMotor.Items[Me.LocalIndex] Then
+store.EnableMotor.Items[Me.LocalIndex] = flag
+store.RevoluteMotorImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the rotational motor is active, ported from
+## b2RevoluteJoint_IsMotorEnabled.
+Function IsMotorEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableMotor.Items[Me.LocalIndex] <> 0
+End Function
+
+## Desired motor speed in radians per second, ported from
+## b2RevoluteJoint_SetMotorSpeed. Changes apply from the next step.
+Sub SetMotorSpeed(motorSpeed As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).RevoluteMotorSpeed.Items[Me.LocalIndex] = motorSpeed
+End Sub
+
+## Desired motor speed in radians per second, ported from
+## b2RevoluteJoint_GetMotorSpeed.
+Function GetMotorSpeed() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteMotorSpeed.Items[Me.LocalIndex]
+End Function
+
+## Maximum motor torque in newton-metres, ported from
+## b2RevoluteJoint_SetMaxMotorTorque. Changes apply from the next step.
+Sub SetMaxMotorTorque(torque As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).RevoluteMaxMotorTorque.Items[Me.LocalIndex] = torque
+End Sub
+
+## Maximum motor torque in newton-metres, ported from
+## b2RevoluteJoint_GetMaxMotorTorque.
+Function GetMaxMotorTorque() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteMaxMotorTorque.Items[Me.LocalIndex]
+End Function
+
+## Torque the motor applied this step in newton-metres, ported from
+## b2RevoluteJoint_GetMotorTorque.
+Function GetMotorTorque() As Double
+Me.CheckValid()
+Return Me.Owner.InvH * Me.Owner.GetJointSims(Me).RevoluteMotorImpulse.Items[Me.LocalIndex]
+End Function
+End Class
+
+# Revolute joint definition, ported from upstream b2RevoluteJointDef and
+# b2DefaultRevoluteJointDef in types.h and joint.c. Defaults match upstream:
+# coincident local anchors, zero reference and target angles, no spring,
+# no limits, no motor. A revolute joint pins two bodies together at a
+# hinge point and optionally drives or limits the relative angle.
+Class RevoluteJointDefinition
+## First attached body, ported from b2RevoluteJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, ported from b2RevoluteJointDef.bodyIdB.
+Property BodyB As Body
+## Local anchor point relative to body A's origin, in metres.
+Property LocalAnchorA As Vector2
+## Local anchor point relative to body B's origin, in metres.
+Property LocalAnchorB As Vector2
+## Body B angle minus body A angle in the reference state, in radians.
+## Defines the zero angle for the joint angle, limits, and target.
+Property ReferenceAngle As Double
+## Target angle for the rotational spring in radians. The spring-damper
+## drives toward this angle.
+Property TargetAngle As Double
+## True when the rotational spring is active.
+Property EnableSpring As Boolean
+## Rotational spring stiffness in hertz.
+Property Hertz As Double
+## Rotational spring damping ratio, non-dimensional.
+Property DampingRatio As Double
+## True when the angle limits are active.
+Property EnableLimit As Boolean
+## Lower angle limit in radians. Upstream requires at least -0.99 pi.
+Property LowerAngle As Double
+## Upper angle limit in radians. Upstream requires at most 0.99 pi.
+Property UpperAngle As Double
+## True when the rotational motor is active.
+Property EnableMotor As Boolean
+## Maximum motor torque, typically in newton-metres.
+Property MaxMotorTorque As Double
+## Desired motor speed in radians per second.
+Property MotorSpeed As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LocalAnchorA = New Vector2(0.0, 0.0)
+Me.LocalAnchorB = New Vector2(0.0, 0.0)
+Me.ReferenceAngle = 0.0
+Me.TargetAngle = 0.0
+Me.EnableSpring = False
+Me.Hertz = 0.0
+Me.DampingRatio = 0.0
+Me.EnableLimit = False
+Me.LowerAngle = 0.0
+Me.UpperAngle = 0.0
+Me.EnableMotor = False
+Me.MaxMotorTorque = 0.0
+Me.MotorSpeed = 0.0
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
+End Class
+
 # Cosine/sine rotation, ported from upstream b2Rot in math_functions.h and
 # math_functions.c. A rotation stores the cosine and sine of its angle so
 # rotating vectors costs no trigonometric calls.
@@ -16802,6 +17589,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
 JointSolver.WarmStartMouseJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.MotorJoint) Then
 JointSolver.WarmStartMotorJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.RevoluteJoint) Then
+JointSolver.WarmStartRevoluteJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -16820,6 +17609,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.MouseJoint) Then
 JointSolver.SolveMouseJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.MotorJoint) Then
 JointSolver.SolveMotorJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.RevoluteJoint) Then
+JointSolver.SolveRevoluteJoint(sims, i, context, useBias)
 End If
 Next i
 End Sub
@@ -19874,6 +20665,8 @@ ElseIf jointType = JointType.MouseJoint Then
 record = New MouseJoint
 ElseIf jointType = JointType.MotorJoint Then
 record = New MotorJoint
+ElseIf jointType = JointType.RevoluteJoint Then
+record = New RevoluteJoint
 Else
 record = New Joint
 End If
@@ -20173,6 +20966,109 @@ Me.DestroyContactsBetweenBodies(bodyA, bodyB)
 End If
 
 Var facade As MotorJoint = MotorJoint(joint)
+Return facade
+End Function
+
+## Creates a revolute joint, ported from b2CreateRevoluteJoint. Throws on a
+## missing definition, missing or foreign bodies, non-finite anchors or
+## tuning, a lower limit above the upper limit, or limits outside
+## [-0.99 pi, 0.99 pi], matching the upstream assertions. The reference and
+## target angles clamp into [-pi, pi] like upstream. The hinge pins the two
+## local anchors together at one world point.
+Function CreateRevoluteJoint(def As RevoluteJointDefinition) As RevoluteJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "RevoluteJointDefinition")
+Me.CheckJointBody(def.BodyA, "RevoluteJointDefinition.BodyA")
+Me.CheckJointBody(def.BodyB, "RevoluteJointDefinition.BodyB")
+If Not def.LocalAnchorA.X.IsFinite() Or Not def.LocalAnchorA.Y.IsFinite() Then
+Throw New InvalidArgumentException("RevoluteJointDefinition local anchor A must be finite")
+End If
+If Not def.LocalAnchorB.X.IsFinite() Or Not def.LocalAnchorB.Y.IsFinite() Then
+Throw New InvalidArgumentException("RevoluteJointDefinition local anchor B must be finite")
+End If
+If Not def.ReferenceAngle.IsFinite() Or Not def.TargetAngle.IsFinite() Then
+Throw New InvalidArgumentException("RevoluteJointDefinition reference and target angles must be finite")
+End If
+If Not def.Hertz.IsFinite() Or def.Hertz < 0.0 Then
+Throw New InvalidArgumentException("RevoluteJointDefinition hertz must be finite and non-negative")
+End If
+If Not def.DampingRatio.IsFinite() Or def.DampingRatio < 0.0 Then
+Throw New InvalidArgumentException("RevoluteJointDefinition damping ratio must be finite and non-negative")
+End If
+If Not def.MaxMotorTorque.IsFinite() Or def.MaxMotorTorque < 0.0 Then
+Throw New InvalidArgumentException("RevoluteJointDefinition max motor torque must be finite and non-negative")
+End If
+If Not def.MotorSpeed.IsFinite() Then
+Throw New InvalidArgumentException("RevoluteJointDefinition motor speed must be finite")
+End If
+If Not def.LowerAngle.IsFinite() Or Not def.UpperAngle.IsFinite() Then
+Throw New InvalidArgumentException("RevoluteJointDefinition limits must be finite")
+End If
+If def.LowerAngle > def.UpperAngle Then
+Throw New InvalidArgumentException("RevoluteJointDefinition lower limit must not exceed the upper limit")
+End If
+If def.LowerAngle < -0.99 * PhysicsConstants.PI Or def.UpperAngle > 0.99 * PhysicsConstants.PI Then
+Throw New InvalidArgumentException("RevoluteJointDefinition limits must lie within [-0.99 pi, 0.99 pi]")
+End If
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.RevoluteJoint, def.CollideConnected, 1.0)
+Var localIndex As Integer = Me.PlaceJointSim(joint, bodyA, bodyB)
+Var store As JointSims = Me.GetJointSims(joint)
+store.ConstraintHertz.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+store.ConstraintDampingRatio.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+store.LocalOriginAnchorAX.Items[localIndex] = def.LocalAnchorA.X
+store.LocalOriginAnchorAY.Items[localIndex] = def.LocalAnchorA.Y
+store.LocalOriginAnchorBX.Items[localIndex] = def.LocalAnchorB.X
+store.LocalOriginAnchorBY.Items[localIndex] = def.LocalAnchorB.Y
+# Upstream clamps the reference and target angles into [-pi, pi].
+Var referenceAngle As Double = def.ReferenceAngle
+If referenceAngle < -PhysicsConstants.PI Then
+referenceAngle = -PhysicsConstants.PI
+ElseIf referenceAngle > PhysicsConstants.PI Then
+referenceAngle = PhysicsConstants.PI
+End If
+store.RevoluteReferenceAngle.Items[localIndex] = referenceAngle
+Var targetAngle As Double = def.TargetAngle
+If targetAngle < -PhysicsConstants.PI Then
+targetAngle = -PhysicsConstants.PI
+ElseIf targetAngle > PhysicsConstants.PI Then
+targetAngle = PhysicsConstants.PI
+End If
+store.RevoluteTargetAngle.Items[localIndex] = targetAngle
+store.RevoluteHertz.Items[localIndex] = def.Hertz
+store.RevoluteDampingRatio.Items[localIndex] = def.DampingRatio
+store.RevoluteLowerAngle.Items[localIndex] = def.LowerAngle
+store.RevoluteUpperAngle.Items[localIndex] = def.UpperAngle
+store.RevoluteMaxMotorTorque.Items[localIndex] = def.MaxMotorTorque
+store.RevoluteMotorSpeed.Items[localIndex] = def.MotorSpeed
+store.EnableSpring.Items[localIndex] = 0
+store.EnableLimit.Items[localIndex] = 0
+store.EnableMotor.Items[localIndex] = 0
+If def.EnableSpring Then
+store.EnableSpring.Items[localIndex] = 1
+End If
+If def.EnableLimit Then
+store.EnableLimit.Items[localIndex] = 1
+End If
+If def.EnableMotor Then
+store.EnableMotor.Items[localIndex] = 1
+End If
+joint.UserData = def.UserData
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# If the joint prevents collisions, destroy all contacts between the
+# attached bodies.
+If def.CollideConnected = False Then
+Me.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+
+Var facade As RevoluteJoint = RevoluteJoint(joint)
 Return facade
 End Function
 

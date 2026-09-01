@@ -179,6 +179,22 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     impulses (upstream asserts at least one awake body and otherwise reads
     the state array unguarded), and the solve body never reads the base
     constraint softness, so the motor family stores no softness columns.
+34. **Revolute joint validation and plain setters.** Upstream asserts the
+    revolute limit range at creation and in `b2RevoluteJoint_SetLimits`
+    (lower not above upper, both within [-0.99 pi, 0.99 pi]); Physics2D
+    throws `InvalidArgumentException` instead, matching the port's
+    validation policy. Upstream clamps the reference and target angles into
+    [-pi, pi] at creation; Physics2D matches the clamping and throws on
+    non-finite definition input. Runtime tuning setters that upstream
+    stores plainly (`SetSpringHertz`, `SetSpringDampingRatio`,
+    `SetTargetAngle`, `SetMotorSpeed`, `SetMaxMotorTorque`) stay plain, so
+    non-finite values cannot enter through the definition but follow the
+    distance-family convention at runtime. Toggling the spring, limits, or
+    motor clears the corresponding accumulated impulses exactly like
+    upstream, and tuning changes do not wake the bodies. The hinge reuses
+    the base `EnableSpring`/`EnableLimit`/`EnableMotor` flag columns and
+    stores its symmetric 2x2 point-to-point solve inline because the
+    combined matrix changes every iteration with the delta rotations.
 
 ## Public Symbol Inventory
 

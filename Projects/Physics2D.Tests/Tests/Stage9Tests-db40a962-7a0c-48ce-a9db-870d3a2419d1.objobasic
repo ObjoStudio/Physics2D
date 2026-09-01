@@ -24,6 +24,15 @@ Private Property mCrossMotorDef As MotorJointDefinition
 ## Motor joint used by the validation throwers.
 Private Property mMotorThrowJoint As MotorJoint
 
+## Revolute joint used by the validation throwers.
+Private Property mRevoluteThrowJoint As RevoluteJoint
+
+## Revolute definition reused by the cross-world throwers.
+Private Property mCrossRevoluteDef As RevoluteJointDefinition
+
+## Invalid revolute definition reused by the creation thrower.
+Private Property mBadRevoluteDef As RevoluteJointDefinition
+
 ## Builds a world with a wide static ground box whose top surface is y=0.
 Shared Function MakeWorld() As World
 Var world As New World
@@ -115,6 +124,35 @@ def.MaxForce = maxForce
 def.MaxTorque = maxTorque
 def.CorrectionFactor = correctionFactor
 Return world.CreateMotorJoint(def)
+End Function
+
+## Builds the hanging-hinge scene shared by the revolute tests: a 0.25 kg
+## box pinned at (2, -0.25) through its top edge, hanging straight down.
+Shared Function MakeHingeWorld(angularDamping As Double) As World
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+boxDef.Position = New Vector2(2.0, -0.5)
+boxDef.AngularDamping = angularDamping
+Var box As Body = world.CreateBody(boxDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var def As New RevoluteJointDefinition
+def.BodyA = ground
+def.BodyB = box
+# The ground body sits at (0, -1), so the local anchor (2, 0.75) puts the
+# world pivot at (2, -0.25), matching the golden fixture scenes.
+def.LocalAnchorA = New Vector2(2.0, 0.75)
+def.LocalAnchorB = New Vector2(0.0, 0.25)
+world.CreateRevoluteJoint(def)
+Return world
+End Function
+
+## Returns the revolute joint of the single-joint hinge scene.
+Shared Function HingeJoint(world As World) As RevoluteJoint
+Return RevoluteJoint(world.Bodies[1].GetJoints()[0])
 End Function
 
 ## A rigid distance joint holds two hanging boxes at the rest length.
@@ -1369,6 +1407,400 @@ Assert.True(box.IsAwake() = False, "box asleep after measured window")
 world.Validate()
 End Sub
 
+## A revolute hinge pins the box at the anchor point, holds its weight,
+## and settles asleep after a kicked swing decays.
+Public Sub TestRevoluteHingeHoldsAnchor()
+Var world As World = Stage9Tests.MakeHingeWorld(5.0)
+Var box As Body = world.Bodies[1]
+Var joint As RevoluteJoint = Stage9Tests.HingeJoint(world)
+Assert.Equal(JointType.RevoluteJoint, joint.GetJointType(), "revolute joint type")
+PhysicsAssert.Near(0.0, joint.GetAngle(), 0.0, 0.0, "initial joint angle")
+# Kick the box and let the swing decay.
+Stage9Tests.Steps(world, 60)
+box.SetAngularVelocity(1.0)
+Stage9Tests.Steps(world, 180)
+Var transform As Transform = world.GetBodyTransform(box)
+Var anchor As Vector2 = transform.P
+PhysicsAssert.Near(2.0, anchor.X, 0.002, 0.002, "hinge holds the anchor x")
+PhysicsAssert.Near(-0.5, anchor.Y, 0.002, 0.002, "hinge holds the anchor y")
+Assert.True(box.IsAwake() = False, "kicked hinge settles asleep")
+Var force As Vector2 = joint.GetConstraintForce()
+PhysicsAssert.Near(0.0, force.X, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "settled force x")
+PhysicsAssert.Near(2.5, force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, "settled force holds the 0.25 kg weight")
+Assert.True(joint.IsSpringEnabled() = False, "spring disabled by default")
+Assert.True(joint.IsLimitEnabled() = False, "limits disabled by default")
+Assert.True(joint.IsMotorEnabled() = False, "motor disabled by default")
+Assert.Equal(0.0, joint.GetMotorTorque(), "motor torque zero when disabled")
+world.Validate()
+End Sub
+
+## A damped rotational spring drives the box toward the target angle and
+## gravity sags the settled angle below the target.
+Public Sub TestRevoluteSpringDrivesToTarget()
+Var world As World = Stage9Tests.MakeHingeWorld(0.0)
+Var box As Body = world.Bodies[1]
+Var joint As RevoluteJoint = Stage9Tests.HingeJoint(world)
+joint.EnableSpring(True)
+joint.SetSpringHertz(2.0)
+joint.SetSpringDampingRatio(0.6)
+joint.SetTargetAngle(0.8)
+Stage9Tests.Steps(world, 240)
+Var angle As Double = joint.GetAngle()
+PhysicsAssert.Near(0.590263, angle, 0.002, 0.002, "spring settles below the target under gravity sag")
+Assert.True(box.IsAwake() = False, "spring-driven body falls asleep")
+Assert.Equal(0.8, joint.GetTargetAngle(), "target angle round trip")
+Assert.Equal(2.0, joint.GetSpringHertz(), "spring hertz round trip")
+Assert.Equal(0.6, joint.GetSpringDampingRatio(), "spring damping round trip")
+# Retarget with an explicit wake, matching the no-wake setter semantics.
+joint.SetTargetAngle(0.0)
+Assert.True(box.IsAwake() = False, "target change does not wake a sleeping body")
+box.SetAwake(True)
+Stage9Tests.Steps(world, 240)
+PhysicsAssert.Near(0.0, joint.GetAngle(), 0.002, 0.002, "spring returns to the zero target")
+Assert.True(box.IsAwake() = False, "body sleeps at the new target")
+world.Validate()
+End Sub
+
+## A zero-speed motor acts as a torque-clamped brake, dissipating the kick
+## and holding the box with a small residual torque.
+Public Sub TestRevoluteMotorBrakeClampsTorque()
+Var world As World = Stage9Tests.MakeHingeWorld(0.0)
+Var box As Body = world.Bodies[1]
+Var joint As RevoluteJoint = Stage9Tests.HingeJoint(world)
+joint.EnableMotor(True)
+joint.SetMaxMotorTorque(0.5)
+Assert.True(joint.IsMotorEnabled(), "motor enabled")
+Stage9Tests.Steps(world, 60)
+box.SetAngularVelocity(1.0)
+Stage9Tests.Steps(world, 180)
+Assert.True(box.IsAwake() = False, "braked body falls asleep")
+PhysicsAssert.Near(0.003622, joint.GetAngle(), 0.002, 0.002, "brake holds the box near the start angle")
+Var torque As Double = joint.GetMotorTorque()
+Assert.True(torque <= 0.5 + 0.01, "motor torque stays within the clamp")
+PhysicsAssert.Near(0.002291, joint.GetConstraintTorque(), 0.0005, 0.0005, "constraint torque matches the residual motor torque")
+# A motor spinning at constant speed tracks the requested speed.
+joint.SetMaxMotorTorque(10.0)
+joint.SetMotorSpeed(2.0)
+box.SetAwake(True)
+Stage9Tests.Steps(world, 60)
+PhysicsAssert.Near(2.0, world.GetBodyAngularVelocity(box), 0.05, 0.05, "motor drives the box to the requested speed")
+world.Validate()
+End Sub
+
+## Angle limits clamp the joint angle: the hanging equilibrium sits below
+## the lower limit and the limit holds the box there against gravity.
+Public Sub TestRevoluteLimitsHoldAtLowerLimit()
+Var world As World = Stage9Tests.MakeHingeWorld(2.0)
+Var joint As RevoluteJoint = Stage9Tests.HingeJoint(world)
+joint.SetLimits(0.5, 0.9)
+joint.EnableLimit(True)
+Assert.True(joint.IsLimitEnabled(), "limits enabled")
+Assert.Equal(0.5, joint.GetLowerLimit(), "lower limit round trip")
+Assert.Equal(0.9, joint.GetUpperLimit(), "upper limit round trip")
+Stage9Tests.Steps(world, 240)
+PhysicsAssert.Near(0.5, joint.GetAngle(), 0.002, 0.002, "lower limit holds the box against gravity")
+Assert.True(world.Bodies[1].IsAwake() = False, "limit-held body falls asleep")
+PhysicsAssert.Near(0.2995, joint.GetConstraintTorque(), 0.001, 0.001, "limit torque balances the weight")
+# Changing the limits clears the accumulated limit impulses; widening the
+# range lets the box fall back to the hanging equilibrium.
+joint.SetLimits(-0.9, 0.9)
+Var box As Body = world.Bodies[1]
+box.SetAwake(True)
+Stage9Tests.Steps(world, 480)
+PhysicsAssert.Near(0.0, joint.GetAngle(), 0.01, 0.01, "widened limits release the box to hang")
+world.Validate()
+End Sub
+
+## Revolute joint setters round trip and reject invalid input; enabling
+## and disabling clears the corresponding impulses.
+Public Sub TestRevoluteRuntimeProperties()
+Var world As World = Stage9Tests.MakeHingeWorld(0.0)
+Var joint As RevoluteJoint = Stage9Tests.HingeJoint(world)
+Me.mRevoluteThrowJoint = joint
+joint.SetSpringHertz(3.0)
+joint.SetSpringDampingRatio(0.8)
+joint.SetTargetAngle(0.4)
+joint.SetMotorSpeed(-1.5)
+joint.SetMaxMotorTorque(25.0)
+Assert.Equal(3.0, joint.GetSpringHertz(), "runtime hertz round trip")
+Assert.Equal(0.8, joint.GetSpringDampingRatio(), "runtime damping round trip")
+Assert.Equal(0.4, joint.GetTargetAngle(), "runtime target round trip")
+Assert.Equal(-1.5, joint.GetMotorSpeed(), "runtime motor speed round trip")
+Assert.Equal(25.0, joint.GetMaxMotorTorque(), "runtime max torque round trip")
+joint.EnableSpring(True)
+joint.EnableLimit(True)
+joint.EnableMotor(True)
+Assert.True(joint.IsSpringEnabled() And joint.IsLimitEnabled() And joint.IsMotorEnabled(), "all three toggles enabled")
+joint.EnableSpring(False)
+joint.EnableLimit(False)
+joint.EnableMotor(False)
+Assert.True(joint.IsSpringEnabled() = False And joint.IsLimitEnabled() = False And joint.IsMotorEnabled() = False, "all three toggles disabled")
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowRevoluteInvertedLimits)
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowRevoluteWideLimits)
+joint.SetUserData(world)
+Assert.True(joint.GetUserData() = world, "revolute user data round trip")
+world.Validate()
+End Sub
+
+## Recreates the four revolute-joint scenes of the joint_revolute golden
+## fixture and compares final transforms, awake flags, constraint forces,
+## torques, and joint angles against upstream Box2D 3.1.1 output generated
+## from the pinned sources.
+Public Sub TestRevoluteJointMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("joint_revolute.txt")
+
+Var hingeWorld As World = Stage9Tests.MakeHingeWorld(5.0)
+Var hingeJoint As RevoluteJoint = Stage9Tests.HingeJoint(hingeWorld)
+Var springWorld As World = Stage9Tests.MakeHingeWorld(0.0)
+Var springJoint As RevoluteJoint = Stage9Tests.HingeJoint(springWorld)
+springJoint.EnableSpring(True)
+springJoint.SetSpringHertz(2.0)
+springJoint.SetSpringDampingRatio(0.6)
+springJoint.SetTargetAngle(0.8)
+Var brakeWorld As World = Stage9Tests.MakeHingeWorld(0.0)
+Var brakeJoint As RevoluteJoint = Stage9Tests.HingeJoint(brakeWorld)
+brakeJoint.EnableMotor(True)
+brakeJoint.SetMaxMotorTorque(0.5)
+Var limitsWorld As World = Stage9Tests.MakeHingeWorld(2.0)
+Var limitsJoint As RevoluteJoint = Stage9Tests.HingeJoint(limitsWorld)
+limitsJoint.SetLimits(0.5, 0.9)
+limitsJoint.EnableLimit(True)
+
+Var frameIndex As Integer = 0
+While frameIndex < 240
+hingeWorld.StepWorld(1.0 / 60.0)
+brakeWorld.StepWorld(1.0 / 60.0)
+springWorld.StepWorld(1.0 / 60.0)
+limitsWorld.StepWorld(1.0 / 60.0)
+If frameIndex = 60 Then
+hingeWorld.Bodies[1].SetAngularVelocity(1.0)
+brakeWorld.Bodies[1].SetAngularVelocity(1.0)
+End If
+frameIndex = frameIndex + 1
+Wend
+
+Var worlds() As World = [hingeWorld, springWorld, brakeWorld, limitsWorld]
+Var joints() As RevoluteJoint = [hingeJoint, springJoint, brakeJoint, limitsJoint]
+Var names() As String = ["hinge", "spring", "brake", "limits"]
+
+Var checkedRecords As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+Var caseName As String = fields[1]
+Var kind As String = fields[2]
+Var sceneIndex As Integer = -1
+Var nameIndex As Integer = 0
+While nameIndex < 4
+If names[nameIndex] = caseName Then
+sceneIndex = nameIndex
+End If
+nameIndex = nameIndex + 1
+Wend
+If sceneIndex < 0 Then
+Assert.Fail("unknown revolute fixture case " + caseName)
+End If
+Var world As World = worlds[sceneIndex]
+Var joint As RevoluteJoint = joints[sceneIndex]
+If kind = "body" Then
+Var values() As String = fields[4].Split(" ")
+Var transform As Transform = world.GetBodyTransform(world.Bodies[1])
+PhysicsAssert.Near(Double.Parse(values[0]), transform.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, caseName + " body x")
+PhysicsAssert.Near(Double.Parse(values[1]), transform.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, caseName + " body y")
+PhysicsAssert.Near(Double.Parse(values[2]), Rot.GetAngle(transform.Q), Tolerances.SCENE_ABS, Tolerances.SCENE_REL, caseName + " body angle")
+If Integer.Parse(values[3]) = 1 Then
+Assert.True(world.Bodies[1].IsAwake(), caseName + " awake")
+Else
+Assert.True(world.Bodies[1].IsAwake() = False, caseName + " asleep")
+End If
+ElseIf kind = "revolute" Then
+Var jointValues() As String = fields[3].Split(" ")
+Var force As Vector2 = joint.GetConstraintForce()
+PhysicsAssert.Near(Double.Parse(jointValues[0]), force.X, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, caseName + " force x")
+PhysicsAssert.Near(Double.Parse(jointValues[1]), force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, caseName + " force y")
+PhysicsAssert.Near(Double.Parse(jointValues[2]), joint.GetConstraintTorque(), Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, caseName + " torque")
+PhysicsAssert.Near(Double.Parse(jointValues[3]), joint.GetAngle(), Tolerances.SCENE_ABS, Tolerances.SCENE_REL, caseName + " joint angle")
+Else
+Assert.Fail("unknown revolute fixture kind " + kind)
+End If
+checkedRecords = checkedRecords + 1
+Next line
+Assert.Equal(8, checkedRecords)
+hingeWorld.Validate()
+springWorld.Validate()
+brakeWorld.Validate()
+limitsWorld.Validate()
+End Sub
+
+## Revolute joint lifecycle: destruction, stale facades, slot reuse, body
+## destruction destroying the attached joint, and collide-connected
+## contact suppression.
+Public Sub TestRevoluteJointLifecycle()
+Var world As World = Stage9Tests.MakeHingeWorld(0.0)
+Var ground As Body = world.Bodies[0]
+Var box As Body = world.Bodies[1]
+Var joint As RevoluteJoint = Stage9Tests.HingeJoint(world)
+Assert.Equal(1, world.JointCount, "one live revolute joint")
+Assert.True(joint.IsValid(), "facade valid after creation")
+Var reusedId As Integer = joint.Id
+Stage9Tests.Steps(world, 30)
+joint.Destroy()
+Assert.False(joint.IsValid(), "stale facade invalid after destroy")
+Assert.Equal(0, world.JointCount, "world empty after destroy")
+Assert.Equal(0, ground.GetJointCount(), "ground unlinked")
+Assert.Equal(0, box.GetJointCount(), "box unlinked")
+Assert.True(box.IsAwake(), "destroy wakes the hinged body")
+Var replacementDef As New RevoluteJointDefinition
+replacementDef.BodyA = ground
+replacementDef.BodyB = box
+replacementDef.LocalAnchorA = New Vector2(1.0, -0.25)
+replacementDef.LocalAnchorB = New Vector2(-1.0, 0.25)
+Var replacement As RevoluteJoint = world.CreateRevoluteJoint(replacementDef)
+Assert.Equal(reusedId, replacement.Id, "slot reused")
+Assert.False(joint.IsValid(), "stale facade stays invalid after slot reuse")
+world.DestroyBody(box)
+Assert.Equal(0, world.JointCount, "attached revolute joint destroyed with the body")
+Stage9Tests.Steps(world, 10)
+world.Validate()
+End Sub
+
+## Cross-world and missing revolute joint bodies are rejected at creation,
+## and invalid definitions throw.
+Public Sub TestRevoluteJointRejectsInvalidDefinitions()
+Var worldA As New World
+Var worldB As New World
+Var bodyA As Body = Stage9Tests.MakeDraggedBox(worldA, 2.0, -0.5)
+Var bodyB As Body = Stage9Tests.MakeDraggedBox(worldB, 2.0, -0.5)
+Var def As New RevoluteJointDefinition
+def.BodyA = bodyA
+def.BodyB = bodyB
+Me.mCrossRevoluteDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldRevoluteJoint)
+def.BodyB = Nothing
+Me.mCrossRevoluteDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldRevoluteJoint)
+worldA.Validate()
+worldB.Validate()
+
+Var world As World = Stage9Tests.MakeHingeWorld(0.0)
+Var ground As Body = world.Bodies[0]
+Var box As Body = world.Bodies[1]
+Var badDef As New RevoluteJointDefinition
+badDef.BodyA = ground
+badDef.BodyB = box
+Me.mBadRevoluteDef = badDef
+badDef.LowerAngle = 0.6
+badDef.UpperAngle = 0.2
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCreateRevoluteJoint)
+badDef.LowerAngle = -3.2
+badDef.UpperAngle = 0.2
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCreateRevoluteJoint)
+badDef.LowerAngle = 0.2
+badDef.UpperAngle = 3.2
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCreateRevoluteJoint)
+badDef.LowerAngle = 0.0
+badDef.UpperAngle = 0.0
+badDef.Hertz = -1.0
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCreateRevoluteJoint)
+world.Validate()
+End Sub
+
+## A hinge between two dynamic bodies converges and both bodies sleep.
+Public Sub TestRevoluteJointBetweenDynamicBodies()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var carrierDef As New BodyDefinition
+carrierDef.Type = BodyType.DynamicBody
+carrierDef.Position = New Vector2(0.0, 0.5)
+Var carrier As Body = world.CreateBody(carrierDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+carrier.CreatePolygon(shapeDef, Polygon.MakeBox(0.5, 0.5))
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+boxDef.Position = New Vector2(1.5, 0.5)
+boxDef.AngularDamping = 2.0
+Var box As Body = world.CreateBody(boxDef)
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var def As New RevoluteJointDefinition
+def.BodyA = carrier
+def.BodyB = box
+def.LocalAnchorA = New Vector2(0.5, 0.0)
+def.LocalAnchorB = New Vector2(-0.75, 0.0)
+world.CreateRevoluteJoint(def)
+Stage9Tests.Steps(world, 240)
+Assert.True(carrier.IsAwake() = False, "carrier sleeps")
+Assert.True(box.IsAwake() = False, "box sleeps")
+world.Validate()
+End Sub
+
+## A hinge swings the box deterministically across repeated worlds.
+Public Sub TestRevoluteJointDeterminism()
+Var first As World = Stage9Tests.MakeHingeWorld(2.0)
+Var second As World = Stage9Tests.MakeHingeWorld(2.0)
+Stage9Tests.Steps(first, 60)
+Stage9Tests.Steps(second, 60)
+first.Bodies[1].SetAngularVelocity(1.0)
+second.Bodies[1].SetAngularVelocity(1.0)
+Stage9Tests.Steps(first, 180)
+Stage9Tests.Steps(second, 180)
+Var firstChecksum As Integer = Stage9Tests.FoldWorld(first)
+Var secondChecksum As Integer = Stage9Tests.FoldWorld(second)
+Assert.Equal(firstChecksum, secondChecksum, "revolute swing repeats bit for bit")
+first.Validate()
+second.Validate()
+End Sub
+
+## After a warm-up that covers sleeping, waking, kicking, retargeting, and
+## re-sleeping with a revolute joint attached, further steps must allocate
+## nothing. Gate for the Stage 9 zero-allocation requirement on the
+## revolute family, including the runtime tuning path.
+Public Sub TestWarmRevoluteJointAllocatesNothing()
+Var world As World = Stage9Tests.MakeHingeWorld(0.0)
+Var box As Body = world.Bodies[1]
+Var joint As RevoluteJoint = Stage9Tests.HingeJoint(world)
+joint.EnableSpring(True)
+joint.SetSpringHertz(2.0)
+joint.SetSpringDampingRatio(0.6)
+
+# Warm-up: settle, sleep, wake with a kick and a retarget, sleep again so
+# every migration buffer and graph colour list is sized.
+Var warmIndex As Integer = 0
+While warmIndex < 120
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+joint.SetTargetAngle(0.5)
+box.SetAwake(True)
+While warmIndex < 300
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(box.IsAwake() = False, "box asleep after first retarget warm-up")
+box.SetAwake(True)
+While warmIndex < 420
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(box.IsAwake() = False, "box asleep after warm-up")
+
+# Measured window: wake the body, retarget mid-window, let it sleep. All
+# setters below are scalar overloads, so the runtime tuning path stays
+# allocation-free.
+Var before As Integer = System.AllocationCount
+box.SetAwake(True)
+Var stepIndex As Integer = 0
+While stepIndex < 90
+world.StepWorld(1.0 / 60.0)
+If stepIndex = 30 Then
+joint.SetTargetAngle(-0.4)
+End If
+stepIndex = stepIndex + 1
+Wend
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed revolute joint stepping allocates nothing")
+Assert.True(box.IsAwake() = False, "box asleep after measured window")
+world.Validate()
+End Sub
+
 ## A chain of distance joints swings and settles deterministically.
 Public Sub TestJointChainDeterminism()
 Var first As World = Stage9Tests.MakeJointChainWorld()
@@ -1499,6 +1931,29 @@ End Sub
 Private Sub ThrowCrossWorldMotorJoint()
 Var world As World = Stage9Tests.MakeMouseWorld()
 world.CreateMotorJoint(Me.mCrossMotorDef)
+End Sub
+
+## Throws an inverted revolute limit range.
+Private Sub ThrowRevoluteInvertedLimits()
+Me.mRevoluteThrowJoint.SetLimits(0.6, 0.2)
+End Sub
+
+## Throws revolute limits outside the upstream range.
+Private Sub ThrowRevoluteWideLimits()
+Me.mRevoluteThrowJoint.SetLimits(-3.2, 0.2)
+End Sub
+
+## Throws while creating a revolute joint with an invalid definition.
+Private Sub ThrowCreateRevoluteJoint()
+Var world As World = Stage9Tests.MakeHingeWorld(0.0)
+world.CreateRevoluteJoint(Me.mBadRevoluteDef)
+End Sub
+
+## Throws while creating a revolute joint with a definition that mixes
+## worlds.
+Private Sub ThrowCrossWorldRevoluteJoint()
+Var world As World = Stage9Tests.MakeMouseWorld()
+world.CreateRevoluteJoint(Me.mCrossRevoluteDef)
 End Sub
 
 ## Throws an inverted length range.

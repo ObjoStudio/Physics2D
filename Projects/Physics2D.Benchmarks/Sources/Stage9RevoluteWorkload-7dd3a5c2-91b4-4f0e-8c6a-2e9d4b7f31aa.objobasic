@@ -1,0 +1,113 @@
+# Stage 9 revolute workload: thirty motor-driven hinges, the realistic
+# continuously rotating wheel pattern. Each box hangs from a ground pivot
+# and spins under a constant-speed revolute motor, exercising the motor
+# clamp and the point-to-point block every step. Motor tuning is fixed at
+# creation, so the measured path is the solver loop itself.
+Class RevoluteSwingWorkload
+## The stepped world.
+Property World As World
+## The spinning boxes.
+Property Boxes As Array(Of Body)
+## The revolute joints, in box order.
+Property Joints As Array(Of RevoluteJoint)
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Builds a fresh scene of thirty motor-driven hinges over a static ground.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -1.0)
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 1.0))
+
+Me.Boxes = New Array(Of Body)
+Me.Joints = New Array(Of RevoluteJoint)
+Me.Boxes.Reserve(30)
+Me.Joints.Reserve(30)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var boxIndex As Integer = 0
+While boxIndex < 30
+Var pivotX As Double = -14.5 + 1.0 * boxIndex
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+boxDef.Position = New Vector2(pivotX, 1.25)
+Var box As Body = Me.World.CreateBody(boxDef)
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Me.Boxes.Append(box)
+Var def As New RevoluteJointDefinition
+def.BodyA = ground
+def.BodyB = box
+def.LocalAnchorA = New Vector2(pivotX, 2.5)
+def.LocalAnchorB = New Vector2(0.0, 0.25)
+def.EnableMotor = True
+def.MotorSpeed = 1.0 + 0.05 * boxIndex
+If boxIndex Mod 2 = 1 Then
+def.MotorSpeed = -def.MotorSpeed
+End If
+def.MaxMotorTorque = 50.0
+Me.Joints.Append(Me.World.CreateRevoluteJoint(def))
+boxIndex = boxIndex + 1
+Wend
+Me.SubSteps = 1
+Me.World.UpdateBroadPhasePairs()
+# Warm the solver so measured iterations exclude capacity growth.
+Var warmIndex As Integer = 0
+While warmIndex < 240
+Me.StepFrame()
+warmIndex = warmIndex + 1
+Wend
+End Sub
+
+## Steps one frame.
+Sub StepFrame()
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+End Sub
+
+## Steps the scene four times, then folds live transforms.
+Sub RunKernels()
+Var stepIndex As Integer = 0
+While stepIndex < 4
+Me.StepFrame()
+stepIndex = stepIndex + 1
+Wend
+Var checksum As Integer = 0
+Var count As Integer = Me.Boxes.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Boxes[i])
+checksum = Me.FoldDouble(checksum, transform.P.X)
+checksum = Me.FoldDouble(checksum, transform.P.Y)
+checksum = Me.FoldDouble(checksum, transform.Q.C)
+checksum = Me.FoldDouble(checksum, transform.Q.S)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## Folds one Double into the checksum, matching the PhysicsAssert fold:
+## round to nine decimals, then FNV-1a over the little-end octets.
+Function FoldDouble(checksum As Integer, value As Double) As Integer
+Var scaled As Integer = Integer(Maths.Round(value * 1000000000.0))
+Var hash As Integer = checksum
+Var octetIndex As Integer = 0
+While octetIndex < 8
+Var octet As Integer = scaled.BitAnd(255)
+hash = hash.BitXor(octet)
+hash = hash * 1099511628211
+scaled = scaled.ShiftRight(8)
+octetIndex = octetIndex + 1
+Wend
+Return hash
+End Function
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class

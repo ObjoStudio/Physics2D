@@ -1,0 +1,37 @@
+# Stage 9 benchmark scenario wrapping the revolute swing workload.
+Import Physics2D
+
+Class Stage9RevoluteScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As RevoluteSwingWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage9-revolute-swing-30"
+Me.Description = "Spins 30 motor-driven hinges through the full Stage 9 solver four times per iteration."
+Me.WarmupIterations = 3
+Me.MeasuredIterations = 8
+Me.mWorkload = New RevoluteSwingWorkload
+End Constructor
+
+## Describes the swing parameters.
+Override Function Parameters() As String
+Return "boxes=30,joints=30,steps=4,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class

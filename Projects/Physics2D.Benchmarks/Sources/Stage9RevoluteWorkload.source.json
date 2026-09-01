@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9RevoluteWorkload",
+  "Id": "7dd3a5c2-91b4-4f0e-8c6a-2e9d4b7f31aa",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9RevoluteWorkload-7dd3a5c2-91b4-4f0e-8c6a-2e9d4b7f31aa.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

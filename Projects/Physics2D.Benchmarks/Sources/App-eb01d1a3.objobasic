@@ -63,6 +63,7 @@ runner.Add(New Stage7PyramidScenario())
 runner.Add(New Stage9JointChainScenario())
 runner.Add(New Stage9MouseDragScenario())
 runner.Add(New Stage9MotorDriveScenario())
+runner.Add(New Stage9RevoluteScenario())
 
 Var results() As BenchmarkResult = runner.RunAll()
 

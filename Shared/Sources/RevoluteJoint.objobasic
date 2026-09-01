@@ -1,0 +1,214 @@
+# Public revolute joint façade, ported from the b2RevoluteJoint_* surface in
+# revolute_joint.c. The joint pins two bodies at a hinge point; a spring,
+# limits, and a motor optionally act on the relative angle. Tuning changes
+# deliberately do not wake the bodies, matching upstream; the solver picks
+# up new values on the next step. Enabling or disabling the spring, limits,
+# or motor clears the corresponding accumulated impulses exactly like the
+# upstream toggles. Setters store plain values where upstream stores plain
+# values and throw where upstream asserts. The façade reads and writes its
+# row in the owning JointSims store.
+Class RevoluteJoint Inherits Joint
+## Enables the rotational spring, ported from b2RevoluteJoint_EnableSpring.
+## Toggling clears the accumulated spring impulse.
+Sub EnableSpring(enableSpring As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableSpring Then
+flag = 1
+End If
+If flag <> store.EnableSpring.Items[Me.LocalIndex] Then
+store.EnableSpring.Items[Me.LocalIndex] = flag
+store.RevoluteSpringImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the rotational spring is active, ported from
+## b2RevoluteJoint_IsSpringEnabled.
+Function IsSpringEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableSpring.Items[Me.LocalIndex] <> 0
+End Function
+
+## Rotational spring stiffness in hertz, ported from
+## b2RevoluteJoint_SetSpringHertz. Changes apply from the next step.
+Sub SetSpringHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).RevoluteHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Rotational spring stiffness in hertz, ported from
+## b2RevoluteJoint_GetSpringHertz.
+Function GetSpringHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteHertz.Items[Me.LocalIndex]
+End Function
+
+## Rotational spring damping ratio, ported from
+## b2RevoluteJoint_SetSpringDampingRatio. Changes apply from the next step.
+Sub SetSpringDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).RevoluteDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Rotational spring damping ratio, ported from
+## b2RevoluteJoint_GetSpringDampingRatio.
+Function GetSpringDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## Target angle of the rotational spring in radians, ported from
+## b2RevoluteJoint_SetTargetAngle. Changes apply from the next step and do
+## not wake the bodies.
+Sub SetTargetAngle(angle As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).RevoluteTargetAngle.Items[Me.LocalIndex] = angle
+End Sub
+
+## Target angle of the rotational spring in radians, ported from
+## b2RevoluteJoint_GetTargetAngle.
+Function GetTargetAngle() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteTargetAngle.Items[Me.LocalIndex]
+End Function
+
+## Current joint angle in radians, ported from b2RevoluteJoint_GetAngle:
+## the live relative body angle minus the reference angle, wrapped into
+## [-pi, pi].
+Function GetAngle() As Double
+Me.CheckValid()
+Var transformA As Transform = Me.Owner.GetBodyTransform(Me.GetBodyA())
+Var transformB As Transform = Me.Owner.GetBodyTransform(Me.GetBodyB())
+Var angle As Double = Rot.RelativeAngle(transformB.Q, transformA.Q) - Me.Owner.GetJointSims(Me).RevoluteReferenceAngle.Items[Me.LocalIndex]
+Return PhysicsMaths.UnwindAngle(angle)
+End Function
+
+## Enables the angle limits, ported from b2RevoluteJoint_EnableLimit.
+## Toggling clears both accumulated limit impulses.
+Sub EnableLimit(enableLimit As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableLimit Then
+flag = 1
+End If
+If flag <> store.EnableLimit.Items[Me.LocalIndex] Then
+store.EnableLimit.Items[Me.LocalIndex] = flag
+store.RevoluteLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.RevoluteUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the angle limits are active, ported from
+## b2RevoluteJoint_IsLimitEnabled.
+Function IsLimitEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableLimit.Items[Me.LocalIndex] <> 0
+End Function
+
+## Lower angle limit in radians, ported from
+## b2RevoluteJoint_GetLowerLimit.
+Function GetLowerLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteLowerAngle.Items[Me.LocalIndex]
+End Function
+
+## Upper angle limit in radians, ported from
+## b2RevoluteJoint_GetUpperLimit.
+Function GetUpperLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteUpperAngle.Items[Me.LocalIndex]
+End Function
+
+## Sets both angle limits in radians, ported from
+## b2RevoluteJoint_SetLimits. The lower limit must not exceed the upper
+## limit and both must lie within [-0.99 pi, 0.99 pi], matching the
+## upstream assertions; changing the values clears both accumulated limit
+## impulses.
+Sub SetLimits(lower As Double, upper As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not lower.IsFinite() Or Not upper.IsFinite() Then
+Throw New InvalidArgumentException("Revolute joint limits must be finite")
+End If
+If lower > upper Then
+Throw New InvalidArgumentException("Revolute joint lower limit must not exceed the upper limit")
+End If
+If lower < -0.99 * PhysicsConstants.PI Or upper > 0.99 * PhysicsConstants.PI Then
+Throw New InvalidArgumentException("Revolute joint limits must lie within [-0.99 pi, 0.99 pi]")
+End If
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+If lower <> store.RevoluteLowerAngle.Items[Me.LocalIndex] Or upper <> store.RevoluteUpperAngle.Items[Me.LocalIndex] Then
+store.RevoluteLowerAngle.Items[Me.LocalIndex] = lower
+store.RevoluteUpperAngle.Items[Me.LocalIndex] = upper
+store.RevoluteLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.RevoluteUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## Enables the rotational motor, ported from b2RevoluteJoint_EnableMotor.
+## Toggling clears the accumulated motor impulse.
+Sub EnableMotor(enableMotor As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableMotor Then
+flag = 1
+End If
+If flag <> store.EnableMotor.Items[Me.LocalIndex] Then
+store.EnableMotor.Items[Me.LocalIndex] = flag
+store.RevoluteMotorImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the rotational motor is active, ported from
+## b2RevoluteJoint_IsMotorEnabled.
+Function IsMotorEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableMotor.Items[Me.LocalIndex] <> 0
+End Function
+
+## Desired motor speed in radians per second, ported from
+## b2RevoluteJoint_SetMotorSpeed. Changes apply from the next step.
+Sub SetMotorSpeed(motorSpeed As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).RevoluteMotorSpeed.Items[Me.LocalIndex] = motorSpeed
+End Sub
+
+## Desired motor speed in radians per second, ported from
+## b2RevoluteJoint_GetMotorSpeed.
+Function GetMotorSpeed() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteMotorSpeed.Items[Me.LocalIndex]
+End Function
+
+## Maximum motor torque in newton-metres, ported from
+## b2RevoluteJoint_SetMaxMotorTorque. Changes apply from the next step.
+Sub SetMaxMotorTorque(torque As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).RevoluteMaxMotorTorque.Items[Me.LocalIndex] = torque
+End Sub
+
+## Maximum motor torque in newton-metres, ported from
+## b2RevoluteJoint_GetMaxMotorTorque.
+Function GetMaxMotorTorque() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).RevoluteMaxMotorTorque.Items[Me.LocalIndex]
+End Function
+
+## Torque the motor applied this step in newton-metres, ported from
+## b2RevoluteJoint_GetMotorTorque.
+Function GetMotorTorque() As Double
+Me.CheckValid()
+Return Me.Owner.InvH * Me.Owner.GetJointSims(Me).RevoluteMotorImpulse.Items[Me.LocalIndex]
+End Function
+End Class

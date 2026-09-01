@@ -180,6 +180,54 @@ Property MotorAngularMass As DoubleList
 ## offset, ported from joint->deltaAngle.
 Property MotorDeltaAngle As DoubleList
 
+# Revolute joint family columns, ported from upstream b2RevoluteJoint in
+# joint.h. Valid only while Type = Integer(JointType.RevoluteJoint). The
+# hinge reuses the base two-body columns (IndexA/IndexB, AnchorA/AnchorB,
+# DeltaCenter, inverse masses, LocalOriginAnchorA/B) and the base
+# EnableSpring/EnableLimit/EnableMotor flag columns, which are per-row and
+# therefore unambiguous across joint types.
+## X component of the accumulated point-to-point impulse.
+Property RevoluteLinearImpulseX As DoubleList
+## Y component of the accumulated point-to-point impulse.
+Property RevoluteLinearImpulseY As DoubleList
+## Accumulated spring impulse.
+Property RevoluteSpringImpulse As DoubleList
+## Accumulated motor impulse.
+Property RevoluteMotorImpulse As DoubleList
+## Accumulated lower-limit impulse, always non-negative.
+Property RevoluteLowerImpulse As DoubleList
+## Accumulated upper-limit impulse, always non-negative.
+Property RevoluteUpperImpulse As DoubleList
+## Rotational spring stiffness in hertz.
+Property RevoluteHertz As DoubleList
+## Rotational spring damping ratio.
+Property RevoluteDampingRatio As DoubleList
+## Spring target angle in radians.
+Property RevoluteTargetAngle As DoubleList
+## Maximum motor torque.
+Property RevoluteMaxMotorTorque As DoubleList
+## Desired motor speed in radians per second.
+Property RevoluteMotorSpeed As DoubleList
+## Reference angle in radians: body B angle minus body A angle in the
+## reference state.
+Property RevoluteReferenceAngle As DoubleList
+## Lower angle limit in radians.
+Property RevoluteLowerAngle As DoubleList
+## Upper angle limit in radians.
+Property RevoluteUpperAngle As DoubleList
+## Inverse of the sum of both rotational inertias, zero when both are zero.
+Property RevoluteAxialMass As DoubleList
+## Angle of body B relative to body A at prepare time, ported from
+## joint->deltaAngle; the spring, limits, and angle queries offset this by
+## the target or reference angle.
+Property RevoluteDeltaAngle As DoubleList
+## Spring softness bias rate prepared from hertz and damping ratio.
+Property RevoluteSpringSoftnessBiasRate As DoubleList
+## Spring softness mass scale.
+Property RevoluteSpringSoftnessMassScale As DoubleList
+## Spring softness impulse scale.
+Property RevoluteSpringSoftnessImpulseScale As DoubleList
+
 ## Creates an empty store.
 Constructor()
 Me.JointId = New IntegerList
@@ -256,6 +304,25 @@ Me.MotorLinearMassXY = New DoubleList
 Me.MotorLinearMassYY = New DoubleList
 Me.MotorAngularMass = New DoubleList
 Me.MotorDeltaAngle = New DoubleList
+Me.RevoluteLinearImpulseX = New DoubleList
+Me.RevoluteLinearImpulseY = New DoubleList
+Me.RevoluteSpringImpulse = New DoubleList
+Me.RevoluteMotorImpulse = New DoubleList
+Me.RevoluteLowerImpulse = New DoubleList
+Me.RevoluteUpperImpulse = New DoubleList
+Me.RevoluteHertz = New DoubleList
+Me.RevoluteDampingRatio = New DoubleList
+Me.RevoluteTargetAngle = New DoubleList
+Me.RevoluteMaxMotorTorque = New DoubleList
+Me.RevoluteMotorSpeed = New DoubleList
+Me.RevoluteReferenceAngle = New DoubleList
+Me.RevoluteLowerAngle = New DoubleList
+Me.RevoluteUpperAngle = New DoubleList
+Me.RevoluteAxialMass = New DoubleList
+Me.RevoluteDeltaAngle = New DoubleList
+Me.RevoluteSpringSoftnessBiasRate = New DoubleList
+Me.RevoluteSpringSoftnessMassScale = New DoubleList
+Me.RevoluteSpringSoftnessImpulseScale = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -343,6 +410,25 @@ Me.MotorLinearMassXY.Append(0.0)
 Me.MotorLinearMassYY.Append(0.0)
 Me.MotorAngularMass.Append(0.0)
 Me.MotorDeltaAngle.Append(0.0)
+Me.RevoluteLinearImpulseX.Append(0.0)
+Me.RevoluteLinearImpulseY.Append(0.0)
+Me.RevoluteSpringImpulse.Append(0.0)
+Me.RevoluteMotorImpulse.Append(0.0)
+Me.RevoluteLowerImpulse.Append(0.0)
+Me.RevoluteUpperImpulse.Append(0.0)
+Me.RevoluteHertz.Append(0.0)
+Me.RevoluteDampingRatio.Append(0.0)
+Me.RevoluteTargetAngle.Append(0.0)
+Me.RevoluteMaxMotorTorque.Append(0.0)
+Me.RevoluteMotorSpeed.Append(0.0)
+Me.RevoluteReferenceAngle.Append(0.0)
+Me.RevoluteLowerAngle.Append(0.0)
+Me.RevoluteUpperAngle.Append(0.0)
+Me.RevoluteAxialMass.Append(0.0)
+Me.RevoluteDeltaAngle.Append(0.0)
+Me.RevoluteSpringSoftnessBiasRate.Append(0.0)
+Me.RevoluteSpringSoftnessMassScale.Append(1.0)
+Me.RevoluteSpringSoftnessImpulseScale.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -430,6 +516,25 @@ Me.MotorLinearMassXY.RemoveSwap(index)
 Me.MotorLinearMassYY.RemoveSwap(index)
 Me.MotorAngularMass.RemoveSwap(index)
 Me.MotorDeltaAngle.RemoveSwap(index)
+Me.RevoluteLinearImpulseX.RemoveSwap(index)
+Me.RevoluteLinearImpulseY.RemoveSwap(index)
+Me.RevoluteSpringImpulse.RemoveSwap(index)
+Me.RevoluteMotorImpulse.RemoveSwap(index)
+Me.RevoluteLowerImpulse.RemoveSwap(index)
+Me.RevoluteUpperImpulse.RemoveSwap(index)
+Me.RevoluteHertz.RemoveSwap(index)
+Me.RevoluteDampingRatio.RemoveSwap(index)
+Me.RevoluteTargetAngle.RemoveSwap(index)
+Me.RevoluteMaxMotorTorque.RemoveSwap(index)
+Me.RevoluteMotorSpeed.RemoveSwap(index)
+Me.RevoluteReferenceAngle.RemoveSwap(index)
+Me.RevoluteLowerAngle.RemoveSwap(index)
+Me.RevoluteUpperAngle.RemoveSwap(index)
+Me.RevoluteAxialMass.RemoveSwap(index)
+Me.RevoluteDeltaAngle.RemoveSwap(index)
+Me.RevoluteSpringSoftnessBiasRate.RemoveSwap(index)
+Me.RevoluteSpringSoftnessMassScale.RemoveSwap(index)
+Me.RevoluteSpringSoftnessImpulseScale.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -511,6 +616,25 @@ target.MotorLinearMassXY.Items[targetIndex] = Me.MotorLinearMassXY.Items[sourceI
 target.MotorLinearMassYY.Items[targetIndex] = Me.MotorLinearMassYY.Items[sourceIndex]
 target.MotorAngularMass.Items[targetIndex] = Me.MotorAngularMass.Items[sourceIndex]
 target.MotorDeltaAngle.Items[targetIndex] = Me.MotorDeltaAngle.Items[sourceIndex]
+target.RevoluteLinearImpulseX.Items[targetIndex] = Me.RevoluteLinearImpulseX.Items[sourceIndex]
+target.RevoluteLinearImpulseY.Items[targetIndex] = Me.RevoluteLinearImpulseY.Items[sourceIndex]
+target.RevoluteSpringImpulse.Items[targetIndex] = Me.RevoluteSpringImpulse.Items[sourceIndex]
+target.RevoluteMotorImpulse.Items[targetIndex] = Me.RevoluteMotorImpulse.Items[sourceIndex]
+target.RevoluteLowerImpulse.Items[targetIndex] = Me.RevoluteLowerImpulse.Items[sourceIndex]
+target.RevoluteUpperImpulse.Items[targetIndex] = Me.RevoluteUpperImpulse.Items[sourceIndex]
+target.RevoluteHertz.Items[targetIndex] = Me.RevoluteHertz.Items[sourceIndex]
+target.RevoluteDampingRatio.Items[targetIndex] = Me.RevoluteDampingRatio.Items[sourceIndex]
+target.RevoluteTargetAngle.Items[targetIndex] = Me.RevoluteTargetAngle.Items[sourceIndex]
+target.RevoluteMaxMotorTorque.Items[targetIndex] = Me.RevoluteMaxMotorTorque.Items[sourceIndex]
+target.RevoluteMotorSpeed.Items[targetIndex] = Me.RevoluteMotorSpeed.Items[sourceIndex]
+target.RevoluteReferenceAngle.Items[targetIndex] = Me.RevoluteReferenceAngle.Items[sourceIndex]
+target.RevoluteLowerAngle.Items[targetIndex] = Me.RevoluteLowerAngle.Items[sourceIndex]
+target.RevoluteUpperAngle.Items[targetIndex] = Me.RevoluteUpperAngle.Items[sourceIndex]
+target.RevoluteAxialMass.Items[targetIndex] = Me.RevoluteAxialMass.Items[sourceIndex]
+target.RevoluteDeltaAngle.Items[targetIndex] = Me.RevoluteDeltaAngle.Items[sourceIndex]
+target.RevoluteSpringSoftnessBiasRate.Items[targetIndex] = Me.RevoluteSpringSoftnessBiasRate.Items[sourceIndex]
+target.RevoluteSpringSoftnessMassScale.Items[targetIndex] = Me.RevoluteSpringSoftnessMassScale.Items[sourceIndex]
+target.RevoluteSpringSoftnessImpulseScale.Items[targetIndex] = Me.RevoluteSpringSoftnessImpulseScale.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -589,5 +713,24 @@ Me.MotorLinearMassXY.Clear()
 Me.MotorLinearMassYY.Clear()
 Me.MotorAngularMass.Clear()
 Me.MotorDeltaAngle.Clear()
+Me.RevoluteLinearImpulseX.Clear()
+Me.RevoluteLinearImpulseY.Clear()
+Me.RevoluteSpringImpulse.Clear()
+Me.RevoluteMotorImpulse.Clear()
+Me.RevoluteLowerImpulse.Clear()
+Me.RevoluteUpperImpulse.Clear()
+Me.RevoluteHertz.Clear()
+Me.RevoluteDampingRatio.Clear()
+Me.RevoluteTargetAngle.Clear()
+Me.RevoluteMaxMotorTorque.Clear()
+Me.RevoluteMotorSpeed.Clear()
+Me.RevoluteReferenceAngle.Clear()
+Me.RevoluteLowerAngle.Clear()
+Me.RevoluteUpperAngle.Clear()
+Me.RevoluteAxialMass.Clear()
+Me.RevoluteDeltaAngle.Clear()
+Me.RevoluteSpringSoftnessBiasRate.Clear()
+Me.RevoluteSpringSoftnessMassScale.Clear()
+Me.RevoluteSpringSoftnessImpulseScale.Clear()
 End Sub
 End Class

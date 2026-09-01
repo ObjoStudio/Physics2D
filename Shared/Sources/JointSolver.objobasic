@@ -22,6 +22,8 @@ ElseIf sims.Type.Items[index] = Integer(JointType.MouseJoint) Then
 PrepareMouseJoint(sims, index, context)
 ElseIf sims.Type.Items[index] = Integer(JointType.MotorJoint) Then
 PrepareMotorJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.RevoluteJoint) Then
+PrepareRevoluteJoint(sims, index, context)
 End If
 End Sub
 
@@ -874,6 +876,359 @@ End Function
 ## b2GetMotorJointTorque.
 Shared Function GetMotorJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
 Return invH * sims.MotorAngularImpulse.Items[index]
+End Function
+
+## Prepares one revolute joint row, ported from b2PrepareRevoluteJoint.
+## The hinge pins the two anchor points together and measures the relative
+## angle against the reference angle, so both bodies contribute to every
+## block. Anchors come from the definition's local anchors. The spring
+## softness is prepared from the definition hertz and damping ratio; the
+## base constraint softness (used by the limits and the point-to-point
+## block) is prepared by the common joint prepare. A non-awake body stores
+## a NULL_INDEX state row that the kernels replace with an identity dummy.
+Private Shared Sub PrepareRevoluteJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyA As Body = world.Bodies[sims.BodyIdA.Items[index]]
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simA As BodySims = world.GetBodySim(bodyA)
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexA As Integer = bodyA.LocalIndex
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassA.Items[index] = simA.InvMass.Items[indexA]
+sims.InvIA.Items[index] = simA.InvInertia.Items[indexA]
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexA.Items[index] = indexA
+Else
+sims.IndexA.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+# Initial anchors in world space from the definition's local anchors.
+Var localDX As Double = sims.LocalOriginAnchorAX.Items[index] - simA.LCX.Items[indexA]
+Var localDY As Double = sims.LocalOriginAnchorAY.Items[index] - simA.LCY.Items[indexA]
+Var qcA As Double = simA.QC.Items[indexA]
+Var qsA As Double = simA.QS.Items[indexA]
+sims.AnchorAX.Items[index] = qcA * localDX - qsA * localDY
+sims.AnchorAY.Items[index] = qsA * localDX + qcA * localDY
+Var localEX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localEY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localEX - qsB * localEY
+sims.AnchorBY.Items[index] = qsB * localEX + qcB * localEY
+
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
+# Relative angle with scalar components; see the motor prepare note.
+Var relS As Double = simB.QS.Items[indexB] * simA.QC.Items[indexA] - simB.QC.Items[indexB] * simA.QS.Items[indexA]
+Var relC As Double = simB.QC.Items[indexB] * simA.QC.Items[indexA] + simB.QS.Items[indexB] * simA.QS.Items[indexA]
+sims.RevoluteDeltaAngle.Items[index] = PhysicsMaths.Atan2(relS, relC)
+
+Var ka As Double = sims.InvIA.Items[index] + sims.InvIB.Items[index]
+If ka > 0.0 Then
+sims.RevoluteAxialMass.Items[index] = 1.0 / ka
+Else
+sims.RevoluteAxialMass.Items[index] = 0.0
+End If
+
+Softness.MakeTo(sims.RevoluteHertz.Items[index], sims.RevoluteDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.RevoluteSpringSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.RevoluteSpringSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.RevoluteSpringSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+
+If context.WarmStartScale = 0.0 Then
+sims.RevoluteLinearImpulseX.Items[index] = 0.0
+sims.RevoluteLinearImpulseY.Items[index] = 0.0
+sims.RevoluteSpringImpulse.Items[index] = 0.0
+sims.RevoluteMotorImpulse.Items[index] = 0.0
+sims.RevoluteLowerImpulse.Items[index] = 0.0
+sims.RevoluteUpperImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored revolute joint impulses to both body states before
+## iterating, ported from b2WarmStartRevoluteJoint. The axial impulse
+## bundles the spring, motor, and limit contributions.
+Shared Sub WarmStartRevoluteJoint(sims As JointSims, index As Integer, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var pX As Double = sims.RevoluteLinearImpulseX.Items[index]
+Var pY As Double = sims.RevoluteLinearImpulseY.Items[index]
+Var axialImpulse As Double = sims.RevoluteSpringImpulse.Items[index] + sims.RevoluteMotorImpulse.Items[index] + sims.RevoluteLowerImpulse.Items[index] - sims.RevoluteUpperImpulse.Items[index]
+
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (rAX * pY - rAY * pX + axialImpulse)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (rBX * pY - rBY * pX + axialImpulse)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Runs one velocity iteration for one revolute joint row, ported from
+## b2SolveRevoluteJoint: spring, motor, lower and upper limits, then the
+## point-to-point block. The fixed-rotation guard skips the axial blocks
+## exactly like upstream; the point-to-point block always runs.
+Shared Sub SolveRevoluteJoint(sims As JointSims, index As Integer, context As StepContext, useBias As Boolean)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var fixedRotation As Boolean = (iA + iB = 0.0)
+
+# Solve spring.
+If sims.EnableSpring.Items[index] <> 0 And fixedRotation = False Then
+Var relS As Double = dqBS * dqAC - dqBC * dqAS
+Var relC As Double = dqBC * dqAC + dqBS * dqAS
+Var jointAngle As Double = PhysicsMaths.Atan2(relS, relC) + sims.RevoluteDeltaAngle.Items[index]
+Var C As Double = PhysicsMaths.UnwindAngle(jointAngle - sims.RevoluteTargetAngle.Items[index])
+Var bias As Double = sims.RevoluteSpringSoftnessBiasRate.Items[index] * C
+Var massScale As Double = sims.RevoluteSpringSoftnessMassScale.Items[index]
+Var impulseScale As Double = sims.RevoluteSpringSoftnessImpulseScale.Items[index]
+Var Cdot As Double = wB - wA
+Var impulse As Double = -massScale * sims.RevoluteAxialMass.Items[index] * (Cdot + bias) - impulseScale * sims.RevoluteSpringImpulse.Items[index]
+sims.RevoluteSpringImpulse.Items[index] = sims.RevoluteSpringImpulse.Items[index] + impulse
+wA = wA - iA * impulse
+wB = wB + iB * impulse
+End If
+
+# Solve motor constraint.
+If sims.EnableMotor.Items[index] <> 0 And fixedRotation = False Then
+Var Cdot As Double = wB - wA - sims.RevoluteMotorSpeed.Items[index]
+Var impulse As Double = -sims.RevoluteAxialMass.Items[index] * Cdot
+Var oldImpulse As Double = sims.RevoluteMotorImpulse.Items[index]
+Var maxImpulse As Double = context.H * sims.RevoluteMaxMotorTorque.Items[index]
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse > maxImpulse Then
+newImpulse = maxImpulse
+ElseIf newImpulse < -maxImpulse Then
+newImpulse = -maxImpulse
+End If
+sims.RevoluteMotorImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+wA = wA - iA * impulse
+wB = wB + iB * impulse
+End If
+
+If sims.EnableLimit.Items[index] <> 0 And fixedRotation = False Then
+Var relS As Double = dqBS * dqAC - dqBC * dqAS
+Var relC As Double = dqBC * dqAC + dqBS * dqAS
+Var jointAngle As Double = PhysicsMaths.UnwindAngle(PhysicsMaths.Atan2(relS, relC) + sims.RevoluteDeltaAngle.Items[index] - sims.RevoluteReferenceAngle.Items[index])
+
+# Lower limit.
+Var C As Double = jointAngle - sims.RevoluteLowerAngle.Items[index]
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If C > 0.0 Then
+# Speculation.
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var Cdot As Double = wB - wA
+Var oldImpulse As Double = sims.RevoluteLowerImpulse.Items[index]
+Var impulse As Double = -massScale * sims.RevoluteAxialMass.Items[index] * (Cdot + bias) - impulseScale * oldImpulse
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.RevoluteLowerImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+wA = wA - iA * impulse
+wB = wB + iB * impulse
+
+# Upper limit: signs are flipped to keep C positive when the constraint
+# is satisfied, which also keeps the impulse positive when active.
+C = sims.RevoluteUpperAngle.Items[index] - jointAngle
+bias = 0.0
+massScale = 1.0
+impulseScale = 0.0
+If C > 0.0 Then
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+
+# Sign flipped on Cdot.
+Cdot = wA - wB
+oldImpulse = sims.RevoluteUpperImpulse.Items[index]
+impulse = -massScale * sims.RevoluteAxialMass.Items[index] * (Cdot + bias) - impulseScale * oldImpulse
+newImpulse = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.RevoluteUpperImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+
+# Sign flipped on applied impulse.
+wA = wA + iA * impulse
+wB = wB - iB * impulse
+End If
+
+# Solve point-to-point constraint. The 2x2 combined matrix is symmetric
+# by construction and solved inline with the guarded inverse determinant
+# of upstream b2Solve22.
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var cdX As Double = vBX - wB * rBY - (vAX - wA * rAY)
+Var cdY As Double = vBY + wB * rBX - (vAY + wA * rAX)
+Var biasX As Double = 0.0
+Var biasY As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If useBias Then
+Var sepX As Double = dpBX - dpAX + rBX - rAX + sims.DeltaCenterX.Items[index]
+Var sepY As Double = dpBY - dpAY + rBY - rAY + sims.DeltaCenterY.Items[index]
+biasX = sims.SoftnessBiasRate.Items[index] * sepX
+biasY = sims.SoftnessBiasRate.Items[index] * sepY
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var k11 As Double = mA + mB + rAY * rAY * iA + rBY * rBY * iB
+Var k12 As Double = -(rAY * rAX * iA + rBY * rBX * iB)
+Var k22 As Double = mA + mB + rAX * rAX * iA + rBX * rBX * iB
+Var rhsX As Double = cdX + biasX
+Var rhsY As Double = cdY + biasY
+Var det As Double = k11 * k22 - k12 * k12
+If det <> 0.0 Then
+det = 1.0 / det
+End If
+Var bX As Double = det * (k22 * rhsX - k12 * rhsY)
+Var bY As Double = det * (k11 * rhsY - k12 * rhsX)
+Var oldX As Double = sims.RevoluteLinearImpulseX.Items[index]
+Var oldY As Double = sims.RevoluteLinearImpulseY.Items[index]
+Var impX As Double = -massScale * bX - impulseScale * oldX
+Var impY As Double = -massScale * bY - impulseScale * oldY
+sims.RevoluteLinearImpulseX.Items[index] = oldX + impX
+sims.RevoluteLinearImpulseY.Items[index] = oldY + impY
+
+vAX = vAX - mA * impX
+vAY = vAY - mA * impY
+wA = wA - iA * (rAX * impY - rAY * impX)
+vBX = vBX + mB * impX
+vBY = vBY + mB * impY
+wB = wB + iB * (rBX * impY - rBY * impX)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Total force the revolute joint row applied this step, ported from
+## b2GetRevoluteJointForce.
+Shared Function GetRevoluteJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var scale As Double = invH
+Return New Vector2(scale * sims.RevoluteLinearImpulseX.Items[index], scale * sims.RevoluteLinearImpulseY.Items[index])
+End Function
+
+## Torque the revolute joint row applied this step, ported from
+## b2GetRevoluteJointTorque: the motor and limit impulses combined.
+Shared Function GetRevoluteJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * (sims.RevoluteMotorImpulse.Items[index] + sims.RevoluteLowerImpulse.Items[index] - sims.RevoluteUpperImpulse.Items[index])
 End Function
 
 ## Total force the mouse joint row applied this step, ported from

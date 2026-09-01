@@ -1,0 +1,65 @@
+# Revolute joint definition, ported from upstream b2RevoluteJointDef and
+# b2DefaultRevoluteJointDef in types.h and joint.c. Defaults match upstream:
+# coincident local anchors, zero reference and target angles, no spring,
+# no limits, no motor. A revolute joint pins two bodies together at a
+# hinge point and optionally drives or limits the relative angle.
+Class RevoluteJointDefinition
+## First attached body, ported from b2RevoluteJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, ported from b2RevoluteJointDef.bodyIdB.
+Property BodyB As Body
+## Local anchor point relative to body A's origin, in metres.
+Property LocalAnchorA As Vector2
+## Local anchor point relative to body B's origin, in metres.
+Property LocalAnchorB As Vector2
+## Body B angle minus body A angle in the reference state, in radians.
+## Defines the zero angle for the joint angle, limits, and target.
+Property ReferenceAngle As Double
+## Target angle for the rotational spring in radians. The spring-damper
+## drives toward this angle.
+Property TargetAngle As Double
+## True when the rotational spring is active.
+Property EnableSpring As Boolean
+## Rotational spring stiffness in hertz.
+Property Hertz As Double
+## Rotational spring damping ratio, non-dimensional.
+Property DampingRatio As Double
+## True when the angle limits are active.
+Property EnableLimit As Boolean
+## Lower angle limit in radians. Upstream requires at least -0.99 pi.
+Property LowerAngle As Double
+## Upper angle limit in radians. Upstream requires at most 0.99 pi.
+Property UpperAngle As Double
+## True when the rotational motor is active.
+Property EnableMotor As Boolean
+## Maximum motor torque, typically in newton-metres.
+Property MaxMotorTorque As Double
+## Desired motor speed in radians per second.
+Property MotorSpeed As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LocalAnchorA = New Vector2(0.0, 0.0)
+Me.LocalAnchorB = New Vector2(0.0, 0.0)
+Me.ReferenceAngle = 0.0
+Me.TargetAngle = 0.0
+Me.EnableSpring = False
+Me.Hertz = 0.0
+Me.DampingRatio = 0.0
+Me.EnableLimit = False
+Me.LowerAngle = 0.0
+Me.UpperAngle = 0.0
+Me.EnableMotor = False
+Me.MaxMotorTorque = 0.0
+Me.MotorSpeed = 0.0
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
+End Class

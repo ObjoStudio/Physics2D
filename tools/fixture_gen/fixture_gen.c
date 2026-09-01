@@ -1058,11 +1058,108 @@ static void EmitMotorCases(void)
 	EmitMotorClamped();
 }
 
+// ----------------------------------------------------- revolute joints ----
+
+// Revolute-joint scene fixture: four deterministic hinge cases stepped with
+// the upstream default of four substeps. Every case pins a 0.25 kg box to a
+// static ground through a hinge at (2, -0.25) and ends asleep, so the
+// records are stable across float widths. The joint line carries the final
+// constraint force, torque, and joint angle.
+static void DumpRevoluteJoint(const char* name, b2JointId jointId)
+{
+	b2Vec2 force = b2Joint_GetConstraintForce(jointId);
+	float torque = b2Joint_GetConstraintTorque(jointId);
+	float angle = b2RevoluteJoint_GetAngle(jointId);
+	printf("joint|%s|revolute|", name);
+	PrintNum(force.x); printf(" ");
+	PrintNum(force.y); printf(" ");
+	PrintNum(torque); printf(" ");
+	PrintNum(angle); printf("\n");
+}
+
+static void EmitRevoluteScene(const char* name, float angularDamping, int kickAt60, void (*configure)(b2JointId jointId))
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){2.0f, -0.5f};
+	bodyDef.angularDamping = angularDamping;
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	b2RevoluteJointDef jointDef = b2DefaultRevoluteJointDef();
+	jointDef.bodyIdA = groundId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.localAnchorA = (b2Vec2){2.0f, -0.25f};
+	jointDef.localAnchorB = (b2Vec2){0.0f, 0.25f};
+	b2JointId jointId = b2CreateRevoluteJoint(worldId, &jointDef);
+	configure(jointId);
+
+	for (int frame = 0; frame < 240; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+		if (frame == 60 && kickAt60)
+		{
+			b2Body_SetAngularVelocity(bodyId, 1.0f);
+		}
+	}
+
+	DumpJointBody(name, 0, bodyId);
+	DumpRevoluteJoint(name, jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void RevoluteConfigureNone(b2JointId jointId)
+{
+	(void)jointId;
+}
+
+static void RevoluteConfigureSpring(b2JointId jointId)
+{
+	// A damped 2 Hz spring drives the box toward 0.8 rad; gravity sags the
+	// settled angle to about 0.59 rad.
+	b2RevoluteJoint_EnableSpring(jointId, true);
+	b2RevoluteJoint_SetSpringHertz(jointId, 2.0f);
+	b2RevoluteJoint_SetSpringDampingRatio(jointId, 0.6f);
+	b2RevoluteJoint_SetTargetAngle(jointId, 0.8f);
+}
+
+static void RevoluteConfigureBrake(b2JointId jointId)
+{
+	// A zero-speed motor acts as a torque-clamped brake on the kicked box.
+	b2RevoluteJoint_EnableMotor(jointId, true);
+	b2RevoluteJoint_SetMaxMotorTorque(jointId, 0.5f);
+}
+
+static void RevoluteConfigureLimits(b2JointId jointId)
+{
+	// The hanging equilibrium at angle zero sits below the lower limit, so
+	// the limit holds the box at 0.5 rad against gravity.
+	b2RevoluteJoint_EnableLimit(jointId, true);
+	b2RevoluteJoint_SetLimits(jointId, 0.5f, 0.9f);
+}
+
+static void EmitRevoluteCases(void)
+{
+	EmitRevoluteScene("hinge", 5.0f, 1, RevoluteConfigureNone);
+	EmitRevoluteScene("spring", 0.0f, 0, RevoluteConfigureSpring);
+	EmitRevoluteScene("brake", 0.0f, 1, RevoluteConfigureBrake);
+	EmitRevoluteScene("limits", 2.0f, 0, RevoluteConfigureLimits);
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
 	{
-		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse|joint_motor>\n");
+		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse|joint_motor|joint_revolute>\n");
 		return 2;
 	}
 
@@ -1080,6 +1177,7 @@ int main(int argc, char** argv)
 	else if (strcmp(name, "joint_distance") == 0) EmitJointDistance();
 	else if (strcmp(name, "joint_mouse") == 0) EmitJointMouse();
 	else if (strcmp(name, "joint_motor") == 0) EmitMotorCases();
+	else if (strcmp(name, "joint_revolute") == 0) EmitRevoluteCases();
 	else
 	{
 		fprintf(stderr, "unknown fixture: %s\n", name);
