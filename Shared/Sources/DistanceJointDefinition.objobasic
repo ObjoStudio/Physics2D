@@ -1,0 +1,58 @@
+# Distance joint definition, ported from upstream b2DistanceJointDef and
+# b2DefaultDistanceJointDef in types.h and joint.c. Defaults match upstream:
+# rest length of one metre, unlimited maximum length, no spring, limits, or
+# motor.
+Class DistanceJointDefinition
+## First attached body.
+Property BodyA As Body
+## Second attached body.
+Property BodyB As Body
+## Anchor on body A in body A's local frame.
+Property LocalAnchorA As Vector2
+## Anchor on body B in body B's local frame.
+Property LocalAnchorB As Vector2
+## Rest length in metres.
+Property Length As Double
+## Minimum length when limits are enabled.
+Property MinLength As Double
+## Maximum length when limits are enabled.
+Property MaxLength As Double
+## Spring stiffness in hertz. Zero gives a rigid rope.
+Property Hertz As Double
+## Spring damping ratio.
+Property DampingRatio As Double
+## Maximum motor force magnitude.
+Property MaxMotorForce As Double
+## Target relative speed along the rope axis.
+Property MotorSpeed As Double
+## Enables the soft spring behaviour.
+Property EnableSpring As Boolean
+## Enables the length limits.
+Property EnableLimit As Boolean
+## Enables the motor.
+Property EnableMotor As Boolean
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data attached to the joint.
+Property UserData As Integer
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LocalAnchorA = New Vector2(0.0, 0.0)
+Me.LocalAnchorB = New Vector2(0.0, 0.0)
+Me.Length = 1.0
+Me.MinLength = 0.0
+Me.MaxLength = PhysicsConstants.POSITION_LIMIT
+Me.Hertz = 0.0
+Me.DampingRatio = 0.0
+Me.MaxMotorForce = 0.0
+Me.MotorSpeed = 0.0
+Me.EnableSpring = False
+Me.EnableLimit = False
+Me.EnableMotor = False
+Me.CollideConnected = False
+Me.UserData = 0
+End Constructor
+End Class

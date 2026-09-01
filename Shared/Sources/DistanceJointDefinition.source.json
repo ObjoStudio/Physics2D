@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "DistanceJointDefinition",
+  "Id": "d48ad5d3-a08a-423a-b5f8-9b96c3a87381",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "DistanceJointDefinition.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

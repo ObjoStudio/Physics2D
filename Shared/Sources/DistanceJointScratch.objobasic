@@ -1,0 +1,49 @@
+# Mutable solver state for one distance joint during prepare/warm-start/
+# solve, kept as a scratch record so the per-block solver helpers stay
+# within method complexity limits. Mirrors the local variables of upstream
+# b2SolveDistanceJoint.
+Class DistanceJointScratch
+## Linear velocity of body A.
+Property VAX As Double
+## Y component of body A's linear velocity.
+Property VAY As Double
+## Angular velocity of body A.
+Property WA As Double
+## X component of body B's linear velocity.
+Property VBX As Double
+## Y component of body B's linear velocity.
+Property VBY As Double
+## Angular velocity of body B.
+Property WB As Double
+## X component of the rotated anchor on body A.
+Property RAX As Double
+## Y component of the rotated anchor on body A.
+Property RAY As Double
+## X component of the rotated anchor on body B.
+Property RBX As Double
+## Y component of the rotated anchor on body B.
+Property RBY As Double
+## X component of the unit separation axis.
+Property AxisX As Double
+## Y component of the unit separation axis.
+Property AxisY As Double
+## Current anchor separation length.
+Property Length As Double
+
+## Creates a zeroed scratch record.
+Constructor()
+Me.VAX = 0.0
+Me.VAY = 0.0
+Me.WA = 0.0
+Me.VBX = 0.0
+Me.VBY = 0.0
+Me.WB = 0.0
+Me.RAX = 0.0
+Me.RAY = 0.0
+Me.RBX = 0.0
+Me.RBY = 0.0
+Me.AxisX = 0.0
+Me.AxisY = 0.0
+Me.Length = 0.0
+End Constructor
+End Class

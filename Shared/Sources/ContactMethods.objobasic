@@ -147,10 +147,39 @@ End Function
 ## Two bodies collide only when at least one is dynamic; the connected-joint
 ## walk arrives with Stage 9.
 Shared Function ShouldBodiesCollide(world As World, bodyA As Body, bodyB As Body) As Boolean
-Pragma Unused world
 If bodyA.Type <> BodyType.DynamicBody And bodyB.Type <> BodyType.DynamicBody Then
 Return False
 End If
+
+# A joint between the two bodies with collideConnected disabled suppresses
+# every contact between them, ported from b2ShouldBodiesCollide in body.c.
+Var jointKey As Integer
+Var otherBodyId As Integer
+If bodyA.JointCount < bodyB.JointCount Then
+jointKey = bodyA.HeadJointKey
+otherBodyId = bodyB.Id
+Else
+jointKey = bodyB.HeadJointKey
+otherBodyId = bodyA.Id
+End If
+
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = world.Joints[jointId]
+Var jointOtherBodyId As Integer = joint.Edge1BodyId
+If edgeIndex = 1 Then
+jointOtherBodyId = joint.Edge0BodyId
+End If
+If joint.CollideConnected = False And jointOtherBodyId = otherBodyId Then
+Return False
+End If
+If edgeIndex = 0 Then
+jointKey = joint.Edge0NextKey
+Else
+jointKey = joint.Edge1NextKey
+End If
+Wend
 Return True
 End Function
 

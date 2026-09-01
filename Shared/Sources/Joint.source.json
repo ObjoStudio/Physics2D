@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Joint",
+  "Id": "a42eda4e-b95b-4698-98aa-d7b8182f73f2",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "Joint.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

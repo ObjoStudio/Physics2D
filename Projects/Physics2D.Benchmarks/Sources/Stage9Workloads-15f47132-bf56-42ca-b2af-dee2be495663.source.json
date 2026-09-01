@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9Workloads",
+  "Id": "15f47132-bf56-42ca-b2af-dee2be495663",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9Workloads-15f47132-bf56-42ca-b2af-dee2be495663.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

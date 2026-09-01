@@ -1,13 +1,15 @@
 # One colour of the constraint graph, ported from upstream b2GraphColor in
 # constraint_graph.h. Colours 0..10 track which body slots they hold so the
 # solver can batch independent constraints; colour 11 is the overflow colour
-# and deliberately has no body set. Each colour owns dense contact sims for
-# its touching contacts.
+# and deliberately has no body set. Each colour owns dense contact and joint
+# sims for its awake touching contacts and awake joints.
 Class GraphColor
 ## Body slots held by this colour. Nothing for the overflow colour.
 Property BodySet As BitSet
 ## Touching contact sims assigned to this colour.
 Property ContactSims As ContactSims
+## Joint sims assigned to this colour.
+Property JointSims As JointSims
 ## Solver scratch constraints matching the sim rows one to one.
 Property Constraints As Array(Of ContactConstraint)
 ## Number of live constraints in the scratch array this step.
@@ -22,6 +24,7 @@ Else
 Me.BodySet = Nothing
 End If
 Me.ContactSims = New ContactSims()
+Me.JointSims = New JointSims()
 Me.Constraints = New Array(Of ContactConstraint)
 Me.ConstraintCount = 0
 End Constructor
@@ -30,6 +33,7 @@ End Constructor
 Constructor()
 Me.BodySet = Nothing
 Me.ContactSims = New ContactSims()
+Me.JointSims = New JointSims()
 Me.Constraints = New Array(Of ContactConstraint)
 Me.ConstraintCount = 0
 End Constructor

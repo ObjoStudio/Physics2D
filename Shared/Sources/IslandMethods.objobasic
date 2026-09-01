@@ -1,9 +1,8 @@
 # Island graph maintenance, ported from upstream island.c. Islands link
-# touching contacts into connected components using union-find with path
-# compression; awake islands merge eagerly, sleeping islands merge when
-# their solver set wakes. Island splitting by depth-first search runs after
-# constraint removal. Joint linking arrives with Stage 9; the record's
-# joint lists stay empty until then.
+# touching contacts and joints into connected components using union-find
+# with path compression; awake islands merge eagerly, sleeping islands merge
+# when their solver set wakes. Island splitting by depth-first search runs
+# after constraint removal.
 Class IslandMethods
 ## Creates an island in the given solver set, ported from b2CreateIsland.
 Shared Function CreateIsland(world As World, setIndex As Integer) As Island
@@ -117,6 +116,97 @@ island.TailContact = island.HeadContact
 End If
 island.ContactCount = island.ContactCount + 1
 contact.IslandId = islandId
+End Sub
+
+## Appends a joint to an island's joint list, ported from b2AddJointToIsland.
+Private Shared Sub AddJointToIsland(world As World, islandId As Integer, joint As Joint)
+If joint.IslandId <> PhysicsConstants.NULL_INDEX Or joint.IslandPrev <> PhysicsConstants.NULL_INDEX Or joint.IslandNext <> PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Joint already belongs to an island")
+End If
+Var island As Island = world.Islands[islandId]
+If island.HeadJoint <> PhysicsConstants.NULL_INDEX Then
+joint.IslandNext = island.HeadJoint
+world.Joints[island.HeadJoint].IslandPrev = joint.Id
+End If
+island.HeadJoint = joint.Id
+If island.TailJoint = PhysicsConstants.NULL_INDEX Then
+island.TailJoint = island.HeadJoint
+End If
+island.JointCount = island.JointCount + 1
+joint.IslandId = islandId
+End Sub
+
+## Links a joint into the island graph, ported from b2LinkJoint. Wakes a
+## sleeping body whose counterpart is awake, unions the two bodies' islands
+## with path compression, and merges awake islands when mergeIslands is set.
+Shared Sub LinkJoint(world As World, joint As Joint, mergeIslands As Boolean)
+Var bodyA As Body = world.Bodies[joint.Edge0BodyId]
+Var bodyB As Body = world.Bodies[joint.Edge1BodyId]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET And bodyB.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET Then
+world.WakeSolverSet(bodyB.SetIndex)
+ElseIf bodyB.SetIndex = PhysicsConstants.AWAKE_SET And bodyA.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET Then
+world.WakeSolverSet(bodyA.SetIndex)
+End If
+
+Var islandIdA As Integer = bodyA.IslandId
+Var islandIdB As Integer = bodyB.IslandId
+If islandIdA = PhysicsConstants.NULL_INDEX And islandIdB = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("LinkJoint requires a body with an island")
+End If
+
+If islandIdA = islandIdB Then
+# Joint in same island.
+AddJointToIsland(world, islandIdA, joint)
+Return
+End If
+
+Var rootIdA As Integer = FindRootIsland(world, islandIdA)
+Var rootIdB As Integer = FindRootIsland(world, islandIdB)
+
+If rootIdA <> rootIdB And rootIdA <> PhysicsConstants.NULL_INDEX And rootIdB <> PhysicsConstants.NULL_INDEX Then
+world.Islands[rootIdB].ParentIsland = rootIdA
+End If
+
+If rootIdA <> PhysicsConstants.NULL_INDEX Then
+AddJointToIsland(world, rootIdA, joint)
+Else
+AddJointToIsland(world, rootIdB, joint)
+End If
+
+# Joints need to have islands merged immediately when they are created to
+# keep the island graph valid. A body type change can defer the merge until
+# all joints are linked.
+If mergeIslands Then
+MergeAwakeIslands(world)
+End If
+End Sub
+
+## Unlinks a joint from its island when it is destroyed or disabled, ported
+## from b2UnlinkJoint.
+Shared Sub UnlinkJoint(world As World, joint As Joint)
+If joint.IslandId = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("UnlinkJoint requires a linked joint")
+End If
+Var islandId As Integer = joint.IslandId
+Var island As Island = world.Islands[islandId]
+If joint.IslandPrev <> PhysicsConstants.NULL_INDEX Then
+world.Joints[joint.IslandPrev].IslandNext = joint.IslandNext
+End If
+If joint.IslandNext <> PhysicsConstants.NULL_INDEX Then
+world.Joints[joint.IslandNext].IslandPrev = joint.IslandPrev
+End If
+If island.HeadJoint = joint.Id Then
+island.HeadJoint = joint.IslandNext
+End If
+If island.TailJoint = joint.Id Then
+island.TailJoint = joint.IslandPrev
+End If
+island.JointCount = island.JointCount - 1
+island.ConstraintRemoveCount = island.ConstraintRemoveCount + 1
+joint.IslandId = PhysicsConstants.NULL_INDEX
+joint.IslandPrev = PhysicsConstants.NULL_INDEX
+joint.IslandNext = PhysicsConstants.NULL_INDEX
 End Sub
 
 ## Links a touching contact into the island graph, ported from b2LinkContact.
@@ -238,6 +328,13 @@ contact.IslandId = rootId
 contactId = contact.IslandNext
 Wend
 
+Var jointId As Integer = island.HeadJoint
+While jointId <> PhysicsConstants.NULL_INDEX
+Var joint As Joint = world.Joints[jointId]
+joint.IslandId = rootId
+jointId = joint.IslandNext
+Wend
+
 world.Bodies[rootIsland.TailBody].IslandNext = island.HeadBody
 world.Bodies[island.HeadBody].IslandPrev = rootIsland.TailBody
 rootIsland.TailBody = island.TailBody
@@ -252,6 +349,17 @@ world.Contacts[rootIsland.TailContact].IslandNext = island.HeadContact
 world.Contacts[island.HeadContact].IslandPrev = rootIsland.TailContact
 rootIsland.TailContact = island.TailContact
 rootIsland.ContactCount = rootIsland.ContactCount + island.ContactCount
+End If
+
+If rootIsland.HeadJoint = PhysicsConstants.NULL_INDEX Then
+rootIsland.HeadJoint = island.HeadJoint
+rootIsland.TailJoint = island.TailJoint
+rootIsland.JointCount = island.JointCount
+ElseIf island.HeadJoint <> PhysicsConstants.NULL_INDEX Then
+world.Joints[rootIsland.TailJoint].IslandNext = island.HeadJoint
+world.Joints[island.HeadJoint].IslandPrev = rootIsland.TailJoint
+rootIsland.TailJoint = island.TailJoint
+rootIsland.JointCount = rootIsland.JointCount + island.JointCount
 End If
 
 rootIsland.ConstraintRemoveCount = rootIsland.ConstraintRemoveCount + island.ConstraintRemoveCount
@@ -315,6 +423,14 @@ While nextContactId <> PhysicsConstants.NULL_INDEX
 Var contact As Contact = world.Contacts[nextContactId]
 contact.IsMarked = False
 nextContactId = contact.IslandNext
+Wend
+
+# Clear joint island flags.
+Var nextJointId As Integer = baseIsland.HeadJoint
+While nextJointId <> PhysicsConstants.NULL_INDEX
+Var markedJoint As Joint = world.Joints[nextJointId]
+markedJoint.IsMarked = False
+nextJointId = markedJoint.IslandNext
 Wend
 
 IslandMethods.DestroyIsland(world, baseId)
@@ -394,6 +510,64 @@ island.HeadContact = contactId
 End If
 island.ContactCount = island.ContactCount + 1
 Wend
+
+	# Search all joints connected to this body, ported from the joint walk of
+	# b2SplitIsland.
+	DfsVisitJoints(world, island, islandId, bodyId, stack)
+End Sub
+
+## Walks the joints attached to one body during island split DFS, marking
+## unmarked joints, pushing awake unmarked neighbours, and appending the
+## joint to the new island's list.
+Private Shared Sub DfsVisitJoints(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As Array(Of Integer))
+	Var body As Body = world.Bodies[bodyId]
+	Var jointKey As Integer = body.HeadJointKey
+	While jointKey <> PhysicsConstants.NULL_INDEX
+		Var visitedJointId As Integer = jointKey.ShiftRight(1)
+		Var jointEdgeIndex As Integer = jointKey.BitAnd(1)
+		Var visitedJoint As Joint = world.Joints[visitedJointId]
+		jointKey = visitedJoint.Edge0NextKey
+		If jointEdgeIndex = 1 Then
+			jointKey = visitedJoint.Edge1NextKey
+		End If
+		If visitedJoint.IsMarked Then
+			Continue While
+		End If
+		visitedJoint.IsMarked = True
+
+		Var jointOtherEdge As Integer = 0
+		If jointEdgeIndex = 0 Then
+			jointOtherEdge = 1
+		End If
+		Var jointOtherBodyId As Integer = visitedJoint.Edge0BodyId
+		If jointOtherEdge = 1 Then
+			jointOtherBodyId = visitedJoint.Edge1BodyId
+		End If
+		Var jointOtherBody As Body = world.Bodies[jointOtherBodyId]
+
+		# Don't simulate joints connected to disabled bodies.
+		If jointOtherBody.SetIndex = PhysicsConstants.DISABLED_SET Then
+			Continue While
+		End If
+
+		If jointOtherBody.IsMarked = False And jointOtherBody.SetIndex = PhysicsConstants.AWAKE_SET Then
+			stack.Append(jointOtherBodyId)
+			jointOtherBody.IsMarked = True
+		End If
+
+		# Add joint to island.
+		visitedJoint.IslandId = islandId
+		If island.TailJoint <> PhysicsConstants.NULL_INDEX Then
+			world.Joints[island.TailJoint].IslandNext = visitedJointId
+		End If
+		visitedJoint.IslandPrev = island.TailJoint
+		visitedJoint.IslandNext = PhysicsConstants.NULL_INDEX
+		island.TailJoint = visitedJointId
+		If island.HeadJoint = PhysicsConstants.NULL_INDEX Then
+			island.HeadJoint = visitedJointId
+		End If
+		island.JointCount = island.JointCount + 1
+	Wend
 End Sub
 
 ## Validates one island's linked lists and cross-references, ported from
@@ -432,7 +606,14 @@ If count <> island.BodyCount Then
 Throw New RuntimeException("Island body count disagrees with traversal")
 End If
 
-count = 0
+ValidateIslandContacts(world, island, islandId)
+ValidateIslandJoints(world, island, islandId)
+End Sub
+
+## Validates the contact linked list of one island, ported from the contact
+## walk of b2ValidateIsland.
+Private Shared Sub ValidateIslandContacts(world As World, island As Island, islandId As Integer)
+Var count As Integer = 0
 Var contactId As Integer = island.HeadContact
 While contactId <> PhysicsConstants.NULL_INDEX
 Var contact As Contact = world.Contacts[contactId]
@@ -453,6 +634,33 @@ Throw New RuntimeException("Island contact count disagrees with traversal")
 End If
 If count = 0 And (island.TailContact <> PhysicsConstants.NULL_INDEX Or island.ContactCount <> 0) Then
 Throw New RuntimeException("Empty island must hold no contacts")
+End If
+End Sub
+
+## Validates the joint linked list of one island, ported from the joint walk
+## of b2ValidateIsland.
+Private Shared Sub ValidateIslandJoints(world As World, island As Island, islandId As Integer)
+Var count As Integer = 0
+Var jointListId As Integer = island.HeadJoint
+While jointListId <> PhysicsConstants.NULL_INDEX
+Var listedJoint As Joint = world.Joints[jointListId]
+If listedJoint.SetIndex <> island.SetIndex Then
+Throw New RuntimeException("Joint solver set disagrees with island")
+End If
+If listedJoint.IslandId <> islandId Then
+Throw New RuntimeException("Joint island back reference disagrees")
+End If
+count = count + 1
+If count = island.JointCount And jointListId <> island.TailJoint Then
+Throw New RuntimeException("Island tail joint disagrees with traversal")
+End If
+jointListId = listedJoint.IslandNext
+Wend
+If count <> island.JointCount Then
+Throw New RuntimeException("Island joint count disagrees with traversal")
+End If
+If count = 0 And (island.TailJoint <> PhysicsConstants.NULL_INDEX Or island.JointCount <> 0) Then
+Throw New RuntimeException("Empty island must hold no joints")
 End If
 End Sub
 End Class

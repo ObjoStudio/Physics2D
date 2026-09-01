@@ -1,0 +1,399 @@
+# Stage 9 tests: distance joints, covering constraint satisfaction, spring,
+# limits, motor, collide-connected toggling, joint placement across solver
+# sets, destruction, validation, and determinism.
+Import Physics2D
+
+Class Stage9Tests Inherits TestCase
+## Joint used by the tuning validation helpers.
+Private Property mTuningJoint As DistanceJoint
+
+## Builds a world with a wide static ground box whose top surface is y=0.
+Shared Function MakeWorld() As World
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(50.0, 0.5))
+Return world
+End Function
+
+## Builds a dynamic box body with unit density.
+Shared Function MakeBox(world As World, x As Double, y As Double, halfWidth As Double, halfHeight As Double) As Body
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(x, y)
+Var body As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+body.CreatePolygon(shapeDef, Polygon.MakeBox(halfWidth, halfHeight))
+Return body
+End Function
+
+## Steps the world at 60 Hz.
+Shared Sub Steps(world As World, count As Integer)
+Var i As Integer = 0
+While i < count
+world.StepWorld(1.0 / 60.0)
+i = i + 1
+Wend
+End Sub
+
+## Builds a rigid distance joint between two bodies at the given world
+## separation along x, with anchors at the body centres.
+Shared Function MakeRope(world As World, bodyA As Body, bodyB As Body, length As Double) As DistanceJoint
+Var def As New DistanceJointDefinition
+def.BodyA = bodyA
+def.BodyB = bodyB
+def.Length = length
+Return world.CreateDistanceJoint(def)
+End Function
+
+## A rigid distance joint holds two hanging boxes at the rest length.
+Public Sub TestRigidDistanceConstraintHoldsLength()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -1.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 1.0, 5.0, 0.2, 0.2)
+Var joint As DistanceJoint = Stage9Tests.MakeRope(world, boxA, boxB, 2.0)
+Assert.Equal(2.0, joint.GetLength(), "rest length round trip")
+Stage9Tests.Steps(world, 120)
+Var separation As Double = Maths.Sqrt(Stage9Tests.SeparationSquared(world, boxA, boxB))
+PhysicsAssert.Near(2.0, separation, 0.02, 0.02, "rigid distance holds rest length")
+PhysicsAssert.Near(0.0, world.GetBodyLinearVelocity(boxA).X, 0.05, 0.05, "box A settles")
+PhysicsAssert.Near(0.0, world.GetBodyLinearVelocity(boxB).X, 0.05, 0.05, "box B settles")
+world.Validate()
+End Sub
+
+## A soft spring with damping restores the rest length after a disturbance.
+Public Sub TestSpringRestoresRestLength()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -3.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 3.0, 5.0, 0.2, 0.2)
+Var def As New DistanceJointDefinition
+def.BodyA = boxA
+def.BodyB = boxB
+def.Length = 2.0
+def.Hertz = 5.0
+def.DampingRatio = 0.7
+def.EnableSpring = True
+Var joint As DistanceJoint = world.CreateDistanceJoint(def)
+Assert.True(joint.IsSpringEnabled(), "spring enabled round trip")
+Assert.Equal(5.0, joint.GetSpringHertz(), "spring hertz round trip")
+Assert.Equal(0.7, joint.GetSpringDampingRatio(), "damping ratio round trip")
+Stage9Tests.Steps(world, 240)
+Var separation As Double = Maths.Sqrt(Stage9Tests.SeparationSquared(world, boxA, boxB))
+PhysicsAssert.Near(2.0, separation, 0.03, 0.03, "spring pulls bodies to rest length")
+world.Validate()
+End Sub
+
+## Length limits clamp a motor-driven stretch.
+Public Sub TestLimitsClampMotorStretch()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -3.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 0.0, 5.0, 0.2, 0.2)
+Var def As New DistanceJointDefinition
+def.BodyA = boxA
+def.BodyB = boxB
+def.Length = 2.0
+def.EnableSpring = True
+def.EnableLimit = True
+def.MinLength = 1.0
+def.MaxLength = 3.0
+def.EnableMotor = True
+def.MotorSpeed = 2.0
+def.MaxMotorForce = 50.0
+Var joint As DistanceJoint = world.CreateDistanceJoint(def)
+Assert.True(joint.IsLimitEnabled(), "limit enabled round trip")
+Assert.Equal(1.0, joint.GetMinLength(), "min length round trip")
+Assert.Equal(3.0, joint.GetMaxLength(), "max length round trip")
+Stage9Tests.Steps(world, 240)
+Var separation As Double = Maths.Sqrt(Stage9Tests.SeparationSquared(world, boxA, boxB))
+Assert.True(separation <= 3.1, "separation stays under the upper limit")
+Assert.True(separation >= 0.98, "separation stays over the lower limit")
+Assert.True(joint.GetMotorForce() > 0.0, "motor reports positive force")
+world.Validate()
+End Sub
+
+## A motor stretches a rigid rope at the requested speed until limits stop it.
+Public Sub TestMotorDrivesSeparation()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -3.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 0.0, 5.0, 0.2, 0.2)
+Var def As New DistanceJointDefinition
+def.BodyA = boxA
+def.BodyB = boxB
+def.Length = 2.0
+def.EnableSpring = True
+def.EnableMotor = True
+def.MotorSpeed = 1.0
+def.MaxMotorForce = 10000.0
+world.CreateDistanceJoint(def)
+Stage9Tests.Steps(world, 60)
+Var separation As Double = Maths.Sqrt(Stage9Tests.SeparationSquared(world, boxA, boxB))
+PhysicsAssert.Near(3.0, separation, 0.2, 0.2, "motor stretches one metre per second")
+world.Validate()
+End Sub
+
+## SetCollideConnected destroys and restores the contact between the bodies.
+Public Sub TestCollideConnectedDestroysAndRestoresContact()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -0.15, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 0.15, 5.0, 0.2, 0.2)
+Var def As New DistanceJointDefinition
+def.BodyA = boxA
+def.BodyB = boxB
+def.Length = 0.3
+def.CollideConnected = False
+Var joint As DistanceJoint = world.CreateDistanceJoint(def)
+Stage9Tests.Steps(world, 10)
+Assert.Equal(0, world.ContactCount, "overlapping joined bodies hold no contact")
+joint.SetCollideConnected(True)
+Stage9Tests.Steps(world, 10)
+Assert.Equal(1, world.ContactCount, "collide connected restores the contact")
+joint.SetCollideConnected(False)
+Stage9Tests.Steps(world, 10)
+Assert.Equal(0, world.ContactCount, "collide connected off destroys the contact again")
+world.Validate()
+End Sub
+
+## Joint placement covers static-static, disabled, and awake graph cases.
+Public Sub TestJointPlacementAcrossSolverSets()
+Var world As World = Stage9Tests.MakeWorld()
+Var staticOne As Body = world.CreateBody(New BodyDefinition)
+Var staticTwo As Body = world.CreateBody(New BodyDefinition)
+Var def As New DistanceJointDefinition
+def.BodyA = staticOne
+def.BodyB = staticTwo
+def.Length = 1.0
+Var staticJoint As DistanceJoint = world.CreateDistanceJoint(def)
+Assert.Equal(PhysicsConstants.STATIC_SET, staticJoint.SetIndex, "static-static joint sits in the static set")
+
+Var boxA As Body = Stage9Tests.MakeBox(world, -1.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 1.0, 5.0, 0.2, 0.2)
+Var awakeDef As New DistanceJointDefinition
+awakeDef.BodyA = boxA
+awakeDef.BodyB = boxB
+awakeDef.Length = 2.0
+Var awakeJoint As DistanceJoint = world.CreateDistanceJoint(awakeDef)
+Assert.Equal(PhysicsConstants.AWAKE_SET, awakeJoint.SetIndex, "awake joint sits in the graph")
+Assert.True(awakeJoint.ColorIndex >= 0 And awakeJoint.ColorIndex < PhysicsConstants.GRAPH_COLOUR_COUNT, "awake joint holds a graph colour")
+
+boxA.Disable()
+Var disabledDef As New DistanceJointDefinition
+disabledDef.BodyA = boxA
+disabledDef.BodyB = boxB
+disabledDef.Length = 2.0
+Var disabledJoint As DistanceJoint = world.CreateDistanceJoint(disabledDef)
+Assert.Equal(PhysicsConstants.DISABLED_SET, disabledJoint.SetIndex, "joint with a disabled body sits in the disabled set")
+Assert.Equal(3, world.JointCount, "three live joints")
+world.Validate()
+End Sub
+
+## Destroying a joint unlinks both bodies and wakes the attached islands.
+Public Sub TestDestroyJointUnlinksAndWakes()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -1.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 1.0, 5.0, 0.2, 0.2)
+Var joint As DistanceJoint = Stage9Tests.MakeRope(world, boxA, boxB, 2.0)
+Assert.Equal(1, boxA.GetJointCount(), "body A holds one joint")
+Assert.Equal(1, boxB.GetJointCount(), "body B holds one joint")
+Assert.Equal(1, world.JointCount, "world holds one joint")
+joint.Destroy()
+Assert.False(joint.IsValid(), "stale facade invalid after destroy")
+Assert.Equal(0, boxA.GetJointCount(), "body A unlinked after destroy")
+Assert.Equal(0, boxB.GetJointCount(), "body B unlinked after destroy")
+Assert.Equal(0, world.JointCount, "world empty after destroy")
+boxB.SetLinearVelocity(New Vector2(2.0, 0.0))
+Stage9Tests.Steps(world, 30)
+Var separation As Double = Maths.Sqrt(Stage9Tests.SeparationSquared(world, boxA, boxB))
+Assert.True(separation > 2.1, "bodies drift apart after the rope is destroyed")
+world.Validate()
+End Sub
+
+## Destroying a body destroys its attached joints and keeps the partner.
+Public Sub TestDestroyBodyDestroysAttachedJoints()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -1.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 1.0, 5.0, 0.2, 0.2)
+Stage9Tests.MakeRope(world, boxA, boxB, 2.0)
+world.DestroyBody(boxA)
+Assert.Equal(0, world.JointCount, "attached joints destroyed with the body")
+Assert.Equal(0, boxB.GetJointCount(), "surviving body holds no joints")
+Stage9Tests.Steps(world, 10)
+world.Validate()
+End Sub
+
+## Body.GetJoints returns every attached joint and survives slot reuse.
+Public Sub TestGetJointsListsAllAttachments()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -1.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 1.0, 5.0, 0.2, 0.2)
+Var boxC As Body = Stage9Tests.MakeBox(world, 3.0, 5.0, 0.2, 0.2)
+Stage9Tests.MakeRope(world, boxA, boxB, 2.0)
+Stage9Tests.MakeRope(world, boxB, boxC, 2.0)
+Assert.Equal(2, boxB.GetJointCount(), "middle body holds two joints")
+Var joints As Array(Of Joint) = boxB.GetJoints()
+Assert.Equal(2, joints.Count, "GetJoints returns both attachments")
+Assert.Equal(2, world.JointCount, "world holds two joints")
+Stage9Tests.Steps(world, 30)
+world.Validate()
+End Sub
+
+## Destroyed joint slots are reused and stale facades stay invalid.
+Public Sub TestSlotReuseAndGenerationGuard()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -1.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 1.0, 5.0, 0.2, 0.2)
+Var joint As DistanceJoint = Stage9Tests.MakeRope(world, boxA, boxB, 2.0)
+joint.Destroy()
+Var replacement As DistanceJoint = Stage9Tests.MakeRope(world, boxA, boxB, 2.0)
+Assert.True(replacement.IsValid(), "replacement facade is valid")
+Assert.False(joint.IsValid(), "stale facade still invalid after slot reuse")
+Assert.Equal(0, replacement.Id, "slot reused for the replacement")
+Assert.Equal(1, world.JointCount, "world holds one live joint")
+world.Validate()
+End Sub
+
+## Constraint tuning setters validate inputs and round trip through sims.
+Public Sub TestConstraintTuningValidation()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -1.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 1.0, 5.0, 0.2, 0.2)
+Var joint As DistanceJoint = Stage9Tests.MakeRope(world, boxA, boxB, 2.0)
+Me.mTuningJoint = joint
+joint.SetConstraintHertz(30.0)
+joint.SetConstraintDampingRatio(0.5)
+Assert.Equal(30.0, joint.GetConstraintHertz(), "constraint hertz round trip")
+Assert.Equal(0.5, joint.GetConstraintDampingRatio(), "damping ratio round trip")
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowNegativeHertz)
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowNegativeDampingRatio)
+joint.SetLength(-1.0)
+Assert.Equal(PhysicsConstants.LINEAR_SLOP, joint.GetLength(), "negative length clamps to the slop")
+joint.SetLengthRange(2.0, 1.0)
+Assert.Equal(1.0, joint.GetMinLength(), "inverted range orders the lower bound first")
+Assert.Equal(2.0, joint.GetMaxLength(), "inverted range orders the upper bound second")
+joint.SetUserData(77)
+Assert.Equal(77, joint.GetUserData(), "user data round trip")
+world.Validate()
+End Sub
+
+## Contact-state bit tracking must follow the contact id pool capacity,
+## not the live contact count, when slots churn. Regression for the chain
+## workload crash after roughly 40 steps.
+Public Sub TestContactStateBitsTrackPoolCapacity()
+Var world As World = Stage9Tests.MakeJointChainWorld(60)
+Stage9Tests.Steps(world, 44)
+world.Validate()
+Assert.Equal(60, world.JointCount, "chain holds all sixty joints")
+End Sub
+
+## A chain of distance joints swings and settles deterministically.
+Public Sub TestJointChainDeterminism()
+Var first As World = Stage9Tests.MakeJointChainWorld()
+Var second As World = Stage9Tests.MakeJointChainWorld()
+Stage9Tests.Steps(first, 240)
+Stage9Tests.Steps(second, 240)
+Var firstChecksum As Integer = Stage9Tests.FoldWorld(first)
+Var secondChecksum As Integer = Stage9Tests.FoldWorld(second)
+Assert.Equal(firstChecksum, secondChecksum, "joint chain repeats bit for bit")
+first.Validate()
+second.Validate()
+End Sub
+
+## Builds a hanging two-link rope chain used by the determinism test.
+Shared Function MakeJointChainWorld() As World
+Var world As World = Stage9Tests.MakeWorld()
+Var anchorDef As New BodyDefinition
+anchorDef.Position = New Vector2(0.0, 6.0)
+Var anchor As Body = world.CreateBody(anchorDef)
+Var linkA As Body = Stage9Tests.MakeBox(world, 1.0, 6.0, 0.15, 0.15)
+Var linkB As Body = Stage9Tests.MakeBox(world, 3.0, 6.0, 0.15, 0.15)
+Var anchorDef2 As New DistanceJointDefinition
+anchorDef2.BodyA = anchor
+anchorDef2.BodyB = linkA
+anchorDef2.Length = 1.0
+world.CreateDistanceJoint(anchorDef2)
+Var linkDef As New DistanceJointDefinition
+linkDef.BodyA = linkA
+linkDef.BodyB = linkB
+linkDef.Length = 2.0
+world.CreateDistanceJoint(linkDef)
+Return world
+End Function
+
+## Builds a hanging chain of the given link count from a static anchor.
+Shared Function MakeJointChainWorld(linkCount As Integer) As World
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var anchorDef As New BodyDefinition
+anchorDef.Position = New Vector2(0.0, 10.0)
+Var anchor As Body = world.CreateBody(anchorDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var previous As Body = anchor
+Var def As New DistanceJointDefinition
+Var linkIndex As Integer = 0
+While linkIndex < linkCount
+Var linkDef As New BodyDefinition
+linkDef.Type = BodyType.DynamicBody
+linkDef.Position = New Vector2(0.25 * (linkIndex + 1), 10.0)
+Var link As Body = world.CreateBody(linkDef)
+link.CreatePolygon(shapeDef, Polygon.MakeBox(0.15, 0.15))
+def.BodyA = previous
+def.BodyB = link
+def.LocalAnchorA = New Vector2(0.25, 0.0)
+def.LocalAnchorB = New Vector2(-0.25, 0.0)
+def.Length = 0.5
+world.CreateDistanceJoint(def)
+previous = link
+linkIndex = linkIndex + 1
+Wend
+world.UpdateBroadPhasePairs()
+Return world
+End Function
+
+## Squared separation between two bodies' origins.
+Shared Function SeparationSquared(world As World, bodyA As Body, bodyB As Body) As Double
+Var pA As Vector2 = world.GetBodyTransform(bodyA).P
+Var pB As Vector2 = world.GetBodyTransform(bodyB).P
+Var dx As Double = pB.X - pA.X
+Var dy As Double = pB.Y - pA.Y
+Return dx * dx + dy * dy
+End Function
+
+## Throws a negative constraint hertz.
+Private Sub ThrowNegativeHertz()
+Me.mTuningJoint.SetConstraintHertz(-1.0)
+End Sub
+
+## Throws a negative damping ratio.
+Private Sub ThrowNegativeDampingRatio()
+Me.mTuningJoint.SetConstraintDampingRatio(-1.0)
+End Sub
+
+## Throws a negative length.
+Private Sub ThrowNegativeLength()
+Me.mTuningJoint.SetLength(-1.0)
+End Sub
+
+## Throws an inverted length range.
+Private Sub ThrowInvertedLengthRange()
+Me.mTuningJoint.SetLengthRange(2.0, 1.0)
+End Sub
+
+## Folds every live body transform into a golden checksum.
+Shared Function FoldWorld(world As World) As Integer
+Var checksum As Integer = 0
+For i As Integer = 0 To world.Bodies.Count - 1
+Var body As Body = world.Bodies[i]
+If body <> Nothing And body.Id <> PhysicsConstants.NULL_INDEX Then
+Var transform As Transform = world.GetBodyTransform(body)
+checksum = PhysicsAssert.FoldDouble(checksum, transform.P.X)
+checksum = PhysicsAssert.FoldDouble(checksum, transform.P.Y)
+checksum = PhysicsAssert.FoldDouble(checksum, transform.Q.C)
+checksum = PhysicsAssert.FoldDouble(checksum, transform.Q.S)
+End If
+Next i
+Return checksum
+End Function
+End Class

@@ -1,0 +1,321 @@
+# Persistent joint record and public façade, ported from upstream b2Joint in
+# joint.h plus the b2Joint_* surface in joint.c. The record carries solver-set
+# membership, body-edge lists, and island links; the hot per-family state
+# lives in a JointSim owned by whichever solver set or graph colour the joint
+# currently occupies. Family façades such as DistanceJoint extend this class
+# with their typed tuning surface.
+Class Joint
+## Owning world. Nothing for free slots.
+Property Owner As World
+## Joint slot index.
+Property Id As Integer
+## True while the slot addresses a live joint.
+Property Live As Boolean
+## Index of the solver set that owns the hot sim. NULL_INDEX when free.
+Property SetIndex As Integer
+## Constraint-graph colour index. NULL_INDEX outside the awake set.
+Property ColorIndex As Integer
+## Joint index within the owning set or graph colour. NULL_INDEX when free.
+Property LocalIndex As Integer
+## Body slot of edge zero.
+Property Edge0BodyId As Integer
+## Doubly linked list key of the previous joint on edge zero's body.
+Property Edge0PrevKey As Integer
+## Doubly linked list key of the next joint on edge zero's body.
+Property Edge0NextKey As Integer
+## Body slot of edge one.
+Property Edge1BodyId As Integer
+## Doubly linked list key of the previous joint on edge one's body.
+Property Edge1PrevKey As Integer
+## Doubly linked list key of the next joint on edge one's body.
+Property Edge1NextKey As Integer
+## Island linked list: previous joint. NULL_INDEX when unlinked.
+Property IslandPrev As Integer
+## Island linked list: next joint.
+Property IslandNext As Integer
+## Island slot this joint belongs to. NULL_INDEX when unlinked or outside
+## the simulated sets.
+Property IslandId As Integer
+## Family discriminator.
+Property Type As JointType
+## Generation used to invalidate stale façades, ported from
+## b2Joint.generation.
+Property Generation As Integer
+## Scratch mark used by island traversal.
+Property IsMarked As Boolean
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data attached to this joint.
+Property UserData As Integer
+## Debug draw size in metres.
+Property DrawSize As Double
+
+## Returns True when this façade still addresses a live joint.
+Function IsValid() As Boolean
+Return Me.Owner <> Nothing And Me.Live And Me.Id <> PhysicsConstants.NULL_INDEX
+End Function
+
+## Throws when this façade no longer addresses a live joint.
+Sub CheckValid()
+If Me.Owner = Nothing Then
+Throw New RuntimeException("Joint has no owner")
+End If
+If Not Me.Live Or Me.Id = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Joint is destroyed")
+End If
+End Sub
+
+## Destroys this joint and wakes both attached bodies, ported from
+## b2DestroyJoint.
+Sub Destroy()
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.DestroyJointInternal(Me, True)
+End Sub
+
+## Family discriminator, ported from b2Joint_GetType.
+Function GetJointType() As JointType
+Me.CheckValid()
+Return Me.Type
+End Function
+
+## First attached body, ported from b2Joint_GetBodyA.
+Function GetBodyA() As Body
+Me.CheckValid()
+Return Me.Owner.Bodies[Me.Edge0BodyId]
+End Function
+
+## Second attached body, ported from b2Joint_GetBodyB.
+Function GetBodyB() As Body
+Me.CheckValid()
+Return Me.Owner.Bodies[Me.Edge1BodyId]
+End Function
+
+## Owning world, ported from b2Joint_GetWorld.
+Function GetWorld() As World
+Me.CheckValid()
+Return Me.Owner
+End Function
+
+## Hot sim for this joint, resolving set or graph placement.
+Function GetJointSim() As JointSim
+Me.CheckValid()
+Return Me.Owner.GetJointSim(Me)
+End Function
+
+## Moves the first local anchor, ported from b2Joint_SetLocalAnchorA.
+Sub SetLocalAnchorA(localAnchor As Vector2)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+sim.LocalOriginAnchorAX = localAnchor.X
+sim.LocalOriginAnchorAY = localAnchor.Y
+End Sub
+
+## First local anchor, ported from b2Joint_GetLocalAnchorA.
+Function GetLocalAnchorA() As Vector2
+Me.CheckValid()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+Return New Vector2(sim.LocalOriginAnchorAX, sim.LocalOriginAnchorAY)
+End Function
+
+## Moves the second local anchor, ported from b2Joint_SetLocalAnchorB.
+Sub SetLocalAnchorB(localAnchor As Vector2)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+sim.LocalOriginAnchorBX = localAnchor.X
+sim.LocalOriginAnchorBY = localAnchor.Y
+End Sub
+
+## Second local anchor, ported from b2Joint_GetLocalAnchorB.
+Function GetLocalAnchorB() As Vector2
+Me.CheckValid()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+Return New Vector2(sim.LocalOriginAnchorBX, sim.LocalOriginAnchorBY)
+End Function
+
+## Sets the reference angle for the families that have one, ported from
+## b2Joint_SetReferenceAngle. The prismatic, revolute, and weld cases join
+## with those families.
+Sub SetReferenceAngle(angleInRadians As Double)
+Pragma Unused angleInRadians
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+End Sub
+
+## Reference angle for the families that have one, ported from
+## b2Joint_GetReferenceAngle.
+Function GetReferenceAngle() As Double
+Me.CheckValid()
+Return 0.0
+End Function
+
+## Sets the local axis for the families that have one, ported from
+## b2Joint_SetLocalAxisA. The prismatic and wheel cases join with those
+## families.
+Sub SetLocalAxisA(localAxis As Vector2)
+Pragma Unused localAxis
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+End Sub
+
+## Local axis for the families that have one, ported from
+## b2Joint_GetLocalAxisA.
+Function GetLocalAxisA() As Vector2
+Me.CheckValid()
+Return New Vector2(0.0, 0.0)
+End Function
+
+## Sets whether the connected bodies may collide, ported from
+## b2Joint_SetCollideConnected.
+Sub SetCollideConnected(shouldCollide As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Me.CollideConnected = shouldCollide Then
+Return
+End If
+Me.CollideConnected = shouldCollide
+Var bodyA As Body = Me.Owner.Bodies[Me.Edge0BodyId]
+Var bodyB As Body = Me.Owner.Bodies[Me.Edge1BodyId]
+If shouldCollide Then
+# Nudge the broad phase to look for new pairs; pick the body with the
+# fewest shapes.
+Var shapeId As Integer = bodyB.HeadShapeId
+If bodyA.ShapeCount < bodyB.ShapeCount Then
+shapeId = bodyA.HeadShapeId
+End If
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+If shape.ProxyKey <> PhysicsConstants.NULL_INDEX Then
+Me.Owner.BroadPhase.BufferMove(shape.ProxyKey)
+End If
+shapeId = shape.NextShapeId
+Wend
+Else
+Me.Owner.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+End Sub
+
+## True when the connected bodies may collide, ported from
+## b2Joint_GetCollideConnected.
+Function GetCollideConnected() As Boolean
+Me.CheckValid()
+Return Me.CollideConnected
+End Function
+
+## Attaches user data, ported from b2Joint_SetUserData.
+Sub SetUserData(userData As Integer)
+Me.CheckValid()
+Me.UserData = userData
+End Sub
+
+## User data, ported from b2Joint_GetUserData.
+Function GetUserData() As Integer
+Me.CheckValid()
+Return Me.UserData
+End Function
+
+## Wakes both attached bodies, ported from b2Joint_WakeBodies.
+Sub WakeBodies()
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var bodyA As Body = Me.Owner.Bodies[Me.Edge0BodyId]
+Var bodyB As Body = Me.Owner.Bodies[Me.Edge1BodyId]
+Me.Owner.WakeBody(bodyA)
+Me.Owner.WakeBody(bodyB)
+End Sub
+
+## Solver hertz for this joint, ported from the hertz out-param of
+## b2Joint_GetConstraintTuning.
+Function GetConstraintHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSim(Me).ConstraintHertz
+End Function
+
+## Sets the solver hertz for this joint, ported from b2Joint_SetConstraintTuning.
+Sub SetConstraintHertz(hertz As Double)
+Me.CheckValid()
+If Not hertz.IsFinite() Or hertz < 0.0 Then
+Throw New InvalidArgumentException("Joint hertz must be finite and non-negative")
+End If
+Me.Owner.GetJointSim(Me).ConstraintHertz = hertz
+End Sub
+
+## Solver damping ratio for this joint, ported from the damping ratio
+## out-param of b2Joint_GetConstraintTuning.
+Function GetConstraintDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSim(Me).ConstraintDampingRatio
+End Function
+
+## Sets the solver damping ratio for this joint, ported from
+## b2Joint_SetConstraintTuning.
+Sub SetConstraintDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+If Not dampingRatio.IsFinite() Or dampingRatio < 0.0 Then
+Throw New InvalidArgumentException("Joint damping ratio must be finite and non-negative")
+End If
+Me.Owner.GetJointSim(Me).ConstraintDampingRatio = dampingRatio
+End Sub
+
+## Changes the solver tuning for this joint, ported from
+## b2Joint_SetConstraintTuning.
+Sub SetConstraintTuning(hertz As Double, dampingRatio As Double)
+Me.SetConstraintHertz(hertz)
+Me.SetConstraintDampingRatio(dampingRatio)
+End Sub
+
+## Total constraint force applied this step, ported from
+## b2Joint_GetConstraintForce.
+Function GetConstraintForce() As Vector2
+Me.CheckValid()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+If Me.Type = JointType.DistanceJoint Then
+Return JointSolver.GetDistanceJointForce(Me.Owner, DistanceJointSim(sim))
+End If
+Return New Vector2(0.0, 0.0)
+End Function
+
+## Total constraint torque applied this step, ported from
+## b2Joint_GetConstraintTorque.
+Function GetConstraintTorque() As Double
+Me.CheckValid()
+Return 0.0
+End Function
+
+## Signed distance that still violates the joint's constraints, ported from
+## b2Joint_GetLinearSeparation.
+Function GetLinearSeparation() As Double
+Me.CheckValid()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+Var transformA As Transform = Me.Owner.GetBodyTransformById(Me.Edge0BodyId)
+Var transformB As Transform = Me.Owner.GetBodyTransformById(Me.Edge1BodyId)
+Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(sim.LocalOriginAnchorAX, sim.LocalOriginAnchorAY))
+Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(sim.LocalOriginAnchorBX, sim.LocalOriginAnchorBY))
+Var dp As Vector2 = pB - pA
+If Me.Type = JointType.DistanceJoint Then
+Var distance As DistanceJointSim = DistanceJointSim(sim)
+Var length As Double = dp.Length()
+If distance.EnableSpring Then
+If distance.EnableLimit Then
+If length < distance.MinLength Then
+Return distance.MinLength - length
+ElseIf length > distance.MaxLength Then
+Return length - distance.MaxLength
+End If
+End If
+Return 0.0
+End If
+Return Maths.Abs(length - distance.Length)
+End If
+Return 0.0
+End Function
+
+## Signed angle that still violates the joint's constraints, ported from
+## b2Joint_GetAngularSeparation.
+Function GetAngularSeparation() As Double
+Me.CheckValid()
+Return 0.0
+End Function
+End Class

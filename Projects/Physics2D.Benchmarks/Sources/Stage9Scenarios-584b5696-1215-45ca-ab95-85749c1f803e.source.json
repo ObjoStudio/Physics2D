@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9Scenarios",
+  "Id": "584b5696-1215-45ca-ab95-85749c1f803e",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9Scenarios-584b5696-1215-45ca-ab95-85749c1f803e.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

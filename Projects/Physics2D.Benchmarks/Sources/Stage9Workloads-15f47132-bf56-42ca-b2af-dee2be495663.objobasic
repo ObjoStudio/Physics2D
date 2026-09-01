@@ -1,0 +1,95 @@
+# Stage 9 joint workloads.
+#
+# The joint chain workload drives the full step pipeline over a hanging
+# rope of distance joints, the first joint-solver performance baseline.
+# Each iteration steps the fixed scene and folds live body transforms into
+# a deterministic checksum.
+Import Physics2D
+
+Class JointChainWorkload
+## The stepped world.
+Property World As World
+## The falling chain links.
+Property Links As Array(Of Body)
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Builds a fresh 60-link distance-joint chain hanging from a static anchor.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var anchorDef As New BodyDefinition
+anchorDef.Position = New Vector2(0.0, 10.0)
+Var anchor As Body = Me.World.CreateBody(anchorDef)
+
+Me.Links = New Array(Of Body)
+Me.Links.Reserve(60)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var previous As Body = anchor
+Var def As New DistanceJointDefinition
+Var linkIndex As Integer = 0
+While linkIndex < 60
+Var linkDef As New BodyDefinition
+linkDef.Type = BodyType.DynamicBody
+linkDef.Position = New Vector2(0.25 * (linkIndex + 1), 10.0)
+Var link As Body = Me.World.CreateBody(linkDef)
+link.CreatePolygon(shapeDef, Polygon.MakeBox(0.15, 0.15))
+Me.Links.Append(link)
+
+def.BodyA = previous
+def.BodyB = link
+def.LocalAnchorA = New Vector2(0.25, 0.0)
+def.LocalAnchorB = New Vector2(-0.25, 0.0)
+def.Length = 0.5
+Me.World.CreateDistanceJoint(def)
+previous = link
+linkIndex = linkIndex + 1
+Wend
+Me.SubSteps = 1
+Me.World.UpdateBroadPhasePairs()
+End Sub
+
+## Steps the chain four times, then folds live transforms.
+Sub RunKernels()
+Var stepIndex As Integer = 0
+While stepIndex < 4
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+stepIndex = stepIndex + 1
+Wend
+Var checksum As Integer = 0
+Var count As Integer = Me.Links.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Links[i])
+checksum = Me.FoldDouble(checksum, transform.P.X)
+checksum = Me.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## Folds one Double into the checksum, matching the PhysicsAssert fold:
+## round to nine decimals, then FNV-1a over the little-end octets.
+Function FoldDouble(checksum As Integer, value As Double) As Integer
+Var scaled As Integer = Integer(Maths.Round(value * 1000000000.0))
+Var hash As Integer = checksum
+Var octetIndex As Integer = 0
+While octetIndex < 8
+Var octet As Integer = scaled.BitAnd(255)
+hash = hash.BitXor(octet)
+hash = hash * 1099511628211
+scaled = scaled.ShiftRight(8)
+octetIndex = octetIndex + 1
+Wend
+Return hash
+End Function
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class

@@ -6,7 +6,7 @@
 #
 # Input: AABB-375d053c-9aba-487b-b381-874abcd7b5a7.objobasic 995130c81ff8bd6fe0acda99e69614d9e7297e08b19ad3d1a673c89e81bae8a9
 # Input: BitSet-32ba5db1-d4a3-41d8-978f-6020100c45db.objobasic 1625c50d37848f57f6d82ee58302562750774ebbebf4243d84ea610e95d630d7
-# Input: Body.objobasic 203011bf81629ffa35f4a1b69734a9b1fa460fd95aa81f8b89ab29c51b8fd521
+# Input: Body.objobasic 8a60afee311533714588148564d4261f7caa555d93252b75a1d1d75cfa342d78
 # Input: BodyDefinition.objobasic 6d4099185528eb5fcb4aae0e582e9fd583b979cc95f784781bba3883efcfe9ff
 # Input: BodySims.objobasic 4bc5987447d5544cffad98498671ff642f43b305211a37b9eda321462abe8962
 # Input: BodyStates.objobasic 34ecdd2493c9d76ce09a4fd975cbfa86af0ffbb5eb1de0eb66b9017bce409282
@@ -31,7 +31,7 @@
 # Input: Contact.objobasic 6c9dabeb3bdf783032ea2cc01ddae72f73f7a9b02bf727fa47bcfc8cdae20ab2
 # Input: ContactConstraint.objobasic 035f5e6d9b00737fb1e0d05aed0821441452bf5ae04bd2018caa8b7648a1e517
 # Input: ContactFlags.objobasic 60d159f6cf6e942332b1ff941019e78a96e3c4aab637f56f8f431ad2651221d1
-# Input: ContactMethods.objobasic 648379807c6d0efc0024395b506a3c824cdbc0ff07bf111fe84711e3c800e5a9
+# Input: ContactMethods.objobasic ec610fd6ddd9bdde6007ea6f532b2876fa02c50287109e4a911619870dd133e3
 # Input: ContactSims.objobasic e2bce217a2d08ad5fdf8886b14b636f5b49d2c7bfe46822cfeb3ea81b9462d7e
 # Input: ContactSolver.objobasic 7656cbea54cb438fef2d8fe60975cd85169aa0ca25068de19dc260c3745670a1
 # Input: ContinuousContext.objobasic 4d6fe8a572e0a7e900ced991d880f52e796a5a6690cb25aaad17473607101362
@@ -42,19 +42,28 @@
 # Input: CustomPreSolve.objobasic 633a51981a6f216496f322a57c4739d6df454bd1477f101c5586c0034626aebd
 # Input: Distance-a8dae15a-4200-4d94-9eb8-1be720713a74.objobasic c03d3e2850756899619485e0612f26fa32a423c570aedbd6fb986dc911adb65e
 # Input: DistanceInput-491bbf59-5549-4fb5-a028-a761c8544333.objobasic 0127713aa815720f9e01f2be2a5e07f93a9dd0eb3b7993e39145272cff17311a
+# Input: DistanceJoint.objobasic a26dbaa2fca31da7eb6dabc7922cbd829ba81a7c626e5bbdfb9540ae20737736
+# Input: DistanceJointDefinition.objobasic 30b4fb508b81d3340de2dd0f564f711f3fe3b93ca65ef89114356e25fbc84450
+# Input: DistanceJointScratch.objobasic f431da78e05d538fc717039731d18b885991160ac34a6a665b54eab3f42c2f73
+# Input: DistanceJointSim.objobasic 3bb6cf1952d87549dca8f9623d06c913b4d89d8991bf3636cd933ba5ccf55767
 # Input: DistanceOutput-d619ee17-034e-4a05-a8d7-d61257435965.objobasic 15dd3383c16f63efed47c74647dfe3949d0481fcb721b5300cd2b84b54fec98a
 # Input: DistanceScratch-b2490261-2e05-45e6-97e1-2d0a41723f65.objobasic f9e1514b2da2d9421f452082d7ddeb84aa9a1af10c333bc05ee6a01d7f050c04
 # Input: DoubleList-bf54ef29-8eae-4760-bd6b-fae9a46f6114.objobasic 88f6cd11834dcbdad3bd27ec627e3538f2f2427177020c6047c557ecb4019516
 # Input: DynamicTree-55542eb0-42a0-4347-b11f-3b7e2e8c53c6.objobasic 7951306a5b478cd7110a9f0cca40ecf103261109f36bee9896a4fe7fbf5d805e
 # Input: Filter.objobasic 455187bd46728c62c4c2784de321128dacf43ccf7964a1352b88c042796bac78
 # Input: GenerationalPool-a7eb56c1-ce86-4368-ae3c-458ea741dd55.objobasic 124a545390769606488fb8c6855cbaba9cc135170e8f24120127ef1a60b22d9e
-# Input: GraphColor.objobasic 05adefe9fa164a43893cdc651df583728aa6b3ef193e964002bf4f69637000c4
-# Input: GraphMethods.objobasic a9882981d3d1779304974a6b097ff68d338a1f8c52dfe53c0e23374875ab897f
+# Input: GraphColor.objobasic 517058f2a514948b4b4ecbe1f4f96e8dc543ebdb2471855c8f431c574a835f88
+# Input: GraphMethods.objobasic 65e21283c3af6e94d83a0007f6a7559ac284783aed1e7ce2f3fcf0cfaed60388
 # Input: Hull-46e523c2-f9cc-462f-91b6-53ab922cc560.objobasic 74d15ddd59dc1af0c1ea3a82efe06f46b9a4cb16e001340460c2e1bb12b14f26
 # Input: IdPool-fbf7c609-ee86-443b-8d23-078728df5ac9.objobasic 626645c06f0424bccaa91f2354eb2c1e8c952ca239b17686b7bfbe1631e11c27
 # Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
 # Input: Island.objobasic 44f9b035b888e2dbbec81e2c88390bd8081257a3f57a52efc6fffdddabb10fa4
-# Input: IslandMethods.objobasic 46190fa35190f01e3eb228bc6f5fc192b3faeac2811d4ee0537e4bcb148ab4e7
+# Input: IslandMethods.objobasic a8f8d47eb064fcf552695fa693a59411d2d91a0b665afe28fb58d73482b18cbe
+# Input: Joint.objobasic 1dc0e60c427b6e2df12d8d440b7aaeafb5ea0eb945504cbea9cb9dde71d7ef2b
+# Input: JointSim.objobasic 5b1db3f613e805a5b6d2152a10a6bd5d4d883d3c9d0783d76d60a4930823b4c7
+# Input: JointSims.objobasic d981030246c9b54430183c1e72e3d3fdb91ae8a5941fe1659db6c1b156487c26
+# Input: JointSolver.objobasic 729280cd191c8f8a6c97abc38ab6db200a0a2c1cbd30605a0b2b871026124d7d
+# Input: JointType-856da3bd-dadf-41a2-af79-4e1fcc92c642.objobasic 595178f214846dc7716badeb118dfb5729356f738f99204ff34b849f6fd14838
 # Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 2204114b1a588c77c29b945afd4b19ad7c68f56bce9f68f6a6ee47f5e8463787
 # Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic dcebd68c0b3500bb6ab7688775a8056b75304728e39537252715a4309cc96402
 # Input: MassData-cd26f83f-962d-4695-aa00-893f86fd1099.objobasic 954cf89f8f01ac0ba9e4d378506536bbb64de2e1630351bf9373731366488987
@@ -89,9 +98,9 @@
 # Input: SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic 82bc4694e90f396c176e50cbe8196ea7c809da4842781d5f9750137a1d087314
 # Input: SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic 7c911da9871051f8580713a107d379e349bdc89cf9f9f0e9968f07c29e2f19da
 # Input: Softness.objobasic 06211852d8bbb70e4c5f5479756606be96bb2667bd617c4f635f76a661e47d4a
-# Input: SolverMethods.objobasic b211a0cc05a398e237aa12f8a911af3626e3654ffee4fbe3abd62d5ce5251514
-# Input: SolverSet.objobasic 1d2b42169e753b0f4170547856e8e70e2fe1627878b28a60f941ccc978df8418
-# Input: StepContext.objobasic 203f584682477424c7d95486c3a0e2cb2e613d6f0096d52fa4e109fa5ede8ca2
+# Input: SolverMethods.objobasic bf669af57bc9348dbc0065ac90bea9df57b3f6bf5ac41fbe0edb9c2cb5f4f3a6
+# Input: SolverSet.objobasic ae57d26036c92d75a660f380cae829c6ef353d45bbba3876779bf1689234a922
+# Input: StepContext.objobasic e38cc4968d3501ac74dba270b23f47a80b9209d535120500055077f6dce90d75
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
 # Input: Sweep-cb00a2fd-6231-417e-b9c8-c8b9600f8a60.objobasic 63ddb320289daea999ff29f84fefccd8f3153869b145930b3c49163fbdbb8578
 # Input: TOIInput-ed2377a5-cd3e-456e-97c1-3b960def0f54.objobasic cdc342dace66bf807f8463117512baf9e8a506b2befd05aa00aec3e30c369753
@@ -106,7 +115,7 @@
 # Input: TreeScratch-3add8e75-acc6-4f27-996e-372dc4d98372.objobasic 35e077b5cec3caafcc6d334013421d7a9612c3ba18ecf97875019b87ac2f9f55
 # Input: TreeShapeCastCallback-20329436-ff04-4cf6-9641-f13fc2531dcb.objobasic 2abd4a4ca724ab02daa1a476dd447403aea4c5d80a507691f770ed20469a832b
 # Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
-# Input: World.objobasic fe69d42437c900eaf45c2b3e39ce773f2743eaa0bba5f5ce1807dbe5cc0d4695
+# Input: World.objobasic 6f8e6334b769a0862ab5deace18a726810ad0954b8ff31b264ee0417a9823fc9
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
@@ -115,7 +124,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): c65d7c5e319dafd5cddb112b1a17a214086d490de523e6a38e2960f020f4329e
+# Source content checksum (SHA-256): 88f6436dfe9f9f351d1181ee57525b851a83da1fb4fd09d8760e02b9671ce000
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -590,6 +599,11 @@ Property HeadChainId As Integer
 Property HeadContactKey As Integer
 ## Number of contacts attached to this body.
 Property ContactCount As Integer
+## Head of the doubly linked joint list as a joint edge key:
+## (jointId << 1) | edgeIndex.
+Property HeadJointKey As Integer
+## Number of joints attached to this body.
+Property JointCount As Integer
 ## Island this body belongs to. NULL_INDEX for static and disabled bodies.
 Property IslandId As Integer
 ## Doubly linked island list: previous body.
@@ -637,6 +651,8 @@ Me.ShapeCount = 0
 Me.HeadChainId = PhysicsConstants.NULL_INDEX
 Me.HeadContactKey = PhysicsConstants.NULL_INDEX
 Me.ContactCount = 0
+Me.HeadJointKey = PhysicsConstants.NULL_INDEX
+Me.JointCount = 0
 Me.IslandId = PhysicsConstants.NULL_INDEX
 Me.IslandPrev = PhysicsConstants.NULL_INDEX
 Me.IslandNext = PhysicsConstants.NULL_INDEX
@@ -1036,6 +1052,32 @@ While shapeId <> PhysicsConstants.NULL_INDEX
 Var shape As Shape = Me.Owner.Shapes[shapeId]
 results.Append(shape)
 shapeId = shape.NextShapeId
+Wend
+Return results
+End Function
+
+## The number of attached joints, ported from b2Body_GetJointCount.
+Function GetJointCount() As Integer
+Me.Validate()
+Return Me.JointCount
+End Function
+
+## Returns the attached joint façades in a fresh array, ported from
+## b2Body_GetJoints. Allocating convenience for cold paths.
+Function GetJoints() As Array(Of Joint)
+Me.Validate()
+Var results As New Array(Of Joint)
+Var jointKey As Integer = Me.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = Me.Owner.Joints[jointId]
+results.Append(joint)
+If edgeIndex = 0 Then
+jointKey = joint.Edge0NextKey
+Else
+jointKey = joint.Edge1NextKey
+End If
 Wend
 Return results
 End Function
@@ -5509,10 +5551,39 @@ End Function
 ## Two bodies collide only when at least one is dynamic; the connected-joint
 ## walk arrives with Stage 9.
 Shared Function ShouldBodiesCollide(world As World, bodyA As Body, bodyB As Body) As Boolean
-Pragma Unused world
 If bodyA.Type <> BodyType.DynamicBody And bodyB.Type <> BodyType.DynamicBody Then
 Return False
 End If
+
+# A joint between the two bodies with collideConnected disabled suppresses
+# every contact between them, ported from b2ShouldBodiesCollide in body.c.
+Var jointKey As Integer
+Var otherBodyId As Integer
+If bodyA.JointCount < bodyB.JointCount Then
+jointKey = bodyA.HeadJointKey
+otherBodyId = bodyB.Id
+Else
+jointKey = bodyB.HeadJointKey
+otherBodyId = bodyA.Id
+End If
+
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = world.Joints[jointId]
+Var jointOtherBodyId As Integer = joint.Edge1BodyId
+If edgeIndex = 1 Then
+jointOtherBodyId = joint.Edge0BodyId
+End If
+If joint.CollideConnected = False And jointOtherBodyId = otherBodyId Then
+Return False
+End If
+If edgeIndex = 0 Then
+jointKey = joint.Edge0NextKey
+Else
+jointKey = joint.Edge1NextKey
+End If
+Wend
 Return True
 End Function
 
@@ -7427,6 +7498,371 @@ Me.TransformA = New Transform
 Me.TransformB = New Transform
 Me.UseRadii = False
 End Constructor
+End Class
+
+# Public distance joint façade, ported from the b2DistanceJoint_* surface in
+# distance_joint.c. Tuning changes deliberately do not wake the bodies,
+# matching upstream; the solver picks up new values on the next step.
+Class DistanceJoint Inherits Joint
+## Rest length, ported from b2DistanceJoint_GetLength.
+Function GetLength() As Double
+Me.CheckValid()
+Return DistanceJointSim(Me.GetJointSim()).Length
+End Function
+
+## Changes the rest length and clears the spring and limit impulses, ported
+## from b2DistanceJoint_SetLength.
+Sub SetLength(length As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not length.IsFinite() Then
+Throw New InvalidArgumentException("Distance joint length must be finite")
+End If
+Var sim As DistanceJointSim = DistanceJointSim(Me.GetJointSim())
+If length < PhysicsConstants.LINEAR_SLOP Then
+length = PhysicsConstants.LINEAR_SLOP
+End If
+If length > PhysicsConstants.POSITION_LIMIT Then
+length = PhysicsConstants.POSITION_LIMIT
+End If
+sim.Length = length
+sim.Impulse = 0.0
+sim.LowerImpulse = 0.0
+sim.UpperImpulse = 0.0
+End Sub
+
+## Enables the length limits, ported from b2DistanceJoint_EnableLimit.
+Sub EnableLimit(enableLimit As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+DistanceJointSim(Me.GetJointSim()).EnableLimit = enableLimit
+End Sub
+
+## True when the length limits are enabled, ported from
+## b2DistanceJoint_IsLimitEnabled.
+Function IsLimitEnabled() As Boolean
+Me.CheckValid()
+Return DistanceJointSim(Me.GetJointSim()).EnableLimit
+End Function
+
+## Sets the length range and clears the spring and limit impulses, ported
+## from b2DistanceJoint_SetLengthRange.
+Sub SetLengthRange(minLength As Double, maxLength As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not minLength.IsFinite() Or Not maxLength.IsFinite() Then
+Throw New InvalidArgumentException("Distance joint length range must be finite")
+End If
+If minLength < PhysicsConstants.LINEAR_SLOP Then
+minLength = PhysicsConstants.LINEAR_SLOP
+End If
+If maxLength < PhysicsConstants.LINEAR_SLOP Then
+maxLength = PhysicsConstants.LINEAR_SLOP
+End If
+If minLength > PhysicsConstants.POSITION_LIMIT Then
+minLength = PhysicsConstants.POSITION_LIMIT
+End If
+If maxLength > PhysicsConstants.POSITION_LIMIT Then
+maxLength = PhysicsConstants.POSITION_LIMIT
+End If
+Var sim As DistanceJointSim = DistanceJointSim(Me.GetJointSim())
+If minLength < maxLength Then
+sim.MinLength = minLength
+sim.MaxLength = maxLength
+Else
+sim.MinLength = maxLength
+sim.MaxLength = minLength
+End If
+sim.Impulse = 0.0
+sim.LowerImpulse = 0.0
+sim.UpperImpulse = 0.0
+End Sub
+
+## Lower clamp of the length range, ported from b2DistanceJoint_GetMinLength.
+Function GetMinLength() As Double
+Me.CheckValid()
+Return DistanceJointSim(Me.GetJointSim()).MinLength
+End Function
+
+## Upper clamp of the length range, ported from b2DistanceJoint_GetMaxLength.
+Function GetMaxLength() As Double
+Me.CheckValid()
+Return DistanceJointSim(Me.GetJointSim()).MaxLength
+End Function
+
+## Current distance between the two anchors, ported from
+## b2DistanceJoint_GetCurrentLength.
+Function GetCurrentLength() As Double
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var sim As DistanceJointSim = DistanceJointSim(Me.GetJointSim())
+Var transformA As Transform = Me.Owner.GetBodyTransformById(Me.Edge0BodyId)
+Var transformB As Transform = Me.Owner.GetBodyTransformById(Me.Edge1BodyId)
+Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(sim.LocalOriginAnchorAX, sim.LocalOriginAnchorAY))
+Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(sim.LocalOriginAnchorBX, sim.LocalOriginAnchorBY))
+Var d As Vector2 = pB - pA
+Return d.Length()
+End Function
+
+## Enables the spring, ported from b2DistanceJoint_EnableSpring.
+Sub EnableSpring(enableSpring As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+DistanceJointSim(Me.GetJointSim()).EnableSpring = enableSpring
+End Sub
+
+## True when the spring is enabled, ported from
+## b2DistanceJoint_IsSpringEnabled.
+Function IsSpringEnabled() As Boolean
+Me.CheckValid()
+Return DistanceJointSim(Me.GetJointSim()).EnableSpring
+End Function
+
+## Spring stiffness in hertz, ported from b2DistanceJoint_SetSpringHertz.
+Sub SetSpringHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+DistanceJointSim(Me.GetJointSim()).Hertz = hertz
+End Sub
+
+## Spring stiffness in hertz, ported from b2DistanceJoint_GetSpringHertz.
+Function GetSpringHertz() As Double
+Me.CheckValid()
+Return DistanceJointSim(Me.GetJointSim()).Hertz
+End Function
+
+## Spring damping ratio, ported from b2DistanceJoint_SetSpringDampingRatio.
+Sub SetSpringDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+DistanceJointSim(Me.GetJointSim()).DampingRatio = dampingRatio
+End Sub
+
+## Spring damping ratio, ported from b2DistanceJoint_GetSpringDampingRatio.
+Function GetSpringDampingRatio() As Double
+Me.CheckValid()
+Return DistanceJointSim(Me.GetJointSim()).DampingRatio
+End Function
+
+## Enables the motor and clears the motor impulse, ported from
+## b2DistanceJoint_EnableMotor.
+Sub EnableMotor(enableMotor As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var sim As DistanceJointSim = DistanceJointSim(Me.GetJointSim())
+If enableMotor <> sim.EnableMotor Then
+sim.EnableMotor = enableMotor
+sim.MotorImpulse = 0.0
+End If
+End Sub
+
+## True when the motor is enabled, ported from b2DistanceJoint_IsMotorEnabled.
+Function IsMotorEnabled() As Boolean
+Me.CheckValid()
+Return DistanceJointSim(Me.GetJointSim()).EnableMotor
+End Function
+
+## Target relative speed along the rope axis, ported from
+## b2DistanceJoint_SetMotorSpeed.
+Sub SetMotorSpeed(motorSpeed As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+DistanceJointSim(Me.GetJointSim()).MotorSpeed = motorSpeed
+End Sub
+
+## Target relative speed along the rope axis, ported from
+## b2DistanceJoint_GetMotorSpeed.
+Function GetMotorSpeed() As Double
+Me.CheckValid()
+Return DistanceJointSim(Me.GetJointSim()).MotorSpeed
+End Function
+
+## Motor force applied during the last step, ported from
+## b2DistanceJoint_GetMotorForce.
+Function GetMotorForce() As Double
+Me.CheckValid()
+Var sim As DistanceJointSim = DistanceJointSim(Me.GetJointSim())
+Return Me.Owner.InvH * sim.MotorImpulse
+End Function
+
+## Maximum motor force magnitude, ported from
+## b2DistanceJoint_SetMaxMotorForce.
+Sub SetMaxMotorForce(force As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+DistanceJointSim(Me.GetJointSim()).MaxMotorForce = force
+End Sub
+
+## Maximum motor force magnitude, ported from
+## b2DistanceJoint_GetMaxMotorForce.
+Function GetMaxMotorForce() As Double
+Me.CheckValid()
+Return DistanceJointSim(Me.GetJointSim()).MaxMotorForce
+End Function
+End Class
+
+# Distance joint definition, ported from upstream b2DistanceJointDef and
+# b2DefaultDistanceJointDef in types.h and joint.c. Defaults match upstream:
+# rest length of one metre, unlimited maximum length, no spring, limits, or
+# motor.
+Class DistanceJointDefinition
+## First attached body.
+Property BodyA As Body
+## Second attached body.
+Property BodyB As Body
+## Anchor on body A in body A's local frame.
+Property LocalAnchorA As Vector2
+## Anchor on body B in body B's local frame.
+Property LocalAnchorB As Vector2
+## Rest length in metres.
+Property Length As Double
+## Minimum length when limits are enabled.
+Property MinLength As Double
+## Maximum length when limits are enabled.
+Property MaxLength As Double
+## Spring stiffness in hertz. Zero gives a rigid rope.
+Property Hertz As Double
+## Spring damping ratio.
+Property DampingRatio As Double
+## Maximum motor force magnitude.
+Property MaxMotorForce As Double
+## Target relative speed along the rope axis.
+Property MotorSpeed As Double
+## Enables the soft spring behaviour.
+Property EnableSpring As Boolean
+## Enables the length limits.
+Property EnableLimit As Boolean
+## Enables the motor.
+Property EnableMotor As Boolean
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data attached to the joint.
+Property UserData As Integer
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LocalAnchorA = New Vector2(0.0, 0.0)
+Me.LocalAnchorB = New Vector2(0.0, 0.0)
+Me.Length = 1.0
+Me.MinLength = 0.0
+Me.MaxLength = PhysicsConstants.POSITION_LIMIT
+Me.Hertz = 0.0
+Me.DampingRatio = 0.0
+Me.MaxMotorForce = 0.0
+Me.MotorSpeed = 0.0
+Me.EnableSpring = False
+Me.EnableLimit = False
+Me.EnableMotor = False
+Me.CollideConnected = False
+Me.UserData = 0
+End Constructor
+End Class
+
+# Mutable solver state for one distance joint during prepare/warm-start/
+# solve, kept as a scratch record so the per-block solver helpers stay
+# within method complexity limits. Mirrors the local variables of upstream
+# b2SolveDistanceJoint.
+Class DistanceJointScratch
+## Linear velocity of body A.
+Property VAX As Double
+## Y component of body A's linear velocity.
+Property VAY As Double
+## Angular velocity of body A.
+Property WA As Double
+## X component of body B's linear velocity.
+Property VBX As Double
+## Y component of body B's linear velocity.
+Property VBY As Double
+## Angular velocity of body B.
+Property WB As Double
+## X component of the rotated anchor on body A.
+Property RAX As Double
+## Y component of the rotated anchor on body A.
+Property RAY As Double
+## X component of the rotated anchor on body B.
+Property RBX As Double
+## Y component of the rotated anchor on body B.
+Property RBY As Double
+## X component of the unit separation axis.
+Property AxisX As Double
+## Y component of the unit separation axis.
+Property AxisY As Double
+## Current anchor separation length.
+Property Length As Double
+
+## Creates a zeroed scratch record.
+Constructor()
+Me.VAX = 0.0
+Me.VAY = 0.0
+Me.WA = 0.0
+Me.VBX = 0.0
+Me.VBY = 0.0
+Me.WB = 0.0
+Me.RAX = 0.0
+Me.RAY = 0.0
+Me.RBX = 0.0
+Me.RBY = 0.0
+Me.AxisX = 0.0
+Me.AxisY = 0.0
+Me.Length = 0.0
+End Constructor
+End Class
+
+# Distance joint solver state, ported from upstream b2DistanceJoint in
+# joint.h. The scalar working fields (impulses, anchors, effective mass)
+# change every substep; the definition fields (length, spring, limits,
+# motor) mirror the public tuning surface.
+Class DistanceJointSim Inherits JointSim
+## Rest length of the rope constraint.
+Property Length As Double
+## Spring stiffness in hertz. Zero means a rigid rope.
+Property Hertz As Double
+## Spring damping ratio.
+Property DampingRatio As Double
+## Lower clamp of the length range.
+Property MinLength As Double
+## Upper clamp of the length range.
+Property MaxLength As Double
+## Maximum motor force magnitude.
+Property MaxMotorForce As Double
+## Target relative speed along the rope axis.
+Property MotorSpeed As Double
+## Spring impulse accumulator.
+Property Impulse As Double
+## Lower limit impulse accumulator.
+Property LowerImpulse As Double
+## Upper limit impulse accumulator.
+Property UpperImpulse As Double
+## Motor impulse accumulator.
+Property MotorImpulse As Double
+## Awake-set state index of body A. NULL_INDEX for static bodies.
+Property IndexA As Integer
+## Awake-set state index of body B. NULL_INDEX for static bodies.
+Property IndexB As Integer
+## X component of the world-space anchor on body A at prepare time.
+Property AnchorAX As Double
+## Y component of the world-space anchor on body A at prepare time.
+Property AnchorAY As Double
+## X component of the world-space anchor on body B at prepare time.
+Property AnchorBX As Double
+## Y component of the world-space anchor on body B at prepare time.
+Property AnchorBY As Double
+## X component of the body-centre difference at prepare time.
+Property DeltaCenterX As Double
+## Y component of the body-centre difference at prepare time.
+Property DeltaCenterY As Double
+## Softness of the spring constraint.
+Property DistanceSoftness As Softness
+## Effective mass along the rope axis.
+Property AxialMass As Double
+## Enables the soft spring behaviour.
+Property EnableSpring As Boolean
+## Enables the length limits.
+Property EnableLimit As Boolean
+## Enables the motor.
+Property EnableMotor As Boolean
 End Class
 
 # Output for shape distance, ported from upstream b2DistanceOutput in
@@ -9418,13 +9854,15 @@ End Class
 # One colour of the constraint graph, ported from upstream b2GraphColor in
 # constraint_graph.h. Colours 0..10 track which body slots they hold so the
 # solver can batch independent constraints; colour 11 is the overflow colour
-# and deliberately has no body set. Each colour owns dense contact sims for
-# its touching contacts.
+# and deliberately has no body set. Each colour owns dense contact and joint
+# sims for its awake touching contacts and awake joints.
 Class GraphColor
 ## Body slots held by this colour. Nothing for the overflow colour.
 Property BodySet As BitSet
 ## Touching contact sims assigned to this colour.
 Property ContactSims As ContactSims
+## Joint sims assigned to this colour.
+Property JointSims As JointSims
 ## Solver scratch constraints matching the sim rows one to one.
 Property Constraints As Array(Of ContactConstraint)
 ## Number of live constraints in the scratch array this step.
@@ -9439,6 +9877,7 @@ Else
 Me.BodySet = Nothing
 End If
 Me.ContactSims = New ContactSims()
+Me.JointSims = New JointSims()
 Me.Constraints = New Array(Of ContactConstraint)
 Me.ConstraintCount = 0
 End Constructor
@@ -9447,6 +9886,7 @@ End Constructor
 Constructor()
 Me.BodySet = Nothing
 Me.ContactSims = New ContactSims()
+Me.JointSims = New JointSims()
 Me.Constraints = New Array(Of ContactConstraint)
 Me.ConstraintCount = 0
 End Constructor
@@ -9454,9 +9894,163 @@ End Class
 
 # Constraint-graph colour assignment and sim migration, ported from
 # constraint_graph.c. Contact sims clone into a colour when they start
-# touching and move back to the awake set's store when they stop. Joint
-# colour assignment arrives with Stage 9.
+# touching and move back to the awake set's store when they stop. Joint sims
+# live in a colour whenever their joint is awake.
 Class GraphMethods
+## Claims the first colour whose body set has room for both joint bodies,
+## ported from b2AssignJointColor. Static bodies never occupy a colour, so
+## a joint anchored to a static body claims a colour for the moving body
+## only, and the search starts at colour 1 for that body exactly as for
+## contacts.
+Private Shared Function ChooseJointColor(graph As ConstraintGraph, bodyIdA As Integer, bodyIdB As Integer, staticA As Boolean, staticB As Boolean) As Integer
+If staticA And staticB Then
+Throw New RuntimeException("Static bodies cannot share a joint")
+End If
+Var colorIndex As Integer = PhysicsConstants.GRAPH_OVERFLOW_INDEX
+If staticA = False And staticB = False Then
+Var i As Integer = 0
+While i < PhysicsConstants.GRAPH_OVERFLOW_INDEX And colorIndex = PhysicsConstants.GRAPH_OVERFLOW_INDEX
+Var colorSet As BitSet = graph.Colors[i].BodySet
+If colorSet.GetBit(bodyIdA) = False And colorSet.GetBit(bodyIdB) = False Then
+colorSet.SetBitGrow(bodyIdA)
+colorSet.SetBitGrow(bodyIdB)
+colorIndex = i
+End If
+i = i + 1
+Wend
+ElseIf staticA = False Then
+Var i As Integer = 0
+While i < PhysicsConstants.GRAPH_OVERFLOW_INDEX And colorIndex = PhysicsConstants.GRAPH_OVERFLOW_INDEX
+Var colorSet As BitSet = graph.Colors[i].BodySet
+If colorSet.GetBit(bodyIdA) = False Then
+colorSet.SetBitGrow(bodyIdA)
+colorIndex = i
+End If
+i = i + 1
+Wend
+Else
+Var i As Integer = 0
+While i < PhysicsConstants.GRAPH_OVERFLOW_INDEX And colorIndex = PhysicsConstants.GRAPH_OVERFLOW_INDEX
+Var colorSet As BitSet = graph.Colors[i].BodySet
+If colorSet.GetBit(bodyIdB) = False Then
+colorSet.SetBitGrow(bodyIdB)
+colorIndex = i
+End If
+i = i + 1
+Wend
+End If
+Return colorIndex
+End Function
+
+## Allocates a fresh joint sim of the given family. Families without their
+## own solver state yet share the base record. Module classes cannot call
+## Super.Constructor(), so the factory fills the softness records here and
+## callers assign every remaining field.
+Shared Function NewJointSimOfType(jointType As JointType) As JointSim
+If jointType = JointType.DistanceJoint Then
+Var distance As DistanceJointSim = New DistanceJointSim
+distance.DistanceSoftness = New Softness
+distance.ConstraintSoftness = New Softness
+Return distance
+End If
+Var sim As JointSim = New JointSim
+sim.ConstraintSoftness = New Softness
+Return sim
+End Function
+
+## Assigns an awake joint to a colour and creates its sim row there, ported
+## from b2CreateJointInGraph. Returns the fresh sim for the caller to fill.
+Shared Function CreateJointInGraph(world As World, joint As Joint) As JointSim
+Var graph As ConstraintGraph = world.ConstraintGraph
+Var bodyIdA As Integer = joint.Edge0BodyId
+Var bodyIdB As Integer = joint.Edge1BodyId
+Var bodyA As Body = world.Bodies[bodyIdA]
+Var bodyB As Body = world.Bodies[bodyIdB]
+Var staticA As Boolean = bodyA.SetIndex = PhysicsConstants.STATIC_SET
+Var staticB As Boolean = bodyB.SetIndex = PhysicsConstants.STATIC_SET
+
+Var colorIndex As Integer = ChooseJointColor(graph, bodyIdA, bodyIdB, staticA, staticB)
+Var color As GraphColor = graph.Colors[colorIndex]
+Var sim As JointSim = GraphMethods.NewJointSimOfType(joint.Type)
+joint.ColorIndex = colorIndex
+joint.LocalIndex = color.JointSims.Add(sim)
+Return sim
+End Function
+
+## Moves a joint sim into its colour, ported from b2AddJointToGraph. Used
+## when a sleeping joint wakes and joins the graph.
+Shared Sub AddJointToGraph(world As World, jointSim As JointSim, joint As Joint)
+Var movedSim As JointSim = GraphMethods.CreateJointInGraph(world, joint)
+GraphMethods.CopyJointSim(movedSim, jointSim)
+End Sub
+
+## Copies every field of one joint sim into another, mirroring the memcpy
+## of b2AddJointToGraph and b2TransferJoint. Family state is cloned through
+## the downcast so the family subtype is preserved.
+Shared Sub CopyJointSim(target As JointSim, source As JointSim)
+target.JointId = source.JointId
+target.BodyIdA = source.BodyIdA
+target.BodyIdB = source.BodyIdB
+target.Type = source.Type
+target.LocalOriginAnchorAX = source.LocalOriginAnchorAX
+target.LocalOriginAnchorAY = source.LocalOriginAnchorAY
+target.LocalOriginAnchorBX = source.LocalOriginAnchorBX
+target.LocalOriginAnchorBY = source.LocalOriginAnchorBY
+target.InvMassA = source.InvMassA
+target.InvIA = source.InvIA
+target.InvMassB = source.InvMassB
+target.InvIB = source.InvIB
+target.ConstraintHertz = source.ConstraintHertz
+target.ConstraintDampingRatio = source.ConstraintDampingRatio
+target.ConstraintSoftness.BiasRate = source.ConstraintSoftness.BiasRate
+target.ConstraintSoftness.MassScale = source.ConstraintSoftness.MassScale
+target.ConstraintSoftness.ImpulseScale = source.ConstraintSoftness.ImpulseScale
+If source.Type = JointType.DistanceJoint Then
+Var sourceDistance As DistanceJointSim = DistanceJointSim(source)
+Var targetDistance As DistanceJointSim = DistanceJointSim(target)
+targetDistance.Length = sourceDistance.Length
+targetDistance.Hertz = sourceDistance.Hertz
+targetDistance.DampingRatio = sourceDistance.DampingRatio
+targetDistance.MinLength = sourceDistance.MinLength
+targetDistance.MaxLength = sourceDistance.MaxLength
+targetDistance.MaxMotorForce = sourceDistance.MaxMotorForce
+targetDistance.MotorSpeed = sourceDistance.MotorSpeed
+targetDistance.Impulse = sourceDistance.Impulse
+targetDistance.LowerImpulse = sourceDistance.LowerImpulse
+targetDistance.UpperImpulse = sourceDistance.UpperImpulse
+targetDistance.MotorImpulse = sourceDistance.MotorImpulse
+targetDistance.IndexA = sourceDistance.IndexA
+targetDistance.IndexB = sourceDistance.IndexB
+targetDistance.AnchorAX = sourceDistance.AnchorAX
+targetDistance.AnchorAY = sourceDistance.AnchorAY
+targetDistance.AnchorBX = sourceDistance.AnchorBX
+targetDistance.AnchorBY = sourceDistance.AnchorBY
+targetDistance.DeltaCenterX = sourceDistance.DeltaCenterX
+targetDistance.DeltaCenterY = sourceDistance.DeltaCenterY
+targetDistance.DistanceSoftness.BiasRate = sourceDistance.DistanceSoftness.BiasRate
+targetDistance.DistanceSoftness.MassScale = sourceDistance.DistanceSoftness.MassScale
+targetDistance.DistanceSoftness.ImpulseScale = sourceDistance.DistanceSoftness.ImpulseScale
+targetDistance.AxialMass = sourceDistance.AxialMass
+targetDistance.EnableSpring = sourceDistance.EnableSpring
+targetDistance.EnableLimit = sourceDistance.EnableLimit
+targetDistance.EnableMotor = sourceDistance.EnableMotor
+End If
+End Sub
+
+## Removes a joint's sim from its colour, ported from
+## b2RemoveJointFromGraph.
+Shared Sub RemoveJointFromGraph(world As World, bodyIdA As Integer, bodyIdB As Integer, colorIndex As Integer, localIndex As Integer)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+If colorIndex <> PhysicsConstants.GRAPH_OVERFLOW_INDEX Then
+# May clear a bit for a static body, but this has no effect.
+color.BodySet.ClearBit(bodyIdA)
+color.BodySet.ClearBit(bodyIdB)
+End If
+Var movedSim As JointSim = color.JointSims.RemoveSwap(localIndex)
+If movedSim <> Nothing Then
+world.Joints[movedSim.JointId].LocalIndex = localIndex
+End If
+End Sub
 ## Claims the first colour whose body set has room for the pair, ported
 ## from the colour search of b2AddContactToGraph. Static bodies never
 ## occupy colour 0. Marks the claimed body slots.
@@ -10240,11 +10834,10 @@ End Constructor
 End Class
 
 # Island graph maintenance, ported from upstream island.c. Islands link
-# touching contacts into connected components using union-find with path
-# compression; awake islands merge eagerly, sleeping islands merge when
-# their solver set wakes. Island splitting by depth-first search runs after
-# constraint removal. Joint linking arrives with Stage 9; the record's
-# joint lists stay empty until then.
+# touching contacts and joints into connected components using union-find
+# with path compression; awake islands merge eagerly, sleeping islands merge
+# when their solver set wakes. Island splitting by depth-first search runs
+# after constraint removal.
 Class IslandMethods
 ## Creates an island in the given solver set, ported from b2CreateIsland.
 Shared Function CreateIsland(world As World, setIndex As Integer) As Island
@@ -10358,6 +10951,97 @@ island.TailContact = island.HeadContact
 End If
 island.ContactCount = island.ContactCount + 1
 contact.IslandId = islandId
+End Sub
+
+## Appends a joint to an island's joint list, ported from b2AddJointToIsland.
+Private Shared Sub AddJointToIsland(world As World, islandId As Integer, joint As Joint)
+If joint.IslandId <> PhysicsConstants.NULL_INDEX Or joint.IslandPrev <> PhysicsConstants.NULL_INDEX Or joint.IslandNext <> PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Joint already belongs to an island")
+End If
+Var island As Island = world.Islands[islandId]
+If island.HeadJoint <> PhysicsConstants.NULL_INDEX Then
+joint.IslandNext = island.HeadJoint
+world.Joints[island.HeadJoint].IslandPrev = joint.Id
+End If
+island.HeadJoint = joint.Id
+If island.TailJoint = PhysicsConstants.NULL_INDEX Then
+island.TailJoint = island.HeadJoint
+End If
+island.JointCount = island.JointCount + 1
+joint.IslandId = islandId
+End Sub
+
+## Links a joint into the island graph, ported from b2LinkJoint. Wakes a
+## sleeping body whose counterpart is awake, unions the two bodies' islands
+## with path compression, and merges awake islands when mergeIslands is set.
+Shared Sub LinkJoint(world As World, joint As Joint, mergeIslands As Boolean)
+Var bodyA As Body = world.Bodies[joint.Edge0BodyId]
+Var bodyB As Body = world.Bodies[joint.Edge1BodyId]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET And bodyB.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET Then
+world.WakeSolverSet(bodyB.SetIndex)
+ElseIf bodyB.SetIndex = PhysicsConstants.AWAKE_SET And bodyA.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET Then
+world.WakeSolverSet(bodyA.SetIndex)
+End If
+
+Var islandIdA As Integer = bodyA.IslandId
+Var islandIdB As Integer = bodyB.IslandId
+If islandIdA = PhysicsConstants.NULL_INDEX And islandIdB = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("LinkJoint requires a body with an island")
+End If
+
+If islandIdA = islandIdB Then
+# Joint in same island.
+AddJointToIsland(world, islandIdA, joint)
+Return
+End If
+
+Var rootIdA As Integer = FindRootIsland(world, islandIdA)
+Var rootIdB As Integer = FindRootIsland(world, islandIdB)
+
+If rootIdA <> rootIdB And rootIdA <> PhysicsConstants.NULL_INDEX And rootIdB <> PhysicsConstants.NULL_INDEX Then
+world.Islands[rootIdB].ParentIsland = rootIdA
+End If
+
+If rootIdA <> PhysicsConstants.NULL_INDEX Then
+AddJointToIsland(world, rootIdA, joint)
+Else
+AddJointToIsland(world, rootIdB, joint)
+End If
+
+# Joints need to have islands merged immediately when they are created to
+# keep the island graph valid. A body type change can defer the merge until
+# all joints are linked.
+If mergeIslands Then
+MergeAwakeIslands(world)
+End If
+End Sub
+
+## Unlinks a joint from its island when it is destroyed or disabled, ported
+## from b2UnlinkJoint.
+Shared Sub UnlinkJoint(world As World, joint As Joint)
+If joint.IslandId = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("UnlinkJoint requires a linked joint")
+End If
+Var islandId As Integer = joint.IslandId
+Var island As Island = world.Islands[islandId]
+If joint.IslandPrev <> PhysicsConstants.NULL_INDEX Then
+world.Joints[joint.IslandPrev].IslandNext = joint.IslandNext
+End If
+If joint.IslandNext <> PhysicsConstants.NULL_INDEX Then
+world.Joints[joint.IslandNext].IslandPrev = joint.IslandPrev
+End If
+If island.HeadJoint = joint.Id Then
+island.HeadJoint = joint.IslandNext
+End If
+If island.TailJoint = joint.Id Then
+island.TailJoint = joint.IslandPrev
+End If
+island.JointCount = island.JointCount - 1
+island.ConstraintRemoveCount = island.ConstraintRemoveCount + 1
+joint.IslandId = PhysicsConstants.NULL_INDEX
+joint.IslandPrev = PhysicsConstants.NULL_INDEX
+joint.IslandNext = PhysicsConstants.NULL_INDEX
 End Sub
 
 ## Links a touching contact into the island graph, ported from b2LinkContact.
@@ -10479,6 +11163,13 @@ contact.IslandId = rootId
 contactId = contact.IslandNext
 Wend
 
+Var jointId As Integer = island.HeadJoint
+While jointId <> PhysicsConstants.NULL_INDEX
+Var joint As Joint = world.Joints[jointId]
+joint.IslandId = rootId
+jointId = joint.IslandNext
+Wend
+
 world.Bodies[rootIsland.TailBody].IslandNext = island.HeadBody
 world.Bodies[island.HeadBody].IslandPrev = rootIsland.TailBody
 rootIsland.TailBody = island.TailBody
@@ -10493,6 +11184,17 @@ world.Contacts[rootIsland.TailContact].IslandNext = island.HeadContact
 world.Contacts[island.HeadContact].IslandPrev = rootIsland.TailContact
 rootIsland.TailContact = island.TailContact
 rootIsland.ContactCount = rootIsland.ContactCount + island.ContactCount
+End If
+
+If rootIsland.HeadJoint = PhysicsConstants.NULL_INDEX Then
+rootIsland.HeadJoint = island.HeadJoint
+rootIsland.TailJoint = island.TailJoint
+rootIsland.JointCount = island.JointCount
+ElseIf island.HeadJoint <> PhysicsConstants.NULL_INDEX Then
+world.Joints[rootIsland.TailJoint].IslandNext = island.HeadJoint
+world.Joints[island.HeadJoint].IslandPrev = rootIsland.TailJoint
+rootIsland.TailJoint = island.TailJoint
+rootIsland.JointCount = rootIsland.JointCount + island.JointCount
 End If
 
 rootIsland.ConstraintRemoveCount = rootIsland.ConstraintRemoveCount + island.ConstraintRemoveCount
@@ -10556,6 +11258,14 @@ While nextContactId <> PhysicsConstants.NULL_INDEX
 Var contact As Contact = world.Contacts[nextContactId]
 contact.IsMarked = False
 nextContactId = contact.IslandNext
+Wend
+
+# Clear joint island flags.
+Var nextJointId As Integer = baseIsland.HeadJoint
+While nextJointId <> PhysicsConstants.NULL_INDEX
+Var markedJoint As Joint = world.Joints[nextJointId]
+markedJoint.IsMarked = False
+nextJointId = markedJoint.IslandNext
 Wend
 
 IslandMethods.DestroyIsland(world, baseId)
@@ -10635,6 +11345,64 @@ island.HeadContact = contactId
 End If
 island.ContactCount = island.ContactCount + 1
 Wend
+
+# Search all joints connected to this body, ported from the joint walk of
+# b2SplitIsland.
+DfsVisitJoints(world, island, islandId, bodyId, stack)
+End Sub
+
+## Walks the joints attached to one body during island split DFS, marking
+## unmarked joints, pushing awake unmarked neighbours, and appending the
+## joint to the new island's list.
+Private Shared Sub DfsVisitJoints(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As Array(Of Integer))
+Var body As Body = world.Bodies[bodyId]
+Var jointKey As Integer = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var visitedJointId As Integer = jointKey.ShiftRight(1)
+Var jointEdgeIndex As Integer = jointKey.BitAnd(1)
+Var visitedJoint As Joint = world.Joints[visitedJointId]
+jointKey = visitedJoint.Edge0NextKey
+If jointEdgeIndex = 1 Then
+jointKey = visitedJoint.Edge1NextKey
+End If
+If visitedJoint.IsMarked Then
+Continue While
+End If
+visitedJoint.IsMarked = True
+
+Var jointOtherEdge As Integer = 0
+If jointEdgeIndex = 0 Then
+jointOtherEdge = 1
+End If
+Var jointOtherBodyId As Integer = visitedJoint.Edge0BodyId
+If jointOtherEdge = 1 Then
+jointOtherBodyId = visitedJoint.Edge1BodyId
+End If
+Var jointOtherBody As Body = world.Bodies[jointOtherBodyId]
+
+# Don't simulate joints connected to disabled bodies.
+If jointOtherBody.SetIndex = PhysicsConstants.DISABLED_SET Then
+Continue While
+End If
+
+If jointOtherBody.IsMarked = False And jointOtherBody.SetIndex = PhysicsConstants.AWAKE_SET Then
+stack.Append(jointOtherBodyId)
+jointOtherBody.IsMarked = True
+End If
+
+# Add joint to island.
+visitedJoint.IslandId = islandId
+If island.TailJoint <> PhysicsConstants.NULL_INDEX Then
+world.Joints[island.TailJoint].IslandNext = visitedJointId
+End If
+visitedJoint.IslandPrev = island.TailJoint
+visitedJoint.IslandNext = PhysicsConstants.NULL_INDEX
+island.TailJoint = visitedJointId
+If island.HeadJoint = PhysicsConstants.NULL_INDEX Then
+island.HeadJoint = visitedJointId
+End If
+island.JointCount = island.JointCount + 1
+Wend
 End Sub
 
 ## Validates one island's linked lists and cross-references, ported from
@@ -10673,7 +11441,14 @@ If count <> island.BodyCount Then
 Throw New RuntimeException("Island body count disagrees with traversal")
 End If
 
-count = 0
+ValidateIslandContacts(world, island, islandId)
+ValidateIslandJoints(world, island, islandId)
+End Sub
+
+## Validates the contact linked list of one island, ported from the contact
+## walk of b2ValidateIsland.
+Private Shared Sub ValidateIslandContacts(world As World, island As Island, islandId As Integer)
+Var count As Integer = 0
 Var contactId As Integer = island.HeadContact
 While contactId <> PhysicsConstants.NULL_INDEX
 Var contact As Contact = world.Contacts[contactId]
@@ -10696,7 +11471,899 @@ If count = 0 And (island.TailContact <> PhysicsConstants.NULL_INDEX Or island.Co
 Throw New RuntimeException("Empty island must hold no contacts")
 End If
 End Sub
+
+## Validates the joint linked list of one island, ported from the joint walk
+## of b2ValidateIsland.
+Private Shared Sub ValidateIslandJoints(world As World, island As Island, islandId As Integer)
+Var count As Integer = 0
+Var jointListId As Integer = island.HeadJoint
+While jointListId <> PhysicsConstants.NULL_INDEX
+Var listedJoint As Joint = world.Joints[jointListId]
+If listedJoint.SetIndex <> island.SetIndex Then
+Throw New RuntimeException("Joint solver set disagrees with island")
+End If
+If listedJoint.IslandId <> islandId Then
+Throw New RuntimeException("Joint island back reference disagrees")
+End If
+count = count + 1
+If count = island.JointCount And jointListId <> island.TailJoint Then
+Throw New RuntimeException("Island tail joint disagrees with traversal")
+End If
+jointListId = listedJoint.IslandNext
+Wend
+If count <> island.JointCount Then
+Throw New RuntimeException("Island joint count disagrees with traversal")
+End If
+If count = 0 And (island.TailJoint <> PhysicsConstants.NULL_INDEX Or island.JointCount <> 0) Then
+Throw New RuntimeException("Empty island must hold no joints")
+End If
+End Sub
 End Class
+
+# Persistent joint record and public façade, ported from upstream b2Joint in
+# joint.h plus the b2Joint_* surface in joint.c. The record carries solver-set
+# membership, body-edge lists, and island links; the hot per-family state
+# lives in a JointSim owned by whichever solver set or graph colour the joint
+# currently occupies. Family façades such as DistanceJoint extend this class
+# with their typed tuning surface.
+Class Joint
+## Owning world. Nothing for free slots.
+Property Owner As World
+## Joint slot index.
+Property Id As Integer
+## True while the slot addresses a live joint.
+Property Live As Boolean
+## Index of the solver set that owns the hot sim. NULL_INDEX when free.
+Property SetIndex As Integer
+## Constraint-graph colour index. NULL_INDEX outside the awake set.
+Property ColorIndex As Integer
+## Joint index within the owning set or graph colour. NULL_INDEX when free.
+Property LocalIndex As Integer
+## Body slot of edge zero.
+Property Edge0BodyId As Integer
+## Doubly linked list key of the previous joint on edge zero's body.
+Property Edge0PrevKey As Integer
+## Doubly linked list key of the next joint on edge zero's body.
+Property Edge0NextKey As Integer
+## Body slot of edge one.
+Property Edge1BodyId As Integer
+## Doubly linked list key of the previous joint on edge one's body.
+Property Edge1PrevKey As Integer
+## Doubly linked list key of the next joint on edge one's body.
+Property Edge1NextKey As Integer
+## Island linked list: previous joint. NULL_INDEX when unlinked.
+Property IslandPrev As Integer
+## Island linked list: next joint.
+Property IslandNext As Integer
+## Island slot this joint belongs to. NULL_INDEX when unlinked or outside
+## the simulated sets.
+Property IslandId As Integer
+## Family discriminator.
+Property Type As JointType
+## Generation used to invalidate stale façades, ported from
+## b2Joint.generation.
+Property Generation As Integer
+## Scratch mark used by island traversal.
+Property IsMarked As Boolean
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data attached to this joint.
+Property UserData As Integer
+## Debug draw size in metres.
+Property DrawSize As Double
+
+## Returns True when this façade still addresses a live joint.
+Function IsValid() As Boolean
+Return Me.Owner <> Nothing And Me.Live And Me.Id <> PhysicsConstants.NULL_INDEX
+End Function
+
+## Throws when this façade no longer addresses a live joint.
+Sub CheckValid()
+If Me.Owner = Nothing Then
+Throw New RuntimeException("Joint has no owner")
+End If
+If Not Me.Live Or Me.Id = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Joint is destroyed")
+End If
+End Sub
+
+## Destroys this joint and wakes both attached bodies, ported from
+## b2DestroyJoint.
+Sub Destroy()
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.DestroyJointInternal(Me, True)
+End Sub
+
+## Family discriminator, ported from b2Joint_GetType.
+Function GetJointType() As JointType
+Me.CheckValid()
+Return Me.Type
+End Function
+
+## First attached body, ported from b2Joint_GetBodyA.
+Function GetBodyA() As Body
+Me.CheckValid()
+Return Me.Owner.Bodies[Me.Edge0BodyId]
+End Function
+
+## Second attached body, ported from b2Joint_GetBodyB.
+Function GetBodyB() As Body
+Me.CheckValid()
+Return Me.Owner.Bodies[Me.Edge1BodyId]
+End Function
+
+## Owning world, ported from b2Joint_GetWorld.
+Function GetWorld() As World
+Me.CheckValid()
+Return Me.Owner
+End Function
+
+## Hot sim for this joint, resolving set or graph placement.
+Function GetJointSim() As JointSim
+Me.CheckValid()
+Return Me.Owner.GetJointSim(Me)
+End Function
+
+## Moves the first local anchor, ported from b2Joint_SetLocalAnchorA.
+Sub SetLocalAnchorA(localAnchor As Vector2)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+sim.LocalOriginAnchorAX = localAnchor.X
+sim.LocalOriginAnchorAY = localAnchor.Y
+End Sub
+
+## First local anchor, ported from b2Joint_GetLocalAnchorA.
+Function GetLocalAnchorA() As Vector2
+Me.CheckValid()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+Return New Vector2(sim.LocalOriginAnchorAX, sim.LocalOriginAnchorAY)
+End Function
+
+## Moves the second local anchor, ported from b2Joint_SetLocalAnchorB.
+Sub SetLocalAnchorB(localAnchor As Vector2)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+sim.LocalOriginAnchorBX = localAnchor.X
+sim.LocalOriginAnchorBY = localAnchor.Y
+End Sub
+
+## Second local anchor, ported from b2Joint_GetLocalAnchorB.
+Function GetLocalAnchorB() As Vector2
+Me.CheckValid()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+Return New Vector2(sim.LocalOriginAnchorBX, sim.LocalOriginAnchorBY)
+End Function
+
+## Sets the reference angle for the families that have one, ported from
+## b2Joint_SetReferenceAngle. The prismatic, revolute, and weld cases join
+## with those families.
+Sub SetReferenceAngle(angleInRadians As Double)
+Pragma Unused angleInRadians
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+End Sub
+
+## Reference angle for the families that have one, ported from
+## b2Joint_GetReferenceAngle.
+Function GetReferenceAngle() As Double
+Me.CheckValid()
+Return 0.0
+End Function
+
+## Sets the local axis for the families that have one, ported from
+## b2Joint_SetLocalAxisA. The prismatic and wheel cases join with those
+## families.
+Sub SetLocalAxisA(localAxis As Vector2)
+Pragma Unused localAxis
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+End Sub
+
+## Local axis for the families that have one, ported from
+## b2Joint_GetLocalAxisA.
+Function GetLocalAxisA() As Vector2
+Me.CheckValid()
+Return New Vector2(0.0, 0.0)
+End Function
+
+## Sets whether the connected bodies may collide, ported from
+## b2Joint_SetCollideConnected.
+Sub SetCollideConnected(shouldCollide As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Me.CollideConnected = shouldCollide Then
+Return
+End If
+Me.CollideConnected = shouldCollide
+Var bodyA As Body = Me.Owner.Bodies[Me.Edge0BodyId]
+Var bodyB As Body = Me.Owner.Bodies[Me.Edge1BodyId]
+If shouldCollide Then
+# Nudge the broad phase to look for new pairs; pick the body with the
+# fewest shapes.
+Var shapeId As Integer = bodyB.HeadShapeId
+If bodyA.ShapeCount < bodyB.ShapeCount Then
+shapeId = bodyA.HeadShapeId
+End If
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Owner.Shapes[shapeId]
+If shape.ProxyKey <> PhysicsConstants.NULL_INDEX Then
+Me.Owner.BroadPhase.BufferMove(shape.ProxyKey)
+End If
+shapeId = shape.NextShapeId
+Wend
+Else
+Me.Owner.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+End Sub
+
+## True when the connected bodies may collide, ported from
+## b2Joint_GetCollideConnected.
+Function GetCollideConnected() As Boolean
+Me.CheckValid()
+Return Me.CollideConnected
+End Function
+
+## Attaches user data, ported from b2Joint_SetUserData.
+Sub SetUserData(userData As Integer)
+Me.CheckValid()
+Me.UserData = userData
+End Sub
+
+## User data, ported from b2Joint_GetUserData.
+Function GetUserData() As Integer
+Me.CheckValid()
+Return Me.UserData
+End Function
+
+## Wakes both attached bodies, ported from b2Joint_WakeBodies.
+Sub WakeBodies()
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var bodyA As Body = Me.Owner.Bodies[Me.Edge0BodyId]
+Var bodyB As Body = Me.Owner.Bodies[Me.Edge1BodyId]
+Me.Owner.WakeBody(bodyA)
+Me.Owner.WakeBody(bodyB)
+End Sub
+
+## Solver hertz for this joint, ported from the hertz out-param of
+## b2Joint_GetConstraintTuning.
+Function GetConstraintHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSim(Me).ConstraintHertz
+End Function
+
+## Sets the solver hertz for this joint, ported from b2Joint_SetConstraintTuning.
+Sub SetConstraintHertz(hertz As Double)
+Me.CheckValid()
+If Not hertz.IsFinite() Or hertz < 0.0 Then
+Throw New InvalidArgumentException("Joint hertz must be finite and non-negative")
+End If
+Me.Owner.GetJointSim(Me).ConstraintHertz = hertz
+End Sub
+
+## Solver damping ratio for this joint, ported from the damping ratio
+## out-param of b2Joint_GetConstraintTuning.
+Function GetConstraintDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSim(Me).ConstraintDampingRatio
+End Function
+
+## Sets the solver damping ratio for this joint, ported from
+## b2Joint_SetConstraintTuning.
+Sub SetConstraintDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+If Not dampingRatio.IsFinite() Or dampingRatio < 0.0 Then
+Throw New InvalidArgumentException("Joint damping ratio must be finite and non-negative")
+End If
+Me.Owner.GetJointSim(Me).ConstraintDampingRatio = dampingRatio
+End Sub
+
+## Changes the solver tuning for this joint, ported from
+## b2Joint_SetConstraintTuning.
+Sub SetConstraintTuning(hertz As Double, dampingRatio As Double)
+Me.SetConstraintHertz(hertz)
+Me.SetConstraintDampingRatio(dampingRatio)
+End Sub
+
+## Total constraint force applied this step, ported from
+## b2Joint_GetConstraintForce.
+Function GetConstraintForce() As Vector2
+Me.CheckValid()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+If Me.Type = JointType.DistanceJoint Then
+Return JointSolver.GetDistanceJointForce(Me.Owner, DistanceJointSim(sim))
+End If
+Return New Vector2(0.0, 0.0)
+End Function
+
+## Total constraint torque applied this step, ported from
+## b2Joint_GetConstraintTorque.
+Function GetConstraintTorque() As Double
+Me.CheckValid()
+Return 0.0
+End Function
+
+## Signed distance that still violates the joint's constraints, ported from
+## b2Joint_GetLinearSeparation.
+Function GetLinearSeparation() As Double
+Me.CheckValid()
+Var sim As JointSim = Me.Owner.GetJointSim(Me)
+Var transformA As Transform = Me.Owner.GetBodyTransformById(Me.Edge0BodyId)
+Var transformB As Transform = Me.Owner.GetBodyTransformById(Me.Edge1BodyId)
+Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(sim.LocalOriginAnchorAX, sim.LocalOriginAnchorAY))
+Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(sim.LocalOriginAnchorBX, sim.LocalOriginAnchorBY))
+Var dp As Vector2 = pB - pA
+If Me.Type = JointType.DistanceJoint Then
+Var distance As DistanceJointSim = DistanceJointSim(sim)
+Var length As Double = dp.Length()
+If distance.EnableSpring Then
+If distance.EnableLimit Then
+If length < distance.MinLength Then
+Return distance.MinLength - length
+ElseIf length > distance.MaxLength Then
+Return length - distance.MaxLength
+End If
+End If
+Return 0.0
+End If
+Return Maths.Abs(length - distance.Length)
+End If
+Return 0.0
+End Function
+
+## Signed angle that still violates the joint's constraints, ported from
+## b2Joint_GetAngularSeparation.
+Function GetAngularSeparation() As Double
+Me.CheckValid()
+Return 0.0
+End Function
+End Class
+
+# Hot joint simulation state shared by every family, ported from the base
+# fields of upstream b2JointSim in joint.h. Family-specific state lives in
+# subclasses that extend this record; the owning solver set or graph colour
+# stores one instance per joint row. Anchors are relative to body origins,
+# matching upstream localOriginAnchorA/B.
+Class JointSim
+## Joint slot this sim serves.
+Property JointId As Integer
+## Body slot of the first edge.
+Property BodyIdA As Integer
+## Body slot of the second edge.
+Property BodyIdB As Integer
+## Family discriminator.
+Property Type As JointType
+## X component of the first anchor relative to body A's origin.
+Property LocalOriginAnchorAX As Double
+## Y component of the first anchor relative to body A's origin.
+Property LocalOriginAnchorAY As Double
+## X component of the second anchor relative to body B's origin.
+Property LocalOriginAnchorBX As Double
+## Y component of the second anchor relative to body B's origin.
+Property LocalOriginAnchorBY As Double
+## Inverse mass of body A.
+Property InvMassA As Double
+## Inverse rotational inertia of body A.
+Property InvIA As Double
+## Inverse mass of body B.
+Property InvMassB As Double
+## Inverse rotational inertia of body B.
+Property InvIB As Double
+## Solver hertz clamp for this joint, ported from constraintHertz.
+Property ConstraintHertz As Double
+## Solver damping ratio clamp for this joint, ported from
+## constraintDampingRatio.
+Property ConstraintDampingRatio As Double
+## Soft-step softness derived from the tuning each step.
+Property ConstraintSoftness As Softness
+End Class
+
+# Dense joint sim store for one solver set or graph colour, mirroring the
+# ContactSims role for the much smaller joint rows. A row is one heap
+# JointSim (base or family subclass), so migration between sets and colours
+# moves the reference and fixes the moved joint's local index. The swap
+# removal keeps row order deterministic without allocation.
+Class JointSims
+## Sim rows in local-index order.
+Property Rows As Array(Of JointSim)
+
+## Creates an empty store.
+Constructor()
+Me.Rows = New Array(Of JointSim)
+End Constructor
+
+## Number of live joint sims in this store.
+Function Count() As Integer
+Return Me.Rows.Count
+End Function
+
+## Returns the sim at the given local index.
+Function GetItem(index As Integer) As JointSim
+Return Me.Rows[index]
+End Function
+
+## Appends one sim row and returns its local index.
+Function Add(sim As JointSim) As Integer
+Me.Rows.Append(sim)
+Return Me.Rows.Count - 1
+End Function
+
+## Removes one row by swapping in the last row. Returns the moved sim, or
+## Nothing when the removed row was the last one. After the call the moved
+## sim lives at `index`.
+Function RemoveSwap(index As Integer) As JointSim
+Var lastIndex As Integer = Me.Rows.Count - 1
+Var moved As JointSim = Me.Rows[lastIndex]
+Me.Rows[index] = moved
+Me.Rows.RemoveAt(lastIndex)
+If index = lastIndex Then
+Return Nothing
+End If
+Return moved
+End Function
+
+## Empties the store while retaining capacity.
+Sub ClearAll()
+Me.Rows.Clear()
+End Sub
+End Class
+
+# Joint constraint solver, ported from the prepare/warm-start/solve bodies in
+# joint.c and distance_joint.c. The dispatch collapses upstream's function
+# tables into type switches; the per-family maths is a direct scalar port in
+# the ContactSolver idiom. The overflow colour runs its own entry points so
+# the solve order matches upstream's serial overflow work.
+Class JointSolver
+## Prepares one joint for the step, ported from b2PrepareJoint. Clamps the
+## solver hertz against the substep rate before refreshing softness.
+Shared Sub PrepareJoint(joint As JointSim, context As StepContext)
+Var hertz As Double = joint.ConstraintHertz
+If hertz > 0.25 * context.InvH Then
+hertz = 0.25 * context.InvH
+End If
+Softness.MakeTo(hertz, joint.ConstraintDampingRatio, context.H, joint.ConstraintSoftness)
+If joint.Type = JointType.DistanceJoint Then
+JointSolver.PrepareDistanceJoint(DistanceJointSim(joint), context)
+End If
+End Sub
+
+## Prepares one distance joint, ported from b2PrepareDistanceJoint.
+Shared Sub PrepareDistanceJoint(base As DistanceJointSim, context As StepContext)
+Var world As World = context.World
+Var bodyA As Body = world.Bodies[base.BodyIdA]
+Var bodyB As Body = world.Bodies[base.BodyIdB]
+Var simA As BodySims = world.GetBodySim(bodyA)
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexA As Integer = bodyA.LocalIndex
+Var indexB As Integer = bodyB.LocalIndex
+
+base.InvMassA = simA.InvMass.Items[indexA]
+base.InvIA = simA.InvInertia.Items[indexA]
+base.InvMassB = simB.InvMass.Items[indexB]
+base.InvIB = simB.InvInertia.Items[indexB]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+base.IndexA = indexA
+Else
+base.IndexA = PhysicsConstants.NULL_INDEX
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+base.IndexB = indexB
+Else
+base.IndexB = PhysicsConstants.NULL_INDEX
+End If
+
+# Initial anchors in world space relative to the body centres.
+Var localDX As Double = base.LocalOriginAnchorAX - simA.LCX.Items[indexA]
+Var localDY As Double = base.LocalOriginAnchorAY - simA.LCY.Items[indexA]
+Var qcA As Double = simA.QC.Items[indexA]
+Var qsA As Double = simA.QS.Items[indexA]
+base.AnchorAX = qcA * localDX - qsA * localDY
+base.AnchorAY = qsA * localDX + qcA * localDY
+Var localEX As Double = base.LocalOriginAnchorBX - simB.LCX.Items[indexB]
+Var localEY As Double = base.LocalOriginAnchorBY - simB.LCY.Items[indexB]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+base.AnchorBX = qcB * localEX - qsB * localEY
+base.AnchorBY = qsB * localEX + qcB * localEY
+base.DeltaCenterX = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
+base.DeltaCenterY = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
+
+Var rAX As Double = base.AnchorAX
+Var rAY As Double = base.AnchorAY
+Var rBX As Double = base.AnchorBX
+Var rBY As Double = base.AnchorBY
+Var sepX As Double = base.DeltaCenterX + rBX - rAX
+Var sepY As Double = base.DeltaCenterY + rBY - rAY
+Var length As Double = Maths.Sqrt(sepX * sepX + sepY * sepY)
+Var axisX As Double = 0.0
+Var axisY As Double = 0.0
+If length >= PhysicsConstants.FLT_EPSILON Then
+Var invLength As Double = 1.0 / length
+axisX = invLength * sepX
+axisY = invLength * sepY
+End If
+
+# Compute effective mass.
+Var crA As Double = rAX * axisY - rAY * axisX
+Var crB As Double = rBX * axisY - rBY * axisX
+Var k As Double = base.InvMassA + base.InvMassB + base.InvIA * crA * crA + base.InvIB * crB * crB
+If k > 0.0 Then
+base.AxialMass = 1.0 / k
+Else
+base.AxialMass = 0.0
+End If
+
+Softness.MakeTo(base.Hertz, base.DampingRatio, context.H, base.DistanceSoftness)
+
+If context.WarmStartScale = 0.0 Then
+base.Impulse = 0.0
+base.LowerImpulse = 0.0
+base.UpperImpulse = 0.0
+base.MotorImpulse = 0.0
+End If
+End Sub
+
+## Applies stored impulses to the body states before iterating, ported from
+## b2WarmStartDistanceJoint.
+Shared Sub WarmStartDistanceJoint(base As DistanceJointSim, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = base.InvMassA
+Var mB As Double = base.InvMassB
+Var iA As Double = base.InvIA
+Var iB As Double = base.InvIB
+
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If base.IndexA <> PhysicsConstants.NULL_INDEX Then
+dpAX = states.DPX.Items[base.IndexA]
+dpAY = states.DPY.Items[base.IndexA]
+dqAC = states.DRC.Items[base.IndexA]
+dqAS = states.DRS.Items[base.IndexA]
+End If
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If base.IndexB <> PhysicsConstants.NULL_INDEX Then
+dpBX = states.DPX.Items[base.IndexB]
+dpBY = states.DPY.Items[base.IndexB]
+dqBC = states.DRC.Items[base.IndexB]
+dqBS = states.DRS.Items[base.IndexB]
+End If
+
+Var rAX As Double = dqAC * base.AnchorAX - dqAS * base.AnchorAY
+Var rAY As Double = dqAS * base.AnchorAX + dqAC * base.AnchorAY
+Var rBX As Double = dqBC * base.AnchorBX - dqBS * base.AnchorBY
+Var rBY As Double = dqBS * base.AnchorBX + dqBC * base.AnchorBY
+
+Var dsX As Double = dpBX - dpAX + rBX - rAX
+Var dsY As Double = dpBY - dpAY + rBY - rAY
+Var sepX As Double = base.DeltaCenterX + dsX
+Var sepY As Double = base.DeltaCenterY + dsY
+Var length As Double = Maths.Sqrt(sepX * sepX + sepY * sepY)
+Var axisX As Double = 0.0
+Var axisY As Double = 0.0
+If length >= PhysicsConstants.FLT_EPSILON Then
+Var invLength As Double = 1.0 / length
+axisX = invLength * sepX
+axisY = invLength * sepY
+End If
+
+Var axialImpulse As Double = base.Impulse + base.LowerImpulse - base.UpperImpulse + base.MotorImpulse
+Var pX As Double = axialImpulse * axisX
+Var pY As Double = axialImpulse * axisY
+
+If base.IndexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[base.IndexA] = states.LVX.Items[base.IndexA] - mA * pX
+states.LVY.Items[base.IndexA] = states.LVY.Items[base.IndexA] - mA * pY
+states.AngularVelocity.Items[base.IndexA] = states.AngularVelocity.Items[base.IndexA] - iA * (rAX * pY - rAY * pX)
+End If
+If base.IndexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[base.IndexB] = states.LVX.Items[base.IndexB] + mB * pX
+states.LVY.Items[base.IndexB] = states.LVY.Items[base.IndexB] + mB * pY
+states.AngularVelocity.Items[base.IndexB] = states.AngularVelocity.Items[base.IndexB] + iB * (rBX * pY - rBY * pX)
+End If
+End Sub
+
+## Runs one velocity iteration with optional soft-step bias, ported from
+## b2SolveDistanceJoint.
+Shared Sub SolveDistanceJoint(base As DistanceJointSim, context As StepContext, useBias As Boolean)
+Var states As BodyStates = context.States
+Var mA As Double = base.InvMassA
+Var mB As Double = base.InvMassB
+Var iA As Double = base.InvIA
+Var iB As Double = base.InvIB
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If base.IndexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[base.IndexA]
+vAY = states.LVY.Items[base.IndexA]
+wA = states.AngularVelocity.Items[base.IndexA]
+dpAX = states.DPX.Items[base.IndexA]
+dpAY = states.DPY.Items[base.IndexA]
+dqAC = states.DRC.Items[base.IndexA]
+dqAS = states.DRS.Items[base.IndexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If base.IndexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[base.IndexB]
+vBY = states.LVY.Items[base.IndexB]
+wB = states.AngularVelocity.Items[base.IndexB]
+dpBX = states.DPX.Items[base.IndexB]
+dpBY = states.DPY.Items[base.IndexB]
+dqBC = states.DRC.Items[base.IndexB]
+dqBS = states.DRS.Items[base.IndexB]
+End If
+
+# Current anchors and separation. The scratch record is reused across
+# every joint solve within a step, ported from the C stack locals of
+# b2SolveDistanceJoint.
+Var scratch As DistanceJointScratch = context.JointScratch
+scratch.RAX = dqAC * base.AnchorAX - dqAS * base.AnchorAY
+scratch.RAY = dqAS * base.AnchorAX + dqAC * base.AnchorAY
+scratch.RBX = dqBC * base.AnchorBX - dqBS * base.AnchorBY
+scratch.RBY = dqBS * base.AnchorBX + dqBC * base.AnchorBY
+Var dsX As Double = dpBX - dpAX + scratch.RBX - scratch.RAX
+Var dsY As Double = dpBY - dpAY + scratch.RBY - scratch.RAY
+Var sepX As Double = base.DeltaCenterX + dsX
+Var sepY As Double = base.DeltaCenterY + dsY
+scratch.Length = Maths.Sqrt(sepX * sepX + sepY * sepY)
+If scratch.Length >= PhysicsConstants.FLT_EPSILON Then
+Var invLength As Double = 1.0 / scratch.Length
+scratch.AxisX = invLength * sepX
+scratch.AxisY = invLength * sepY
+End If
+
+Var vrX As Double = vBX - wB * scratch.RBY - (vAX - wA * scratch.RAY)
+Var vrY As Double = vBY + wB * scratch.RBX - (vAY + wA * scratch.RAX)
+Var vDotAxis As Double = vrX * scratch.AxisX + vrY * scratch.AxisY
+
+If base.EnableSpring And (base.MinLength < base.MaxLength Or base.EnableLimit = False) Then
+# Soft constraint with spring, limits, and motor.
+If base.Hertz > 0.0 Then
+Var C As Double = scratch.Length - base.Length
+Var bias As Double = base.DistanceSoftness.BiasRate * C
+Var m As Double = base.DistanceSoftness.MassScale * base.AxialMass
+Var impulse As Double = -m * (vDotAxis + bias) - base.DistanceSoftness.ImpulseScale * base.Impulse
+base.Impulse = base.Impulse + impulse
+
+Var pX As Double = impulse * scratch.AxisX
+Var pY As Double = impulse * scratch.AxisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (scratch.RAX * pY - scratch.RAY * pX)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (scratch.RBX * pY - scratch.RBY * pX)
+End If
+
+If base.EnableLimit Then
+scratch.VAX = vAX
+scratch.VAY = vAY
+scratch.WA = wA
+scratch.VBX = vBX
+scratch.VBY = vBY
+scratch.WB = wB
+JointSolver.SolveDistanceLowerLimit(scratch, base, context, useBias, mA, mB, iA, iB)
+JointSolver.SolveDistanceUpperLimit(scratch, base, context, useBias, mA, mB, iA, iB)
+vAX = scratch.VAX
+vAY = scratch.VAY
+wA = scratch.WA
+vBX = scratch.VBX
+vBY = scratch.VBY
+wB = scratch.WB
+End If
+
+If base.EnableMotor Then
+scratch.VAX = vAX
+scratch.VAY = vAY
+scratch.WA = wA
+scratch.VBX = vBX
+scratch.VBY = vBY
+scratch.WB = wB
+JointSolver.SolveDistanceMotor(scratch, base, context, mA, mB, iA, iB)
+vAX = scratch.VAX
+vAY = scratch.VAY
+wA = scratch.WA
+vBX = scratch.VBX
+vBY = scratch.VBY
+wB = scratch.WB
+End If
+Else
+# Rigid constraint.
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If useBias Then
+bias = base.ConstraintSoftness.BiasRate * (scratch.Length - base.Length)
+massScale = base.ConstraintSoftness.MassScale
+impulseScale = base.ConstraintSoftness.ImpulseScale
+End If
+
+Var impulse As Double = -massScale * base.AxialMass * (vDotAxis + bias) - impulseScale * base.Impulse
+base.Impulse = base.Impulse + impulse
+
+Var pX As Double = impulse * scratch.AxisX
+Var pY As Double = impulse * scratch.AxisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (scratch.RAX * pY - scratch.RAY * pX)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (scratch.RBX * pY - scratch.RBY * pX)
+End If
+
+If base.IndexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[base.IndexA] = vAX
+states.LVY.Items[base.IndexA] = vAY
+states.AngularVelocity.Items[base.IndexA] = wA
+End If
+If base.IndexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[base.IndexB] = vBX
+states.LVY.Items[base.IndexB] = vBY
+states.AngularVelocity.Items[base.IndexB] = wB
+End If
+End Sub
+
+## Solves the lower length limit of a soft distance joint, ported from the
+## lower-limit block of b2SolveDistanceJoint.
+Shared Sub SolveDistanceLowerLimit(scratch As DistanceJointScratch, base As DistanceJointSim, context As StepContext, useBias As Boolean, mA As Double, mB As Double, iA As Double, iB As Double)
+Var vrX As Double = scratch.VBX - scratch.WB * scratch.RBY - (scratch.VAX - scratch.WA * scratch.RAY)
+Var vrY As Double = scratch.VBY + scratch.WB * scratch.RBX - (scratch.VAY + scratch.WA * scratch.RAX)
+Var lowerCdot As Double = vrX * scratch.AxisX + vrY * scratch.AxisY
+Var lowerC As Double = scratch.Length - base.MinLength
+Var lowerBias As Double = 0.0
+Var lowerMassCoeff As Double = 1.0
+Var lowerImpulseCoeff As Double = 0.0
+If lowerC > 0.0 Then
+# Speculative.
+lowerBias = lowerC * context.InvH
+ElseIf useBias Then
+lowerBias = base.ConstraintSoftness.BiasRate * lowerC
+lowerMassCoeff = base.ConstraintSoftness.MassScale
+lowerImpulseCoeff = base.ConstraintSoftness.ImpulseScale
+End If
+Var lowerImpulse As Double = -lowerMassCoeff * base.AxialMass * (lowerCdot + lowerBias) - lowerImpulseCoeff * base.LowerImpulse
+Var newLowerImpulse As Double = base.LowerImpulse + lowerImpulse
+If newLowerImpulse < 0.0 Then
+newLowerImpulse = 0.0
+End If
+lowerImpulse = newLowerImpulse - base.LowerImpulse
+base.LowerImpulse = newLowerImpulse
+
+Var lowerPX As Double = lowerImpulse * scratch.AxisX
+Var lowerPY As Double = lowerImpulse * scratch.AxisY
+scratch.VAX = scratch.VAX - mA * lowerPX
+scratch.VAY = scratch.VAY - mA * lowerPY
+scratch.WA = scratch.WA - iA * (scratch.RAX * lowerPY - scratch.RAY * lowerPX)
+scratch.VBX = scratch.VBX + mB * lowerPX
+scratch.VBY = scratch.VBY + mB * lowerPY
+scratch.WB = scratch.WB + iB * (scratch.RBX * lowerPY - scratch.RBY * lowerPX)
+End Sub
+
+## Solves the upper length limit of a soft distance joint, ported from the
+## upper-limit block of b2SolveDistanceJoint.
+Shared Sub SolveDistanceUpperLimit(scratch As DistanceJointScratch, base As DistanceJointSim, context As StepContext, useBias As Boolean, mA As Double, mB As Double, iA As Double, iB As Double)
+Var vrUX As Double = scratch.VAX - scratch.WA * scratch.RAY - (scratch.VBX - scratch.WB * scratch.RBY)
+Var vrUY As Double = scratch.VAY + scratch.WA * scratch.RAX - (scratch.VBY + scratch.WB * scratch.RBX)
+Var upperCdot As Double = vrUX * scratch.AxisX + vrUY * scratch.AxisY
+Var upperC As Double = base.MaxLength - scratch.Length
+Var upperBias As Double = 0.0
+Var upperMassScale As Double = 1.0
+Var upperImpulseScale As Double = 0.0
+If upperC > 0.0 Then
+# Speculative.
+upperBias = upperC * context.InvH
+ElseIf useBias Then
+upperBias = base.ConstraintSoftness.BiasRate * upperC
+upperMassScale = base.ConstraintSoftness.MassScale
+upperImpulseScale = base.ConstraintSoftness.ImpulseScale
+End If
+Var upperImpulse As Double = -upperMassScale * base.AxialMass * (upperCdot + upperBias) - upperImpulseScale * base.UpperImpulse
+Var newUpperImpulse As Double = base.UpperImpulse + upperImpulse
+If newUpperImpulse < 0.0 Then
+newUpperImpulse = 0.0
+End If
+upperImpulse = newUpperImpulse - base.UpperImpulse
+base.UpperImpulse = newUpperImpulse
+
+Var upperPX As Double = -upperImpulse * scratch.AxisX
+Var upperPY As Double = -upperImpulse * scratch.AxisY
+scratch.VAX = scratch.VAX - mA * upperPX
+scratch.VAY = scratch.VAY - mA * upperPY
+scratch.WA = scratch.WA - iA * (scratch.RAX * upperPY - scratch.RAY * upperPX)
+scratch.VBX = scratch.VBX + mB * upperPX
+scratch.VBY = scratch.VBY + mB * upperPY
+scratch.WB = scratch.WB + iB * (scratch.RBX * upperPY - scratch.RBY * upperPX)
+End Sub
+
+## Solves the distance joint motor, ported from the motor block of
+## b2SolveDistanceJoint.
+Shared Sub SolveDistanceMotor(scratch As DistanceJointScratch, base As DistanceJointSim, context As StepContext, mA As Double, mB As Double, iA As Double, iB As Double)
+Var vrMX As Double = scratch.VBX - scratch.WB * scratch.RBY - (scratch.VAX - scratch.WA * scratch.RAY)
+Var vrMY As Double = scratch.VBY + scratch.WB * scratch.RBX - (scratch.VAY + scratch.WA * scratch.RAX)
+Var motorCdot As Double = vrMX * scratch.AxisX + vrMY * scratch.AxisY
+Var motorImpulse As Double = base.AxialMass * (base.MotorSpeed - motorCdot)
+Var oldMotorImpulse As Double = base.MotorImpulse
+Var maxImpulse As Double = context.H * base.MaxMotorForce
+Var newMotorImpulse As Double = base.MotorImpulse + motorImpulse
+If newMotorImpulse > maxImpulse Then
+newMotorImpulse = maxImpulse
+ElseIf newMotorImpulse < -maxImpulse Then
+newMotorImpulse = -maxImpulse
+End If
+base.MotorImpulse = newMotorImpulse
+motorImpulse = newMotorImpulse - oldMotorImpulse
+
+Var motorPX As Double = motorImpulse * scratch.AxisX
+Var motorPY As Double = motorImpulse * scratch.AxisY
+scratch.VAX = scratch.VAX - mA * motorPX
+scratch.VAY = scratch.VAY - mA * motorPY
+scratch.WA = scratch.WA - iA * (scratch.RAX * motorPY - scratch.RAY * motorPX)
+scratch.VBX = scratch.VBX + mB * motorPX
+scratch.VBY = scratch.VBY + mB * motorPY
+scratch.WB = scratch.WB + iB * (scratch.RBX * motorPY - scratch.RBY * motorPX)
+End Sub
+
+## Total force the distance joint applied this step, ported from
+## b2GetDistanceJointForce.
+Shared Function GetDistanceJointForce(world As World, base As DistanceJointSim) As Vector2
+Var transformA As Transform = world.GetBodyTransformById(base.BodyIdA)
+Var transformB As Transform = world.GetBodyTransformById(base.BodyIdB)
+Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(base.LocalOriginAnchorAX, base.LocalOriginAnchorAY))
+Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(base.LocalOriginAnchorBX, base.LocalOriginAnchorBY))
+Var d As Vector2 = pB - pA
+Var length As Double = d.Length()
+Var axisX As Double = 0.0
+Var axisY As Double = 0.0
+If length >= PhysicsConstants.FLT_EPSILON Then
+Var invLength As Double = 1.0 / length
+axisX = invLength * d.X
+axisY = invLength * d.Y
+End If
+Var force As Double = (base.Impulse + base.LowerImpulse - base.UpperImpulse + base.MotorImpulse) * world.InvH
+Return New Vector2(force * axisX, force * axisY)
+End Function
+End Class
+
+# Joint family discriminator, ported from upstream b2JointType in types.h.
+# Values match upstream so solver dispatch and serialisation stay aligned.
+Enum JointType
+## Rigid or springy rope constraint between two anchor points.
+DistanceJoint
+## Collision filter override between two bodies; has no solver behaviour.
+FilterJoint
+## Soft constraint pulling body B to an offset pose relative to body A.
+MotorJoint
+## Soft constraint dragging a body anchor toward a world target.
+MouseJoint
+## Translation along a body-A axis with optional spring, limits, and motor.
+PrismaticJoint
+## Rotation about a shared anchor with optional spring, limits, and motor.
+RevoluteJoint
+## Rigid or soft relative-pose lock between two bodies.
+WeldJoint
+## Wheel: translation along a body-A axis plus rotation about the anchor.
+WheelJoint
+End Enum
 
 # A contact manifold describing the contact points between colliding
 # shapes, ported from upstream b2Manifold in collision.h. Box2D uses
@@ -13828,6 +15495,43 @@ End Class
 # over the graph colours; the overflow colour runs first to match
 # upstream's serial overflow work.
 Class SolverMethods
+## Prepares one colour's joint constraints, ported from b2PrepareJointsTask
+## and b2PrepareOverflowJoints. Dispatches on each sim's family.
+Shared Sub PrepareColourJoints(world As World, context As StepContext, colorIndex As Integer)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var count As Integer = color.JointSims.Count()
+For i As Integer = 0 To count - 1
+JointSolver.PrepareJoint(color.JointSims.GetItem(i), context)
+Next i
+End Sub
+
+## Warm starts one colour's joint constraints, ported from
+## b2WarmStartJointsTask and b2WarmStartOverflowJoints.
+Shared Sub WarmStartColourJoints(world As World, context As StepContext, colorIndex As Integer)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var count As Integer = color.JointSims.Count()
+For i As Integer = 0 To count - 1
+Var sim As JointSim = color.JointSims.GetItem(i)
+If sim.Type = JointType.DistanceJoint Then
+JointSolver.WarmStartDistanceJoint(DistanceJointSim(sim), context)
+End If
+Next i
+End Sub
+
+## Runs one velocity iteration over one colour's joint constraints, ported
+## from b2SolveJointsTask and b2SolveOverflowJoints. useBias enables the
+## soft-step bias term.
+Shared Sub SolveColourJoints(world As World, context As StepContext, colorIndex As Integer, useBias As Boolean)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var count As Integer = color.JointSims.Count()
+For i As Integer = 0 To count - 1
+Var sim As JointSim = color.JointSims.GetItem(i)
+If sim.Type = JointType.DistanceJoint Then
+JointSolver.SolveDistanceJoint(DistanceJointSim(sim), context, useBias)
+End If
+Next i
+End Sub
+
 ## Prepares one colour's contact constraints, growing the colour's scratch
 ## constraint array to cover its sims, ported from b2PrepareContactsTask.
 Shared Sub PrepareColorContacts(world As World, context As StepContext, colorIndex As Integer)
@@ -13974,7 +15678,7 @@ End Class
 # per-island sleeping sets. The contact sim array holds all contacts of
 # sleeping sets and the non-touching contacts of the awake set; touching
 # awake contacts move into constraint-graph colours during the step.
-# Joint and island sim arrays arrive with their owning stages.
+# Joint sims follow the same split: awake joints live in graph colours.
 Class SolverSet
 ## Index of this set in the world's solver set array.
 Property SetIndex As Integer
@@ -13985,6 +15689,9 @@ Property Sims As BodySims
 Property States As BodyStates
 ## Dense contact state owned by this set.
 Property ContactSims As ContactSims
+## Dense joint state owned by this set. Awake joints live in graph colours
+## instead, so this store holds sleeping, static, and disabled joints.
+Property JointSims As JointSims
 ## Ids of the islands that live in this set.
 Property IslandIds As IntegerList
 
@@ -13998,6 +15705,7 @@ Else
 Me.States = Nothing
 End If
 Me.ContactSims = New ContactSims()
+Me.JointSims = New JointSims()
 Me.IslandIds = New IntegerList()
 End Constructor
 
@@ -14009,6 +15717,7 @@ If Me.States <> Nothing Then
 Me.States.ClearAll()
 End If
 Me.ContactSims.ClearAll()
+Me.JointSims.ClearAll()
 Me.IslandIds.Clear()
 End Sub
 End Class
@@ -14041,12 +15750,21 @@ Property MaximumLinearVelocity As Double
 Property WarmStartScale As Double
 ## Fast bullet body sim indices collected during finalization.
 Property BulletBodies As IntegerList
+## Owning world, ported from context->world.
+Property World As World
+## Awake set body states, ported from context->states.
+Property States As BodyStates
+## Reusable distance joint solver scratch, one row per joint solve.
+Property JointScratch As DistanceJointScratch
 
 ## Creates a scratch context with reusable softness records.
 Constructor()
 Me.ContactSoftness = New Softness
 Me.StaticSoftness = New Softness
 Me.BulletBodies = New IntegerList
+Me.World = Nothing
+Me.States = Nothing
+Me.JointScratch = New DistanceJointScratch
 End Constructor
 End Class
 
@@ -14863,6 +16581,17 @@ Property ShapeIdPool As IdPool
 Property ChainIdPool As IdPool
 ## Solver-set slot pool for sleeping sets.
 Property SolverSetIdPool As IdPool
+## Joint slot pool.
+Property JointIdPool As IdPool
+## Number of live joints, ported from b2World_GetJointCount.
+Property JointCount As Integer
+## Persistent joint records, indexed by joint slot.
+Property Joints As Array(Of Joint)
+## Generation per joint slot, surviving record replacement.
+Property JointGenerations As IntegerList
+## Cached inverse substep length from the last step, used by the joint
+## force accessors. Zero before the first step.
+Property InvH As Double
 
 ## Reused overlap query adapter.
 Private Property mOverlapContext As WorldOverlapContext
@@ -15061,6 +16790,11 @@ Me.BodyIdPool = New IdPool
 Me.ShapeIdPool = New IdPool
 Me.ChainIdPool = New IdPool
 Me.SolverSetIdPool = New IdPool
+Me.JointIdPool = New IdPool
+Me.Joints = New Array(Of Joint)
+Me.JointCount = 0
+Me.JointGenerations = New IntegerList
+Me.InvH = 0.0
 Me.BodyGenerations = New IntegerList
 Me.ShapeGenerations = New IntegerList
 Me.ChainGenerations = New IntegerList
@@ -15074,6 +16808,9 @@ Me.IslandIdPool = New IdPool
 Me.Islands = New Array(Of Island)
 Me.SplitIslandId = PhysicsConstants.NULL_INDEX
 Me.ConstraintGraph = New ConstraintGraph(8)
+Me.JointIdPool = New IdPool
+Me.Joints = New Array(Of Joint)
+Me.JointCount = 0
 Me.Bodies = New Array(Of Body)
 Me.Shapes = New Array(Of Shape)
 Me.Chains = New Array(Of Chain)
@@ -15183,8 +16920,9 @@ End Sub
 ## Broad-phase sink hook, ported from the record-time filtering of upstream
 ## b2PairQueryCallback. Returns True when the two shapes may collide. Same
 ## body pairs pass, sensor pairs are rejected because sensors are handled
-## by their own stage, and the built-in shape filter plus the opt-in custom
-## filter decide the rest. Joint filtering arrives with Stage 9.
+## by their own stage, the body pair rule plus the joint collideConnected
+## walk suppress disabled pairs, and the built-in shape filter plus the
+## opt-in custom filter decide the rest.
 Override Function ShouldCollide(shapeIndexA As Integer, shapeIndexB As Integer) As Boolean
 If shapeIndexA = shapeIndexB Then
 Return True
@@ -15193,6 +16931,11 @@ Var shapeA As Shape = Me.Shapes[shapeIndexA]
 Var shapeB As Shape = Me.Shapes[shapeIndexB]
 # Sensors are handled by the sensor stage.
 If shapeA.SensorIndex <> PhysicsConstants.NULL_INDEX Or shapeB.SensorIndex <> PhysicsConstants.NULL_INDEX Then
+Return False
+End If
+Var bodyA As Body = Me.Bodies[shapeA.BodyId]
+Var bodyB As Body = Me.Bodies[shapeB.BodyId]
+If ContactMethods.ShouldBodiesCollide(Me, bodyA, bodyB) = False Then
 Return False
 End If
 If Not ContactMethods.ShouldShapesCollide(shapeA.Filter, shapeB.Filter) Then
@@ -15315,6 +17058,10 @@ context.WarmStartScale = 1.0
 Else
 context.WarmStartScale = 0.0
 End If
+context.World = Me
+Var awakeSetForContext As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+context.States = awakeSetForContext.States
+Me.InvH = context.InvH
 
 Me.CollideStep(context)
 Me.SolveStep(context)
@@ -15968,7 +17715,7 @@ Var graph As ConstraintGraph = Me.ConstraintGraph
 
 # Gather contact ids: colours first, then the awake set's non-touching
 # store, matching upstream's gather order.
-Me.mContactStateBits.SetCountAndClear(Me.ContactIdPool.IdCount() + 8)
+Me.mContactStateBits.SetCountAndClear(Me.ContactIdPool.IdCapacity())
 Var colorIndex As Integer = 0
 While colorIndex < PhysicsConstants.GRAPH_COLOUR_COUNT
 Var color As GraphColor = graph.Colors[colorIndex]
@@ -16134,12 +17881,19 @@ Me.SplitIslandId = PhysicsConstants.NULL_INDEX
 awakeSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
 End If
 
-# Prepare contact constraints: colours first, then the overflow colour.
+# Prepare constraints, ported from the stage order of b2Solve: colour
+# joints, colour contacts, then the overflow colour for both.
 Var colorIndex As Integer = 0
+While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
+SolverMethods.PrepareColourJoints(Me, context, colorIndex)
+colorIndex = colorIndex + 1
+Wend
+colorIndex = 0
 While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
 SolverMethods.PrepareColorContacts(Me, context, colorIndex)
 colorIndex = colorIndex + 1
 Wend
+SolverMethods.PrepareColourJoints(Me, context, PhysicsConstants.GRAPH_OVERFLOW_INDEX)
 SolverMethods.PrepareColorContacts(Me, context, PhysicsConstants.GRAPH_OVERFLOW_INDEX)
 
 Var subStepCount As Integer = context.SubStepCount
@@ -16147,17 +17901,25 @@ Var subStep As Integer = 0
 While subStep < subStepCount
 SolverMethods.IntegrateVelocities(Me, context)
 
-# Warm start: overflow first, then colours.
+# Warm start: overflow joints, then overflow contacts, then colours with
+# joints first.
+SolverMethods.WarmStartColourJoints(Me, context, PhysicsConstants.GRAPH_OVERFLOW_INDEX)
 SolverMethods.WarmStartColorContacts(Me, PhysicsConstants.GRAPH_OVERFLOW_INDEX)
 colorIndex = 0
 While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
+SolverMethods.WarmStartColourJoints(Me, context, colorIndex)
 SolverMethods.WarmStartColorContacts(Me, colorIndex)
 colorIndex = colorIndex + 1
 Wend
 
-# Solve with bias: overflow first, then colours.
+# Solve with bias: overflow joints, then overflow contacts, then colours
+# with joints first. This matches the serial fallback of b2Solve and fixes
+# the overflow colour being skipped.
+SolverMethods.SolveColourJoints(Me, context, PhysicsConstants.GRAPH_OVERFLOW_INDEX, True)
+SolverMethods.SolveColorContacts(Me, context, PhysicsConstants.GRAPH_OVERFLOW_INDEX, True)
 colorIndex = 0
 While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
+SolverMethods.SolveColourJoints(Me, context, colorIndex, True)
 SolverMethods.SolveColorContacts(Me, context, colorIndex, True)
 colorIndex = colorIndex + 1
 Wend
@@ -16165,8 +17927,11 @@ Wend
 SolverMethods.IntegratePositions(Me, context)
 
 # Relax without bias: overflow first, then colours.
+SolverMethods.SolveColourJoints(Me, context, PhysicsConstants.GRAPH_OVERFLOW_INDEX, False)
+SolverMethods.SolveColorContacts(Me, context, PhysicsConstants.GRAPH_OVERFLOW_INDEX, False)
 colorIndex = 0
 While colorIndex < PhysicsConstants.GRAPH_OVERFLOW_INDEX
+SolverMethods.SolveColourJoints(Me, context, colorIndex, False)
 SolverMethods.SolveColorContacts(Me, context, colorIndex, False)
 colorIndex = colorIndex + 1
 Wend
@@ -16601,6 +18366,23 @@ Sub DestroyBody(body As Body)
 Me.CheckNotLocked()
 Me.ValidateBody(body)
 
+# Wake bodies attached to this body, even if this body is static. Destroy
+# the attached joints first, ported from b2DestroyBody.
+Var jointKey As Integer = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = Me.Joints[jointId]
+If edgeIndex = 0 Then
+jointKey = joint.Edge0NextKey
+Else
+jointKey = joint.Edge1NextKey
+End If
+
+# Careful because this modifies the list being traversed.
+Me.DestroyJointInternal(joint, True)
+Wend
+
 # Destroy attached contacts first, ported from b2DestroyBodyInternal.
 ContactMethods.DestroyBodyContacts(Me, body, True)
 
@@ -16704,6 +18486,378 @@ End Sub
 ## the awake set, sleeping contacts and islands migrate wholesale, and the
 ## emptied sleeping set is destroyed. Joint and constraint-graph work
 ## arrives with Stages 9 and the step.
+## Resolves the hot sim for a joint, ported from b2GetJointSim. Awake joints
+## live in graph colours; every other set stores its joints directly.
+Function GetJointSim(joint As Joint) As JointSim
+If joint.SetIndex = PhysicsConstants.AWAKE_SET Then
+Var color As GraphColor = Me.ConstraintGraph.Colors[joint.ColorIndex]
+Return color.JointSims.GetItem(joint.LocalIndex)
+End If
+Var ownerSet As SolverSet = Me.SolverSets[joint.SetIndex]
+Return ownerSet.JointSims.GetItem(joint.LocalIndex)
+End Function
+
+## Creates the joint record and links it into both bodies' edge lists, ported
+## from the record and edge section of b2CreateJoint. Returns the record for
+## the set-placement step.
+Private Function CreateJointRecord(bodyA As Body, bodyB As Body, jointType As JointType, collideConnected As Boolean, drawSize As Double) As Joint
+Var jointId As Integer = Me.JointIdPool.AllocId()
+Var record As Joint
+If jointType = JointType.DistanceJoint Then
+record = New DistanceJoint
+Else
+record = New Joint
+End If
+If jointId = Me.Joints.Count Then
+Me.Joints.Append(record)
+Else
+Me.Joints[jointId] = record
+End If
+If jointId = Me.JointGenerations.Count Then
+Me.JointGenerations.Append(0)
+End If
+record.Owner = Me
+record.Id = jointId
+record.Live = True
+record.Generation = Me.JointGenerations.Items[jointId] + 1
+Me.JointGenerations.Items[jointId] = record.Generation
+record.Type = jointType
+record.CollideConnected = collideConnected
+record.DrawSize = drawSize
+record.SetIndex = PhysicsConstants.NULL_INDEX
+record.ColorIndex = PhysicsConstants.NULL_INDEX
+record.LocalIndex = PhysicsConstants.NULL_INDEX
+record.IslandId = PhysicsConstants.NULL_INDEX
+record.IslandPrev = PhysicsConstants.NULL_INDEX
+record.IslandNext = PhysicsConstants.NULL_INDEX
+Me.JointCount = Me.JointCount + 1
+
+# Doubly linked list on body A.
+record.Edge0BodyId = bodyA.Id
+record.Edge0PrevKey = PhysicsConstants.NULL_INDEX
+record.Edge0NextKey = bodyA.HeadJointKey
+Var keyA As Integer = jointId.ShiftLeft(1)
+If bodyA.HeadJointKey <> PhysicsConstants.NULL_INDEX Then
+Var jointA As Joint = Me.Joints[bodyA.HeadJointKey.ShiftRight(1)]
+Var edgeAIndex As Integer = bodyA.HeadJointKey.BitAnd(1)
+If edgeAIndex = 0 Then
+jointA.Edge0PrevKey = keyA
+Else
+jointA.Edge1PrevKey = keyA
+End If
+End If
+bodyA.HeadJointKey = keyA
+bodyA.JointCount = bodyA.JointCount + 1
+
+# Doubly linked list on body B.
+record.Edge1BodyId = bodyB.Id
+record.Edge1PrevKey = PhysicsConstants.NULL_INDEX
+record.Edge1NextKey = bodyB.HeadJointKey
+Var keyB As Integer = jointId.ShiftLeft(1) + 1
+If bodyB.HeadJointKey <> PhysicsConstants.NULL_INDEX Then
+Var jointB As Joint = Me.Joints[bodyB.HeadJointKey.ShiftRight(1)]
+Var edgeBIndex As Integer = bodyB.HeadJointKey.BitAnd(1)
+If edgeBIndex = 0 Then
+jointB.Edge0PrevKey = keyB
+Else
+jointB.Edge1PrevKey = keyB
+End If
+End If
+bodyB.HeadJointKey = keyB
+bodyB.JointCount = bodyB.JointCount + 1
+Return record
+End Function
+
+## Places a fresh joint sim in the solver set or graph colour implied by its
+## bodies, ported from the placement section of b2CreateJoint. Returns the
+## new sim with its identity fields set.
+Private Function PlaceJointSim(joint As Joint, bodyA As Body, bodyB As Body) As JointSim
+Var sim As JointSim
+If bodyA.SetIndex = PhysicsConstants.DISABLED_SET Or bodyB.SetIndex = PhysicsConstants.DISABLED_SET Then
+# If either body is disabled, create in the disabled set.
+Var disabledSet As SolverSet = Me.SolverSets[PhysicsConstants.DISABLED_SET]
+joint.SetIndex = PhysicsConstants.DISABLED_SET
+sim = GraphMethods.NewJointSimOfType(joint.Type)
+joint.LocalIndex = disabledSet.JointSims.Add(sim)
+ElseIf bodyA.SetIndex = PhysicsConstants.STATIC_SET And bodyB.SetIndex = PhysicsConstants.STATIC_SET Then
+# Joint is connecting static bodies.
+Var staticSet As SolverSet = Me.SolverSets[PhysicsConstants.STATIC_SET]
+joint.SetIndex = PhysicsConstants.STATIC_SET
+sim = GraphMethods.NewJointSimOfType(joint.Type)
+joint.LocalIndex = staticSet.JointSims.Add(sim)
+ElseIf bodyA.SetIndex = PhysicsConstants.AWAKE_SET Or bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+# If either body is sleeping, wake it.
+Var maxSetIndex As Integer = bodyA.SetIndex
+If bodyB.SetIndex > maxSetIndex Then
+maxSetIndex = bodyB.SetIndex
+End If
+If maxSetIndex >= PhysicsConstants.FIRST_SLEEPING_SET Then
+Me.WakeSolverSet(maxSetIndex)
+End If
+joint.SetIndex = PhysicsConstants.AWAKE_SET
+sim = GraphMethods.CreateJointInGraph(Me, joint)
+Else
+# Joint connected between sleeping and/or static bodies goes into the
+# sleeping set, merging the two sets when both are sleeping.
+Var setIndex As Integer = bodyA.SetIndex
+If bodyB.SetIndex > setIndex Then
+setIndex = bodyB.SetIndex
+End If
+Var sleepSet As SolverSet = Me.SolverSets[setIndex]
+joint.SetIndex = setIndex
+sim = GraphMethods.NewJointSimOfType(joint.Type)
+joint.LocalIndex = sleepSet.JointSims.Add(sim)
+If bodyA.SetIndex <> bodyB.SetIndex And bodyA.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET And bodyB.SetIndex >= PhysicsConstants.FIRST_SLEEPING_SET Then
+Me.MergeSolverSets(bodyA.SetIndex, bodyB.SetIndex)
+joint.SetIndex = bodyA.SetIndex
+End If
+End If
+sim.JointId = joint.Id
+sim.BodyIdA = joint.Edge0BodyId
+sim.BodyIdB = joint.Edge1BodyId
+sim.Type = joint.Type
+Return sim
+End Function
+
+## Creates a distance joint, ported from b2CreateDistanceJoint. Throws on a
+## missing definition, missing bodies, or a non-positive finite length.
+Function CreateDistanceJoint(def As DistanceJointDefinition) As DistanceJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "DistanceJointDefinition")
+If def.BodyA = Nothing Or def.BodyB = Nothing Then
+Throw New InvalidArgumentException("DistanceJointDefinition requires two bodies")
+End If
+Me.ValidateBody(def.BodyA)
+Me.ValidateBody(def.BodyB)
+If Not def.Length.IsFinite() Or def.Length <= 0.0 Then
+Throw New InvalidArgumentException("DistanceJointDefinition length must be finite and positive")
+End If
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.DistanceJoint, def.CollideConnected, 1.0)
+Var sim As DistanceJointSim = DistanceJointSim(Me.PlaceJointSim(joint, bodyA, bodyB))
+sim.ConstraintHertz = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+sim.ConstraintDampingRatio = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+sim.ConstraintSoftness.BiasRate = 0.0
+sim.ConstraintSoftness.MassScale = 1.0
+sim.ConstraintSoftness.ImpulseScale = 0.0
+sim.LocalOriginAnchorAX = def.LocalAnchorA.X
+sim.LocalOriginAnchorAY = def.LocalAnchorA.Y
+sim.LocalOriginAnchorBX = def.LocalAnchorB.X
+sim.LocalOriginAnchorBY = def.LocalAnchorB.Y
+Var minLength As Double = def.MinLength
+If minLength < PhysicsConstants.LINEAR_SLOP Then
+minLength = PhysicsConstants.LINEAR_SLOP
+End If
+Var maxLength As Double = def.MaxLength
+If minLength > maxLength Then
+maxLength = minLength
+End If
+sim.Length = def.Length
+If sim.Length < PhysicsConstants.LINEAR_SLOP Then
+sim.Length = PhysicsConstants.LINEAR_SLOP
+End If
+sim.Hertz = def.Hertz
+sim.DampingRatio = def.DampingRatio
+sim.MinLength = minLength
+sim.MaxLength = maxLength
+sim.MaxMotorForce = def.MaxMotorForce
+sim.MotorSpeed = def.MotorSpeed
+sim.EnableSpring = def.EnableSpring
+sim.EnableLimit = def.EnableLimit
+sim.EnableMotor = def.EnableMotor
+sim.Impulse = 0.0
+sim.LowerImpulse = 0.0
+sim.UpperImpulse = 0.0
+sim.MotorImpulse = 0.0
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# If the joint prevents collisions, destroy all contacts between the
+# attached bodies.
+If def.CollideConnected = False Then
+Me.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+
+Var facade As DistanceJoint = DistanceJoint(joint)
+Return facade
+End Function
+
+## Destroys every contact touching both bodies, ported from
+## b2DestroyContactsBetweenBodies. Wakes neither body.
+Sub DestroyContactsBetweenBodies(bodyA As Body, bodyB As Body)
+# Use the smaller of the two contact lists.
+Var contactKey As Integer
+Var otherBodyId As Integer
+If bodyA.ContactCount < bodyB.ContactCount Then
+contactKey = bodyA.HeadContactKey
+otherBodyId = bodyB.Id
+Else
+contactKey = bodyB.HeadContactKey
+otherBodyId = bodyA.Id
+End If
+
+While contactKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = contactKey.ShiftRight(1)
+Var edgeIndex As Integer = contactKey.BitAnd(1)
+Var contact As Contact = Me.Contacts[contactId]
+contactKey = contact.Edge0NextKey
+If edgeIndex = 1 Then
+contactKey = contact.Edge1NextKey
+End If
+
+Var otherEdgeIndex As Integer = 1
+If edgeIndex = 1 Then
+otherEdgeIndex = 0
+End If
+Var contactOtherBodyId As Integer = contact.Edge1BodyId
+If otherEdgeIndex = 0 Then
+contactOtherBodyId = contact.Edge0BodyId
+End If
+If contactOtherBodyId = otherBodyId Then
+# Careful: this removes the contact from the list being traversed.
+ContactMethods.DestroyContact(Me, contact, False)
+End If
+Wend
+End Sub
+
+## Destroys a joint record, its hot sim, and its island links, ported from
+## b2DestroyJointInternal. Wakes the attached bodies when wakeBodies is set.
+Sub DestroyJointInternal(joint As Joint, wakeBodies As Boolean)
+Var jointId As Integer = joint.Id
+Var bodyIdA As Integer = joint.Edge0BodyId
+Var bodyIdB As Integer = joint.Edge1BodyId
+Var bodyA As Body = Me.Bodies[bodyIdA]
+Var bodyB As Body = Me.Bodies[bodyIdB]
+
+# Remove from body A's list.
+If joint.Edge0PrevKey <> PhysicsConstants.NULL_INDEX Then
+Var prevJointA As Joint = Me.Joints[joint.Edge0PrevKey.ShiftRight(1)]
+If joint.Edge0PrevKey.BitAnd(1) = 0 Then
+prevJointA.Edge0NextKey = joint.Edge0NextKey
+Else
+prevJointA.Edge1NextKey = joint.Edge0NextKey
+End If
+End If
+If joint.Edge0NextKey <> PhysicsConstants.NULL_INDEX Then
+Var nextJointA As Joint = Me.Joints[joint.Edge0NextKey.ShiftRight(1)]
+If joint.Edge0NextKey.BitAnd(1) = 0 Then
+nextJointA.Edge0PrevKey = joint.Edge0PrevKey
+Else
+nextJointA.Edge1PrevKey = joint.Edge0PrevKey
+End If
+End If
+Var edgeKeyA As Integer = jointId.ShiftLeft(1)
+If bodyA.HeadJointKey = edgeKeyA Then
+bodyA.HeadJointKey = joint.Edge0NextKey
+End If
+bodyA.JointCount = bodyA.JointCount - 1
+
+# Remove from body B's list.
+If joint.Edge1PrevKey <> PhysicsConstants.NULL_INDEX Then
+Var prevJointB As Joint = Me.Joints[joint.Edge1PrevKey.ShiftRight(1)]
+If joint.Edge1PrevKey.BitAnd(1) = 0 Then
+prevJointB.Edge0NextKey = joint.Edge1NextKey
+Else
+prevJointB.Edge1NextKey = joint.Edge1NextKey
+End If
+End If
+If joint.Edge1NextKey <> PhysicsConstants.NULL_INDEX Then
+Var nextJointB As Joint = Me.Joints[joint.Edge1NextKey.ShiftRight(1)]
+If joint.Edge1NextKey.BitAnd(1) = 0 Then
+nextJointB.Edge0PrevKey = joint.Edge1PrevKey
+Else
+nextJointB.Edge1PrevKey = joint.Edge1PrevKey
+End If
+End If
+Var edgeKeyB As Integer = jointId.ShiftLeft(1) + 1
+If bodyB.HeadJointKey = edgeKeyB Then
+bodyB.HeadJointKey = joint.Edge1NextKey
+End If
+bodyB.JointCount = bodyB.JointCount - 1
+
+If joint.IslandId <> PhysicsConstants.NULL_INDEX Then
+IslandMethods.UnlinkJoint(Me, joint)
+End If
+
+# Remove the sim from the graph colour or solver set that owns it.
+If joint.SetIndex = PhysicsConstants.AWAKE_SET Then
+GraphMethods.RemoveJointFromGraph(Me, joint.Edge0BodyId, joint.Edge1BodyId, joint.ColorIndex, joint.LocalIndex)
+Else
+Var ownerSet As SolverSet = Me.SolverSets[joint.SetIndex]
+Var movedSim As JointSim = ownerSet.JointSims.RemoveSwap(joint.LocalIndex)
+If movedSim <> Nothing Then
+Me.Joints[movedSim.JointId].LocalIndex = joint.LocalIndex
+End If
+End If
+
+# Free the joint and id, preserving the generation for stale façades.
+joint.SetIndex = PhysicsConstants.NULL_INDEX
+joint.ColorIndex = PhysicsConstants.NULL_INDEX
+joint.LocalIndex = PhysicsConstants.NULL_INDEX
+Me.JointIdPool.FreeId(jointId)
+joint.Live = False
+Me.JointCount = Me.JointCount - 1
+Me.JointGenerations.Items[jointId] = Me.JointGenerations.Items[jointId] + 1
+joint.Generation = Me.JointGenerations.Items[jointId]
+Me.Joints[jointId] = Nothing
+joint.Id = PhysicsConstants.NULL_INDEX
+
+If wakeBodies Then
+Me.WakeBody(bodyA)
+Me.WakeBody(bodyB)
+End If
+End Sub
+
+## Moves a joint sim between solver sets or into a graph colour, ported from
+## b2TransferJoint. The source may be any set; a target of the awake set
+## routes the sim through the graph colouring.
+Sub TransferJoint(targetSet As SolverSet, sourceSet As SolverSet, joint As Joint)
+If targetSet = sourceSet Then
+Throw New RuntimeException("TransferJoint requires different sets")
+End If
+
+Var localIndex As Integer = joint.LocalIndex
+Var colorIndex As Integer = joint.ColorIndex
+
+# Retrieve the source sim.
+Var sourceSim As JointSim
+If sourceSet.SetIndex = PhysicsConstants.AWAKE_SET Then
+Var color As GraphColor = Me.ConstraintGraph.Colors[colorIndex]
+sourceSim = color.JointSims.GetItem(localIndex)
+Else
+sourceSim = sourceSet.JointSims.GetItem(localIndex)
+End If
+
+# Create the target and fix the joint.
+If targetSet.SetIndex = PhysicsConstants.AWAKE_SET Then
+GraphMethods.AddJointToGraph(Me, sourceSim, joint)
+joint.SetIndex = PhysicsConstants.AWAKE_SET
+Else
+joint.SetIndex = targetSet.SetIndex
+joint.LocalIndex = targetSet.JointSims.Count()
+joint.ColorIndex = PhysicsConstants.NULL_INDEX
+Var targetSim As JointSim = GraphMethods.NewJointSimOfType(joint.Type)
+targetSet.JointSims.Add(targetSim)
+GraphMethods.CopyJointSim(targetSim, sourceSim)
+End If
+
+# Destroy the source row.
+If sourceSet.SetIndex = PhysicsConstants.AWAKE_SET Then
+GraphMethods.RemoveJointFromGraph(Me, joint.Edge0BodyId, joint.Edge1BodyId, colorIndex, localIndex)
+Else
+Var movedSim As JointSim = sourceSet.JointSims.RemoveSwap(localIndex)
+If movedSim <> Nothing Then
+Me.Joints[movedSim.JointId].LocalIndex = localIndex
+End If
+End If
+End Sub
+
+## Wakes a sleeping solver set, ported from b2WakeSolverSet.
 Sub WakeSolverSet(setIndex As Integer)
 If setIndex < 3 Then
 Throw New RuntimeException("WakeSolverSet requires a sleeping set")
@@ -16749,6 +18903,20 @@ Wend
 While solverSet.ContactSims.Count() > 0
 Var sleepingContactId As Integer = solverSet.ContactSims.ContactId.Items[0]
 GraphMethods.AddContactToGraph(Me, Me.Contacts[sleepingContactId])
+Wend
+
+# Migrate the sleeping joints into the constraint graph, ported from the
+# joint transfer of b2WakeSolverSet. Adding to the graph does not remove
+# the source row, so each iteration drops row zero after the move.
+While solverSet.JointSims.Count() > 0
+Var sleepingSim As JointSim = solverSet.JointSims.GetItem(0)
+Var sleepingJoint As Joint = Me.Joints[sleepingSim.JointId]
+GraphMethods.AddJointToGraph(Me, sleepingSim, sleepingJoint)
+sleepingJoint.SetIndex = PhysicsConstants.AWAKE_SET
+Var movedJointSim As JointSim = solverSet.JointSims.RemoveSwap(0)
+If movedJointSim <> Nothing Then
+Me.Joints[movedJointSim.JointId].LocalIndex = 0
+End If
 Wend
 
 # Migrate the islands.
@@ -16799,6 +18967,10 @@ Wend
 
 # Move the island's touching contacts out of the graph colours.
 Me.MoveIslandContactsToSleepSet(island, sleepSet)
+
+# Move the island's joints out of the graph colours, ported from the joint
+# loop of b2TrySleepIsland.
+Me.MoveIslandJointsToSleepSet(island, sleepSet)
 
 # Move the island record.
 Var islandIndex As Integer = island.LocalIndex
@@ -16895,6 +19067,34 @@ contactId = contact.IslandNext
 Wend
 End Sub
 
+## Moves an island's joints from the graph colours into the sleeping set,
+## ported from the joint loop of b2TrySleepIsland.
+Private Sub MoveIslandJointsToSleepSet(island As Island, sleepSet As SolverSet)
+Var jointId As Integer = island.HeadJoint
+While jointId <> PhysicsConstants.NULL_INDEX
+Var joint As Joint = Me.Joints[jointId]
+Var color As GraphColor = Me.ConstraintGraph.Colors[joint.ColorIndex]
+If joint.ColorIndex <> PhysicsConstants.GRAPH_OVERFLOW_INDEX Then
+# Might clear a bit for a static body, but this has no effect.
+color.BodySet.ClearBit(joint.Edge0BodyId)
+color.BodySet.ClearBit(joint.Edge1BodyId)
+End If
+Var localIndex As Integer = joint.LocalIndex
+Var sleepJointIndex As Integer = sleepSet.JointSims.Count()
+Var sleepSim As JointSim = GraphMethods.NewJointSimOfType(joint.Type)
+sleepSet.JointSims.Add(sleepSim)
+GraphMethods.CopyJointSim(sleepSim, color.JointSims.GetItem(localIndex))
+Var movedJointSim As JointSim = color.JointSims.RemoveSwap(localIndex)
+If movedJointSim <> Nothing Then
+Me.Joints[movedJointSim.JointId].LocalIndex = localIndex
+End If
+joint.SetIndex = sleepSet.SetIndex
+joint.ColorIndex = PhysicsConstants.NULL_INDEX
+joint.LocalIndex = sleepJointIndex
+jointId = joint.IslandNext
+Wend
+End Sub
+
 ## Merges sleeping set two into sleeping set one and destroys set two,
 ## ported from b2MergeSolverSets. The smaller set migrates.
 Sub MergeSolverSets(setId1 As Integer, setId2 As Integer)
@@ -16928,6 +19128,18 @@ contact.LocalIndex = targetSet.ContactSims.Count()
 targetSet.ContactSims.Add()
 sourceSet.ContactSims.MoveRowTo(targetSet.ContactSims, contact.LocalIndex, c)
 Next c
+
+# Transfer joints, ported from the joint section of b2MergeSolverSets.
+Var jointCount As Integer = sourceSet.JointSims.Count()
+For j As Integer = 0 To jointCount - 1
+Var jointSim As JointSim = sourceSet.JointSims.GetItem(j)
+Var joint As Joint = Me.Joints[jointSim.JointId]
+joint.SetIndex = setId1
+joint.LocalIndex = targetSet.JointSims.Count()
+Var mergedSim As JointSim = GraphMethods.NewJointSimOfType(joint.Type)
+targetSet.JointSims.Add(mergedSim)
+GraphMethods.CopyJointSim(mergedSim, jointSim)
+Next j
 
 Var islandCount As Integer = sourceSet.IslandIds.Count
 For s As Integer = 0 To islandCount - 1
@@ -17384,6 +19596,43 @@ Wend
 If setId <> 0 Then
 IslandMethods.CreateIslandForBody(Me, setId, body)
 End If
+
+# Transfer joints out of the disabled set, ported from the joint loop of
+# b2Body_Enable. If the other body is disabled, don't transfer.
+Var jointKey As Integer = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = Me.Joints[jointId]
+jointKey = joint.Edge0NextKey
+If edgeIndex = 1 Then
+jointKey = joint.Edge1NextKey
+End If
+
+Var jointBodyA As Body = Me.Bodies[joint.Edge0BodyId]
+Var jointBodyB As Body = Me.Bodies[joint.Edge1BodyId]
+If jointBodyA.SetIndex = PhysicsConstants.DISABLED_SET Or jointBodyB.SetIndex = PhysicsConstants.DISABLED_SET Then
+# One body is still disabled.
+Continue While
+End If
+
+# Pick the joint's set from the enabled bodies.
+Var jointSetId As Integer = jointBodyA.SetIndex
+If jointBodyA.SetIndex = PhysicsConstants.STATIC_SET And jointBodyB.SetIndex = PhysicsConstants.STATIC_SET Then
+jointSetId = PhysicsConstants.STATIC_SET
+ElseIf jointBodyA.SetIndex = PhysicsConstants.STATIC_SET Then
+jointSetId = jointBodyB.SetIndex
+End If
+
+Me.TransferJoint(Me.SolverSets[jointSetId], Me.SolverSets[PhysicsConstants.DISABLED_SET], joint)
+
+# Now that the joint is in the correct set, link it into the island.
+If jointSetId <> PhysicsConstants.STATIC_SET Then
+IslandMethods.LinkJoint(Me, joint, False)
+End If
+Wend
+
+IslandMethods.MergeAwakeIslands(Me)
 End Sub
 
 ## Disables a live body, ported from b2Body_Disable.
@@ -17396,6 +19645,30 @@ End If
 
 # Destroy attached contacts and wake their other bodies.
 ContactMethods.DestroyBodyContacts(Me, body, True)
+
+# Unlink joints and transfer them to the disabled set, ported from the
+# joint loop of b2Body_Disable.
+Var jointKey As Integer = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = Me.Joints[jointId]
+jointKey = joint.Edge0NextKey
+If edgeIndex = 1 Then
+jointKey = joint.Edge1NextKey
+End If
+
+# The joint may already be disabled by the other body.
+If joint.SetIndex = PhysicsConstants.DISABLED_SET Then
+Continue While
+End If
+
+If joint.IslandId <> PhysicsConstants.NULL_INDEX Then
+IslandMethods.UnlinkJoint(Me, joint)
+End If
+
+Me.TransferJoint(Me.SolverSets[PhysicsConstants.DISABLED_SET], Me.SolverSets[joint.SetIndex], joint)
+Wend
 
 Var shapeId As Integer = body.HeadShapeId
 While shapeId <> PhysicsConstants.NULL_INDEX
@@ -17426,8 +19699,9 @@ End If
 Me.UpdateBodyMassData(body)
 End Sub
 
-## Changes the body type, ported from b2Body_SetType. Joint handling
-## arrives with Stage 9.
+## Changes the body type, ported from b2Body_SetType. Joints transfer
+## between solver sets, get re-coloured, and relink into islands exactly as
+## upstream.
 Sub SetBodyType(body As Body, bodyType As BodyType)
 Me.CheckNotLocked()
 Me.ValidateBody(body)
@@ -17436,25 +19710,154 @@ If originalType = bodyType Then
 Return
 End If
 If body.SetIndex = 1 Then
+# Disabled bodies don't change solver sets or islands when they change
+# type.
 body.Type = bodyType
 Me.UpdateBodyMassData(body)
 Return
 End If
 Me.WakeBody(body)
 body.Type = bodyType
+
+# Unlink all joints and wake attached bodies, ported from the unlink loop
+# of b2Body_SetType.
+Var jointKey As Integer = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = Me.Joints[jointId]
+If joint.IslandId <> PhysicsConstants.NULL_INDEX Then
+IslandMethods.UnlinkJoint(Me, joint)
+End If
+
+# A body going from static to dynamic or kinematic goes to the awake set
+# and other attached bodies must be awake as well; this is done for all
+# cases.
+Me.WakeBody(Me.Bodies[joint.Edge0BodyId])
+Me.WakeBody(Me.Bodies[joint.Edge1BodyId])
+
+If edgeIndex = 0 Then
+jointKey = joint.Edge0NextKey
+Else
+jointKey = joint.Edge1NextKey
+End If
+Wend
+
 If originalType = BodyType.StaticBody Then
 Me.TransferBody(Me.SolverSets[2], Me.SolverSets[0], body)
 IslandMethods.CreateIslandForBody(Me, PhysicsConstants.AWAKE_SET, body)
+Me.TransferStaticJointsToAwakeSet(body)
 Me.RecreateShapeProxies(body, bodyType)
 ElseIf bodyType = BodyType.StaticBody Then
 Me.TransferBody(Me.SolverSets[0], Me.SolverSets[2], body)
 IslandMethods.RemoveBodyFromIsland(Me, body)
 Me.GetBodySim(body).IsFast.Items[body.LocalIndex] = 0
+Me.TransferJointsToStaticSet(body)
 Me.RecreateShapeProxies(body, BodyType.StaticBody)
 Else
 Me.RecreateShapeProxies(body, bodyType)
 End If
+
+# Relink all joints, ported from the relink loop of b2Body_SetType.
+jointKey = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var relinkJointId As Integer = jointKey.ShiftRight(1)
+Var relinkEdgeIndex As Integer = jointKey.BitAnd(1)
+Var relinkJoint As Joint = Me.Joints[relinkJointId]
+If relinkEdgeIndex = 0 Then
+jointKey = relinkJoint.Edge0NextKey
+Else
+jointKey = relinkJoint.Edge1NextKey
+End If
+Var relinkOtherId As Integer = relinkJoint.Edge1BodyId
+If relinkEdgeIndex = 1 Then
+relinkOtherId = relinkJoint.Edge0BodyId
+End If
+Var relinkOtherBody As Body = Me.Bodies[relinkOtherId]
+If relinkOtherBody.SetIndex = PhysicsConstants.DISABLED_SET Then
+Continue While
+End If
+If body.Type = BodyType.StaticBody And relinkOtherBody.Type = BodyType.StaticBody Then
+Continue While
+End If
+IslandMethods.LinkJoint(Me, relinkJoint, False)
+Wend
+IslandMethods.MergeAwakeIslands(Me)
+
 Me.UpdateBodyMassData(body)
+End Sub
+
+## Moves this body's joints out of the static set and re-colours graph
+## joints after the body left the static set, ported from the static-to-
+## dynamic joint walk of b2Body_SetType.
+Private Sub TransferStaticJointsToAwakeSet(body As Body)
+Var staticSet As SolverSet = Me.SolverSets[PhysicsConstants.STATIC_SET]
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+Var jointKey As Integer = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = Me.Joints[jointId]
+If edgeIndex = 0 Then
+jointKey = joint.Edge0NextKey
+Else
+jointKey = joint.Edge1NextKey
+End If
+
+# Transfer the joint if it is in the static set.
+If joint.SetIndex = PhysicsConstants.STATIC_SET Then
+Me.TransferJoint(awakeSet, staticSet, joint)
+ElseIf joint.SetIndex = PhysicsConstants.AWAKE_SET Then
+# In this case the joint must be re-inserted into the constraint graph
+# to ensure the correct graph colour: first transfer to the static set,
+# then transfer it back into the graph.
+Me.TransferJoint(staticSet, awakeSet, joint)
+Me.TransferJoint(awakeSet, staticSet, joint)
+End If
+Wend
+End Sub
+
+## Moves this body's joints into the static set when both sides are static
+## and re-colours graph joints otherwise, ported from the to-static joint
+## walk of b2Body_SetType.
+Private Sub TransferJointsToStaticSet(body As Body)
+Var staticSet As SolverSet = Me.SolverSets[PhysicsConstants.STATIC_SET]
+Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
+Var jointKey As Integer = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = Me.Joints[jointId]
+jointKey = joint.Edge0NextKey
+If edgeIndex = 1 Then
+jointKey = joint.Edge1NextKey
+End If
+
+# Skip disabled joints; they connect to a disabled body.
+If joint.SetIndex = PhysicsConstants.DISABLED_SET Then
+Continue While
+End If
+Var otherEdgeIndex As Integer = 1
+If edgeIndex = 1 Then
+otherEdgeIndex = 0
+End If
+Var otherBodyId As Integer = joint.Edge1BodyId
+If otherEdgeIndex = 0 Then
+otherBodyId = joint.Edge0BodyId
+End If
+Var otherBody As Body = Me.Bodies[otherBodyId]
+
+# Only transfer the joint to the static set if both bodies are static.
+If otherBody.SetIndex = PhysicsConstants.STATIC_SET Then
+Me.TransferJoint(staticSet, awakeSet, joint)
+Else
+# The joint must live in a graph colour and must be re-inserted into
+# the constraint graph to ensure the correct graph colour: first
+# transfer to the static set, then transfer it back into the graph.
+Me.TransferJoint(staticSet, awakeSet, joint)
+Me.TransferJoint(awakeSet, staticSet, joint)
+End If
+Wend
 End Sub
 
 ## Destroys and recreates every shape proxy with the given proxy type.
@@ -18742,6 +21145,7 @@ Throw New RuntimeException("World live shape count does not match pool")
 End If
 Me.ValidateContacts()
 Me.ValidateIslands()
+Me.ValidateJoints()
 End Sub
 
 ## Validates contact bookkeeping, ported from the contact checks of
@@ -18776,6 +21180,109 @@ Throw New RuntimeException("Solver set contact sims do not match contact count")
 End If
 If Me.BroadPhase.PairSet.Count <> Me.ContactCount Then
 Throw New RuntimeException("Pair set keys do not match contact count")
+End If
+End Sub
+
+## Validates joint bookkeeping across the world, ported from the joint
+## checks of b2ValidateSolverSets. Checks live counts, slot identity, sim
+## locations, body edge lists, and per-set totals.
+Sub ValidateJoints()
+If Me.JointIdPool.IdCount() <> Me.Joints.Count - CountNothing(Me.Joints) Then
+Throw New RuntimeException("World live joint count does not match pool")
+End If
+For j As Integer = 0 To Me.Joints.Count - 1
+Var joint As Joint = Me.Joints[j]
+If joint <> Nothing Then
+If Not joint.Live Or joint.Id <> j Then
+Throw New RuntimeException("World joint store holds a stale joint")
+End If
+Me.ValidateJointLocation(joint, j)
+Me.ValidateJointBodyEdges(joint)
+End If
+Next j
+Var jointTotal As Integer = 0
+For s As Integer = 0 To Me.SolverSets.Count - 1
+Var jointSetTotal As SolverSet = Me.SolverSets[s]
+If jointSetTotal <> Nothing Then
+jointTotal = jointTotal + jointSetTotal.JointSims.Count()
+End If
+Next s
+For g As Integer = 0 To PhysicsConstants.GRAPH_COLOUR_COUNT - 1
+jointTotal = jointTotal + Me.ConstraintGraph.Colors[g].JointSims.Count()
+Next g
+If jointTotal <> Me.JointIdPool.IdCount() Then
+Throw New RuntimeException("Solver set joint sims do not match joint count")
+End If
+End Sub
+
+## Walks one joint's two body edge lists and confirms both reference the
+## joint symmetrically.
+Private Sub ValidateJointBodyEdges(joint As Joint)
+Var edgeIndex As Integer = 0
+While edgeIndex <= 1
+Var bodyId As Integer = joint.Edge0BodyId
+If edgeIndex = 1 Then
+bodyId = joint.Edge1BodyId
+End If
+Var edgeBody As Body = Me.Bodies[bodyId]
+If edgeBody = Nothing Then
+Throw New RuntimeException("Joint edge references a missing body")
+End If
+Var edgeKey As Integer = joint.Id.ShiftLeft(1) + edgeIndex
+Var walkKey As Integer = edgeBody.HeadJointKey
+Var found As Boolean = False
+While walkKey <> PhysicsConstants.NULL_INDEX
+If walkKey = edgeKey Then
+found = True
+Exit While
+End If
+Var walkJoint As Joint = Me.Joints[walkKey.ShiftRight(1)]
+If walkKey.BitAnd(1) = 0 Then
+walkKey = walkJoint.Edge0NextKey
+Else
+walkKey = walkJoint.Edge1NextKey
+End If
+Wend
+If found = False Then
+Throw New RuntimeException("Joint edge missing from body joint list")
+End If
+edgeIndex = edgeIndex + 1
+Wend
+End Sub
+
+## Counts the Nothing slots of a sparse record array.
+Private Function CountNothing(records As Array(Of Joint)) As Integer
+Var emptyCount As Integer = 0
+For i As Integer = 0 To records.Count - 1
+If records[i] = Nothing Then
+emptyCount = emptyCount + 1
+End If
+Next i
+Return emptyCount
+End Function
+
+## Checks that one live joint's sim record sits where the joint record
+## claims, ported from the joint checks of b2ValidateSolverSets.
+Private Sub ValidateJointLocation(joint As Joint, jointId As Integer)
+If joint.SetIndex = PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Live joint has no solver set")
+End If
+If joint.SetIndex = PhysicsConstants.AWAKE_SET Then
+If joint.ColorIndex = PhysicsConstants.NULL_INDEX Or joint.ColorIndex >= PhysicsConstants.GRAPH_COLOUR_COUNT Then
+Throw New RuntimeException("Awake joint has no graph colour")
+End If
+Var colorSims As JointSims = Me.ConstraintGraph.Colors[joint.ColorIndex].JointSims
+If colorSims.GetItem(joint.LocalIndex).JointId <> jointId Then
+Throw New RuntimeException("Colour sim and joint record disagree on location")
+End If
+Else
+If joint.ColorIndex <> PhysicsConstants.NULL_INDEX Then
+Throw New RuntimeException("Non-awake joint must not hold a graph colour")
+End If
+Var jointSet As SolverSet = Me.SolverSets[joint.SetIndex]
+If jointSet.JointSims.GetItem(joint.LocalIndex).JointId <> jointId Then
+Throw New RuntimeException("Set sim and joint record disagree on location")
+End If
 End If
 End Sub
 
@@ -18851,10 +21358,20 @@ If orphanChain <> Nothing Then
 Throw New RuntimeException("World.Clear found an orphaned chain")
 End If
 Next k
+For m As Integer = 0 To Me.Joints.Count - 1
+Var orphanJoint As Joint = Me.Joints[m]
+If orphanJoint <> Nothing Then
+Throw New RuntimeException("World.Clear found an orphaned joint")
+End If
+Next m
 Me.BodyIdPool.Clear()
 Me.ShapeIdPool.Clear()
 Me.ChainIdPool.Clear()
 Me.SolverSetIdPool.Clear()
+Me.JointIdPool.Clear()
+Me.Contacts.Clear()
+Me.Joints.Clear()
+Me.JointGenerations.Clear()
 Me.ContactIdPool.Clear()
 Me.IslandIdPool.Clear()
 Me.SplitIslandId = PhysicsConstants.NULL_INDEX

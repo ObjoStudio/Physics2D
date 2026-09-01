@@ -3,6 +3,43 @@
 # over the graph colours; the overflow colour runs first to match
 # upstream's serial overflow work.
 Class SolverMethods
+## Prepares one colour's joint constraints, ported from b2PrepareJointsTask
+## and b2PrepareOverflowJoints. Dispatches on each sim's family.
+Shared Sub PrepareColourJoints(world As World, context As StepContext, colorIndex As Integer)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var count As Integer = color.JointSims.Count()
+For i As Integer = 0 To count - 1
+JointSolver.PrepareJoint(color.JointSims.GetItem(i), context)
+Next i
+End Sub
+
+## Warm starts one colour's joint constraints, ported from
+## b2WarmStartJointsTask and b2WarmStartOverflowJoints.
+Shared Sub WarmStartColourJoints(world As World, context As StepContext, colorIndex As Integer)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var count As Integer = color.JointSims.Count()
+For i As Integer = 0 To count - 1
+Var sim As JointSim = color.JointSims.GetItem(i)
+If sim.Type = JointType.DistanceJoint Then
+JointSolver.WarmStartDistanceJoint(DistanceJointSim(sim), context)
+End If
+Next i
+End Sub
+
+## Runs one velocity iteration over one colour's joint constraints, ported
+## from b2SolveJointsTask and b2SolveOverflowJoints. useBias enables the
+## soft-step bias term.
+Shared Sub SolveColourJoints(world As World, context As StepContext, colorIndex As Integer, useBias As Boolean)
+Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
+Var count As Integer = color.JointSims.Count()
+For i As Integer = 0 To count - 1
+Var sim As JointSim = color.JointSims.GetItem(i)
+If sim.Type = JointType.DistanceJoint Then
+JointSolver.SolveDistanceJoint(DistanceJointSim(sim), context, useBias)
+End If
+Next i
+End Sub
+
 ## Prepares one colour's contact constraints, growing the colour's scratch
 ## constraint array to cover its sims, ported from b2PrepareContactsTask.
 Shared Sub PrepareColorContacts(world As World, context As StepContext, colorIndex As Integer)

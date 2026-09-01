@@ -26,11 +26,20 @@ Property MaximumLinearVelocity As Double
 Property WarmStartScale As Double
 ## Fast bullet body sim indices collected during finalization.
 Property BulletBodies As IntegerList
+## Owning world, ported from context->world.
+Property World As World
+## Awake set body states, ported from context->states.
+Property States As BodyStates
+## Reusable distance joint solver scratch, one row per joint solve.
+Property JointScratch As DistanceJointScratch
 
 ## Creates a scratch context with reusable softness records.
 Constructor()
 Me.ContactSoftness = New Softness
 Me.StaticSoftness = New Softness
 Me.BulletBodies = New IntegerList
+Me.World = Nothing
+Me.States = Nothing
+Me.JointScratch = New DistanceJointScratch
 End Constructor
 End Class

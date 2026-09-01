@@ -30,6 +30,11 @@ Property HeadChainId As Integer
 Property HeadContactKey As Integer
 ## Number of contacts attached to this body.
 Property ContactCount As Integer
+## Head of the doubly linked joint list as a joint edge key:
+## (jointId << 1) | edgeIndex.
+Property HeadJointKey As Integer
+## Number of joints attached to this body.
+Property JointCount As Integer
 ## Island this body belongs to. NULL_INDEX for static and disabled bodies.
 Property IslandId As Integer
 ## Doubly linked island list: previous body.
@@ -77,6 +82,8 @@ Me.ShapeCount = 0
 Me.HeadChainId = PhysicsConstants.NULL_INDEX
 Me.HeadContactKey = PhysicsConstants.NULL_INDEX
 Me.ContactCount = 0
+Me.HeadJointKey = PhysicsConstants.NULL_INDEX
+Me.JointCount = 0
 Me.IslandId = PhysicsConstants.NULL_INDEX
 Me.IslandPrev = PhysicsConstants.NULL_INDEX
 Me.IslandNext = PhysicsConstants.NULL_INDEX
@@ -476,6 +483,32 @@ While shapeId <> PhysicsConstants.NULL_INDEX
 Var shape As Shape = Me.Owner.Shapes[shapeId]
 results.Append(shape)
 shapeId = shape.NextShapeId
+Wend
+Return results
+End Function
+
+## The number of attached joints, ported from b2Body_GetJointCount.
+Function GetJointCount() As Integer
+Me.Validate()
+Return Me.JointCount
+End Function
+
+## Returns the attached joint façades in a fresh array, ported from
+## b2Body_GetJoints. Allocating convenience for cold paths.
+Function GetJoints() As Array(Of Joint)
+Me.Validate()
+Var results As New Array(Of Joint)
+Var jointKey As Integer = Me.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = Me.Owner.Joints[jointId]
+results.Append(joint)
+If edgeIndex = 0 Then
+jointKey = joint.Edge0NextKey
+Else
+jointKey = joint.Edge1NextKey
+End If
 Wend
 Return results
 End Function

@@ -1,0 +1,49 @@
+# Dense joint sim store for one solver set or graph colour, mirroring the
+# ContactSims role for the much smaller joint rows. A row is one heap
+# JointSim (base or family subclass), so migration between sets and colours
+# moves the reference and fixes the moved joint's local index. The swap
+# removal keeps row order deterministic without allocation.
+Class JointSims
+## Sim rows in local-index order.
+Property Rows As Array(Of JointSim)
+
+## Creates an empty store.
+Constructor()
+Me.Rows = New Array(Of JointSim)
+End Constructor
+
+## Number of live joint sims in this store.
+Function Count() As Integer
+Return Me.Rows.Count
+End Function
+
+## Returns the sim at the given local index.
+Function GetItem(index As Integer) As JointSim
+Return Me.Rows[index]
+End Function
+
+## Appends one sim row and returns its local index.
+Function Add(sim As JointSim) As Integer
+Me.Rows.Append(sim)
+Return Me.Rows.Count - 1
+End Function
+
+## Removes one row by swapping in the last row. Returns the moved sim, or
+## Nothing when the removed row was the last one. After the call the moved
+## sim lives at `index`.
+Function RemoveSwap(index As Integer) As JointSim
+Var lastIndex As Integer = Me.Rows.Count - 1
+Var moved As JointSim = Me.Rows[lastIndex]
+Me.Rows[index] = moved
+Me.Rows.RemoveAt(lastIndex)
+If index = lastIndex Then
+Return Nothing
+End If
+Return moved
+End Function
+
+## Empties the store while retaining capacity.
+Sub ClearAll()
+Me.Rows.Clear()
+End Sub
+End Class

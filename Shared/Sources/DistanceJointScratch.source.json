@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "DistanceJointScratch",
+  "Id": "93fe2bb9-38d9-4a5e-89e7-769710e1feb0",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "DistanceJointScratch.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

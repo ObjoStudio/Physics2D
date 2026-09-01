@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9Tests",
+  "Id": "db40a962-7a0c-48ce-a9db-870d3a2419d1",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9Tests-db40a962-7a0c-48ce-a9db-870d3a2419d1.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "JointSim",
+  "Id": "3b1062e7-3890-430b-a460-bc74f9a3a309",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "JointSim.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

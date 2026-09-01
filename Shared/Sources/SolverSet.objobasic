@@ -3,7 +3,7 @@
 # per-island sleeping sets. The contact sim array holds all contacts of
 # sleeping sets and the non-touching contacts of the awake set; touching
 # awake contacts move into constraint-graph colours during the step.
-# Joint and island sim arrays arrive with their owning stages.
+# Joint sims follow the same split: awake joints live in graph colours.
 Class SolverSet
 ## Index of this set in the world's solver set array.
 Property SetIndex As Integer
@@ -14,6 +14,9 @@ Property Sims As BodySims
 Property States As BodyStates
 ## Dense contact state owned by this set.
 Property ContactSims As ContactSims
+## Dense joint state owned by this set. Awake joints live in graph colours
+## instead, so this store holds sleeping, static, and disabled joints.
+Property JointSims As JointSims
 ## Ids of the islands that live in this set.
 Property IslandIds As IntegerList
 
@@ -27,6 +30,7 @@ Else
 Me.States = Nothing
 End If
 Me.ContactSims = New ContactSims()
+Me.JointSims = New JointSims()
 Me.IslandIds = New IntegerList()
 End Constructor
 
@@ -38,6 +42,7 @@ If Me.States <> Nothing Then
 Me.States.ClearAll()
 End If
 Me.ContactSims.ClearAll()
+Me.JointSims.ClearAll()
 Me.IslandIds.Clear()
 End Sub
 End Class

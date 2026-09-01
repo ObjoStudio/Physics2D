@@ -1,0 +1,20 @@
+# Joint family discriminator, ported from upstream b2JointType in types.h.
+# Values match upstream so solver dispatch and serialisation stay aligned.
+Enum JointType
+## Rigid or springy rope constraint between two anchor points.
+DistanceJoint
+## Collision filter override between two bodies; has no solver behaviour.
+FilterJoint
+## Soft constraint pulling body B to an offset pose relative to body A.
+MotorJoint
+## Soft constraint dragging a body anchor toward a world target.
+MouseJoint
+## Translation along a body-A axis with optional spring, limits, and motor.
+PrismaticJoint
+## Rotation about a shared anchor with optional spring, limits, and motor.
+RevoluteJoint
+## Rigid or soft relative-pose lock between two bodies.
+WeldJoint
+## Wheel: translation along a body-A axis plus rotation about the anchor.
+WheelJoint
+End Enum
