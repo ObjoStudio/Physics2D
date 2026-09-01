@@ -1,0 +1,10 @@
+# Public filter joint façade, ported from the b2CreateFilterJoint surface
+# in joint.c. The filter joint has no anchors, no solver behaviour, and no
+# tuning: every inherited query returns its base default and the constraint
+# force and torque are always zero. Its only effect is the connected-joint
+# collision rule: while the joint lives, the two attached bodies never form
+# new contacts with each other. Contacts that already existed when the
+# joint was created persist until they end naturally, exactly like
+# upstream.
+Class FilterJoint Inherits Joint
+End Class

@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "FilterJoint",
+  "Id": "7a598d34-980e-492b-86df-6fee8e549db5",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "FilterJoint.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

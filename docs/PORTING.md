@@ -225,6 +225,14 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     no target field) and the motor is a torque-clamped velocity drive on
     the free spin; Physics2D matches both. The axis normalizes at creation
     like the prismatic joint and the default axis is the world Y axis.
+38. **Filter joint creation keeps existing contacts.** Upstream
+    `b2CreateFilterJoint` does not destroy contacts that already exist
+    between the two bodies, so an overlapping pair pushes itself apart
+    once and the suppression applies only to newly discovered broad-phase
+    pairs through `b2ShouldBodiesCollide`; Physics2D matches this exactly,
+    including the solver no-op (the filter joint joins the constraint
+    graph like every family and every kernel case returns zero, so its
+    only effect is the connected-joint collision rule while it lives).
 
 ## Public Symbol Inventory
 

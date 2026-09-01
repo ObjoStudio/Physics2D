@@ -50,6 +50,8 @@
 # Input: DoubleList-bf54ef29-8eae-4760-bd6b-fae9a46f6114.objobasic 88f6cd11834dcbdad3bd27ec627e3538f2f2427177020c6047c557ecb4019516
 # Input: DynamicTree-55542eb0-42a0-4347-b11f-3b7e2e8c53c6.objobasic ac6b68a02f16f857df7fa0607843ce77b76e57169086dccc5e8fa413bc9456d7
 # Input: Filter.objobasic 455187bd46728c62c4c2784de321128dacf43ccf7964a1352b88c042796bac78
+# Input: FilterJoint.objobasic 6b40e027e46250267b9e3dfbcddf908e73e6ad80936c5b6af4700cfd32010ce2
+# Input: FilterJointDefinition.objobasic e840e135996c7b5167db0264730afe7bb286b3c0baf36f70caaf3d11ed925ad9
 # Input: GenerationalPool-a7eb56c1-ce86-4368-ae3c-458ea741dd55.objobasic 124a545390769606488fb8c6855cbaba9cc135170e8f24120127ef1a60b22d9e
 # Input: GraphColor.objobasic 517058f2a514948b4b4ecbe1f4f96e8dc543ebdb2471855c8f431c574a835f88
 # Input: GraphMethods.objobasic dfd49672f339b73d540d4ff6ea38806474e04d66c2ab34d02d8456eb9b9dda1a
@@ -125,7 +127,7 @@
 # Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
 # Input: WheelJoint.objobasic 063db7c796ee6df9b2ed0d4db36d51dec921e3a61ec1b001cd6ab07308136b4d
 # Input: WheelJointDefinition.objobasic 1ae60874c31b501cb219d8af36f26398fea1ad6a74eb924c08d53b70109e0641
-# Input: World.objobasic ff0ec9c1ffdfc21b8cb20b1ab24931125d5f289a96aef93e29b00b514af3c095
+# Input: World.objobasic 0f12907eeaffc963c10134a2425edd338bcf9025ad8b6c0d9e61999da9be0e4f
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
@@ -134,7 +136,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 75ee8ba52dc5f1dcbf4f6edf76e7d425890868492943e63f98afa809d2ba405c
+# Source content checksum (SHA-256): 94bff18bf80fd7bc846b84e2c3231ca1c3863353e71523bdd5381f5b0b807270
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -9731,6 +9733,39 @@ Constructor(other As Filter)
 Me.CategoryBits = other.CategoryBits
 Me.MaskBits = other.MaskBits
 Me.GroupIndex = other.GroupIndex
+End Constructor
+End Class
+
+# Public filter joint façade, ported from the b2CreateFilterJoint surface
+# in joint.c. The filter joint has no anchors, no solver behaviour, and no
+# tuning: every inherited query returns its base default and the constraint
+# force and torque are always zero. Its only effect is the connected-joint
+# collision rule: while the joint lives, the two attached bodies never form
+# new contacts with each other. Contacts that already existed when the
+# joint was created persist until they end naturally, exactly like
+# upstream.
+Class FilterJoint Inherits Joint
+End Class
+
+# Filter joint definition, ported from upstream b2FilterJointDef and
+# b2DefaultFilterJointDef in types.h and joint.c. A filter joint has no
+# anchors, no solver behaviour, and no tuning: it exists purely to disable
+# collision between two specific bodies through the connected-joint
+# collision rule while both bodies live.
+Class FilterJointDefinition
+## First attached body, ported from b2FilterJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, ported from b2FilterJointDef.bodyIdB.
+Property BodyB As Body
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.UserData = Nothing
 End Constructor
 End Class
 
@@ -23096,6 +23131,8 @@ ElseIf jointType = JointType.WeldJoint Then
 record = New WeldJoint
 ElseIf jointType = JointType.WheelJoint Then
 record = New WheelJoint
+ElseIf jointType = JointType.FilterJoint Then
+record = New FilterJoint
 Else
 record = New Joint
 End If
@@ -23751,6 +23788,39 @@ Me.DestroyContactsBetweenBodies(bodyA, bodyB)
 End If
 
 Var facade As WheelJoint = WheelJoint(joint)
+Return facade
+End Function
+
+## Creates a filter joint, ported from b2CreateFilterJoint. Throws on a
+## missing definition or missing or foreign bodies. The filter joint has no
+## anchors and no solver behaviour: while it lives, the connected-joint
+## collision rule suppresses every new contact between the two bodies.
+## Existing contacts persist until they end naturally, matching upstream,
+## which also does not destroy contacts at creation.
+Function CreateFilterJoint(def As FilterJointDefinition) As FilterJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "FilterJointDefinition")
+Me.CheckJointBody(def.BodyA, "FilterJointDefinition.BodyA")
+Me.CheckJointBody(def.BodyB, "FilterJointDefinition.BodyB")
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.FilterJoint, False, 1.0)
+Var localIndex As Integer = Me.PlaceJointSim(joint, bodyA, bodyB)
+Var store As JointSims = Me.GetJointSims(joint)
+store.ConstraintHertz.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+store.ConstraintDampingRatio.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+joint.UserData = def.UserData
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# Deliberately no contact destruction here: upstream creates the filter
+# joint without destroying existing contacts between the bodies, so only
+# new pairs are suppressed.
+Var facade As FilterJoint = FilterJoint(joint)
 Return facade
 End Function
 

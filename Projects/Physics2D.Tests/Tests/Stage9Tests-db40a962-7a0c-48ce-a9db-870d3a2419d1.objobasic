@@ -57,6 +57,9 @@ Private Property mWheelThrowJoint As WheelJoint
 ## Wheel definition reused by the cross-world throwers.
 Private Property mCrossWheelDef As WheelJointDefinition
 
+## Filter definition reused by the cross-world throwers.
+Private Property mCrossFilterDef As FilterJointDefinition
+
 ## Invalid wheel definition reused by the creation thrower.
 Private Property mBadWheelDef As WheelJointDefinition
 
@@ -2939,6 +2942,85 @@ Assert.True(chassis.IsAwake() = False, "car asleep after measured window")
 world.Validate()
 End Sub
 
+## A filter joint suppresses every new contact between its bodies: two
+## boxes joined by a filter joint fall past each other without colliding,
+## and the constraint force and torque stay zero.
+Public Sub TestFilterJointSuppressesContacts()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var ground As Body = world.Bodies[0]
+Var boxA As Body = Stage9Tests.MakeDraggedBox(world, -0.6, 6.0)
+Var boxB As Body = Stage9Tests.MakeDraggedBox(world, 0.6, 6.0)
+Var def As New FilterJointDefinition
+def.BodyA = boxA
+def.BodyB = boxB
+Var joint As FilterJoint = world.CreateFilterJoint(def)
+Assert.Equal(JointType.FilterJoint, joint.GetJointType(), "filter joint type")
+Assert.Equal(1, world.JointCount, "one live filter joint")
+Assert.Equal(1, boxA.GetJointCount(), "box A holds the joint edge")
+# Push box A through box B's column while both fall; the filter joint
+# suppresses the contact and the boxes pass through each other. The step
+# count keeps both boxes airborne so the ground contact cannot appear.
+boxA.SetLinearVelocity(New Vector2(3.0, 0.0))
+Stage9Tests.Steps(world, 40)
+Var force As Vector2 = joint.GetConstraintForce()
+PhysicsAssert.Near(0.0, force.X, 0.0, 0.0, "filter joint force is zero")
+PhysicsAssert.Near(0.0, force.Y, 0.0, 0.0, "filter joint force is zero vertically")
+Assert.Equal(0.0, joint.GetConstraintTorque(), "filter joint torque is zero")
+Assert.Equal(0.0, joint.GetLinearSeparation(), "filter joint reports no linear separation")
+Assert.Equal(0, boxA.ContactCount, "no contact forms between the filtered bodies")
+# The boxes passed through each other's column.
+Var passedA As Transform = world.GetBodyTransform(boxA)
+Var passedB As Transform = world.GetBodyTransform(boxB)
+Assert.True(passedA.P.X > passedB.P.X, "boxes pass through each other")
+Assert.True(passedA.P.Y > 2.0, "box A stays airborne")
+world.Validate()
+End Sub
+
+## Destroying the filter joint restores collision: the same boxes pushed
+## together again form a contact and collide.
+Public Sub TestFilterJointDestroyRestoresCollision()
+Var world As World = Stage9Tests.MakeMouseWorld()
+Var boxA As Body = Stage9Tests.MakeDraggedBox(world, -0.6, 6.0)
+Var boxB As Body = Stage9Tests.MakeDraggedBox(world, 0.6, 6.0)
+Var def As New FilterJointDefinition
+def.BodyA = boxA
+def.BodyB = boxB
+Var joint As FilterJoint = world.CreateFilterJoint(def)
+boxA.SetLinearVelocity(New Vector2(3.0, 0.0))
+Stage9Tests.Steps(world, 20)
+Assert.Equal(0, boxA.ContactCount, "no contact while the filter lives")
+joint.Destroy()
+Assert.False(joint.IsValid(), "stale facade invalid after destroy")
+Assert.True(boxA.IsAwake(), "destroy wakes the bodies")
+boxA.SetLinearVelocity(New Vector2(3.0, 0.0))
+Stage9Tests.Steps(world, 20)
+Assert.True(boxA.ContactCount > 0, "contact forms after the filter is destroyed")
+Assert.True(world.GetBodyTransform(boxA).P.Y > 2.0, "box A stays airborne")
+world.Validate()
+End Sub
+
+## Cross-world and missing filter joint bodies are rejected at creation.
+Public Sub TestFilterJointRejectsCrossWorldBodies()
+Var worldA As New World
+Var worldB As New World
+Var bodyA As Body = Stage9Tests.MakeDraggedBox(worldA, 0.0, 5.0)
+Var bodyB As Body = Stage9Tests.MakeDraggedBox(worldB, 0.0, 5.0)
+Var def As New FilterJointDefinition
+def.BodyA = bodyA
+def.BodyB = bodyB
+Me.mCrossFilterDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldFilterJoint)
+def.BodyB = Nothing
+Me.mCrossFilterDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldFilterJoint)
+def.BodyA = Nothing
+def.BodyB = bodyB
+Me.mCrossFilterDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldFilterJoint)
+worldA.Validate()
+worldB.Validate()
+End Sub
+
 ## A chain of distance joints swings and settles deterministically.
 Public Sub TestJointChainDeterminism()
 Var first As World = Stage9Tests.MakeJointChainWorld()
@@ -3159,6 +3241,13 @@ End Sub
 Private Sub ThrowCrossWorldWheelJoint()
 Var world As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, False)
 world.CreateWheelJoint(Me.mCrossWheelDef)
+End Sub
+
+## Throws while creating a filter joint with a definition that mixes
+## worlds.
+Private Sub ThrowCrossWorldFilterJoint()
+Var world As World = Stage9Tests.MakeMouseWorld()
+world.CreateFilterJoint(Me.mCrossFilterDef)
 End Sub
 
 ## Throws an inverted length range.

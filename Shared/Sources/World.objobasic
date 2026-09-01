@@ -2087,6 +2087,8 @@ ElseIf jointType = JointType.WeldJoint Then
 record = New WeldJoint
 ElseIf jointType = JointType.WheelJoint Then
 record = New WheelJoint
+ElseIf jointType = JointType.FilterJoint Then
+record = New FilterJoint
 Else
 record = New Joint
 End If
@@ -2742,6 +2744,39 @@ Me.DestroyContactsBetweenBodies(bodyA, bodyB)
 End If
 
 Var facade As WheelJoint = WheelJoint(joint)
+Return facade
+End Function
+
+## Creates a filter joint, ported from b2CreateFilterJoint. Throws on a
+## missing definition or missing or foreign bodies. The filter joint has no
+## anchors and no solver behaviour: while it lives, the connected-joint
+## collision rule suppresses every new contact between the two bodies.
+## Existing contacts persist until they end naturally, matching upstream,
+## which also does not destroy contacts at creation.
+Function CreateFilterJoint(def As FilterJointDefinition) As FilterJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "FilterJointDefinition")
+Me.CheckJointBody(def.BodyA, "FilterJointDefinition.BodyA")
+Me.CheckJointBody(def.BodyB, "FilterJointDefinition.BodyB")
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.FilterJoint, False, 1.0)
+Var localIndex As Integer = Me.PlaceJointSim(joint, bodyA, bodyB)
+Var store As JointSims = Me.GetJointSims(joint)
+store.ConstraintHertz.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+store.ConstraintDampingRatio.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+joint.UserData = def.UserData
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# Deliberately no contact destruction here: upstream creates the filter
+# joint without destroying existing contacts between the bodies, so only
+# new pairs are suppressed.
+Var facade As FilterJoint = FilterJoint(joint)
 Return facade
 End Function
 

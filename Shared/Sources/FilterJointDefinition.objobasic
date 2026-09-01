@@ -1,0 +1,21 @@
+# Filter joint definition, ported from upstream b2FilterJointDef and
+# b2DefaultFilterJointDef in types.h and joint.c. A filter joint has no
+# anchors, no solver behaviour, and no tuning: it exists purely to disable
+# collision between two specific bodies through the connected-joint
+# collision rule while both bodies live.
+Class FilterJointDefinition
+## First attached body, ported from b2FilterJointDef.bodyIdA.
+Property BodyA As Body
+## Second attached body, ported from b2FilterJointDef.bodyIdB.
+Property BodyB As Body
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.UserData = Nothing
+End Constructor
+End Class
