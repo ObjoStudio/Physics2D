@@ -309,6 +309,9 @@ End If
 If Me.Type = JointType.WeldJoint Then
 Return JointSolver.GetWeldJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
+If Me.Type = JointType.WheelJoint Then
+Return JointSolver.GetWheelJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return New Vector2(0.0, 0.0)
 End Function
 
@@ -330,6 +333,9 @@ Return JointSolver.GetPrismaticJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIn
 End If
 If Me.Type = JointType.WeldJoint Then
 Return JointSolver.GetWeldJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
+If Me.Type = JointType.WheelJoint Then
+Return JointSolver.GetWheelJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
 Return 0.0
 End Function

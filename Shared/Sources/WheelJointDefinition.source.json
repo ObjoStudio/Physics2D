@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "WheelJointDefinition",
+  "Id": "e1f18c00-7de2-4d6f-91d7-66fe039b0077",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "Physics2D",
+  "ParentModuleId": "7e9c2aae-9cad-4e56-b339-aa984e4c7cb3",
+  "AvailableInDesigner": false,
+  "CodeFile": "WheelJointDefinition.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

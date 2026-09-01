@@ -1,12 +1,13 @@
 # Smoke application. It proves that the Physics2D module assembles from nested
 # Shared Code source items and compiles in a project-type-neutral program, and
-# doubles as the compact distance-, mouse-, motor-, revolute-, prismatic-, and
-# weld-joint examples: two boxes connected by a spring-loaded distance joint
-# that is stretched and released, a third box dragged to a target with a mouse
-# joint, a fourth box driven to a position and angle pose with a motor joint,
-# a fifth box swinging on a revolute hinge held by a rotational spring, a
-# sixth box shuttling along a prismatic rail under a sine-speed motor, and a
-# soft-welded pair dropped onto the ground that flexes and holds a bent pose.
+# doubles as the compact joint-family examples: two boxes connected by a
+# spring-loaded distance joint that is stretched and released, a third box
+# dragged to a target with a mouse joint, a fourth box driven to a position
+# and angle pose with a motor joint, a fifth box swinging on a revolute hinge
+# held by a rotational spring, a sixth box shuttling along a prismatic rail
+# under a sine-speed motor, a soft-welded pair dropped onto the ground that
+# flexes and holds a bent pose, and a motorized car rolling on a suspended
+# wheel.
 Import Physics2D
 
 Class App Inherits CommandLineApplication
@@ -181,6 +182,36 @@ For i As Integer = 1 To 300
   world.StepWorld(1.0 / 60.0)
 Next
 
+# Drive a car: a motorized wheel under a soft suspension rolls the
+# chassis along the ground.
+Var carDef As New BodyDefinition()
+carDef.Type = BodyType.DynamicBody
+carDef.Position = New Vector2(9.0, 1.5)
+Var car As Body = world.CreateBody(carDef)
+car.CreatePolygon(New ShapeDefinition(), Polygon.MakeBox(0.5, 0.25))
+Var carWheelDef As New BodyDefinition()
+carWheelDef.Type = BodyType.DynamicBody
+carWheelDef.Position = New Vector2(9.0, 1.0)
+Var carWheel As Body = world.CreateBody(carWheelDef)
+carWheel.CreateCircle(New ShapeDefinition(), New Circle(New Vector2(0.0, 0.0), 0.4))
+
+Var axleDef As New WheelJointDefinition()
+axleDef.BodyA = car
+axleDef.BodyB = carWheel
+axleDef.LocalAnchorA = New Vector2(0.0, -0.5)
+axleDef.LocalAnchorB = New Vector2(0.0, 0.0)
+axleDef.EnableSpring = True
+axleDef.Hertz = 2.0
+axleDef.DampingRatio = 0.7
+axleDef.EnableMotor = True
+axleDef.MotorSpeed = 3.0
+axleDef.MaxMotorTorque = 15.0
+Var axle As WheelJoint = world.CreateWheelJoint(axleDef)
+
+For i As Integer = 1 To 240
+  world.StepWorld(1.0 / 60.0)
+Next
+
 Print("Physics2D module imported successfully.")
 Print("Hanging box at (" + spring.GetBodyB().GetPosition().X.ToString() + ", " + spring.GetBodyB().GetPosition().Y.ToString() + ") after resting on the ground")
 Print("Rod force " + rod.GetConstraintForce().ToString() + " N")
@@ -189,6 +220,7 @@ Print("Driven box at (" + driven.GetPosition().X.ToString() + ", " + driven.GetP
 Print("Pendulum at angle " + hinge.GetAngle().ToString() + " rad held by the revolute spring")
 Print("Slider at translation " + rail.GetTranslation().ToString() + " m on the prismatic rail")
 Print("Welded pair at angle " + Rot.GetAngle(weldB.GetRotation()).ToString() + " rad held by the soft weld")
+Print("Car wheel spinning at " + carWheel.GetAngularVelocity().ToString() + " rad/s under the wheel motor")
 Return 0
 End Event
 End Class

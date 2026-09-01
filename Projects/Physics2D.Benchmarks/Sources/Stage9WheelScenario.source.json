@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9WheelScenario",
+  "Id": "59cc6b66-0c39-4c78-8eb5-1d57db04aaa6",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9WheelScenario-59cc6b66-0c39-4c78-8eb5-1d57db04aaa6.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

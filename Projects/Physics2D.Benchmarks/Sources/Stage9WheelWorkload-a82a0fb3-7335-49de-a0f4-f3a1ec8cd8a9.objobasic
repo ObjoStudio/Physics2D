@@ -1,0 +1,121 @@
+# Stage 9 wheel workload: thirty motor-driven cars rolling along the
+# ground, the realistic continuously driving suspension pattern. Each car
+# carries a soft suspension spring and a torque-clamped wheel motor, so
+# every joint solves its motor, spring, and point-to-line blocks every
+# step. Tuning is fixed at creation and the measured path is the solver
+# loop itself.
+Class WheelDriveWorkload
+## The stepped world.
+Property World As World
+## The chassis bodies.
+Property Chassis As Array(Of Body)
+## The wheel bodies.
+Property Wheels As Array(Of Body)
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Builds a fresh scene of thirty driving cars over a static ground.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+Var ground As Body = Me.World.CreateBody(groundDef)
+Var groundShape As New ShapeDefinition
+ground.CreatePolygon(groundShape, Polygon.MakeBox(120.0, 0.5))
+
+Me.Chassis = New Array(Of Body)
+Me.Wheels = New Array(Of Body)
+Me.Chassis.Reserve(30)
+Me.Wheels.Reserve(30)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var carIndex As Integer = 0
+While carIndex < 30
+Var baseX As Double = -14.5 + 1.0 * carIndex
+Var chassisDef As New BodyDefinition
+chassisDef.Type = BodyType.DynamicBody
+chassisDef.Position = New Vector2(baseX, 1.5)
+Var chassis As Body = Me.World.CreateBody(chassisDef)
+chassis.CreatePolygon(shapeDef, Polygon.MakeBox(0.5, 0.25))
+Me.Chassis.Append(chassis)
+Var wheelDef As New BodyDefinition
+wheelDef.Type = BodyType.DynamicBody
+wheelDef.Position = New Vector2(baseX, 1.0)
+Var wheel As Body = Me.World.CreateBody(wheelDef)
+wheel.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.4))
+Me.Wheels.Append(wheel)
+Var def As New WheelJointDefinition
+def.BodyA = chassis
+def.BodyB = wheel
+def.LocalAnchorA = New Vector2(0.0, -0.5)
+def.LocalAnchorB = New Vector2(0.0, 0.0)
+def.EnableSpring = True
+def.Hertz = 2.0
+def.DampingRatio = 0.7
+def.EnableMotor = True
+def.MotorSpeed = 3.0
+def.MaxMotorTorque = 15.0
+Me.World.CreateWheelJoint(def)
+carIndex = carIndex + 1
+Wend
+Me.SubSteps = 1
+Me.World.UpdateBroadPhasePairs()
+# Warm the solver so measured iterations exclude capacity growth.
+Var warmIndex As Integer = 0
+While warmIndex < 240
+Me.StepFrame()
+warmIndex = warmIndex + 1
+Wend
+End Sub
+
+## Steps one frame.
+Sub StepFrame()
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+End Sub
+
+## Steps the scene four times, then folds live transforms.
+Sub RunKernels()
+Var stepIndex As Integer = 0
+While stepIndex < 4
+Me.StepFrame()
+stepIndex = stepIndex + 1
+Wend
+Var checksum As Integer = 0
+Var count As Integer = Me.Chassis.Count
+Var i As Integer = 0
+While i < count
+Var chassisTransform As Transform = Me.World.GetBodyTransform(Me.Chassis[i])
+checksum = Me.FoldDouble(checksum, chassisTransform.P.X)
+checksum = Me.FoldDouble(checksum, chassisTransform.P.Y)
+Var wheelTransform As Transform = Me.World.GetBodyTransform(Me.Wheels[i])
+checksum = Me.FoldDouble(checksum, wheelTransform.P.X)
+checksum = Me.FoldDouble(checksum, wheelTransform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## Folds one Double into the checksum, matching the PhysicsAssert fold:
+## round to nine decimals, then FNV-1a over the little-end octets.
+Function FoldDouble(checksum As Integer, value As Double) As Integer
+Var scaled As Integer = Integer(Maths.Round(value * 1000000000.0))
+Var hash As Integer = checksum
+Var octetIndex As Integer = 0
+While octetIndex < 8
+Var octet As Integer = scaled.BitAnd(255)
+hash = hash.BitXor(octet)
+hash = hash * 1099511628211
+scaled = scaled.ShiftRight(8)
+octetIndex = octetIndex + 1
+Wend
+Return hash
+End Function
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class

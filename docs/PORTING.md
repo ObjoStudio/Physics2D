@@ -216,6 +216,15 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     input, and the angular and linear bias blocks apply whenever the
     solver asks for bias or the weld is softened, matching the upstream
     `useBias || hertz > 0` condition.
+37. **Wheel joint surface additions.** Upstream exposes no wheel
+    translation or speed getter; Physics2D adds the documented
+    `WheelJoint.GetTranslation` and `WheelJoint.GetSpeed` conveniences
+    porting the prismatic anchor-point projections, because a suspension's
+    ride travel is the wheel joint's most-queried quantity. Upstream's
+    wheel spring drives the slide toward zero translation (the struct has
+    no target field) and the motor is a torque-clamped velocity drive on
+    the free spin; Physics2D matches both. The axis normalizes at creation
+    like the prismatic joint and the default axis is the world Y axis.
 
 ## Public Symbol Inventory
 

@@ -318,6 +318,56 @@ Property WeldAngularSoftnessBiasRate As DoubleList
 Property WeldAngularSoftnessMassScale As DoubleList
 ## Angular softness impulse scale.
 Property WeldAngularSoftnessImpulseScale As DoubleList
+
+# Wheel joint family columns, ported from upstream b2WheelJoint in
+# joint.h. Valid only while Type = Integer(JointType.WheelJoint). The
+# wheel reuses the base two-body columns (IndexA/IndexB, AnchorA/AnchorB,
+# DeltaCenter, inverse masses, LocalOriginAnchorA/B) and the base
+# EnableSpring/EnableLimit/EnableMotor flag columns. The wheel constrains
+# no angle: body B spins freely about the anchor.
+## X component of the normalized local translation axis in body A's frame.
+Property WheelLocalAxisX As DoubleList
+## Y component of the normalized local translation axis.
+Property WheelLocalAxisY As DoubleList
+## X component of the translation axis rotated into body A's world frame
+## at prepare time, ported from joint->axisA.
+Property WheelAxisX As DoubleList
+## Y component of the prepared world-frame translation axis.
+Property WheelAxisY As DoubleList
+## Accumulated perpendicular impulse keeping the wheel on the axis line.
+Property WheelPerpImpulse As DoubleList
+## Accumulated motor impulse.
+Property WheelMotorImpulse As DoubleList
+## Accumulated spring impulse.
+Property WheelSpringImpulse As DoubleList
+## Accumulated lower-limit impulse, always non-negative.
+Property WheelLowerImpulse As DoubleList
+## Accumulated upper-limit impulse, always non-negative.
+Property WheelUpperImpulse As DoubleList
+## Maximum motor torque.
+Property WheelMaxMotorTorque As DoubleList
+## Desired motor speed in radians per second.
+Property WheelMotorSpeed As DoubleList
+## Lower translation limit in metres.
+Property WheelLowerTranslation As DoubleList
+## Upper translation limit in metres.
+Property WheelUpperTranslation As DoubleList
+## Suspension spring stiffness in hertz.
+Property WheelHertz As DoubleList
+## Suspension spring damping ratio.
+Property WheelDampingRatio As DoubleList
+## Inverse perpendicular effective mass, zero when singular.
+Property WheelPerpMass As DoubleList
+## Inverse axial effective mass, zero when singular.
+Property WheelAxialMass As DoubleList
+## Inverse motor effective mass, zero when both inertias vanish.
+Property WheelMotorMass As DoubleList
+## Spring softness bias rate prepared from hertz and damping ratio.
+Property WheelSpringSoftnessBiasRate As DoubleList
+## Spring softness mass scale.
+Property WheelSpringSoftnessMassScale As DoubleList
+## Spring softness impulse scale.
+Property WheelSpringSoftnessImpulseScale As DoubleList
 ## Spring softness mass scale.
 Property RevoluteSpringSoftnessMassScale As DoubleList
 ## Spring softness impulse scale.
@@ -457,6 +507,27 @@ Me.WeldLinearSoftnessImpulseScale = New DoubleList
 Me.WeldAngularSoftnessBiasRate = New DoubleList
 Me.WeldAngularSoftnessMassScale = New DoubleList
 Me.WeldAngularSoftnessImpulseScale = New DoubleList
+Me.WheelLocalAxisX = New DoubleList
+Me.WheelLocalAxisY = New DoubleList
+Me.WheelAxisX = New DoubleList
+Me.WheelAxisY = New DoubleList
+Me.WheelPerpImpulse = New DoubleList
+Me.WheelMotorImpulse = New DoubleList
+Me.WheelSpringImpulse = New DoubleList
+Me.WheelLowerImpulse = New DoubleList
+Me.WheelUpperImpulse = New DoubleList
+Me.WheelMaxMotorTorque = New DoubleList
+Me.WheelMotorSpeed = New DoubleList
+Me.WheelLowerTranslation = New DoubleList
+Me.WheelUpperTranslation = New DoubleList
+Me.WheelHertz = New DoubleList
+Me.WheelDampingRatio = New DoubleList
+Me.WheelPerpMass = New DoubleList
+Me.WheelAxialMass = New DoubleList
+Me.WheelMotorMass = New DoubleList
+Me.WheelSpringSoftnessBiasRate = New DoubleList
+Me.WheelSpringSoftnessMassScale = New DoubleList
+Me.WheelSpringSoftnessImpulseScale = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -602,6 +673,27 @@ Me.WeldLinearSoftnessImpulseScale.Append(0.0)
 Me.WeldAngularSoftnessBiasRate.Append(0.0)
 Me.WeldAngularSoftnessMassScale.Append(1.0)
 Me.WeldAngularSoftnessImpulseScale.Append(0.0)
+Me.WheelLocalAxisX.Append(0.0)
+Me.WheelLocalAxisY.Append(0.0)
+Me.WheelAxisX.Append(0.0)
+Me.WheelAxisY.Append(0.0)
+Me.WheelPerpImpulse.Append(0.0)
+Me.WheelMotorImpulse.Append(0.0)
+Me.WheelSpringImpulse.Append(0.0)
+Me.WheelLowerImpulse.Append(0.0)
+Me.WheelUpperImpulse.Append(0.0)
+Me.WheelMaxMotorTorque.Append(0.0)
+Me.WheelMotorSpeed.Append(0.0)
+Me.WheelLowerTranslation.Append(0.0)
+Me.WheelUpperTranslation.Append(0.0)
+Me.WheelHertz.Append(0.0)
+Me.WheelDampingRatio.Append(0.0)
+Me.WheelPerpMass.Append(0.0)
+Me.WheelAxialMass.Append(0.0)
+Me.WheelMotorMass.Append(0.0)
+Me.WheelSpringSoftnessBiasRate.Append(0.0)
+Me.WheelSpringSoftnessMassScale.Append(1.0)
+Me.WheelSpringSoftnessImpulseScale.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -747,6 +839,27 @@ Me.WeldLinearSoftnessImpulseScale.RemoveSwap(index)
 Me.WeldAngularSoftnessBiasRate.RemoveSwap(index)
 Me.WeldAngularSoftnessMassScale.RemoveSwap(index)
 Me.WeldAngularSoftnessImpulseScale.RemoveSwap(index)
+Me.WheelLocalAxisX.RemoveSwap(index)
+Me.WheelLocalAxisY.RemoveSwap(index)
+Me.WheelAxisX.RemoveSwap(index)
+Me.WheelAxisY.RemoveSwap(index)
+Me.WheelPerpImpulse.RemoveSwap(index)
+Me.WheelMotorImpulse.RemoveSwap(index)
+Me.WheelSpringImpulse.RemoveSwap(index)
+Me.WheelLowerImpulse.RemoveSwap(index)
+Me.WheelUpperImpulse.RemoveSwap(index)
+Me.WheelMaxMotorTorque.RemoveSwap(index)
+Me.WheelMotorSpeed.RemoveSwap(index)
+Me.WheelLowerTranslation.RemoveSwap(index)
+Me.WheelUpperTranslation.RemoveSwap(index)
+Me.WheelHertz.RemoveSwap(index)
+Me.WheelDampingRatio.RemoveSwap(index)
+Me.WheelPerpMass.RemoveSwap(index)
+Me.WheelAxialMass.RemoveSwap(index)
+Me.WheelMotorMass.RemoveSwap(index)
+Me.WheelSpringSoftnessBiasRate.RemoveSwap(index)
+Me.WheelSpringSoftnessMassScale.RemoveSwap(index)
+Me.WheelSpringSoftnessImpulseScale.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -886,6 +999,27 @@ target.WeldLinearSoftnessImpulseScale.Items[targetIndex] = Me.WeldLinearSoftness
 target.WeldAngularSoftnessBiasRate.Items[targetIndex] = Me.WeldAngularSoftnessBiasRate.Items[sourceIndex]
 target.WeldAngularSoftnessMassScale.Items[targetIndex] = Me.WeldAngularSoftnessMassScale.Items[sourceIndex]
 target.WeldAngularSoftnessImpulseScale.Items[targetIndex] = Me.WeldAngularSoftnessImpulseScale.Items[sourceIndex]
+target.WheelLocalAxisX.Items[targetIndex] = Me.WheelLocalAxisX.Items[sourceIndex]
+target.WheelLocalAxisY.Items[targetIndex] = Me.WheelLocalAxisY.Items[sourceIndex]
+target.WheelAxisX.Items[targetIndex] = Me.WheelAxisX.Items[sourceIndex]
+target.WheelAxisY.Items[targetIndex] = Me.WheelAxisY.Items[sourceIndex]
+target.WheelPerpImpulse.Items[targetIndex] = Me.WheelPerpImpulse.Items[sourceIndex]
+target.WheelMotorImpulse.Items[targetIndex] = Me.WheelMotorImpulse.Items[sourceIndex]
+target.WheelSpringImpulse.Items[targetIndex] = Me.WheelSpringImpulse.Items[sourceIndex]
+target.WheelLowerImpulse.Items[targetIndex] = Me.WheelLowerImpulse.Items[sourceIndex]
+target.WheelUpperImpulse.Items[targetIndex] = Me.WheelUpperImpulse.Items[sourceIndex]
+target.WheelMaxMotorTorque.Items[targetIndex] = Me.WheelMaxMotorTorque.Items[sourceIndex]
+target.WheelMotorSpeed.Items[targetIndex] = Me.WheelMotorSpeed.Items[sourceIndex]
+target.WheelLowerTranslation.Items[targetIndex] = Me.WheelLowerTranslation.Items[sourceIndex]
+target.WheelUpperTranslation.Items[targetIndex] = Me.WheelUpperTranslation.Items[sourceIndex]
+target.WheelHertz.Items[targetIndex] = Me.WheelHertz.Items[sourceIndex]
+target.WheelDampingRatio.Items[targetIndex] = Me.WheelDampingRatio.Items[sourceIndex]
+target.WheelPerpMass.Items[targetIndex] = Me.WheelPerpMass.Items[sourceIndex]
+target.WheelAxialMass.Items[targetIndex] = Me.WheelAxialMass.Items[sourceIndex]
+target.WheelMotorMass.Items[targetIndex] = Me.WheelMotorMass.Items[sourceIndex]
+target.WheelSpringSoftnessBiasRate.Items[targetIndex] = Me.WheelSpringSoftnessBiasRate.Items[sourceIndex]
+target.WheelSpringSoftnessMassScale.Items[targetIndex] = Me.WheelSpringSoftnessMassScale.Items[sourceIndex]
+target.WheelSpringSoftnessImpulseScale.Items[targetIndex] = Me.WheelSpringSoftnessImpulseScale.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -1022,5 +1156,26 @@ Me.WeldLinearSoftnessImpulseScale.Clear()
 Me.WeldAngularSoftnessBiasRate.Clear()
 Me.WeldAngularSoftnessMassScale.Clear()
 Me.WeldAngularSoftnessImpulseScale.Clear()
+Me.WheelLocalAxisX.Clear()
+Me.WheelLocalAxisY.Clear()
+Me.WheelAxisX.Clear()
+Me.WheelAxisY.Clear()
+Me.WheelPerpImpulse.Clear()
+Me.WheelMotorImpulse.Clear()
+Me.WheelSpringImpulse.Clear()
+Me.WheelLowerImpulse.Clear()
+Me.WheelUpperImpulse.Clear()
+Me.WheelMaxMotorTorque.Clear()
+Me.WheelMotorSpeed.Clear()
+Me.WheelLowerTranslation.Clear()
+Me.WheelUpperTranslation.Clear()
+Me.WheelHertz.Clear()
+Me.WheelDampingRatio.Clear()
+Me.WheelPerpMass.Clear()
+Me.WheelAxialMass.Clear()
+Me.WheelMotorMass.Clear()
+Me.WheelSpringSoftnessBiasRate.Clear()
+Me.WheelSpringSoftnessMassScale.Clear()
+Me.WheelSpringSoftnessImpulseScale.Clear()
 End Sub
 End Class

@@ -51,6 +51,15 @@ Private Property mCrossWeldDef As WeldJointDefinition
 ## Invalid weld definition reused by the creation thrower.
 Private Property mBadWeldDef As WeldJointDefinition
 
+## Wheel joint used by the validation throwers.
+Private Property mWheelThrowJoint As WheelJoint
+
+## Wheel definition reused by the cross-world throwers.
+Private Property mCrossWheelDef As WheelJointDefinition
+
+## Invalid wheel definition reused by the creation thrower.
+Private Property mBadWheelDef As WheelJointDefinition
+
 ## Builds a world with a wide static ground box whose top surface is y=0.
 Shared Function MakeWorld() As World
 Var world As New World
@@ -241,6 +250,50 @@ End Function
 ## Returns the weld joint of the welded-pair scene.
 Shared Function WeldJointOf(world As World) As WeldJoint
 Return WeldJoint(world.Bodies[1].GetJoints()[0])
+End Function
+
+## Builds the car scene shared by the wheel tests: a 2 kg chassis resting
+## above a 0.5 kg wheel hanging from a suspension anchored at the chassis
+## bottom. Zero hertz makes the suspension rigid; brake mode adds a
+## zero-speed motor as a torque-clamped brake.
+Shared Function MakeWheelWorld(hertz As Double, damping As Double, brake As Boolean) As World
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+Var groundShape As New ShapeDefinition
+ground.CreatePolygon(groundShape, Polygon.MakeBox(50.0, 0.5))
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var chassisDef As New BodyDefinition
+chassisDef.Type = BodyType.DynamicBody
+chassisDef.Position = New Vector2(0.0, 1.5)
+Var chassis As Body = world.CreateBody(chassisDef)
+chassis.CreatePolygon(shapeDef, Polygon.MakeBox(1.0, 0.25))
+Var wheelDef As New BodyDefinition
+wheelDef.Type = BodyType.DynamicBody
+wheelDef.Position = New Vector2(0.0, 1.0)
+Var wheel As Body = world.CreateBody(wheelDef)
+wheel.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.4))
+Var def As New WheelJointDefinition
+def.BodyA = chassis
+def.BodyB = wheel
+def.LocalAnchorA = New Vector2(0.0, -0.5)
+def.LocalAnchorB = New Vector2(0.0, 0.0)
+def.Hertz = hertz
+def.DampingRatio = damping
+def.EnableSpring = hertz > 0.0
+If brake Then
+def.EnableMotor = True
+def.MaxMotorTorque = 10.0
+End If
+world.CreateWheelJoint(def)
+Return world
+End Function
+
+## Returns the wheel joint of the car scene.
+Shared Function WheelJointOf(world As World) As WheelJoint
+Return WheelJoint(world.Bodies[1].GetJoints()[0])
 End Function
 
 ## A rigid distance joint holds two hanging boxes at the rest length.
@@ -2559,6 +2612,333 @@ Assert.True(boxA.IsAwake() = False, "pair asleep after measured window")
 world.Validate()
 End Sub
 
+## A rigid suspension lands the car with the wheel on the ground and the
+## relative translation at zero; a soft suspension sags under the chassis
+## weight and settles holding it.
+Public Sub TestWheelSuspensionSettles()
+Var world As World = Stage9Tests.MakeWheelWorld(0.0, 0.0, False)
+Var joint As WheelJoint = Stage9Tests.WheelJointOf(world)
+Assert.Equal(JointType.WheelJoint, joint.GetJointType(), "wheel joint type")
+Var axis As Vector2 = joint.GetLocalAxisA()
+PhysicsAssert.Near(0.0, axis.X, 0.0, 0.0, "default axis x")
+PhysicsAssert.Near(1.0, axis.Y, 0.0, 0.0, "default axis y")
+Stage9Tests.Steps(world, 300)
+Var chassis As Body = world.Bodies[1]
+Var wheel As Body = world.Bodies[2]
+Var chassisTransform As Transform = world.GetBodyTransform(chassis)
+Var wheelTransform As Transform = world.GetBodyTransform(wheel)
+PhysicsAssert.Near(0.0, chassisTransform.P.X, 0.002, 0.002, "rigid suspension chassis x")
+PhysicsAssert.Near(0.75, chassisTransform.P.Y, 0.002, 0.002, "rigid suspension chassis y")
+PhysicsAssert.Near(0.9, wheelTransform.P.Y, 0.002, 0.002, "rigid suspension wheel rests on the ground")
+# With the spring disabled the suspension slides freely along the axis, so
+# the wheel rests on the ground while the chassis sits lower: the
+# translation measures the slide distance from the chassis anchor
+# (0.9 - (0.75 - 0.5) = 0.65). Upstream exposes no wheel translation
+# getter; Physics2D adds one as a documented convenience.
+PhysicsAssert.Near(0.65, joint.GetTranslation(), 0.002, 0.002, "rigid suspension slides freely to the ground")
+Assert.True(chassis.IsAwake() = False, "car falls asleep")
+Assert.True(wheel.IsAwake() = False, "wheel falls asleep")
+Var force As Vector2 = joint.GetConstraintForce()
+PhysicsAssert.Near(0.0, force.X, 0.001, 0.001, "rigid suspension force x")
+PhysicsAssert.Near(0.0, force.Y, 0.001, 0.001, "rigid suspension force y")
+world.Validate()
+
+Var softWorld As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, False)
+Var softJoint As WheelJoint = Stage9Tests.WheelJointOf(softWorld)
+Stage9Tests.Steps(softWorld, 300)
+Var softChassis As Body = softWorld.Bodies[1]
+Var softChassisTransform As Transform = softWorld.GetBodyTransform(softChassis)
+PhysicsAssert.Near(1.210433, softChassisTransform.P.Y, 0.002, 0.002, "soft suspension chassis sags")
+PhysicsAssert.Near(0.9, softWorld.GetBodyTransform(softWorld.Bodies[2]).P.Y, 0.002, 0.002, "soft suspension wheel rests on the ground")
+Assert.True(softChassis.IsAwake() = False, "soft car falls asleep")
+Var softForce As Vector2 = softJoint.GetConstraintForce()
+PhysicsAssert.Near(0.0, softForce.X, 0.001, 0.001, "soft suspension force x")
+PhysicsAssert.Near(-9.9382, softForce.Y, 0.01, 0.01, "soft suspension spring holds the chassis weight")
+# The soft spring holds the slide near its zero target with a gravity sag.
+PhysicsAssert.Near(0.1894, softJoint.GetTranslation(), 0.002, 0.002, "soft suspension translation sags")
+softWorld.Validate()
+End Sub
+
+## A zero-speed motor acts as a torque-clamped brake: the kicked wheel
+## stops spinning and the car settles on its tail.
+Public Sub TestWheelBrakeStopsSpin()
+Var world As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, True)
+Var wheel As Body = world.Bodies[2]
+Var joint As WheelJoint = Stage9Tests.WheelJointOf(world)
+Assert.True(joint.IsMotorEnabled(), "motor enabled")
+Stage9Tests.Steps(world, 30)
+world.SetBodyAngularVelocity(wheel, 10.0)
+Stage9Tests.Steps(world, 270)
+PhysicsAssert.Near(0.0, world.GetBodyAngularVelocity(wheel), 0.01, 0.01, "brake stops the wheel")
+Assert.True(wheel.IsAwake() = False, "car falls asleep after braking")
+Var torque As Double = joint.GetMotorTorque()
+Assert.True(torque >= -10.0 - 0.01 And torque <= 10.0 + 0.01, "motor torque stays within the clamp")
+PhysicsAssert.Near(-0.3411, joint.GetConstraintTorque(), 0.01, 0.01, "brake holds the tipped car")
+world.Validate()
+End Sub
+
+## A motor driving the wheel tracks the requested speed within the
+## rolling slip of the loaded tyre.
+Public Sub TestWheelDriveTracksSpeed()
+Var world As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, False)
+Var wheel As Body = world.Bodies[2]
+Var joint As WheelJoint = Stage9Tests.WheelJointOf(world)
+joint.EnableMotor(True)
+joint.SetMaxMotorTorque(10.0)
+joint.SetMotorSpeed(5.0)
+Stage9Tests.Steps(world, 180)
+PhysicsAssert.Near(5.0, world.GetBodyAngularVelocity(wheel), 0.15, 0.15, "motor drives the wheel to the requested speed")
+Assert.True(joint.GetMotorTorque() <= 10.0 + 0.01, "drive torque stays within the clamp")
+# Retarget the speed and wake; the wheel follows.
+joint.SetMotorSpeed(-2.0)
+world.Bodies[1].SetAwake(True)
+wheel.SetAwake(True)
+Stage9Tests.Steps(world, 180)
+PhysicsAssert.Near(-2.0, world.GetBodyAngularVelocity(wheel), 0.15, 0.15, "motor reverses the wheel")
+world.Validate()
+End Sub
+
+## Wheel joint setters round trip and reject invalid input.
+Public Sub TestWheelRuntimeProperties()
+Var world As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, False)
+Var joint As WheelJoint = Stage9Tests.WheelJointOf(world)
+Me.mWheelThrowJoint = joint
+joint.SetSpringHertz(3.0)
+joint.SetSpringDampingRatio(0.8)
+joint.SetMotorSpeed(2.5)
+joint.SetMaxMotorTorque(15.0)
+Assert.Equal(3.0, joint.GetSpringHertz(), "runtime hertz round trip")
+Assert.Equal(0.8, joint.GetSpringDampingRatio(), "runtime damping round trip")
+Assert.Equal(2.5, joint.GetMotorSpeed(), "runtime motor speed round trip")
+Assert.Equal(15.0, joint.GetMaxMotorTorque(), "runtime max torque round trip")
+joint.EnableSpring(True)
+joint.EnableLimit(True)
+joint.EnableMotor(True)
+Assert.True(joint.IsSpringEnabled() And joint.IsLimitEnabled() And joint.IsMotorEnabled(), "all three toggles enabled")
+joint.EnableSpring(False)
+joint.EnableLimit(False)
+joint.EnableMotor(False)
+Assert.True(joint.IsSpringEnabled() = False And joint.IsLimitEnabled() = False And joint.IsMotorEnabled() = False, "all three toggles disabled")
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowWheelInvertedLimits)
+joint.SetUserData(world)
+Assert.True(joint.GetUserData() = world, "wheel user data round trip")
+world.Validate()
+End Sub
+
+## Recreates the three wheel-joint scenes of the joint_wheel golden fixture
+## and compares final transforms, awake flags, constraint forces, and
+## torques against upstream Box2D 3.1.1 output generated from the pinned
+## sources.
+Public Sub TestWheelJointMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("joint_wheel.txt")
+Var stiffWorld As World = Stage9Tests.MakeWheelWorld(0.0, 0.0, False)
+Var stiffJoint As WheelJoint = Stage9Tests.WheelJointOf(stiffWorld)
+Var softWorld As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, False)
+Var softJoint As WheelJoint = Stage9Tests.WheelJointOf(softWorld)
+Var brakeWorld As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, True)
+Var brakeJoint As WheelJoint = Stage9Tests.WheelJointOf(brakeWorld)
+
+Var frameIndex As Integer = 0
+While frameIndex < 300
+stiffWorld.StepWorld(1.0 / 60.0)
+softWorld.StepWorld(1.0 / 60.0)
+brakeWorld.StepWorld(1.0 / 60.0)
+If frameIndex = 30 Then
+brakeWorld.Bodies[2].SetAngularVelocity(10.0)
+End If
+frameIndex = frameIndex + 1
+Wend
+
+Var worlds() As World = [stiffWorld, softWorld, brakeWorld]
+Var joints() As WheelJoint = [stiffJoint, softJoint, brakeJoint]
+Var names() As String = ["stiff", "soft", "brake"]
+
+Var checkedRecords As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+Var caseName As String = fields[1]
+Var kind As String = fields[2]
+Var sceneIndex As Integer = -1
+Var nameIndex As Integer = 0
+While nameIndex < 3
+If names[nameIndex] = caseName Then
+sceneIndex = nameIndex
+End If
+nameIndex = nameIndex + 1
+Wend
+If sceneIndex < 0 Then
+Assert.Fail("unknown wheel fixture case " + caseName)
+End If
+Var world As World = worlds[sceneIndex]
+Var joint As WheelJoint = joints[sceneIndex]
+If kind = "body" Then
+Var values() As String = fields[4].Split(" ")
+# Fixture body 0/1 are the chassis and wheel at world indices 1/2.
+Var body As Body = world.Bodies[Integer.Parse(fields[3]) + 1]
+Var transform As Transform = world.GetBodyTransform(body)
+PhysicsAssert.Near(Double.Parse(values[0]), transform.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, caseName + " body " + fields[3] + " x")
+PhysicsAssert.Near(Double.Parse(values[1]), transform.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, caseName + " body " + fields[3] + " y")
+PhysicsAssert.Near(Double.Parse(values[2]), Rot.GetAngle(transform.Q), Tolerances.SCENE_ABS, Tolerances.SCENE_REL, caseName + " body " + fields[3] + " angle")
+If Integer.Parse(values[3]) = 1 Then
+Assert.True(body.IsAwake(), caseName + " awake")
+Else
+Assert.True(body.IsAwake() = False, caseName + " asleep")
+End If
+ElseIf kind = "wheel" Then
+Var jointValues() As String = fields[3].Split(" ")
+Var force As Vector2 = joint.GetConstraintForce()
+# The brake case's settled force is a frozen last-solved impulse whose
+# equilibrium depends on the millimetre-scale rest pose (see the weld
+# notes); it uses a deliberately loose 0.06 N absolute band.
+Var forceAbs As Double = Tolerances.JOINT_FORCE_ABS
+If caseName = "brake" Then
+forceAbs = 0.06
+End If
+PhysicsAssert.Near(Double.Parse(jointValues[0]), force.X, forceAbs, Tolerances.JOINT_FORCE_REL, caseName + " force x")
+PhysicsAssert.Near(Double.Parse(jointValues[1]), force.Y, forceAbs, Tolerances.JOINT_FORCE_REL, caseName + " force y")
+PhysicsAssert.Near(Double.Parse(jointValues[2]), joint.GetConstraintTorque(), forceAbs, Tolerances.JOINT_FORCE_REL, caseName + " torque")
+Else
+Assert.Fail("unknown wheel fixture kind " + kind)
+End If
+checkedRecords = checkedRecords + 1
+Next line
+Assert.Equal(9, checkedRecords)
+stiffWorld.Validate()
+softWorld.Validate()
+brakeWorld.Validate()
+End Sub
+
+## Wheel joint lifecycle: destruction, stale facades, slot reuse, and body
+## destruction destroying the attached joint.
+Public Sub TestWheelJointLifecycle()
+Var world As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, False)
+Var chassis As Body = world.Bodies[1]
+Var wheel As Body = world.Bodies[2]
+Var joint As WheelJoint = Stage9Tests.WheelJointOf(world)
+Assert.Equal(1, world.JointCount, "one live wheel joint")
+Assert.Equal(1, chassis.GetJointCount(), "chassis holds the joint edge")
+Assert.Equal(1, wheel.GetJointCount(), "wheel holds the joint edge")
+Assert.True(joint.IsValid(), "facade valid after creation")
+Var reusedId As Integer = joint.Id
+Stage9Tests.Steps(world, 30)
+joint.Destroy()
+Assert.False(joint.IsValid(), "stale facade invalid after destroy")
+Assert.Equal(0, world.JointCount, "world empty after destroy")
+Assert.Equal(0, chassis.GetJointCount(), "chassis unlinked")
+Assert.Equal(0, wheel.GetJointCount(), "wheel unlinked")
+Assert.True(chassis.IsAwake(), "destroy wakes the car")
+Var replacementDef As New WheelJointDefinition
+replacementDef.BodyA = chassis
+replacementDef.BodyB = wheel
+Var replacement As WheelJoint = world.CreateWheelJoint(replacementDef)
+Assert.Equal(reusedId, replacement.Id, "slot reused")
+Assert.False(joint.IsValid(), "stale facade stays invalid after slot reuse")
+world.DestroyBody(chassis)
+Assert.Equal(0, world.JointCount, "attached wheel joint destroyed with the body")
+Stage9Tests.Steps(world, 10)
+world.Validate()
+End Sub
+
+## Cross-world and missing wheel joint bodies are rejected at creation,
+## and invalid definitions throw.
+Public Sub TestWheelJointRejectsInvalidDefinitions()
+Var worldA As New World
+Var worldB As New World
+Var bodyA As Body = Stage9Tests.MakeDraggedBox(worldA, 0.0, 1.5)
+Var bodyB As Body = Stage9Tests.MakeDraggedBox(worldB, 0.0, 1.0)
+Var def As New WheelJointDefinition
+def.BodyA = bodyA
+def.BodyB = bodyB
+Me.mCrossWheelDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldWheelJoint)
+def.BodyB = Nothing
+Me.mCrossWheelDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldWheelJoint)
+worldA.Validate()
+worldB.Validate()
+
+Var world As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, False)
+Var chassis As Body = world.Bodies[1]
+Var wheel As Body = world.Bodies[2]
+Var badDef As New WheelJointDefinition
+badDef.BodyA = chassis
+badDef.BodyB = wheel
+badDef.LowerTranslation = 0.6
+badDef.UpperTranslation = 0.2
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCreateWheelJoint)
+badDef.LowerTranslation = 0.0
+badDef.UpperTranslation = 0.0
+badDef.Hertz = -1.0
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCreateWheelJoint)
+badDef.Hertz = 2.0
+badDef.MaxMotorTorque = -3.0
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCreateWheelJoint)
+world.Validate()
+End Sub
+
+## A car scene runs deterministically across repeated worlds.
+Public Sub TestWheelJointDeterminism()
+Var first As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, True)
+Var second As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, True)
+Stage9Tests.Steps(first, 30)
+Stage9Tests.Steps(second, 30)
+first.Bodies[2].SetAngularVelocity(10.0)
+second.Bodies[2].SetAngularVelocity(10.0)
+Stage9Tests.Steps(first, 270)
+Stage9Tests.Steps(second, 270)
+Var firstChecksum As Integer = Stage9Tests.FoldWorld(first)
+Var secondChecksum As Integer = Stage9Tests.FoldWorld(second)
+Assert.Equal(firstChecksum, secondChecksum, "wheel scene repeats bit for bit")
+first.Validate()
+second.Validate()
+End Sub
+
+## After a warm-up that covers sleeping, waking, retuning, and re-sleeping
+## with a wheel joint attached, further steps must allocate nothing. Gate
+## for the Stage 9 zero-allocation requirement on the wheel family,
+## including the runtime tuning path.
+Public Sub TestWarmWheelJointAllocatesNothing()
+Var world As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, False)
+Var chassis As Body = world.Bodies[1]
+Var wheel As Body = world.Bodies[2]
+Var joint As WheelJoint = Stage9Tests.WheelJointOf(world)
+
+# Warm-up: settle, sleep, wake with a retune and a spin, sleep again so
+# every migration buffer and graph colour list is sized.
+Var warmIndex As Integer = 0
+While warmIndex < 240
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(chassis.IsAwake() = False, "car asleep after settling")
+joint.SetSpringHertz(3.0)
+chassis.SetAwake(True)
+wheel.SetAwake(True)
+While warmIndex < 420
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(chassis.IsAwake() = False, "car asleep after warm-up")
+
+# Measured window: wake the car, retune mid-window, let it sleep. The
+# tuning setters are scalar, so the runtime path stays allocation-free.
+Var before As Integer = System.AllocationCount
+chassis.SetAwake(True)
+wheel.SetAwake(True)
+Var stepIndex As Integer = 0
+While stepIndex < 90
+world.StepWorld(1.0 / 60.0)
+If stepIndex = 30 Then
+joint.SetSpringHertz(4.0)
+End If
+stepIndex = stepIndex + 1
+Wend
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed wheel joint stepping allocates nothing")
+Assert.True(chassis.IsAwake() = False, "car asleep after measured window")
+world.Validate()
+End Sub
+
 ## A chain of distance joints swings and settles deterministically.
 Public Sub TestJointChainDeterminism()
 Var first As World = Stage9Tests.MakeJointChainWorld()
@@ -2762,6 +3142,23 @@ End Sub
 Private Sub ThrowCrossWorldWeldJoint()
 Var world As World = Stage9Tests.MakeWeldWorld(0.0, 0.0, 0.0)
 world.CreateWeldJoint(Me.mCrossWeldDef)
+End Sub
+
+## Throws an inverted wheel limit range.
+Private Sub ThrowWheelInvertedLimits()
+Me.mWheelThrowJoint.SetLimits(0.6, 0.2)
+End Sub
+
+## Throws while creating a wheel joint with an invalid definition.
+Private Sub ThrowCreateWheelJoint()
+Var world As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, False)
+world.CreateWheelJoint(Me.mBadWheelDef)
+End Sub
+
+## Throws while creating a wheel joint with a definition that mixes worlds.
+Private Sub ThrowCrossWorldWheelJoint()
+Var world As World = Stage9Tests.MakeWheelWorld(2.0, 0.7, False)
+world.CreateWheelJoint(Me.mCrossWheelDef)
 End Sub
 
 ## Throws an inverted length range.

@@ -58,9 +58,9 @@
 # Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
 # Input: Island.objobasic 44f9b035b888e2dbbec81e2c88390bd8081257a3f57a52efc6fffdddabb10fa4
 # Input: IslandMethods.objobasic 20833e02e72df2d6818e0ebd92de184099fb656f56a10b14b7df86353eda2f6d
-# Input: Joint.objobasic 20b0d7dc9cdcc1de3b3e1c1495cc5cc26b00e7842367b88d08695e845534e209
-# Input: JointSims.objobasic fbc85b655f799cd5a22c653ffd09ef1b39904733b3ec2f2b5a9fc646b57ca733
-# Input: JointSolver.objobasic 72d5ffbe67d9df107ab0081c19104829bace4076daf02c42a4c6bbd6c61c7cb4
+# Input: Joint.objobasic d5face1b91870d03fa547af900724eea68f331cb77800503a1ae7854a8036ee0
+# Input: JointSims.objobasic e67ea5f4802c2bdce3aeded684b073f1c730e56ba8569d18e4ea8ac5f70b9b3d
+# Input: JointSolver.objobasic 8b28cb9d7cd20a8de2afe81133abffa72ee016c3522c3930b70901d3b9e12fd1
 # Input: JointType-856da3bd-dadf-41a2-af79-4e1fcc92c642.objobasic 595178f214846dc7716badeb118dfb5729356f738f99204ff34b849f6fd14838
 # Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 2204114b1a588c77c29b945afd4b19ad7c68f56bce9f68f6a6ee47f5e8463787
 # Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic dcebd68c0b3500bb6ab7688775a8056b75304728e39537252715a4309cc96402
@@ -104,7 +104,7 @@
 # Input: SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic 82bc4694e90f396c176e50cbe8196ea7c809da4842781d5f9750137a1d087314
 # Input: SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic 7c911da9871051f8580713a107d379e349bdc89cf9f9f0e9968f07c29e2f19da
 # Input: Softness.objobasic 06211852d8bbb70e4c5f5479756606be96bb2667bd617c4f635f76a661e47d4a
-# Input: SolverMethods.objobasic e7ba26ea525deb53a1c332658c46f52653ded3afc7ea4a5f15f54d31a1febb34
+# Input: SolverMethods.objobasic cfb4af3d61ee10d90ebe9315f571e430176b340b85bb3dd9f64bbfb1a6e3557d
 # Input: SolverSet.objobasic ae57d26036c92d75a660f380cae829c6ef353d45bbba3876779bf1689234a922
 # Input: StepContext.objobasic 0d6a04f453555a2ff4207c21b9cacba5f3f2103f22c2d8ac4dd8c449f7b67e12
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
@@ -123,7 +123,9 @@
 # Input: TreeStats-2ce2b899-683a-4e83-8af4-a30f8b84ee38.objobasic 09820193b977cb3b3a3df0e224af7c9dfb68436ffa3c84543329844c0d2b85fe
 # Input: WeldJoint.objobasic f2b0d21970140a1f0b8a878650a93cb96f9e669fd2c8763e0d2889c3f024c830
 # Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
-# Input: World.objobasic 3a05e21fdb08de56a8c90bb4978525fb2161d8bf1dc5305194f4d97cf37eb75c
+# Input: WheelJoint.objobasic 063db7c796ee6df9b2ed0d4db36d51dec921e3a61ec1b001cd6ab07308136b4d
+# Input: WheelJointDefinition.objobasic 1ae60874c31b501cb219d8af36f26398fea1ad6a74eb924c08d53b70109e0641
+# Input: World.objobasic ff0ec9c1ffdfc21b8cb20b1ab24931125d5f289a96aef93e29b00b514af3c095
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
@@ -132,7 +134,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 57be41b44c85b98fcc7972ab9320ae9e84a1c77230adecd21402b7ecc58d5a79
+# Source content checksum (SHA-256): 75ee8ba52dc5f1dcbf4f6edf76e7d425890868492943e63f98afa809d2ba405c
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -11773,6 +11775,9 @@ End If
 If Me.Type = JointType.WeldJoint Then
 Return JointSolver.GetWeldJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
+If Me.Type = JointType.WheelJoint Then
+Return JointSolver.GetWheelJointForce(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
 Return New Vector2(0.0, 0.0)
 End Function
 
@@ -11794,6 +11799,9 @@ Return JointSolver.GetPrismaticJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIn
 End If
 If Me.Type = JointType.WeldJoint Then
 Return JointSolver.GetWeldJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
+End If
+If Me.Type = JointType.WheelJoint Then
+Return JointSolver.GetWheelJointTorque(Me.Owner.GetJointSims(Me), Me.LocalIndex, Me.Owner.InvH)
 End If
 Return 0.0
 End Function
@@ -12153,6 +12161,56 @@ Property WeldAngularSoftnessBiasRate As DoubleList
 Property WeldAngularSoftnessMassScale As DoubleList
 ## Angular softness impulse scale.
 Property WeldAngularSoftnessImpulseScale As DoubleList
+
+# Wheel joint family columns, ported from upstream b2WheelJoint in
+# joint.h. Valid only while Type = Integer(JointType.WheelJoint). The
+# wheel reuses the base two-body columns (IndexA/IndexB, AnchorA/AnchorB,
+# DeltaCenter, inverse masses, LocalOriginAnchorA/B) and the base
+# EnableSpring/EnableLimit/EnableMotor flag columns. The wheel constrains
+# no angle: body B spins freely about the anchor.
+## X component of the normalized local translation axis in body A's frame.
+Property WheelLocalAxisX As DoubleList
+## Y component of the normalized local translation axis.
+Property WheelLocalAxisY As DoubleList
+## X component of the translation axis rotated into body A's world frame
+## at prepare time, ported from joint->axisA.
+Property WheelAxisX As DoubleList
+## Y component of the prepared world-frame translation axis.
+Property WheelAxisY As DoubleList
+## Accumulated perpendicular impulse keeping the wheel on the axis line.
+Property WheelPerpImpulse As DoubleList
+## Accumulated motor impulse.
+Property WheelMotorImpulse As DoubleList
+## Accumulated spring impulse.
+Property WheelSpringImpulse As DoubleList
+## Accumulated lower-limit impulse, always non-negative.
+Property WheelLowerImpulse As DoubleList
+## Accumulated upper-limit impulse, always non-negative.
+Property WheelUpperImpulse As DoubleList
+## Maximum motor torque.
+Property WheelMaxMotorTorque As DoubleList
+## Desired motor speed in radians per second.
+Property WheelMotorSpeed As DoubleList
+## Lower translation limit in metres.
+Property WheelLowerTranslation As DoubleList
+## Upper translation limit in metres.
+Property WheelUpperTranslation As DoubleList
+## Suspension spring stiffness in hertz.
+Property WheelHertz As DoubleList
+## Suspension spring damping ratio.
+Property WheelDampingRatio As DoubleList
+## Inverse perpendicular effective mass, zero when singular.
+Property WheelPerpMass As DoubleList
+## Inverse axial effective mass, zero when singular.
+Property WheelAxialMass As DoubleList
+## Inverse motor effective mass, zero when both inertias vanish.
+Property WheelMotorMass As DoubleList
+## Spring softness bias rate prepared from hertz and damping ratio.
+Property WheelSpringSoftnessBiasRate As DoubleList
+## Spring softness mass scale.
+Property WheelSpringSoftnessMassScale As DoubleList
+## Spring softness impulse scale.
+Property WheelSpringSoftnessImpulseScale As DoubleList
 ## Spring softness mass scale.
 Property RevoluteSpringSoftnessMassScale As DoubleList
 ## Spring softness impulse scale.
@@ -12292,6 +12350,27 @@ Me.WeldLinearSoftnessImpulseScale = New DoubleList
 Me.WeldAngularSoftnessBiasRate = New DoubleList
 Me.WeldAngularSoftnessMassScale = New DoubleList
 Me.WeldAngularSoftnessImpulseScale = New DoubleList
+Me.WheelLocalAxisX = New DoubleList
+Me.WheelLocalAxisY = New DoubleList
+Me.WheelAxisX = New DoubleList
+Me.WheelAxisY = New DoubleList
+Me.WheelPerpImpulse = New DoubleList
+Me.WheelMotorImpulse = New DoubleList
+Me.WheelSpringImpulse = New DoubleList
+Me.WheelLowerImpulse = New DoubleList
+Me.WheelUpperImpulse = New DoubleList
+Me.WheelMaxMotorTorque = New DoubleList
+Me.WheelMotorSpeed = New DoubleList
+Me.WheelLowerTranslation = New DoubleList
+Me.WheelUpperTranslation = New DoubleList
+Me.WheelHertz = New DoubleList
+Me.WheelDampingRatio = New DoubleList
+Me.WheelPerpMass = New DoubleList
+Me.WheelAxialMass = New DoubleList
+Me.WheelMotorMass = New DoubleList
+Me.WheelSpringSoftnessBiasRate = New DoubleList
+Me.WheelSpringSoftnessMassScale = New DoubleList
+Me.WheelSpringSoftnessImpulseScale = New DoubleList
 End Constructor
 
 ## Number of live joint sims in this store.
@@ -12437,6 +12516,27 @@ Me.WeldLinearSoftnessImpulseScale.Append(0.0)
 Me.WeldAngularSoftnessBiasRate.Append(0.0)
 Me.WeldAngularSoftnessMassScale.Append(1.0)
 Me.WeldAngularSoftnessImpulseScale.Append(0.0)
+Me.WheelLocalAxisX.Append(0.0)
+Me.WheelLocalAxisY.Append(0.0)
+Me.WheelAxisX.Append(0.0)
+Me.WheelAxisY.Append(0.0)
+Me.WheelPerpImpulse.Append(0.0)
+Me.WheelMotorImpulse.Append(0.0)
+Me.WheelSpringImpulse.Append(0.0)
+Me.WheelLowerImpulse.Append(0.0)
+Me.WheelUpperImpulse.Append(0.0)
+Me.WheelMaxMotorTorque.Append(0.0)
+Me.WheelMotorSpeed.Append(0.0)
+Me.WheelLowerTranslation.Append(0.0)
+Me.WheelUpperTranslation.Append(0.0)
+Me.WheelHertz.Append(0.0)
+Me.WheelDampingRatio.Append(0.0)
+Me.WheelPerpMass.Append(0.0)
+Me.WheelAxialMass.Append(0.0)
+Me.WheelMotorMass.Append(0.0)
+Me.WheelSpringSoftnessBiasRate.Append(0.0)
+Me.WheelSpringSoftnessMassScale.Append(1.0)
+Me.WheelSpringSoftnessImpulseScale.Append(0.0)
 Return Me.JointId.Count - 1
 End Function
 
@@ -12582,6 +12682,27 @@ Me.WeldLinearSoftnessImpulseScale.RemoveSwap(index)
 Me.WeldAngularSoftnessBiasRate.RemoveSwap(index)
 Me.WeldAngularSoftnessMassScale.RemoveSwap(index)
 Me.WeldAngularSoftnessImpulseScale.RemoveSwap(index)
+Me.WheelLocalAxisX.RemoveSwap(index)
+Me.WheelLocalAxisY.RemoveSwap(index)
+Me.WheelAxisX.RemoveSwap(index)
+Me.WheelAxisY.RemoveSwap(index)
+Me.WheelPerpImpulse.RemoveSwap(index)
+Me.WheelMotorImpulse.RemoveSwap(index)
+Me.WheelSpringImpulse.RemoveSwap(index)
+Me.WheelLowerImpulse.RemoveSwap(index)
+Me.WheelUpperImpulse.RemoveSwap(index)
+Me.WheelMaxMotorTorque.RemoveSwap(index)
+Me.WheelMotorSpeed.RemoveSwap(index)
+Me.WheelLowerTranslation.RemoveSwap(index)
+Me.WheelUpperTranslation.RemoveSwap(index)
+Me.WheelHertz.RemoveSwap(index)
+Me.WheelDampingRatio.RemoveSwap(index)
+Me.WheelPerpMass.RemoveSwap(index)
+Me.WheelAxialMass.RemoveSwap(index)
+Me.WheelMotorMass.RemoveSwap(index)
+Me.WheelSpringSoftnessBiasRate.RemoveSwap(index)
+Me.WheelSpringSoftnessMassScale.RemoveSwap(index)
+Me.WheelSpringSoftnessImpulseScale.RemoveSwap(index)
 Return movedJointId
 End Function
 
@@ -12721,6 +12842,27 @@ target.WeldLinearSoftnessImpulseScale.Items[targetIndex] = Me.WeldLinearSoftness
 target.WeldAngularSoftnessBiasRate.Items[targetIndex] = Me.WeldAngularSoftnessBiasRate.Items[sourceIndex]
 target.WeldAngularSoftnessMassScale.Items[targetIndex] = Me.WeldAngularSoftnessMassScale.Items[sourceIndex]
 target.WeldAngularSoftnessImpulseScale.Items[targetIndex] = Me.WeldAngularSoftnessImpulseScale.Items[sourceIndex]
+target.WheelLocalAxisX.Items[targetIndex] = Me.WheelLocalAxisX.Items[sourceIndex]
+target.WheelLocalAxisY.Items[targetIndex] = Me.WheelLocalAxisY.Items[sourceIndex]
+target.WheelAxisX.Items[targetIndex] = Me.WheelAxisX.Items[sourceIndex]
+target.WheelAxisY.Items[targetIndex] = Me.WheelAxisY.Items[sourceIndex]
+target.WheelPerpImpulse.Items[targetIndex] = Me.WheelPerpImpulse.Items[sourceIndex]
+target.WheelMotorImpulse.Items[targetIndex] = Me.WheelMotorImpulse.Items[sourceIndex]
+target.WheelSpringImpulse.Items[targetIndex] = Me.WheelSpringImpulse.Items[sourceIndex]
+target.WheelLowerImpulse.Items[targetIndex] = Me.WheelLowerImpulse.Items[sourceIndex]
+target.WheelUpperImpulse.Items[targetIndex] = Me.WheelUpperImpulse.Items[sourceIndex]
+target.WheelMaxMotorTorque.Items[targetIndex] = Me.WheelMaxMotorTorque.Items[sourceIndex]
+target.WheelMotorSpeed.Items[targetIndex] = Me.WheelMotorSpeed.Items[sourceIndex]
+target.WheelLowerTranslation.Items[targetIndex] = Me.WheelLowerTranslation.Items[sourceIndex]
+target.WheelUpperTranslation.Items[targetIndex] = Me.WheelUpperTranslation.Items[sourceIndex]
+target.WheelHertz.Items[targetIndex] = Me.WheelHertz.Items[sourceIndex]
+target.WheelDampingRatio.Items[targetIndex] = Me.WheelDampingRatio.Items[sourceIndex]
+target.WheelPerpMass.Items[targetIndex] = Me.WheelPerpMass.Items[sourceIndex]
+target.WheelAxialMass.Items[targetIndex] = Me.WheelAxialMass.Items[sourceIndex]
+target.WheelMotorMass.Items[targetIndex] = Me.WheelMotorMass.Items[sourceIndex]
+target.WheelSpringSoftnessBiasRate.Items[targetIndex] = Me.WheelSpringSoftnessBiasRate.Items[sourceIndex]
+target.WheelSpringSoftnessMassScale.Items[targetIndex] = Me.WheelSpringSoftnessMassScale.Items[sourceIndex]
+target.WheelSpringSoftnessImpulseScale.Items[targetIndex] = Me.WheelSpringSoftnessImpulseScale.Items[sourceIndex]
 End Sub
 
 ## Empties the store while retaining all capacity.
@@ -12857,6 +12999,27 @@ Me.WeldLinearSoftnessImpulseScale.Clear()
 Me.WeldAngularSoftnessBiasRate.Clear()
 Me.WeldAngularSoftnessMassScale.Clear()
 Me.WeldAngularSoftnessImpulseScale.Clear()
+Me.WheelLocalAxisX.Clear()
+Me.WheelLocalAxisY.Clear()
+Me.WheelAxisX.Clear()
+Me.WheelAxisY.Clear()
+Me.WheelPerpImpulse.Clear()
+Me.WheelMotorImpulse.Clear()
+Me.WheelSpringImpulse.Clear()
+Me.WheelLowerImpulse.Clear()
+Me.WheelUpperImpulse.Clear()
+Me.WheelMaxMotorTorque.Clear()
+Me.WheelMotorSpeed.Clear()
+Me.WheelLowerTranslation.Clear()
+Me.WheelUpperTranslation.Clear()
+Me.WheelHertz.Clear()
+Me.WheelDampingRatio.Clear()
+Me.WheelPerpMass.Clear()
+Me.WheelAxialMass.Clear()
+Me.WheelMotorMass.Clear()
+Me.WheelSpringSoftnessBiasRate.Clear()
+Me.WheelSpringSoftnessMassScale.Clear()
+Me.WheelSpringSoftnessImpulseScale.Clear()
 End Sub
 End Class
 
@@ -12890,6 +13053,8 @@ ElseIf sims.Type.Items[index] = Integer(JointType.PrismaticJoint) Then
 PreparePrismaticJoint(sims, index, context)
 ElseIf sims.Type.Items[index] = Integer(JointType.WeldJoint) Then
 PrepareWeldJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.WheelJoint) Then
+PrepareWheelJoint(sims, index, context)
 End If
 End Sub
 
@@ -14831,6 +14996,420 @@ End Function
 ## b2GetWeldJointTorque.
 Shared Function GetWeldJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
 Return invH * sims.WeldAngularImpulse.Items[index]
+End Function
+
+## Prepares one wheel joint row, ported from b2PrepareWheelJoint. The
+## wheel keeps body B on the axis line, applies the suspension spring and
+## translation limits along the axis, and drives the wheel spin with a
+## torque-clamped motor; body B's rotation is otherwise free. A non-awake
+## body stores a NULL_INDEX state row that the kernels replace with an
+## identity dummy.
+Private Shared Sub PrepareWheelJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyA As Body = world.Bodies[sims.BodyIdA.Items[index]]
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simA As BodySims = world.GetBodySim(bodyA)
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexA As Integer = bodyA.LocalIndex
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassA.Items[index] = simA.InvMass.Items[indexA]
+sims.InvIA.Items[index] = simA.InvInertia.Items[indexA]
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexA.Items[index] = indexA
+Else
+sims.IndexA.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+Var qcA As Double = simA.QC.Items[indexA]
+Var qsA As Double = simA.QS.Items[indexA]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+Var localDX As Double = sims.LocalOriginAnchorAX.Items[index] - simA.LCX.Items[indexA]
+Var localDY As Double = sims.LocalOriginAnchorAY.Items[index] - simA.LCY.Items[indexA]
+sims.AnchorAX.Items[index] = qcA * localDX - qsA * localDY
+sims.AnchorAY.Items[index] = qsA * localDX + qcA * localDY
+Var localEX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localEY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localEX - qsB * localEY
+sims.AnchorBY.Items[index] = qsB * localEX + qcB * localEY
+Var axisLX As Double = sims.WheelLocalAxisX.Items[index]
+Var axisLY As Double = sims.WheelLocalAxisY.Items[index]
+sims.WheelAxisX.Items[index] = qcA * axisLX - qsA * axisLY
+sims.WheelAxisY.Items[index] = qsA * axisLX + qcA * axisLY
+
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
+
+# Effective masses from the perpendicular and axial torque arms.
+Var rAX As Double = sims.AnchorAX.Items[index]
+Var rAY As Double = sims.AnchorAY.Items[index]
+Var rBX As Double = sims.AnchorBX.Items[index]
+Var rBY As Double = sims.AnchorBY.Items[index]
+Var dX As Double = sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = sims.DeltaCenterY.Items[index] + rBY - rAY
+Var axisX As Double = sims.WheelAxisX.Items[index]
+Var axisY As Double = sims.WheelAxisY.Items[index]
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var s1 As Double = (dX + rAX) * perpY - (dY + rAY) * perpX
+Var s2 As Double = rBX * perpY - rBY * perpX
+Var kp As Double = mA + mB + iA * s1 * s1 + iB * s2 * s2
+If kp > 0.0 Then
+sims.WheelPerpMass.Items[index] = 1.0 / kp
+Else
+sims.WheelPerpMass.Items[index] = 0.0
+End If
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+Var ka As Double = mA + mB + iA * a1 * a1 + iB * a2 * a2
+If ka > 0.0 Then
+sims.WheelAxialMass.Items[index] = 1.0 / ka
+Else
+sims.WheelAxialMass.Items[index] = 0.0
+End If
+
+Softness.MakeTo(sims.WheelHertz.Items[index], sims.WheelDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.WheelSpringSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.WheelSpringSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.WheelSpringSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+
+Var km As Double = iA + iB
+If km > 0.0 Then
+sims.WheelMotorMass.Items[index] = 1.0 / km
+Else
+sims.WheelMotorMass.Items[index] = 0.0
+End If
+
+If context.WarmStartScale = 0.0 Then
+sims.WheelPerpImpulse.Items[index] = 0.0
+sims.WheelSpringImpulse.Items[index] = 0.0
+sims.WheelMotorImpulse.Items[index] = 0.0
+sims.WheelLowerImpulse.Items[index] = 0.0
+sims.WheelUpperImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored wheel joint impulses to both body states before
+## iterating, ported from b2WarmStartWheelJoint. The axial impulse bundles
+## the spring and limit impulses; the motor impulse acts on the spin.
+Shared Sub WarmStartWheelJoint(sims As JointSims, index As Integer, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var dX As Double = dpBX - dpAX + sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = dpBY - dpAY + sims.DeltaCenterY.Items[index] + rBY - rAY
+Var axisLX As Double = sims.WheelAxisX.Items[index]
+Var axisLY As Double = sims.WheelAxisY.Items[index]
+Var axisX As Double = dqAC * axisLX - dqAS * axisLY
+Var axisY As Double = dqAS * axisLX + dqAC * axisLY
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+Var s1 As Double = (dX + rAX) * perpY - (dY + rAY) * perpX
+Var s2 As Double = rBX * perpY - rBY * perpX
+Var axialImpulse As Double = sims.WheelSpringImpulse.Items[index] + sims.WheelLowerImpulse.Items[index] - sims.WheelUpperImpulse.Items[index]
+
+Var pX As Double = axialImpulse * axisX + sims.WheelPerpImpulse.Items[index] * perpX
+Var pY As Double = axialImpulse * axisY + sims.WheelPerpImpulse.Items[index] * perpY
+Var la As Double = axialImpulse * a1 + sims.WheelPerpImpulse.Items[index] * s1 + sims.WheelMotorImpulse.Items[index]
+Var lb As Double = axialImpulse * a2 + sims.WheelPerpImpulse.Items[index] * s2 + sims.WheelMotorImpulse.Items[index]
+
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * la
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * lb
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Runs one velocity iteration for one wheel joint row, ported from
+## b2SolveWheelJoint: torque-clamped motor, suspension spring, translation
+## limits, then the perpendicular point-to-line block.
+Shared Sub SolveWheelJoint(sims As JointSims, index As Integer, context As StepContext, useBias As Boolean)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var dX As Double = dpBX - dpAX + sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = dpBY - dpAY + sims.DeltaCenterY.Items[index] + rBY - rAY
+Var axisLX As Double = sims.WheelAxisX.Items[index]
+Var axisLY As Double = sims.WheelAxisY.Items[index]
+Var axisX As Double = dqAC * axisLX - dqAS * axisLY
+Var axisY As Double = dqAS * axisLX + dqAC * axisLY
+Var translation As Double = axisX * dX + axisY * dY
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+
+Var fixedRotation As Boolean = (iA + iB = 0.0)
+
+# Motor constraint.
+If sims.EnableMotor.Items[index] <> 0 And fixedRotation = False Then
+Var Cdot As Double = wB - wA - sims.WheelMotorSpeed.Items[index]
+Var impulse As Double = -sims.WheelMotorMass.Items[index] * Cdot
+Var oldImpulse As Double = sims.WheelMotorImpulse.Items[index]
+Var maxImpulse As Double = context.H * sims.WheelMaxMotorTorque.Items[index]
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse > maxImpulse Then
+newImpulse = maxImpulse
+ElseIf newImpulse < -maxImpulse Then
+newImpulse = -maxImpulse
+End If
+sims.WheelMotorImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+wA = wA - iA * impulse
+wB = wB + iB * impulse
+End If
+
+# Spring constraint: a real spring, applied even during relax. The wheel
+# spring drives the translation toward zero, matching the upstream C.
+If sims.EnableSpring.Items[index] <> 0 Then
+Var C As Double = translation
+Var bias As Double = sims.WheelSpringSoftnessBiasRate.Items[index] * C
+Var massScale As Double = sims.WheelSpringSoftnessMassScale.Items[index]
+Var impulseScale As Double = sims.WheelSpringSoftnessImpulseScale.Items[index]
+Var Cdot As Double = axisX * (vBX - vAX) + axisY * (vBY - vAY) + a2 * wB - a1 * wA
+Var impulse As Double = -massScale * sims.WheelAxialMass.Items[index] * (Cdot + bias) - impulseScale * sims.WheelSpringImpulse.Items[index]
+sims.WheelSpringImpulse.Items[index] = sims.WheelSpringImpulse.Items[index] + impulse
+Var pX As Double = impulse * axisX
+Var pY As Double = impulse * axisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (impulse * a1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (impulse * a2)
+End If
+
+If sims.EnableLimit.Items[index] <> 0 Then
+# Lower limit.
+Var C As Double = translation - sims.WheelLowerTranslation.Items[index]
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If C > 0.0 Then
+# Speculation.
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var Cdot As Double = axisX * (vBX - vAX) + axisY * (vBY - vAY) + a2 * wB - a1 * wA
+Var impulse As Double = -massScale * sims.WheelAxialMass.Items[index] * (Cdot + bias) - impulseScale * sims.WheelLowerImpulse.Items[index]
+Var oldImpulse As Double = sims.WheelLowerImpulse.Items[index]
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.WheelLowerImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+Var pX As Double = impulse * axisX
+Var pY As Double = impulse * axisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (impulse * a1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (impulse * a2)
+
+# Upper limit: signs flipped to keep C positive when satisfied.
+C = sims.WheelUpperTranslation.Items[index] - translation
+bias = 0.0
+massScale = 1.0
+impulseScale = 0.0
+If C > 0.0 Then
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+
+# Sign flipped on Cdot.
+Cdot = axisX * (vAX - vBX) + axisY * (vAY - vBY) + a1 * wA - a2 * wB
+impulse = -massScale * sims.WheelAxialMass.Items[index] * (Cdot + bias) - impulseScale * sims.WheelUpperImpulse.Items[index]
+oldImpulse = sims.WheelUpperImpulse.Items[index]
+newImpulse = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.WheelUpperImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+pX = impulse * axisX
+pY = impulse * axisY
+# Sign flipped on applied impulse.
+vAX = vAX + mA * pX
+vAY = vAY + mA * pY
+wA = wA + iA * (impulse * a1)
+vBX = vBX - mB * pX
+vBY = vBY - mB * pY
+wB = wB - iB * (impulse * a2)
+End If
+
+# Point-to-line constraint.
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var s1 As Double = (dX + rAX) * perpY - (dY + rAY) * perpX
+Var s2 As Double = rBX * perpY - rBY * perpX
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If useBias Then
+Var C As Double = perpX * dX + perpY * dY
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var Cdot As Double = perpX * (vBX - vAX) + perpY * (vBY - vAY) + s2 * wB - s1 * wA
+Var impulse As Double = -massScale * sims.WheelPerpMass.Items[index] * (Cdot + bias) - impulseScale * sims.WheelPerpImpulse.Items[index]
+sims.WheelPerpImpulse.Items[index] = sims.WheelPerpImpulse.Items[index] + impulse
+Var pX As Double = impulse * perpX
+Var pY As Double = impulse * perpY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (impulse * s1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (impulse * s2)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Total force the wheel joint row applied this step, ported from
+## b2GetWheelJointForce: the perpendicular and axial components combined
+## in world space.
+Shared Function GetWheelJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var axisX As Double = sims.WheelAxisX.Items[index]
+Var axisY As Double = sims.WheelAxisY.Items[index]
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var perpForce As Double = invH * sims.WheelPerpImpulse.Items[index]
+Var axialForce As Double = invH * (sims.WheelSpringImpulse.Items[index] + sims.WheelLowerImpulse.Items[index] - sims.WheelUpperImpulse.Items[index])
+Return New Vector2(perpForce * perpX + axialForce * axisX, perpForce * perpY + axialForce * axisY)
+End Function
+
+## Torque the wheel joint row applied this step, ported from
+## b2GetWheelJointTorque: the motor impulse rate.
+Shared Function GetWheelJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * sims.WheelMotorImpulse.Items[index]
 End Function
 
 ## Total force the mouse joint row applied this step, ported from
@@ -18981,6 +19560,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.PrismaticJoint) Then
 JointSolver.WarmStartPrismaticJoint(sims, i, context)
 ElseIf sims.Type.Items[i] = Integer(JointType.WeldJoint) Then
 JointSolver.WarmStartWeldJoint(sims, i, context)
+ElseIf sims.Type.Items[i] = Integer(JointType.WheelJoint) Then
+JointSolver.WarmStartWheelJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -19005,6 +19586,8 @@ ElseIf sims.Type.Items[i] = Integer(JointType.PrismaticJoint) Then
 JointSolver.SolvePrismaticJoint(sims, i, context, useBias)
 ElseIf sims.Type.Items[i] = Integer(JointType.WeldJoint) Then
 JointSolver.SolveWeldJoint(sims, i, context, useBias)
+ElseIf sims.Type.Items[i] = Integer(JointType.WheelJoint) Then
+JointSolver.SolveWheelJoint(sims, i, context, useBias)
 End If
 Next i
 End Sub
@@ -20109,6 +20692,316 @@ Me.LinearHertz = 0.0
 Me.AngularHertz = 0.0
 Me.LinearDampingRatio = 0.0
 Me.AngularDampingRatio = 0.0
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
+End Class
+
+# Public wheel joint façade, ported from the b2WheelJoint_* surface in
+# wheel_joint.c. The joint lets a wheel rotate freely about its anchor
+# while a suspension spring, translation limits, and a drive motor act on
+# the slide along one axis. Tuning changes deliberately do not wake the
+# bodies, matching upstream; the solver picks up new values on the next
+# step. Enabling or disabling the spring, limits, or motor clears the
+# corresponding accumulated impulses exactly like the upstream toggles.
+# Setters store plain values where upstream stores plain values and throw
+# where upstream asserts. The façade reads and writes its row in the
+# owning JointSims store.
+Class WheelJoint Inherits Joint
+## Enables the suspension spring, ported from b2WheelJoint_EnableSpring.
+## Toggling clears the accumulated spring impulse.
+Sub EnableSpring(enableSpring As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableSpring Then
+flag = 1
+End If
+If flag <> store.EnableSpring.Items[Me.LocalIndex] Then
+store.EnableSpring.Items[Me.LocalIndex] = flag
+store.WheelSpringImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the suspension spring is active, ported from
+## b2WheelJoint_IsSpringEnabled.
+Function IsSpringEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableSpring.Items[Me.LocalIndex] <> 0
+End Function
+
+## Suspension spring stiffness in hertz, ported from
+## b2WheelJoint_SetSpringHertz. Changes apply from the next step.
+Sub SetSpringHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).WheelHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Suspension spring stiffness in hertz, ported from
+## b2WheelJoint_GetSpringHertz.
+Function GetSpringHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelHertz.Items[Me.LocalIndex]
+End Function
+
+## Suspension spring damping ratio, ported from
+## b2WheelJoint_SetSpringDampingRatio. Changes apply from the next step.
+Sub SetSpringDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).WheelDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Suspension spring damping ratio, ported from
+## b2WheelJoint_GetSpringDampingRatio.
+Function GetSpringDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## Current suspension translation in metres along the axis, ported from
+## b2WheelJoint_GetTranslation. Allocates the returned query vectors.
+Function GetTranslation() As Double
+Me.CheckValid()
+Var bodyA As Body = Me.GetBodyA()
+Var bodyB As Body = Me.GetBodyB()
+Var transformA As Transform = Me.Owner.GetBodyTransform(bodyA)
+Var transformB As Transform = Me.Owner.GetBodyTransform(bodyB)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var axisX As Double = transformA.Q.C * store.WheelLocalAxisX.Items[Me.LocalIndex] - transformA.Q.S * store.WheelLocalAxisY.Items[Me.LocalIndex]
+Var axisY As Double = transformA.Q.S * store.WheelLocalAxisX.Items[Me.LocalIndex] + transformA.Q.C * store.WheelLocalAxisY.Items[Me.LocalIndex]
+Var localA As Vector2 = Me.GetLocalAnchorA()
+Var localB As Vector2 = Me.GetLocalAnchorB()
+Var pAX As Double = transformA.P.X + transformA.Q.C * localA.X - transformA.Q.S * localA.Y
+Var pAY As Double = transformA.P.Y + transformA.Q.S * localA.X + transformA.Q.C * localA.Y
+Var pBX As Double = transformB.P.X + transformB.Q.C * localB.X - transformB.Q.S * localB.Y
+Var pBY As Double = transformB.P.Y + transformB.Q.S * localB.X + transformB.Q.C * localB.Y
+Return (pBX - pAX) * axisX + (pBY - pAY) * axisY
+End Function
+
+## Current suspension speed in metres per second, ported from
+## b2WheelJoint_GetSpeed. Allocates the returned query vectors.
+Function GetSpeed() As Double
+Me.CheckValid()
+Var bodyA As Body = Me.GetBodyA()
+Var bodyB As Body = Me.GetBodyB()
+Var transformA As Transform = Me.Owner.GetBodyTransform(bodyA)
+Var transformB As Transform = Me.Owner.GetBodyTransform(bodyB)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var axisX As Double = transformA.Q.C * store.WheelLocalAxisX.Items[Me.LocalIndex] - transformA.Q.S * store.WheelLocalAxisY.Items[Me.LocalIndex]
+Var axisY As Double = transformA.Q.S * store.WheelLocalAxisX.Items[Me.LocalIndex] + transformA.Q.C * store.WheelLocalAxisY.Items[Me.LocalIndex]
+Var localA As Vector2 = Me.GetLocalAnchorA()
+Var localB As Vector2 = Me.GetLocalAnchorB()
+Var centerLocalA As Vector2 = bodyA.GetLocalCenterOfMass()
+Var centerLocalB As Vector2 = bodyB.GetLocalCenterOfMass()
+Var rAX As Double = transformA.Q.C * (localA.X - centerLocalA.X) - transformA.Q.S * (localA.Y - centerLocalA.Y)
+Var rAY As Double = transformA.Q.S * (localA.X - centerLocalA.X) + transformA.Q.C * (localA.Y - centerLocalA.Y)
+Var rBX As Double = transformB.Q.C * (localB.X - centerLocalB.X) - transformB.Q.S * (localB.Y - centerLocalB.Y)
+Var rBY As Double = transformB.Q.S * (localB.X - centerLocalB.X) + transformB.Q.C * (localB.Y - centerLocalB.Y)
+Var centerA As Vector2 = Me.Owner.GetBodyWorldCenterOfMass(bodyA)
+Var centerB As Vector2 = Me.Owner.GetBodyWorldCenterOfMass(bodyB)
+Var dX As Double = centerB.X - centerA.X + rBX - rAX
+Var dY As Double = centerB.Y - centerA.Y + rBY - rAY
+Var vA As Vector2 = Me.Owner.GetBodyLinearVelocity(bodyA)
+Var vB As Vector2 = Me.Owner.GetBodyLinearVelocity(bodyB)
+Var wA As Double = Me.Owner.GetBodyAngularVelocity(bodyA)
+Var wB As Double = Me.Owner.GetBodyAngularVelocity(bodyB)
+Var vRelX As Double = vB.X - wB * rBY - (vA.X - wA * rAY)
+Var vRelY As Double = vB.Y + wB * rBX - (vA.Y + wA * rAX)
+Return dX * (wA * axisY) - dY * (wA * axisX) + axisX * vRelX + axisY * vRelY
+End Function
+
+## Enables the translation limits, ported from b2WheelJoint_EnableLimit.
+## Toggling clears both accumulated limit impulses.
+Sub EnableLimit(enableLimit As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableLimit Then
+flag = 1
+End If
+If flag <> store.EnableLimit.Items[Me.LocalIndex] Then
+store.EnableLimit.Items[Me.LocalIndex] = flag
+store.WheelLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.WheelUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the translation limits are active, ported from
+## b2WheelJoint_IsLimitEnabled.
+Function IsLimitEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableLimit.Items[Me.LocalIndex] <> 0
+End Function
+
+## Lower translation limit in metres, ported from
+## b2WheelJoint_GetLowerLimit.
+Function GetLowerLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelLowerTranslation.Items[Me.LocalIndex]
+End Function
+
+## Upper translation limit in metres, ported from
+## b2WheelJoint_GetUpperLimit.
+Function GetUpperLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelUpperTranslation.Items[Me.LocalIndex]
+End Function
+
+## Sets both translation limits in metres, ported from
+## b2WheelJoint_SetLimits. The lower limit must not exceed the upper
+## limit, matching the upstream assertion; changing the values clears both
+## accumulated limit impulses.
+Sub SetLimits(lower As Double, upper As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not lower.IsFinite() Or Not upper.IsFinite() Then
+Throw New InvalidArgumentException("Wheel joint limits must be finite")
+End If
+If lower > upper Then
+Throw New InvalidArgumentException("Wheel joint lower limit must not exceed the upper limit")
+End If
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+If lower <> store.WheelLowerTranslation.Items[Me.LocalIndex] Or upper <> store.WheelUpperTranslation.Items[Me.LocalIndex] Then
+store.WheelLowerTranslation.Items[Me.LocalIndex] = lower
+store.WheelUpperTranslation.Items[Me.LocalIndex] = upper
+store.WheelLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.WheelUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## Enables the wheel motor, ported from b2WheelJoint_EnableMotor.
+## Toggling clears the accumulated motor impulse.
+Sub EnableMotor(enableMotor As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableMotor Then
+flag = 1
+End If
+If flag <> store.EnableMotor.Items[Me.LocalIndex] Then
+store.EnableMotor.Items[Me.LocalIndex] = flag
+store.WheelMotorImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the wheel motor is active, ported from
+## b2WheelJoint_IsMotorEnabled.
+Function IsMotorEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableMotor.Items[Me.LocalIndex] <> 0
+End Function
+
+## Desired motor speed in radians per second, ported from
+## b2WheelJoint_SetMotorSpeed. Changes apply from the next step.
+Sub SetMotorSpeed(motorSpeed As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).WheelMotorSpeed.Items[Me.LocalIndex] = motorSpeed
+End Sub
+
+## Desired motor speed in radians per second, ported from
+## b2WheelJoint_GetMotorSpeed.
+Function GetMotorSpeed() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelMotorSpeed.Items[Me.LocalIndex]
+End Function
+
+## Maximum motor torque in newton-metres, ported from
+## b2WheelJoint_SetMaxMotorTorque. Changes apply from the next step.
+Sub SetMaxMotorTorque(torque As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).WheelMaxMotorTorque.Items[Me.LocalIndex] = torque
+End Sub
+
+## Maximum motor torque in newton-metres, ported from
+## b2WheelJoint_GetMaxMotorTorque.
+Function GetMaxMotorTorque() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelMaxMotorTorque.Items[Me.LocalIndex]
+End Function
+
+## Torque the motor applied this step in newton-metres, ported from
+## b2WheelJoint_GetMotorTorque.
+Function GetMotorTorque() As Double
+Me.CheckValid()
+Return Me.Owner.InvH * Me.Owner.GetJointSims(Me).WheelMotorImpulse.Items[Me.LocalIndex]
+End Function
+
+## The local axis in body A's frame, ported from b2Joint_GetLocalAxisA for
+## the wheel family. Returns a new Vector2 copy; safe to retain.
+Override Function GetLocalAxisA() As Vector2
+Me.CheckValid()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return New Vector2(store.WheelLocalAxisX.Items[Me.LocalIndex], store.WheelLocalAxisY.Items[Me.LocalIndex])
+End Function
+End Class
+
+# Wheel joint definition, ported from upstream b2WheelJointDef and
+# b2DefaultWheelJointDef in types.h and joint.c. Defaults match upstream:
+# coincident anchors, world Y axis, spring/limits/motor disabled. A wheel
+# joint lets a wheel rotate freely about its anchor while the suspension
+# slides along one axis; an optional spring, translation limits, and motor
+# act on that slide and spin.
+Class WheelJointDefinition
+## First attached body, ported from b2WheelJointDef.bodyIdA. Typically the
+## vehicle chassis holding the suspension axis.
+Property BodyA As Body
+## Second attached body, ported from b2WheelJointDef.bodyIdB. Typically
+## the wheel, which spins freely about the anchor.
+Property BodyB As Body
+## Local anchor point relative to body A's origin, in metres.
+Property LocalAnchorA As Vector2
+## Local anchor point relative to body B's origin, in metres.
+Property LocalAnchorB As Vector2
+## Local translation unit axis in body A's frame. Defaults to the world Y
+## axis like upstream; normalized at creation.
+Property LocalAxisA As Vector2
+## True when the suspension spring along the axis is active.
+Property EnableSpring As Boolean
+## Suspension spring stiffness in hertz.
+Property Hertz As Double
+## Suspension spring damping ratio, non-dimensional.
+Property DampingRatio As Double
+## True when the translation limits are active.
+Property EnableLimit As Boolean
+## Lower translation limit in metres.
+Property LowerTranslation As Double
+## Upper translation limit in metres.
+Property UpperTranslation As Double
+## True when the wheel motor is active.
+Property EnableMotor As Boolean
+## Maximum motor torque, typically in newton-metres.
+Property MaxMotorTorque As Double
+## Desired motor speed in radians per second.
+Property MotorSpeed As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LocalAnchorA = New Vector2(0.0, 0.0)
+Me.LocalAnchorB = New Vector2(0.0, 0.0)
+Me.LocalAxisA = New Vector2(0.0, 1.0)
+Me.EnableSpring = False
+Me.Hertz = 0.0
+Me.DampingRatio = 0.0
+Me.EnableLimit = False
+Me.LowerTranslation = 0.0
+Me.UpperTranslation = 0.0
+Me.EnableMotor = False
+Me.MaxMotorTorque = 0.0
+Me.MotorSpeed = 0.0
 Me.CollideConnected = False
 Me.UserData = Nothing
 End Constructor
@@ -22201,6 +23094,8 @@ ElseIf jointType = JointType.PrismaticJoint Then
 record = New PrismaticJoint
 ElseIf jointType = JointType.WeldJoint Then
 record = New WeldJoint
+ElseIf jointType = JointType.WheelJoint Then
+record = New WheelJoint
 Else
 record = New Joint
 End If
@@ -22764,6 +23659,98 @@ Me.DestroyContactsBetweenBodies(bodyA, bodyB)
 End If
 
 Var facade As WeldJoint = WeldJoint(joint)
+Return facade
+End Function
+
+## Creates a wheel joint, ported from b2CreateWheelJoint. Throws on a
+## missing definition, missing or foreign bodies, non-finite anchors, axis,
+## or tuning, a lower translation limit above the upper limit, or negative
+## hertz, damping ratio, or motor torque, matching the upstream
+## assertions. The local axis normalizes at creation like upstream
+## b2Normalize, and a zero axis stays zero.
+Function CreateWheelJoint(def As WheelJointDefinition) As WheelJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "WheelJointDefinition")
+Me.CheckJointBody(def.BodyA, "WheelJointDefinition.BodyA")
+Me.CheckJointBody(def.BodyB, "WheelJointDefinition.BodyB")
+If Not def.LocalAnchorA.X.IsFinite() Or Not def.LocalAnchorA.Y.IsFinite() Then
+Throw New InvalidArgumentException("WheelJointDefinition local anchor A must be finite")
+End If
+If Not def.LocalAnchorB.X.IsFinite() Or Not def.LocalAnchorB.Y.IsFinite() Then
+Throw New InvalidArgumentException("WheelJointDefinition local anchor B must be finite")
+End If
+If Not def.LocalAxisA.X.IsFinite() Or Not def.LocalAxisA.Y.IsFinite() Then
+Throw New InvalidArgumentException("WheelJointDefinition local axis must be finite")
+End If
+If Not def.Hertz.IsFinite() Or def.Hertz < 0.0 Then
+Throw New InvalidArgumentException("WheelJointDefinition hertz must be finite and non-negative")
+End If
+If Not def.DampingRatio.IsFinite() Or def.DampingRatio < 0.0 Then
+Throw New InvalidArgumentException("WheelJointDefinition damping ratio must be finite and non-negative")
+End If
+If Not def.MaxMotorTorque.IsFinite() Or def.MaxMotorTorque < 0.0 Then
+Throw New InvalidArgumentException("WheelJointDefinition max motor torque must be finite and non-negative")
+End If
+If Not def.MotorSpeed.IsFinite() Then
+Throw New InvalidArgumentException("WheelJointDefinition motor speed must be finite")
+End If
+If Not def.LowerTranslation.IsFinite() Or Not def.UpperTranslation.IsFinite() Then
+Throw New InvalidArgumentException("WheelJointDefinition limits must be finite")
+End If
+If def.LowerTranslation > def.UpperTranslation Then
+Throw New InvalidArgumentException("WheelJointDefinition lower limit must not exceed the upper limit")
+End If
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.WheelJoint, def.CollideConnected, 1.0)
+Var localIndex As Integer = Me.PlaceJointSim(joint, bodyA, bodyB)
+Var store As JointSims = Me.GetJointSims(joint)
+store.ConstraintHertz.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+store.ConstraintDampingRatio.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+store.LocalOriginAnchorAX.Items[localIndex] = def.LocalAnchorA.X
+store.LocalOriginAnchorAY.Items[localIndex] = def.LocalAnchorA.Y
+store.LocalOriginAnchorBX.Items[localIndex] = def.LocalAnchorB.X
+store.LocalOriginAnchorBY.Items[localIndex] = def.LocalAnchorB.Y
+# Normalize the local axis like upstream b2Normalize, including the
+# degenerate zero branch.
+Var axisLength As Double = Maths.Sqrt(def.LocalAxisA.X * def.LocalAxisA.X + def.LocalAxisA.Y * def.LocalAxisA.Y)
+If axisLength >= PhysicsConstants.FLT_EPSILON Then
+store.WheelLocalAxisX.Items[localIndex] = def.LocalAxisA.X / axisLength
+store.WheelLocalAxisY.Items[localIndex] = def.LocalAxisA.Y / axisLength
+End If
+store.WheelHertz.Items[localIndex] = def.Hertz
+store.WheelDampingRatio.Items[localIndex] = def.DampingRatio
+store.WheelLowerTranslation.Items[localIndex] = def.LowerTranslation
+store.WheelUpperTranslation.Items[localIndex] = def.UpperTranslation
+store.WheelMaxMotorTorque.Items[localIndex] = def.MaxMotorTorque
+store.WheelMotorSpeed.Items[localIndex] = def.MotorSpeed
+store.EnableSpring.Items[localIndex] = 0
+store.EnableLimit.Items[localIndex] = 0
+store.EnableMotor.Items[localIndex] = 0
+If def.EnableSpring Then
+store.EnableSpring.Items[localIndex] = 1
+End If
+If def.EnableLimit Then
+store.EnableLimit.Items[localIndex] = 1
+End If
+If def.EnableMotor Then
+store.EnableMotor.Items[localIndex] = 1
+End If
+joint.UserData = def.UserData
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# If the joint prevents collisions, destroy all contacts between the
+# attached bodies.
+If def.CollideConnected = False Then
+Me.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+
+Var facade As WheelJoint = WheelJoint(joint)
 Return facade
 End Function
 

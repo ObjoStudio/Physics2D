@@ -1,0 +1,64 @@
+# Wheel joint definition, ported from upstream b2WheelJointDef and
+# b2DefaultWheelJointDef in types.h and joint.c. Defaults match upstream:
+# coincident anchors, world Y axis, spring/limits/motor disabled. A wheel
+# joint lets a wheel rotate freely about its anchor while the suspension
+# slides along one axis; an optional spring, translation limits, and motor
+# act on that slide and spin.
+Class WheelJointDefinition
+## First attached body, ported from b2WheelJointDef.bodyIdA. Typically the
+## vehicle chassis holding the suspension axis.
+Property BodyA As Body
+## Second attached body, ported from b2WheelJointDef.bodyIdB. Typically
+## the wheel, which spins freely about the anchor.
+Property BodyB As Body
+## Local anchor point relative to body A's origin, in metres.
+Property LocalAnchorA As Vector2
+## Local anchor point relative to body B's origin, in metres.
+Property LocalAnchorB As Vector2
+## Local translation unit axis in body A's frame. Defaults to the world Y
+## axis like upstream; normalized at creation.
+Property LocalAxisA As Vector2
+## True when the suspension spring along the axis is active.
+Property EnableSpring As Boolean
+## Suspension spring stiffness in hertz.
+Property Hertz As Double
+## Suspension spring damping ratio, non-dimensional.
+Property DampingRatio As Double
+## True when the translation limits are active.
+Property EnableLimit As Boolean
+## Lower translation limit in metres.
+Property LowerTranslation As Double
+## Upper translation limit in metres.
+Property UpperTranslation As Double
+## True when the wheel motor is active.
+Property EnableMotor As Boolean
+## Maximum motor torque, typically in newton-metres.
+Property MaxMotorTorque As Double
+## Desired motor speed in radians per second.
+Property MotorSpeed As Double
+## True when the two connected bodies may collide.
+Property CollideConnected As Boolean
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
+
+## Creates a definition with upstream defaults.
+Constructor()
+Me.BodyA = Nothing
+Me.BodyB = Nothing
+Me.LocalAnchorA = New Vector2(0.0, 0.0)
+Me.LocalAnchorB = New Vector2(0.0, 0.0)
+Me.LocalAxisA = New Vector2(0.0, 1.0)
+Me.EnableSpring = False
+Me.Hertz = 0.0
+Me.DampingRatio = 0.0
+Me.EnableLimit = False
+Me.LowerTranslation = 0.0
+Me.UpperTranslation = 0.0
+Me.EnableMotor = False
+Me.MaxMotorTorque = 0.0
+Me.MotorSpeed = 0.0
+Me.CollideConnected = False
+Me.UserData = Nothing
+End Constructor
+End Class

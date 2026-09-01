@@ -1330,11 +1330,93 @@ static void EmitWeldCases(void)
 	EmitWeldScene("soft", 2.0f, 2.0f, 0.6f);
 }
 
+// --------------------------------------------------------- wheel joints ----
+
+// Wheel-joint scene fixture: three deterministic suspension cases stepped
+// with the upstream default of four substeps. Each case hangs a 0.5 kg
+// wheel below a 1 kg chassis through a suspension anchored at the chassis
+// bottom; every case ends asleep, so the records are stable across float
+// widths. The joint line carries the final constraint force and torque.
+static void DumpWheelJoint(const char* name, b2JointId jointId)
+{
+	b2Vec2 force = b2Joint_GetConstraintForce(jointId);
+	float torque = b2Joint_GetConstraintTorque(jointId);
+	printf("joint|%s|wheel|", name);
+	PrintNum(force.x); printf(" ");
+	PrintNum(force.y); printf(" ");
+	PrintNum(torque); printf("\n");
+}
+
+static void EmitWheelScene(const char* name, float hertz, float damping, int brakeKick)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon groundBox = b2MakeBox(50.0f, 0.5f);
+	b2CreatePolygonShape(groundId, &shapeDef, &groundBox);
+
+	b2BodyDef chassisDef = b2DefaultBodyDef();
+	chassisDef.type = b2_dynamicBody;
+	chassisDef.position = (b2Vec2){0.0f, 1.5f};
+	b2BodyId chassisId = b2CreateBody(worldId, &chassisDef);
+	b2Polygon chassisBox = b2MakeBox(1.0f, 0.25f);
+	b2CreatePolygonShape(chassisId, &shapeDef, &chassisBox);
+
+	b2BodyDef wheelDef = b2DefaultBodyDef();
+	wheelDef.type = b2_dynamicBody;
+	wheelDef.position = (b2Vec2){0.0f, 1.0f};
+	b2BodyId wheelId = b2CreateBody(worldId, &wheelDef);
+	b2Circle wheelCircle = { {0.0f, 0.0f}, 0.4f };
+	b2CreateCircleShape(wheelId, &shapeDef, &wheelCircle);
+
+	b2WheelJointDef jointDef = b2DefaultWheelJointDef();
+	jointDef.bodyIdA = chassisId;
+	jointDef.bodyIdB = wheelId;
+	jointDef.localAnchorA = (b2Vec2){0.0f, -0.5f};
+	jointDef.localAnchorB = (b2Vec2){0.0f, 0.0f};
+	jointDef.enableSpring = hertz > 0.0f;
+	jointDef.hertz = hertz;
+	jointDef.dampingRatio = damping;
+	if (brakeKick)
+	{
+		// A zero-speed motor acts as a torque-clamped brake on the kicked
+		// wheel; the car rolls briefly and settles on its tail.
+		jointDef.enableMotor = true;
+		jointDef.maxMotorTorque = 10.0f;
+	}
+	b2JointId jointId = b2CreateWheelJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 300; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+		if (frame == 30 && brakeKick)
+		{
+			b2Body_SetAngularVelocity(wheelId, 10.0f);
+		}
+	}
+
+	DumpJointBody(name, 0, chassisId);
+	DumpJointBody(name, 1, wheelId);
+	DumpWheelJoint(name, jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitWheelCases(void)
+{
+	EmitWheelScene("stiff", 0.0f, 0.0f, 0);
+	EmitWheelScene("soft", 2.0f, 0.7f, 0);
+	EmitWheelScene("brake", 2.0f, 0.7f, 1);
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
 	{
-		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse|joint_motor|joint_revolute|joint_prismatic|joint_weld>\n");
+		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance|joint_mouse|joint_motor|joint_revolute|joint_prismatic|joint_weld|joint_wheel>\n");
 		return 2;
 	}
 
@@ -1355,6 +1437,7 @@ int main(int argc, char** argv)
 	else if (strcmp(name, "joint_revolute") == 0) EmitRevoluteCases();
 	else if (strcmp(name, "joint_prismatic") == 0) EmitPrismaticCases();
 	else if (strcmp(name, "joint_weld") == 0) EmitWeldCases();
+	else if (strcmp(name, "joint_wheel") == 0) EmitWheelCases();
 	else
 	{
 		fprintf(stderr, "unknown fixture: %s\n", name);

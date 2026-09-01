@@ -2085,6 +2085,8 @@ ElseIf jointType = JointType.PrismaticJoint Then
 record = New PrismaticJoint
 ElseIf jointType = JointType.WeldJoint Then
 record = New WeldJoint
+ElseIf jointType = JointType.WheelJoint Then
+record = New WheelJoint
 Else
 record = New Joint
 End If
@@ -2648,6 +2650,98 @@ Me.DestroyContactsBetweenBodies(bodyA, bodyB)
 End If
 
 Var facade As WeldJoint = WeldJoint(joint)
+Return facade
+End Function
+
+## Creates a wheel joint, ported from b2CreateWheelJoint. Throws on a
+## missing definition, missing or foreign bodies, non-finite anchors, axis,
+## or tuning, a lower translation limit above the upper limit, or negative
+## hertz, damping ratio, or motor torque, matching the upstream
+## assertions. The local axis normalizes at creation like upstream
+## b2Normalize, and a zero axis stays zero.
+Function CreateWheelJoint(def As WheelJointDefinition) As WheelJoint
+Me.CheckNotLocked()
+Me.CheckDefinition(def, "WheelJointDefinition")
+Me.CheckJointBody(def.BodyA, "WheelJointDefinition.BodyA")
+Me.CheckJointBody(def.BodyB, "WheelJointDefinition.BodyB")
+If Not def.LocalAnchorA.X.IsFinite() Or Not def.LocalAnchorA.Y.IsFinite() Then
+Throw New InvalidArgumentException("WheelJointDefinition local anchor A must be finite")
+End If
+If Not def.LocalAnchorB.X.IsFinite() Or Not def.LocalAnchorB.Y.IsFinite() Then
+Throw New InvalidArgumentException("WheelJointDefinition local anchor B must be finite")
+End If
+If Not def.LocalAxisA.X.IsFinite() Or Not def.LocalAxisA.Y.IsFinite() Then
+Throw New InvalidArgumentException("WheelJointDefinition local axis must be finite")
+End If
+If Not def.Hertz.IsFinite() Or def.Hertz < 0.0 Then
+Throw New InvalidArgumentException("WheelJointDefinition hertz must be finite and non-negative")
+End If
+If Not def.DampingRatio.IsFinite() Or def.DampingRatio < 0.0 Then
+Throw New InvalidArgumentException("WheelJointDefinition damping ratio must be finite and non-negative")
+End If
+If Not def.MaxMotorTorque.IsFinite() Or def.MaxMotorTorque < 0.0 Then
+Throw New InvalidArgumentException("WheelJointDefinition max motor torque must be finite and non-negative")
+End If
+If Not def.MotorSpeed.IsFinite() Then
+Throw New InvalidArgumentException("WheelJointDefinition motor speed must be finite")
+End If
+If Not def.LowerTranslation.IsFinite() Or Not def.UpperTranslation.IsFinite() Then
+Throw New InvalidArgumentException("WheelJointDefinition limits must be finite")
+End If
+If def.LowerTranslation > def.UpperTranslation Then
+Throw New InvalidArgumentException("WheelJointDefinition lower limit must not exceed the upper limit")
+End If
+
+Var bodyA As Body = def.BodyA
+Var bodyB As Body = def.BodyB
+Var joint As Joint = Me.CreateJointRecord(bodyA, bodyB, JointType.WheelJoint, def.CollideConnected, 1.0)
+Var localIndex As Integer = Me.PlaceJointSim(joint, bodyA, bodyB)
+Var store As JointSims = Me.GetJointSims(joint)
+store.ConstraintHertz.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_HERTZ
+store.ConstraintDampingRatio.Items[localIndex] = PhysicsConstants.JOINT_CONSTRAINT_DAMPING_RATIO
+store.LocalOriginAnchorAX.Items[localIndex] = def.LocalAnchorA.X
+store.LocalOriginAnchorAY.Items[localIndex] = def.LocalAnchorA.Y
+store.LocalOriginAnchorBX.Items[localIndex] = def.LocalAnchorB.X
+store.LocalOriginAnchorBY.Items[localIndex] = def.LocalAnchorB.Y
+# Normalize the local axis like upstream b2Normalize, including the
+# degenerate zero branch.
+Var axisLength As Double = Maths.Sqrt(def.LocalAxisA.X * def.LocalAxisA.X + def.LocalAxisA.Y * def.LocalAxisA.Y)
+If axisLength >= PhysicsConstants.FLT_EPSILON Then
+store.WheelLocalAxisX.Items[localIndex] = def.LocalAxisA.X / axisLength
+store.WheelLocalAxisY.Items[localIndex] = def.LocalAxisA.Y / axisLength
+End If
+store.WheelHertz.Items[localIndex] = def.Hertz
+store.WheelDampingRatio.Items[localIndex] = def.DampingRatio
+store.WheelLowerTranslation.Items[localIndex] = def.LowerTranslation
+store.WheelUpperTranslation.Items[localIndex] = def.UpperTranslation
+store.WheelMaxMotorTorque.Items[localIndex] = def.MaxMotorTorque
+store.WheelMotorSpeed.Items[localIndex] = def.MotorSpeed
+store.EnableSpring.Items[localIndex] = 0
+store.EnableLimit.Items[localIndex] = 0
+store.EnableMotor.Items[localIndex] = 0
+If def.EnableSpring Then
+store.EnableSpring.Items[localIndex] = 1
+End If
+If def.EnableLimit Then
+store.EnableLimit.Items[localIndex] = 1
+End If
+If def.EnableMotor Then
+store.EnableMotor.Items[localIndex] = 1
+End If
+joint.UserData = def.UserData
+
+If joint.SetIndex > PhysicsConstants.DISABLED_SET Then
+# Add the joint edge to the island graph.
+IslandMethods.LinkJoint(Me, joint, True)
+End If
+
+# If the joint prevents collisions, destroy all contacts between the
+# attached bodies.
+If def.CollideConnected = False Then
+Me.DestroyContactsBetweenBodies(bodyA, bodyB)
+End If
+
+Var facade As WheelJoint = WheelJoint(joint)
 Return facade
 End Function
 

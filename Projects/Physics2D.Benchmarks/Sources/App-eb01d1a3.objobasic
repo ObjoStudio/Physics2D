@@ -66,6 +66,7 @@ runner.Add(New Stage9MotorDriveScenario())
 runner.Add(New Stage9RevoluteScenario())
 runner.Add(New Stage9PrismaticScenario())
 runner.Add(New Stage9WeldScenario())
+runner.Add(New Stage9WheelScenario())
 
 Var results() As BenchmarkResult = runner.RunAll()
 

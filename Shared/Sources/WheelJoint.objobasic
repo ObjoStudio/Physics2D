@@ -1,0 +1,244 @@
+# Public wheel joint façade, ported from the b2WheelJoint_* surface in
+# wheel_joint.c. The joint lets a wheel rotate freely about its anchor
+# while a suspension spring, translation limits, and a drive motor act on
+# the slide along one axis. Tuning changes deliberately do not wake the
+# bodies, matching upstream; the solver picks up new values on the next
+# step. Enabling or disabling the spring, limits, or motor clears the
+# corresponding accumulated impulses exactly like the upstream toggles.
+# Setters store plain values where upstream stores plain values and throw
+# where upstream asserts. The façade reads and writes its row in the
+# owning JointSims store.
+Class WheelJoint Inherits Joint
+## Enables the suspension spring, ported from b2WheelJoint_EnableSpring.
+## Toggling clears the accumulated spring impulse.
+Sub EnableSpring(enableSpring As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableSpring Then
+flag = 1
+End If
+If flag <> store.EnableSpring.Items[Me.LocalIndex] Then
+store.EnableSpring.Items[Me.LocalIndex] = flag
+store.WheelSpringImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the suspension spring is active, ported from
+## b2WheelJoint_IsSpringEnabled.
+Function IsSpringEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableSpring.Items[Me.LocalIndex] <> 0
+End Function
+
+## Suspension spring stiffness in hertz, ported from
+## b2WheelJoint_SetSpringHertz. Changes apply from the next step.
+Sub SetSpringHertz(hertz As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).WheelHertz.Items[Me.LocalIndex] = hertz
+End Sub
+
+## Suspension spring stiffness in hertz, ported from
+## b2WheelJoint_GetSpringHertz.
+Function GetSpringHertz() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelHertz.Items[Me.LocalIndex]
+End Function
+
+## Suspension spring damping ratio, ported from
+## b2WheelJoint_SetSpringDampingRatio. Changes apply from the next step.
+Sub SetSpringDampingRatio(dampingRatio As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).WheelDampingRatio.Items[Me.LocalIndex] = dampingRatio
+End Sub
+
+## Suspension spring damping ratio, ported from
+## b2WheelJoint_GetSpringDampingRatio.
+Function GetSpringDampingRatio() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelDampingRatio.Items[Me.LocalIndex]
+End Function
+
+## Current suspension translation in metres along the axis, ported from
+## b2WheelJoint_GetTranslation. Allocates the returned query vectors.
+Function GetTranslation() As Double
+Me.CheckValid()
+Var bodyA As Body = Me.GetBodyA()
+Var bodyB As Body = Me.GetBodyB()
+Var transformA As Transform = Me.Owner.GetBodyTransform(bodyA)
+Var transformB As Transform = Me.Owner.GetBodyTransform(bodyB)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var axisX As Double = transformA.Q.C * store.WheelLocalAxisX.Items[Me.LocalIndex] - transformA.Q.S * store.WheelLocalAxisY.Items[Me.LocalIndex]
+Var axisY As Double = transformA.Q.S * store.WheelLocalAxisX.Items[Me.LocalIndex] + transformA.Q.C * store.WheelLocalAxisY.Items[Me.LocalIndex]
+Var localA As Vector2 = Me.GetLocalAnchorA()
+Var localB As Vector2 = Me.GetLocalAnchorB()
+Var pAX As Double = transformA.P.X + transformA.Q.C * localA.X - transformA.Q.S * localA.Y
+Var pAY As Double = transformA.P.Y + transformA.Q.S * localA.X + transformA.Q.C * localA.Y
+Var pBX As Double = transformB.P.X + transformB.Q.C * localB.X - transformB.Q.S * localB.Y
+Var pBY As Double = transformB.P.Y + transformB.Q.S * localB.X + transformB.Q.C * localB.Y
+Return (pBX - pAX) * axisX + (pBY - pAY) * axisY
+End Function
+
+## Current suspension speed in metres per second, ported from
+## b2WheelJoint_GetSpeed. Allocates the returned query vectors.
+Function GetSpeed() As Double
+Me.CheckValid()
+Var bodyA As Body = Me.GetBodyA()
+Var bodyB As Body = Me.GetBodyB()
+Var transformA As Transform = Me.Owner.GetBodyTransform(bodyA)
+Var transformB As Transform = Me.Owner.GetBodyTransform(bodyB)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var axisX As Double = transformA.Q.C * store.WheelLocalAxisX.Items[Me.LocalIndex] - transformA.Q.S * store.WheelLocalAxisY.Items[Me.LocalIndex]
+Var axisY As Double = transformA.Q.S * store.WheelLocalAxisX.Items[Me.LocalIndex] + transformA.Q.C * store.WheelLocalAxisY.Items[Me.LocalIndex]
+Var localA As Vector2 = Me.GetLocalAnchorA()
+Var localB As Vector2 = Me.GetLocalAnchorB()
+Var centerLocalA As Vector2 = bodyA.GetLocalCenterOfMass()
+Var centerLocalB As Vector2 = bodyB.GetLocalCenterOfMass()
+Var rAX As Double = transformA.Q.C * (localA.X - centerLocalA.X) - transformA.Q.S * (localA.Y - centerLocalA.Y)
+Var rAY As Double = transformA.Q.S * (localA.X - centerLocalA.X) + transformA.Q.C * (localA.Y - centerLocalA.Y)
+Var rBX As Double = transformB.Q.C * (localB.X - centerLocalB.X) - transformB.Q.S * (localB.Y - centerLocalB.Y)
+Var rBY As Double = transformB.Q.S * (localB.X - centerLocalB.X) + transformB.Q.C * (localB.Y - centerLocalB.Y)
+Var centerA As Vector2 = Me.Owner.GetBodyWorldCenterOfMass(bodyA)
+Var centerB As Vector2 = Me.Owner.GetBodyWorldCenterOfMass(bodyB)
+Var dX As Double = centerB.X - centerA.X + rBX - rAX
+Var dY As Double = centerB.Y - centerA.Y + rBY - rAY
+Var vA As Vector2 = Me.Owner.GetBodyLinearVelocity(bodyA)
+Var vB As Vector2 = Me.Owner.GetBodyLinearVelocity(bodyB)
+Var wA As Double = Me.Owner.GetBodyAngularVelocity(bodyA)
+Var wB As Double = Me.Owner.GetBodyAngularVelocity(bodyB)
+Var vRelX As Double = vB.X - wB * rBY - (vA.X - wA * rAY)
+Var vRelY As Double = vB.Y + wB * rBX - (vA.Y + wA * rAX)
+Return dX * (wA * axisY) - dY * (wA * axisX) + axisX * vRelX + axisY * vRelY
+End Function
+
+## Enables the translation limits, ported from b2WheelJoint_EnableLimit.
+## Toggling clears both accumulated limit impulses.
+Sub EnableLimit(enableLimit As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableLimit Then
+flag = 1
+End If
+If flag <> store.EnableLimit.Items[Me.LocalIndex] Then
+store.EnableLimit.Items[Me.LocalIndex] = flag
+store.WheelLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.WheelUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the translation limits are active, ported from
+## b2WheelJoint_IsLimitEnabled.
+Function IsLimitEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableLimit.Items[Me.LocalIndex] <> 0
+End Function
+
+## Lower translation limit in metres, ported from
+## b2WheelJoint_GetLowerLimit.
+Function GetLowerLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelLowerTranslation.Items[Me.LocalIndex]
+End Function
+
+## Upper translation limit in metres, ported from
+## b2WheelJoint_GetUpperLimit.
+Function GetUpperLimit() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelUpperTranslation.Items[Me.LocalIndex]
+End Function
+
+## Sets both translation limits in metres, ported from
+## b2WheelJoint_SetLimits. The lower limit must not exceed the upper
+## limit, matching the upstream assertion; changing the values clears both
+## accumulated limit impulses.
+Sub SetLimits(lower As Double, upper As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+If Not lower.IsFinite() Or Not upper.IsFinite() Then
+Throw New InvalidArgumentException("Wheel joint limits must be finite")
+End If
+If lower > upper Then
+Throw New InvalidArgumentException("Wheel joint lower limit must not exceed the upper limit")
+End If
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+If lower <> store.WheelLowerTranslation.Items[Me.LocalIndex] Or upper <> store.WheelUpperTranslation.Items[Me.LocalIndex] Then
+store.WheelLowerTranslation.Items[Me.LocalIndex] = lower
+store.WheelUpperTranslation.Items[Me.LocalIndex] = upper
+store.WheelLowerImpulse.Items[Me.LocalIndex] = 0.0
+store.WheelUpperImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## Enables the wheel motor, ported from b2WheelJoint_EnableMotor.
+## Toggling clears the accumulated motor impulse.
+Sub EnableMotor(enableMotor As Boolean)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var flag As Integer = 0
+If enableMotor Then
+flag = 1
+End If
+If flag <> store.EnableMotor.Items[Me.LocalIndex] Then
+store.EnableMotor.Items[Me.LocalIndex] = flag
+store.WheelMotorImpulse.Items[Me.LocalIndex] = 0.0
+End If
+End Sub
+
+## True when the wheel motor is active, ported from
+## b2WheelJoint_IsMotorEnabled.
+Function IsMotorEnabled() As Boolean
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).EnableMotor.Items[Me.LocalIndex] <> 0
+End Function
+
+## Desired motor speed in radians per second, ported from
+## b2WheelJoint_SetMotorSpeed. Changes apply from the next step.
+Sub SetMotorSpeed(motorSpeed As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).WheelMotorSpeed.Items[Me.LocalIndex] = motorSpeed
+End Sub
+
+## Desired motor speed in radians per second, ported from
+## b2WheelJoint_GetMotorSpeed.
+Function GetMotorSpeed() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelMotorSpeed.Items[Me.LocalIndex]
+End Function
+
+## Maximum motor torque in newton-metres, ported from
+## b2WheelJoint_SetMaxMotorTorque. Changes apply from the next step.
+Sub SetMaxMotorTorque(torque As Double)
+Me.CheckValid()
+Me.Owner.CheckNotLocked()
+Me.Owner.GetJointSims(Me).WheelMaxMotorTorque.Items[Me.LocalIndex] = torque
+End Sub
+
+## Maximum motor torque in newton-metres, ported from
+## b2WheelJoint_GetMaxMotorTorque.
+Function GetMaxMotorTorque() As Double
+Me.CheckValid()
+Return Me.Owner.GetJointSims(Me).WheelMaxMotorTorque.Items[Me.LocalIndex]
+End Function
+
+## Torque the motor applied this step in newton-metres, ported from
+## b2WheelJoint_GetMotorTorque.
+Function GetMotorTorque() As Double
+Me.CheckValid()
+Return Me.Owner.InvH * Me.Owner.GetJointSims(Me).WheelMotorImpulse.Items[Me.LocalIndex]
+End Function
+
+## The local axis in body A's frame, ported from b2Joint_GetLocalAxisA for
+## the wheel family. Returns a new Vector2 copy; safe to retain.
+Override Function GetLocalAxisA() As Vector2
+Me.CheckValid()
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return New Vector2(store.WheelLocalAxisX.Items[Me.LocalIndex], store.WheelLocalAxisY.Items[Me.LocalIndex])
+End Function
+End Class

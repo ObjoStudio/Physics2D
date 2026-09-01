@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage9WheelWorkload",
+  "Id": "a82a0fb3-7335-49de-a0f4-f3a1ec8cd8a9",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage9WheelWorkload-a82a0fb3-7335-49de-a0f4-f3a1ec8cd8a9.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

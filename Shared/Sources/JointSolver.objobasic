@@ -28,6 +28,8 @@ ElseIf sims.Type.Items[index] = Integer(JointType.PrismaticJoint) Then
 PreparePrismaticJoint(sims, index, context)
 ElseIf sims.Type.Items[index] = Integer(JointType.WeldJoint) Then
 PrepareWeldJoint(sims, index, context)
+ElseIf sims.Type.Items[index] = Integer(JointType.WheelJoint) Then
+PrepareWheelJoint(sims, index, context)
 End If
 End Sub
 
@@ -1969,6 +1971,420 @@ End Function
 ## b2GetWeldJointTorque.
 Shared Function GetWeldJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
 Return invH * sims.WeldAngularImpulse.Items[index]
+End Function
+
+## Prepares one wheel joint row, ported from b2PrepareWheelJoint. The
+## wheel keeps body B on the axis line, applies the suspension spring and
+## translation limits along the axis, and drives the wheel spin with a
+## torque-clamped motor; body B's rotation is otherwise free. A non-awake
+## body stores a NULL_INDEX state row that the kernels replace with an
+## identity dummy.
+Private Shared Sub PrepareWheelJoint(sims As JointSims, index As Integer, context As StepContext)
+Var world As World = context.World
+Var bodyA As Body = world.Bodies[sims.BodyIdA.Items[index]]
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
+Var simA As BodySims = world.GetBodySim(bodyA)
+Var simB As BodySims = world.GetBodySim(bodyB)
+Var indexA As Integer = bodyA.LocalIndex
+Var indexB As Integer = bodyB.LocalIndex
+
+sims.InvMassA.Items[index] = simA.InvMass.Items[indexA]
+sims.InvIA.Items[index] = simA.InvInertia.Items[indexA]
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
+
+If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexA.Items[index] = indexA
+Else
+sims.IndexA.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
+sims.IndexB.Items[index] = indexB
+Else
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
+End If
+
+Var qcA As Double = simA.QC.Items[indexA]
+Var qsA As Double = simA.QS.Items[indexA]
+Var qcB As Double = simB.QC.Items[indexB]
+Var qsB As Double = simB.QS.Items[indexB]
+Var localDX As Double = sims.LocalOriginAnchorAX.Items[index] - simA.LCX.Items[indexA]
+Var localDY As Double = sims.LocalOriginAnchorAY.Items[index] - simA.LCY.Items[indexA]
+sims.AnchorAX.Items[index] = qcA * localDX - qsA * localDY
+sims.AnchorAY.Items[index] = qsA * localDX + qcA * localDY
+Var localEX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localEY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
+sims.AnchorBX.Items[index] = qcB * localEX - qsB * localEY
+sims.AnchorBY.Items[index] = qsB * localEX + qcB * localEY
+Var axisLX As Double = sims.WheelLocalAxisX.Items[index]
+Var axisLY As Double = sims.WheelLocalAxisY.Items[index]
+sims.WheelAxisX.Items[index] = qcA * axisLX - qsA * axisLY
+sims.WheelAxisY.Items[index] = qsA * axisLX + qcA * axisLY
+
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
+
+# Effective masses from the perpendicular and axial torque arms.
+Var rAX As Double = sims.AnchorAX.Items[index]
+Var rAY As Double = sims.AnchorAY.Items[index]
+Var rBX As Double = sims.AnchorBX.Items[index]
+Var rBY As Double = sims.AnchorBY.Items[index]
+Var dX As Double = sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = sims.DeltaCenterY.Items[index] + rBY - rAY
+Var axisX As Double = sims.WheelAxisX.Items[index]
+Var axisY As Double = sims.WheelAxisY.Items[index]
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var s1 As Double = (dX + rAX) * perpY - (dY + rAY) * perpX
+Var s2 As Double = rBX * perpY - rBY * perpX
+Var kp As Double = mA + mB + iA * s1 * s1 + iB * s2 * s2
+If kp > 0.0 Then
+sims.WheelPerpMass.Items[index] = 1.0 / kp
+Else
+sims.WheelPerpMass.Items[index] = 0.0
+End If
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+Var ka As Double = mA + mB + iA * a1 * a1 + iB * a2 * a2
+If ka > 0.0 Then
+sims.WheelAxialMass.Items[index] = 1.0 / ka
+Else
+sims.WheelAxialMass.Items[index] = 0.0
+End If
+
+Softness.MakeTo(sims.WheelHertz.Items[index], sims.WheelDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.WheelSpringSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.WheelSpringSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.WheelSpringSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+
+Var km As Double = iA + iB
+If km > 0.0 Then
+sims.WheelMotorMass.Items[index] = 1.0 / km
+Else
+sims.WheelMotorMass.Items[index] = 0.0
+End If
+
+If context.WarmStartScale = 0.0 Then
+sims.WheelPerpImpulse.Items[index] = 0.0
+sims.WheelSpringImpulse.Items[index] = 0.0
+sims.WheelMotorImpulse.Items[index] = 0.0
+sims.WheelLowerImpulse.Items[index] = 0.0
+sims.WheelUpperImpulse.Items[index] = 0.0
+End If
+End Sub
+
+## Applies stored wheel joint impulses to both body states before
+## iterating, ported from b2WarmStartWheelJoint. The axial impulse bundles
+## the spring and limit impulses; the motor impulse acts on the spin.
+Shared Sub WarmStartWheelJoint(sims As JointSims, index As Integer, context As StepContext)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var dX As Double = dpBX - dpAX + sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = dpBY - dpAY + sims.DeltaCenterY.Items[index] + rBY - rAY
+Var axisLX As Double = sims.WheelAxisX.Items[index]
+Var axisLY As Double = sims.WheelAxisY.Items[index]
+Var axisX As Double = dqAC * axisLX - dqAS * axisLY
+Var axisY As Double = dqAS * axisLX + dqAC * axisLY
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+Var s1 As Double = (dX + rAX) * perpY - (dY + rAY) * perpX
+Var s2 As Double = rBX * perpY - rBY * perpX
+Var axialImpulse As Double = sims.WheelSpringImpulse.Items[index] + sims.WheelLowerImpulse.Items[index] - sims.WheelUpperImpulse.Items[index]
+
+Var pX As Double = axialImpulse * axisX + sims.WheelPerpImpulse.Items[index] * perpX
+Var pY As Double = axialImpulse * axisY + sims.WheelPerpImpulse.Items[index] * perpY
+Var la As Double = axialImpulse * a1 + sims.WheelPerpImpulse.Items[index] * s1 + sims.WheelMotorImpulse.Items[index]
+Var lb As Double = axialImpulse * a2 + sims.WheelPerpImpulse.Items[index] * s2 + sims.WheelMotorImpulse.Items[index]
+
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * la
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * lb
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Runs one velocity iteration for one wheel joint row, ported from
+## b2SolveWheelJoint: torque-clamped motor, suspension spring, translation
+## limits, then the perpendicular point-to-line block.
+Shared Sub SolveWheelJoint(sims As JointSims, index As Integer, context As StepContext, useBias As Boolean)
+Var states As BodyStates = context.States
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
+
+Var vAX As Double = 0.0
+Var vAY As Double = 0.0
+Var wA As Double = 0.0
+Var dpAX As Double = 0.0
+Var dpAY As Double = 0.0
+Var dqAC As Double = 1.0
+Var dqAS As Double = 0.0
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
+End If
+Var vBX As Double = 0.0
+Var vBY As Double = 0.0
+Var wB As Double = 0.0
+Var dpBX As Double = 0.0
+Var dpBY As Double = 0.0
+Var dqBC As Double = 1.0
+Var dqBS As Double = 0.0
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
+End If
+
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
+Var dX As Double = dpBX - dpAX + sims.DeltaCenterX.Items[index] + rBX - rAX
+Var dY As Double = dpBY - dpAY + sims.DeltaCenterY.Items[index] + rBY - rAY
+Var axisLX As Double = sims.WheelAxisX.Items[index]
+Var axisLY As Double = sims.WheelAxisY.Items[index]
+Var axisX As Double = dqAC * axisLX - dqAS * axisLY
+Var axisY As Double = dqAS * axisLX + dqAC * axisLY
+Var translation As Double = axisX * dX + axisY * dY
+Var a1 As Double = (dX + rAX) * axisY - (dY + rAY) * axisX
+Var a2 As Double = rBX * axisY - rBY * axisX
+
+Var fixedRotation As Boolean = (iA + iB = 0.0)
+
+# Motor constraint.
+If sims.EnableMotor.Items[index] <> 0 And fixedRotation = False Then
+Var Cdot As Double = wB - wA - sims.WheelMotorSpeed.Items[index]
+Var impulse As Double = -sims.WheelMotorMass.Items[index] * Cdot
+Var oldImpulse As Double = sims.WheelMotorImpulse.Items[index]
+Var maxImpulse As Double = context.H * sims.WheelMaxMotorTorque.Items[index]
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse > maxImpulse Then
+newImpulse = maxImpulse
+ElseIf newImpulse < -maxImpulse Then
+newImpulse = -maxImpulse
+End If
+sims.WheelMotorImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+wA = wA - iA * impulse
+wB = wB + iB * impulse
+End If
+
+# Spring constraint: a real spring, applied even during relax. The wheel
+# spring drives the translation toward zero, matching the upstream C.
+If sims.EnableSpring.Items[index] <> 0 Then
+Var C As Double = translation
+Var bias As Double = sims.WheelSpringSoftnessBiasRate.Items[index] * C
+Var massScale As Double = sims.WheelSpringSoftnessMassScale.Items[index]
+Var impulseScale As Double = sims.WheelSpringSoftnessImpulseScale.Items[index]
+Var Cdot As Double = axisX * (vBX - vAX) + axisY * (vBY - vAY) + a2 * wB - a1 * wA
+Var impulse As Double = -massScale * sims.WheelAxialMass.Items[index] * (Cdot + bias) - impulseScale * sims.WheelSpringImpulse.Items[index]
+sims.WheelSpringImpulse.Items[index] = sims.WheelSpringImpulse.Items[index] + impulse
+Var pX As Double = impulse * axisX
+Var pY As Double = impulse * axisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (impulse * a1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (impulse * a2)
+End If
+
+If sims.EnableLimit.Items[index] <> 0 Then
+# Lower limit.
+Var C As Double = translation - sims.WheelLowerTranslation.Items[index]
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If C > 0.0 Then
+# Speculation.
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var Cdot As Double = axisX * (vBX - vAX) + axisY * (vBY - vAY) + a2 * wB - a1 * wA
+Var impulse As Double = -massScale * sims.WheelAxialMass.Items[index] * (Cdot + bias) - impulseScale * sims.WheelLowerImpulse.Items[index]
+Var oldImpulse As Double = sims.WheelLowerImpulse.Items[index]
+Var newImpulse As Double = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.WheelLowerImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+Var pX As Double = impulse * axisX
+Var pY As Double = impulse * axisY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (impulse * a1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (impulse * a2)
+
+# Upper limit: signs flipped to keep C positive when satisfied.
+C = sims.WheelUpperTranslation.Items[index] - translation
+bias = 0.0
+massScale = 1.0
+impulseScale = 0.0
+If C > 0.0 Then
+bias = C * context.InvH
+ElseIf useBias Then
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+
+# Sign flipped on Cdot.
+Cdot = axisX * (vAX - vBX) + axisY * (vAY - vBY) + a1 * wA - a2 * wB
+impulse = -massScale * sims.WheelAxialMass.Items[index] * (Cdot + bias) - impulseScale * sims.WheelUpperImpulse.Items[index]
+oldImpulse = sims.WheelUpperImpulse.Items[index]
+newImpulse = oldImpulse + impulse
+If newImpulse < 0.0 Then
+newImpulse = 0.0
+End If
+sims.WheelUpperImpulse.Items[index] = newImpulse
+impulse = newImpulse - oldImpulse
+pX = impulse * axisX
+pY = impulse * axisY
+# Sign flipped on applied impulse.
+vAX = vAX + mA * pX
+vAY = vAY + mA * pY
+wA = wA + iA * (impulse * a1)
+vBX = vBX - mB * pX
+vBY = vBY - mB * pY
+wB = wB - iB * (impulse * a2)
+End If
+
+# Point-to-line constraint.
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var s1 As Double = (dX + rAX) * perpY - (dY + rAY) * perpX
+Var s2 As Double = rBX * perpY - rBY * perpX
+Var bias As Double = 0.0
+Var massScale As Double = 1.0
+Var impulseScale As Double = 0.0
+If useBias Then
+Var C As Double = perpX * dX + perpY * dY
+bias = sims.SoftnessBiasRate.Items[index] * C
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
+End If
+Var Cdot As Double = perpX * (vBX - vAX) + perpY * (vBY - vAY) + s2 * wB - s1 * wA
+Var impulse As Double = -massScale * sims.WheelPerpMass.Items[index] * (Cdot + bias) - impulseScale * sims.WheelPerpImpulse.Items[index]
+sims.WheelPerpImpulse.Items[index] = sims.WheelPerpImpulse.Items[index] + impulse
+Var pX As Double = impulse * perpX
+Var pY As Double = impulse * perpY
+vAX = vAX - mA * pX
+vAY = vAY - mA * pY
+wA = wA - iA * (impulse * s1)
+vBX = vBX + mB * pX
+vBY = vBY + mB * pY
+wB = wB + iB * (impulse * s2)
+
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
+End If
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
+End If
+End Sub
+
+## Total force the wheel joint row applied this step, ported from
+## b2GetWheelJointForce: the perpendicular and axial components combined
+## in world space.
+Shared Function GetWheelJointForce(sims As JointSims, index As Integer, invH As Double) As Vector2
+Var axisX As Double = sims.WheelAxisX.Items[index]
+Var axisY As Double = sims.WheelAxisY.Items[index]
+Var perpX As Double = -axisY
+Var perpY As Double = axisX
+Var perpForce As Double = invH * sims.WheelPerpImpulse.Items[index]
+Var axialForce As Double = invH * (sims.WheelSpringImpulse.Items[index] + sims.WheelLowerImpulse.Items[index] - sims.WheelUpperImpulse.Items[index])
+Return New Vector2(perpForce * perpX + axialForce * axisX, perpForce * perpY + axialForce * axisY)
+End Function
+
+## Torque the wheel joint row applied this step, ported from
+## b2GetWheelJointTorque: the motor impulse rate.
+Shared Function GetWheelJointTorque(sims As JointSims, index As Integer, invH As Double) As Double
+Return invH * sims.WheelMotorImpulse.Items[index]
 End Function
 
 ## Total force the mouse joint row applied this step, ported from
