@@ -538,11 +538,211 @@ static void EmitScene(const char* name, int frameCount, int levels, int dumpBody
 	b2DestroyWorld(worldId);
 }
 
+// ----------------------------------------------------------------- joints ----
+
+// Distance-joint scene fixture: four deterministic distance-joint cases
+// stepped with the upstream default of four substeps, exercising the rigid
+// rope, the length limits, the soft spring, and the motor. Each case runs in
+// its own world and dumps final body transforms plus joint measurements.
+static void DumpJointBody(const char* name, int bodyIndex, b2BodyId bodyId)
+{
+	b2Vec2 p = b2Body_GetPosition(bodyId);
+	float angle = b2Rot_GetAngle(b2Body_GetRotation(bodyId));
+	bool awake = b2Body_IsAwake(bodyId);
+	printf("joint|%s|body|%d|", name, bodyIndex);
+	PrintNum(p.x); printf(" ");
+	PrintNum(p.y); printf(" ");
+	PrintNum(angle); printf(" %d\n", awake ? 1 : 0);
+}
+
+static void DumpJointJoint(const char* name, b2JointId jointId)
+{
+	b2Vec2 force = b2Joint_GetConstraintForce(jointId);
+	float torque = b2Joint_GetConstraintTorque(jointId);
+	float length = b2DistanceJoint_GetCurrentLength(jointId);
+	float motorForce = b2DistanceJoint_GetMotorForce(jointId);
+	printf("joint|%s|joint|", name);
+	PrintNum(force.x); printf(" ");
+	PrintNum(force.y); printf(" ");
+	PrintNum(torque); printf(" ");
+	PrintNum(length); printf(" ");
+	PrintNum(motorForce); printf("\n");
+}
+
+static void EmitJointRope(void)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef groundDef = b2DefaultBodyDef();
+	groundDef.position = (b2Vec2){0.0f, -1.0f};
+	b2BodyId groundId = b2CreateBody(worldId, &groundDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon groundBox = b2MakeBox(50.0f, 1.0f);
+	b2CreatePolygonShape(groundId, &shapeDef, &groundBox);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){-1.0f, 6.0f};
+	b2BodyId bodyA = b2CreateBody(worldId, &bodyDef);
+	b2CreatePolygonShape(bodyA, &shapeDef, &box);
+	bodyDef.position = (b2Vec2){1.0f, 6.0f};
+	b2BodyId bodyB = b2CreateBody(worldId, &bodyDef);
+	b2CreatePolygonShape(bodyB, &shapeDef, &box);
+
+	b2DistanceJointDef jointDef = b2DefaultDistanceJointDef();
+	jointDef.bodyIdA = bodyA;
+	jointDef.bodyIdB = bodyB;
+	jointDef.length = 2.0f;
+	b2JointId jointId = b2CreateDistanceJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 90; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+	}
+
+	DumpJointBody("rope", 0, bodyA);
+	DumpJointBody("rope", 1, bodyB);
+	DumpJointJoint("rope", jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitJointLimit(void)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef anchorDef = b2DefaultBodyDef();
+	anchorDef.position = (b2Vec2){0.0f, 8.0f};
+	b2BodyId anchorId = b2CreateBody(worldId, &anchorDef);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){0.0f, 6.5f};
+	bodyDef.linearVelocity = (b2Vec2){0.0f, -12.0f};
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	b2DistanceJointDef jointDef = b2DefaultDistanceJointDef();
+	jointDef.bodyIdA = anchorId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.length = 1.5f;
+	jointDef.enableSpring = true;
+	jointDef.hertz = 5.0f;
+	jointDef.dampingRatio = 0.5f;
+	jointDef.enableLimit = true;
+	jointDef.minLength = 0.5f;
+	jointDef.maxLength = 1.5f;
+	b2JointId jointId = b2CreateDistanceJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 120; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+	}
+
+	DumpJointBody("limit", 0, bodyId);
+	DumpJointJoint("limit", jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitJointSpring(void)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef anchorDef = b2DefaultBodyDef();
+	anchorDef.position = (b2Vec2){0.0f, 8.0f};
+	b2BodyId anchorId = b2CreateBody(worldId, &anchorDef);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){0.0f, 5.5f};
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	b2DistanceJointDef jointDef = b2DefaultDistanceJointDef();
+	jointDef.bodyIdA = anchorId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.length = 2.0f;
+	jointDef.enableSpring = true;
+	jointDef.hertz = 3.0f;
+	jointDef.dampingRatio = 0.6f;
+	b2JointId jointId = b2CreateDistanceJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 240; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+	}
+
+	DumpJointBody("spring", 0, bodyId);
+	DumpJointJoint("spring", jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitJointMotor(void)
+{
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+	b2WorldId worldId = b2CreateWorld(&worldDef);
+
+	b2BodyDef anchorDef = b2DefaultBodyDef();
+	anchorDef.position = (b2Vec2){0.0f, 8.0f};
+	b2BodyId anchorId = b2CreateBody(worldId, &anchorDef);
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = (b2Vec2){0.0f, 7.0f};
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	b2Polygon box = b2MakeBox(0.25f, 0.25f);
+	b2CreatePolygonShape(bodyId, &shapeDef, &box);
+
+	b2DistanceJointDef jointDef = b2DefaultDistanceJointDef();
+	jointDef.bodyIdA = anchorId;
+	jointDef.bodyIdB = bodyId;
+	jointDef.length = 0.5f;
+	jointDef.enableSpring = true;
+	jointDef.hertz = 20.0f;
+	jointDef.dampingRatio = 1.0f;
+	jointDef.enableLimit = true;
+	jointDef.minLength = 0.5f;
+	jointDef.maxLength = 5.0f;
+	jointDef.enableMotor = true;
+	jointDef.motorSpeed = 2.0f;
+	jointDef.maxMotorForce = 2000.0f;
+	b2JointId jointId = b2CreateDistanceJoint(worldId, &jointDef);
+
+	for (int frame = 0; frame < 240; ++frame)
+	{
+		b2World_Step(worldId, 1.0f / 60.0f, 4);
+	}
+
+	DumpJointBody("motor", 0, bodyId);
+	DumpJointJoint("motor", jointId);
+	b2DestroyWorld(worldId);
+}
+
+static void EmitJointDistance(void)
+{
+	EmitJointRope();
+	EmitJointLimit();
+	EmitJointSpring();
+	EmitJointMotor();
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
 	{
-		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack>\n");
+		fprintf(stderr, "usage: fixture_gen <maths|hull|distance|raycast|shapecast|manifold|mass|scene_falling|scene_pyramid|scene_stack|joint_distance>\n");
 		return 2;
 	}
 
@@ -557,6 +757,7 @@ int main(int argc, char** argv)
 	else if (strcmp(name, "scene_falling") == 0) EmitScene("falling", 60, 1, 64);
 	else if (strcmp(name, "scene_pyramid") == 0) EmitScene("pyramid", 120, 10, 64);
 	else if (strcmp(name, "scene_stack") == 0) EmitScene("stack", 240, 8, 64);
+	else if (strcmp(name, "joint_distance") == 0) EmitJointDistance();
 	else
 	{
 		fprintf(stderr, "unknown fixture: %s\n", name);

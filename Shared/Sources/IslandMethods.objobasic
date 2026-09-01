@@ -5,12 +5,15 @@
 # after constraint removal.
 Class IslandMethods
 ## Creates an island in the given solver set, ported from b2CreateIsland.
-Shared Function CreateIsland(world As World, setIndex As Integer) As Island
+Private Shared Function CreateIsland(world As World, setIndex As Integer) As Island
 If setIndex <> PhysicsConstants.AWAKE_SET And setIndex < PhysicsConstants.FIRST_SLEEPING_SET Then
 Throw New InvalidArgumentException("Islands require the awake or a sleeping set")
 End If
 Var islandId As Integer = world.IslandIdPool.AllocId()
 If islandId = world.Islands.Count Then
+# Growing the island array is the only allocation path: freed island
+# ids are reused in place first, so this runs only when the world
+# holds more simultaneous islands than ever before.
 world.Islands.Append(New Island)
 End If
 Var contactSet As SolverSet = world.SolverSets[setIndex]
@@ -35,7 +38,7 @@ End Function
 
 ## Destroys an empty island, ported from b2DestroyIsland. The island must
 ## already be empty.
-Shared Sub DestroyIsland(world As World, islandId As Integer)
+Private Shared Sub DestroyIsland(world As World, islandId As Integer)
 If world.SplitIslandId = islandId Then
 world.SplitIslandId = PhysicsConstants.NULL_INDEX
 End If
@@ -49,6 +52,17 @@ End If
 island.IslandId = PhysicsConstants.NULL_INDEX
 island.SetIndex = PhysicsConstants.NULL_INDEX
 island.LocalIndex = PhysicsConstants.NULL_INDEX
+island.HeadBody = PhysicsConstants.NULL_INDEX
+island.TailBody = PhysicsConstants.NULL_INDEX
+island.BodyCount = 0
+island.HeadContact = PhysicsConstants.NULL_INDEX
+island.TailContact = PhysicsConstants.NULL_INDEX
+island.ContactCount = 0
+island.HeadJoint = PhysicsConstants.NULL_INDEX
+island.TailJoint = PhysicsConstants.NULL_INDEX
+island.JointCount = 0
+island.ParentIsland = PhysicsConstants.NULL_INDEX
+island.ConstraintRemoveCount = 0
 world.IslandIdPool.FreeId(islandId)
 End Sub
 
@@ -61,7 +75,7 @@ End If
 If setIndex = PhysicsConstants.DISABLED_SET Or setIndex = PhysicsConstants.STATIC_SET Then
 Throw New InvalidArgumentException("Islands require the awake or a sleeping set")
 End If
-Var island As Island = IslandMethods.CreateIsland(world, setIndex)
+Var island As Island = CreateIsland(world, setIndex)
 body.IslandId = island.IslandId
 island.HeadBody = body.Id
 island.TailBody = body.Id
@@ -89,7 +103,7 @@ If island.HeadBody = PhysicsConstants.NULL_INDEX Then
 If island.TailBody <> body.Id Or island.BodyCount <> 0 Or island.ContactCount <> 0 Or island.JointCount <> 0 Then
 Throw New RuntimeException("Island bookkeeping disagrees while removing a body")
 End If
-IslandMethods.DestroyIsland(world, island.IslandId)
+DestroyIsland(world, island.IslandId)
 End If
 ElseIf island.TailBody = body.Id Then
 island.TailBody = body.IslandPrev
@@ -389,7 +403,7 @@ Var islandId As Integer = awakeSet.IslandIds.Items[i]
 Var island As Island = world.Islands[islandId]
 If island.ParentIsland <> PhysicsConstants.NULL_INDEX Then
 MergeIsland(world, islandId)
-IslandMethods.DestroyIsland(world, islandId)
+DestroyIsland(world, islandId)
 End If
 i = i - 1
 Wend
@@ -433,14 +447,14 @@ markedJoint.IsMarked = False
 nextJointId = markedJoint.IslandNext
 Wend
 
-IslandMethods.DestroyIsland(world, baseId)
+DestroyIsland(world, baseId)
 
 Var i As Integer = 0
 While i < bodyCount
 Var seedIndex As Integer = bodyIds[i]
 Var seed As Body = world.Bodies[seedIndex]
 If seed.IsMarked = False Then
-Var island As Island = IslandMethods.CreateIsland(world, PhysicsConstants.AWAKE_SET)
+Var island As Island = CreateIsland(world, PhysicsConstants.AWAKE_SET)
 Var islandId As Integer = island.IslandId
 Var stack As New Array(Of Integer)
 stack.Append(seedIndex)
@@ -511,63 +525,63 @@ End If
 island.ContactCount = island.ContactCount + 1
 Wend
 
-	# Search all joints connected to this body, ported from the joint walk of
-	# b2SplitIsland.
-	DfsVisitJoints(world, island, islandId, bodyId, stack)
+# Search all joints connected to this body, ported from the joint walk of
+# b2SplitIsland.
+DfsVisitJoints(world, island, islandId, bodyId, stack)
 End Sub
 
 ## Walks the joints attached to one body during island split DFS, marking
 ## unmarked joints, pushing awake unmarked neighbours, and appending the
 ## joint to the new island's list.
 Private Shared Sub DfsVisitJoints(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As Array(Of Integer))
-	Var body As Body = world.Bodies[bodyId]
-	Var jointKey As Integer = body.HeadJointKey
-	While jointKey <> PhysicsConstants.NULL_INDEX
-		Var visitedJointId As Integer = jointKey.ShiftRight(1)
-		Var jointEdgeIndex As Integer = jointKey.BitAnd(1)
-		Var visitedJoint As Joint = world.Joints[visitedJointId]
-		jointKey = visitedJoint.Edge0NextKey
-		If jointEdgeIndex = 1 Then
-			jointKey = visitedJoint.Edge1NextKey
-		End If
-		If visitedJoint.IsMarked Then
-			Continue While
-		End If
-		visitedJoint.IsMarked = True
+Var body As Body = world.Bodies[bodyId]
+Var jointKey As Integer = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var visitedJointId As Integer = jointKey.ShiftRight(1)
+Var jointEdgeIndex As Integer = jointKey.BitAnd(1)
+Var visitedJoint As Joint = world.Joints[visitedJointId]
+jointKey = visitedJoint.Edge0NextKey
+If jointEdgeIndex = 1 Then
+jointKey = visitedJoint.Edge1NextKey
+End If
+If visitedJoint.IsMarked Then
+Continue While
+End If
+visitedJoint.IsMarked = True
 
-		Var jointOtherEdge As Integer = 0
-		If jointEdgeIndex = 0 Then
-			jointOtherEdge = 1
-		End If
-		Var jointOtherBodyId As Integer = visitedJoint.Edge0BodyId
-		If jointOtherEdge = 1 Then
-			jointOtherBodyId = visitedJoint.Edge1BodyId
-		End If
-		Var jointOtherBody As Body = world.Bodies[jointOtherBodyId]
+Var jointOtherEdge As Integer = 0
+If jointEdgeIndex = 0 Then
+jointOtherEdge = 1
+End If
+Var jointOtherBodyId As Integer = visitedJoint.Edge0BodyId
+If jointOtherEdge = 1 Then
+jointOtherBodyId = visitedJoint.Edge1BodyId
+End If
+Var jointOtherBody As Body = world.Bodies[jointOtherBodyId]
 
-		# Don't simulate joints connected to disabled bodies.
-		If jointOtherBody.SetIndex = PhysicsConstants.DISABLED_SET Then
-			Continue While
-		End If
+# Don't simulate joints connected to disabled bodies.
+If jointOtherBody.SetIndex = PhysicsConstants.DISABLED_SET Then
+Continue While
+End If
 
-		If jointOtherBody.IsMarked = False And jointOtherBody.SetIndex = PhysicsConstants.AWAKE_SET Then
-			stack.Append(jointOtherBodyId)
-			jointOtherBody.IsMarked = True
-		End If
+If jointOtherBody.IsMarked = False And jointOtherBody.SetIndex = PhysicsConstants.AWAKE_SET Then
+stack.Append(jointOtherBodyId)
+jointOtherBody.IsMarked = True
+End If
 
-		# Add joint to island.
-		visitedJoint.IslandId = islandId
-		If island.TailJoint <> PhysicsConstants.NULL_INDEX Then
-			world.Joints[island.TailJoint].IslandNext = visitedJointId
-		End If
-		visitedJoint.IslandPrev = island.TailJoint
-		visitedJoint.IslandNext = PhysicsConstants.NULL_INDEX
-		island.TailJoint = visitedJointId
-		If island.HeadJoint = PhysicsConstants.NULL_INDEX Then
-			island.HeadJoint = visitedJointId
-		End If
-		island.JointCount = island.JointCount + 1
-	Wend
+# Add joint to island.
+visitedJoint.IslandId = islandId
+If island.TailJoint <> PhysicsConstants.NULL_INDEX Then
+world.Joints[island.TailJoint].IslandNext = visitedJointId
+End If
+visitedJoint.IslandPrev = island.TailJoint
+visitedJoint.IslandNext = PhysicsConstants.NULL_INDEX
+island.TailJoint = visitedJointId
+If island.HeadJoint = PhysicsConstants.NULL_INDEX Then
+island.HeadJoint = visitedJointId
+End If
+island.JointCount = island.JointCount + 1
+Wend
 End Sub
 
 ## Validates one island's linked lists and cross-references, ported from

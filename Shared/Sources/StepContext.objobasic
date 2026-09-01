@@ -32,6 +32,9 @@ Property World As World
 Property States As BodyStates
 ## Reusable distance joint solver scratch, one row per joint solve.
 Property JointScratch As DistanceJointScratch
+## Reusable softness target for joint prepare stages, ported from the
+## stack-local b2MakeSoft results of b2PrepareJoint.
+Property SoftnessScratch As Softness
 
 ## Creates a scratch context with reusable softness records.
 Constructor()
@@ -41,5 +44,6 @@ Me.BulletBodies = New IntegerList
 Me.World = Nothing
 Me.States = Nothing
 Me.JointScratch = New DistanceJointScratch
+Me.SoftnessScratch = New Softness
 End Constructor
 End Class

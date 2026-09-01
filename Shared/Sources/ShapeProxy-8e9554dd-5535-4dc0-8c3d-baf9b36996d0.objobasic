@@ -33,6 +33,20 @@ Shared Function MakeOffset(points() As Vector2, count As Integer, radius As Doub
 Return ShapeProxy.MakeImpl(points, count, radius, position.X, position.Y, rotation.C, rotation.S)
 End Function
 
+## Refills an existing one-point proxy in place, for warm paths that
+## would otherwise rebuild a tiny proxy every call. The point object held
+## by the proxy is reused, so callers must not retain the point between
+## calls.
+Shared Sub MakeOnePointTo(out As ShapeProxy, x As Double, y As Double, radius As Double)
+If out.Points.Count = 0 Then
+out.Points.Append(New Vector2(x, y))
+Else
+out.Points[0].Set(x, y)
+End If
+out.Count = 1
+out.Radius = radius
+End Sub
+
 ## Shared implementation for Make and MakeOffset. For Make the offset is
 ## the identity, which reproduces the input exactly.
 Shared Function MakeImpl(points() As Vector2, count As Integer, radius As Double, px As Double, py As Double, qc As Double, qs As Double) As ShapeProxy

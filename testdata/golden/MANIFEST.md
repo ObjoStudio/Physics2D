@@ -4,7 +4,7 @@
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (see docs/PORTING.md).
 #
 # Generation command (from the repository root, after building the tool):
-#   for f in maths hull distance raycast shapecast manifold mass scene_falling scene_pyramid scene_stack; do
+#   for f in maths hull distance raycast shapecast manifold mass scene_falling scene_pyramid scene_stack joint_distance; do
 #     ./build/tools/fixture_gen $f > testdata/golden/$f.txt
 #   done
 #
@@ -16,9 +16,10 @@ Generated on 2026-08-30.
 
 | File | SHA-256 |
 |---|---|
-| `tools/fixture_gen/fixture_gen.c` | 42900e3c787a82343fdd3620f39f574021431e148b8c85d710c6bc7776f1bb14 |
+| `tools/fixture_gen/fixture_gen.c` | 907c3b987bbb84e6ac3b46336572c72b1515a6bb2f289503c43f373b40f9a86c |
 | `testdata/golden/distance.txt` | e3308d9c1aa25d8cd5a715fd8103b28ceaa8a3964cbe513ad424ecdf4eabd26c |
 | `testdata/golden/hull.txt` | 48d12525c5a1a837349d3180c74b640769f56ae78139121be649f2c45a058121 |
+| `testdata/golden/joint_distance.txt` | ff5bf412c046aed8f4abf71d3855d977914ef770d7c1ae24c5ab24384d8f6a67 |
 | `testdata/golden/manifold.txt` | d3364d2db2bd598856668578b7910b44c9183245fafca1ccfb3e5db980c35701 |
 | `testdata/golden/mass.txt` | 880a0a41bb111488631f89e8864d9ee0c4f20df0d335cddd79a1a83422aad736 |
 | `testdata/golden/maths.txt` | b88060fa94260d4850309e753a72fb42cc02184d6931371def7ce708ad1e186f |
@@ -53,3 +54,10 @@ with exact equality. A trailing `1`/`0` integer encodes a Boolean.
 - `scene|name|bodies|bodyCount|movedCount`, then one
   `scene|name|body|index|positionx positiony angle awake` line per dumped body
   (the first `dumpBodyLimit` bodies after the step).
+- `joint|case|body|index|positionx positiony angle awake`, then one
+  `joint|case|joint|forceX forceY torque length motorForce` line per distance
+  joint case. Cases: `rope` (rigid joint, two falling boxes, 90 frames),
+  `limit` (limited soft joint catching a body shot downward, 120 frames),
+  `spring` (soft joint oscillating to rest, 240 frames), `motor` (motor
+  driving a limited spring joint against gravity, 240 frames). Every frame
+  steps with the upstream default substep count of four.

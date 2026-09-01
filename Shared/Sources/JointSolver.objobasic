@@ -1,70 +1,74 @@
 # Joint constraint solver, ported from the prepare/warm-start/solve bodies in
 # joint.c and distance_joint.c. The dispatch collapses upstream's function
-# tables into type switches; the per-family maths is a direct scalar port in
-# the ContactSolver idiom. The overflow colour runs its own entry points so
-# the solve order matches upstream's serial overflow work.
+# tables into type checks on the store's Type column; the per-family maths is
+# a direct scalar port in the ContactSolver idiom, reading and writing the
+# JointSims columns of one row. The overflow colour runs its own entry points
+# so the solve order matches upstream's serial overflow work.
 Class JointSolver
-## Prepares one joint for the step, ported from b2PrepareJoint. Clamps the
-## solver hertz against the substep rate before refreshing softness.
-Shared Sub PrepareJoint(joint As JointSim, context As StepContext)
-Var hertz As Double = joint.ConstraintHertz
+## Prepares one joint row for the step, ported from b2PrepareJoint. Clamps
+## the solver hertz against the substep rate before refreshing softness.
+Shared Sub PrepareJoint(sims As JointSims, index As Integer, context As StepContext)
+Var hertz As Double = sims.ConstraintHertz.Items[index]
 If hertz > 0.25 * context.InvH Then
 hertz = 0.25 * context.InvH
 End If
-Softness.MakeTo(hertz, joint.ConstraintDampingRatio, context.H, joint.ConstraintSoftness)
-If joint.Type = JointType.DistanceJoint Then
-JointSolver.PrepareDistanceJoint(DistanceJointSim(joint), context)
+Softness.MakeTo(hertz, sims.ConstraintDampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.SoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.SoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.SoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
+If sims.Type.Items[index] = Integer(JointType.DistanceJoint) Then
+PrepareDistanceJoint(sims, index, context)
 End If
 End Sub
 
-## Prepares one distance joint, ported from b2PrepareDistanceJoint.
-Shared Sub PrepareDistanceJoint(base As DistanceJointSim, context As StepContext)
+## Prepares one distance joint row, ported from b2PrepareDistanceJoint.
+Private Shared Sub PrepareDistanceJoint(sims As JointSims, index As Integer, context As StepContext)
 Var world As World = context.World
-Var bodyA As Body = world.Bodies[base.BodyIdA]
-Var bodyB As Body = world.Bodies[base.BodyIdB]
+Var bodyA As Body = world.Bodies[sims.BodyIdA.Items[index]]
+Var bodyB As Body = world.Bodies[sims.BodyIdB.Items[index]]
 Var simA As BodySims = world.GetBodySim(bodyA)
 Var simB As BodySims = world.GetBodySim(bodyB)
 Var indexA As Integer = bodyA.LocalIndex
 Var indexB As Integer = bodyB.LocalIndex
 
-base.InvMassA = simA.InvMass.Items[indexA]
-base.InvIA = simA.InvInertia.Items[indexA]
-base.InvMassB = simB.InvMass.Items[indexB]
-base.InvIB = simB.InvInertia.Items[indexB]
+sims.InvMassA.Items[index] = simA.InvMass.Items[indexA]
+sims.InvIA.Items[index] = simA.InvInertia.Items[indexA]
+sims.InvMassB.Items[index] = simB.InvMass.Items[indexB]
+sims.InvIB.Items[index] = simB.InvInertia.Items[indexB]
 
 If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
-base.IndexA = indexA
+sims.IndexA.Items[index] = indexA
 Else
-base.IndexA = PhysicsConstants.NULL_INDEX
+sims.IndexA.Items[index] = PhysicsConstants.NULL_INDEX
 End If
 If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
-base.IndexB = indexB
+sims.IndexB.Items[index] = indexB
 Else
-base.IndexB = PhysicsConstants.NULL_INDEX
+sims.IndexB.Items[index] = PhysicsConstants.NULL_INDEX
 End If
 
 # Initial anchors in world space relative to the body centres.
-Var localDX As Double = base.LocalOriginAnchorAX - simA.LCX.Items[indexA]
-Var localDY As Double = base.LocalOriginAnchorAY - simA.LCY.Items[indexA]
+Var localDX As Double = sims.LocalOriginAnchorAX.Items[index] - simA.LCX.Items[indexA]
+Var localDY As Double = sims.LocalOriginAnchorAY.Items[index] - simA.LCY.Items[indexA]
 Var qcA As Double = simA.QC.Items[indexA]
 Var qsA As Double = simA.QS.Items[indexA]
-base.AnchorAX = qcA * localDX - qsA * localDY
-base.AnchorAY = qsA * localDX + qcA * localDY
-Var localEX As Double = base.LocalOriginAnchorBX - simB.LCX.Items[indexB]
-Var localEY As Double = base.LocalOriginAnchorBY - simB.LCY.Items[indexB]
+sims.AnchorAX.Items[index] = qcA * localDX - qsA * localDY
+sims.AnchorAY.Items[index] = qsA * localDX + qcA * localDY
+Var localEX As Double = sims.LocalOriginAnchorBX.Items[index] - simB.LCX.Items[indexB]
+Var localEY As Double = sims.LocalOriginAnchorBY.Items[index] - simB.LCY.Items[indexB]
 Var qcB As Double = simB.QC.Items[indexB]
 Var qsB As Double = simB.QS.Items[indexB]
-base.AnchorBX = qcB * localEX - qsB * localEY
-base.AnchorBY = qsB * localEX + qcB * localEY
-base.DeltaCenterX = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
-base.DeltaCenterY = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
+sims.AnchorBX.Items[index] = qcB * localEX - qsB * localEY
+sims.AnchorBY.Items[index] = qsB * localEX + qcB * localEY
+sims.DeltaCenterX.Items[index] = simB.CenterX.Items[indexB] - simA.CenterX.Items[indexA]
+sims.DeltaCenterY.Items[index] = simB.CenterY.Items[indexB] - simA.CenterY.Items[indexA]
 
-Var rAX As Double = base.AnchorAX
-Var rAY As Double = base.AnchorAY
-Var rBX As Double = base.AnchorBX
-Var rBY As Double = base.AnchorBY
-Var sepX As Double = base.DeltaCenterX + rBX - rAX
-Var sepY As Double = base.DeltaCenterY + rBY - rAY
+Var rAX As Double = sims.AnchorAX.Items[index]
+Var rAY As Double = sims.AnchorAY.Items[index]
+Var rBX As Double = sims.AnchorBX.Items[index]
+Var rBY As Double = sims.AnchorBY.Items[index]
+Var sepX As Double = sims.DeltaCenterX.Items[index] + rBX - rAX
+Var sepY As Double = sims.DeltaCenterY.Items[index] + rBY - rAY
 Var length As Double = Maths.Sqrt(sepX * sepX + sepY * sepY)
 Var axisX As Double = 0.0
 Var axisY As Double = 0.0
@@ -77,62 +81,67 @@ End If
 # Compute effective mass.
 Var crA As Double = rAX * axisY - rAY * axisX
 Var crB As Double = rBX * axisY - rBY * axisX
-Var k As Double = base.InvMassA + base.InvMassB + base.InvIA * crA * crA + base.InvIB * crB * crB
+Var k As Double = sims.InvMassA.Items[index] + sims.InvMassB.Items[index] + sims.InvIA.Items[index] * crA * crA + sims.InvIB.Items[index] * crB * crB
 If k > 0.0 Then
-base.AxialMass = 1.0 / k
+sims.AxialMass.Items[index] = 1.0 / k
 Else
-base.AxialMass = 0.0
+sims.AxialMass.Items[index] = 0.0
 End If
 
-Softness.MakeTo(base.Hertz, base.DampingRatio, context.H, base.DistanceSoftness)
+Softness.MakeTo(sims.Hertz.Items[index], sims.DampingRatio.Items[index], context.H, context.SoftnessScratch)
+sims.DistanceSoftnessBiasRate.Items[index] = context.SoftnessScratch.BiasRate
+sims.DistanceSoftnessMassScale.Items[index] = context.SoftnessScratch.MassScale
+sims.DistanceSoftnessImpulseScale.Items[index] = context.SoftnessScratch.ImpulseScale
 
 If context.WarmStartScale = 0.0 Then
-base.Impulse = 0.0
-base.LowerImpulse = 0.0
-base.UpperImpulse = 0.0
-base.MotorImpulse = 0.0
+sims.Impulse.Items[index] = 0.0
+sims.LowerImpulse.Items[index] = 0.0
+sims.UpperImpulse.Items[index] = 0.0
+sims.MotorImpulse.Items[index] = 0.0
 End If
 End Sub
 
 ## Applies stored impulses to the body states before iterating, ported from
 ## b2WarmStartDistanceJoint.
-Shared Sub WarmStartDistanceJoint(base As DistanceJointSim, context As StepContext)
+Shared Sub WarmStartDistanceJoint(sims As JointSims, index As Integer, context As StepContext)
 Var states As BodyStates = context.States
-Var mA As Double = base.InvMassA
-Var mB As Double = base.InvMassB
-Var iA As Double = base.InvIA
-Var iB As Double = base.InvIB
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
 
 Var dpAX As Double = 0.0
 Var dpAY As Double = 0.0
 Var dqAC As Double = 1.0
 Var dqAS As Double = 0.0
-If base.IndexA <> PhysicsConstants.NULL_INDEX Then
-dpAX = states.DPX.Items[base.IndexA]
-dpAY = states.DPY.Items[base.IndexA]
-dqAC = states.DRC.Items[base.IndexA]
-dqAS = states.DRS.Items[base.IndexA]
+If indexA <> PhysicsConstants.NULL_INDEX Then
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
 End If
 Var dpBX As Double = 0.0
 Var dpBY As Double = 0.0
 Var dqBC As Double = 1.0
 Var dqBS As Double = 0.0
-If base.IndexB <> PhysicsConstants.NULL_INDEX Then
-dpBX = states.DPX.Items[base.IndexB]
-dpBY = states.DPY.Items[base.IndexB]
-dqBC = states.DRC.Items[base.IndexB]
-dqBS = states.DRS.Items[base.IndexB]
+If indexB <> PhysicsConstants.NULL_INDEX Then
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
 End If
 
-Var rAX As Double = dqAC * base.AnchorAX - dqAS * base.AnchorAY
-Var rAY As Double = dqAS * base.AnchorAX + dqAC * base.AnchorAY
-Var rBX As Double = dqBC * base.AnchorBX - dqBS * base.AnchorBY
-Var rBY As Double = dqBS * base.AnchorBX + dqBC * base.AnchorBY
+Var rAX As Double = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+Var rAY As Double = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+Var rBX As Double = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+Var rBY As Double = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
 
 Var dsX As Double = dpBX - dpAX + rBX - rAX
 Var dsY As Double = dpBY - dpAY + rBY - rAY
-Var sepX As Double = base.DeltaCenterX + dsX
-Var sepY As Double = base.DeltaCenterY + dsY
+Var sepX As Double = sims.DeltaCenterX.Items[index] + dsX
+Var sepY As Double = sims.DeltaCenterY.Items[index] + dsY
 Var length As Double = Maths.Sqrt(sepX * sepX + sepY * sepY)
 Var axisX As Double = 0.0
 Var axisY As Double = 0.0
@@ -142,30 +151,32 @@ axisX = invLength * sepX
 axisY = invLength * sepY
 End If
 
-Var axialImpulse As Double = base.Impulse + base.LowerImpulse - base.UpperImpulse + base.MotorImpulse
+Var axialImpulse As Double = sims.Impulse.Items[index] + sims.LowerImpulse.Items[index] - sims.UpperImpulse.Items[index] + sims.MotorImpulse.Items[index]
 Var pX As Double = axialImpulse * axisX
 Var pY As Double = axialImpulse * axisY
 
-If base.IndexA <> PhysicsConstants.NULL_INDEX Then
-states.LVX.Items[base.IndexA] = states.LVX.Items[base.IndexA] - mA * pX
-states.LVY.Items[base.IndexA] = states.LVY.Items[base.IndexA] - mA * pY
-states.AngularVelocity.Items[base.IndexA] = states.AngularVelocity.Items[base.IndexA] - iA * (rAX * pY - rAY * pX)
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = states.LVX.Items[indexA] - mA * pX
+states.LVY.Items[indexA] = states.LVY.Items[indexA] - mA * pY
+states.AngularVelocity.Items[indexA] = states.AngularVelocity.Items[indexA] - iA * (rAX * pY - rAY * pX)
 End If
-If base.IndexB <> PhysicsConstants.NULL_INDEX Then
-states.LVX.Items[base.IndexB] = states.LVX.Items[base.IndexB] + mB * pX
-states.LVY.Items[base.IndexB] = states.LVY.Items[base.IndexB] + mB * pY
-states.AngularVelocity.Items[base.IndexB] = states.AngularVelocity.Items[base.IndexB] + iB * (rBX * pY - rBY * pX)
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = states.LVX.Items[indexB] + mB * pX
+states.LVY.Items[indexB] = states.LVY.Items[indexB] + mB * pY
+states.AngularVelocity.Items[indexB] = states.AngularVelocity.Items[indexB] + iB * (rBX * pY - rBY * pX)
 End If
 End Sub
 
 ## Runs one velocity iteration with optional soft-step bias, ported from
 ## b2SolveDistanceJoint.
-Shared Sub SolveDistanceJoint(base As DistanceJointSim, context As StepContext, useBias As Boolean)
+Shared Sub SolveDistanceJoint(sims As JointSims, index As Integer, context As StepContext, useBias As Boolean)
 Var states As BodyStates = context.States
-Var mA As Double = base.InvMassA
-Var mB As Double = base.InvMassB
-Var iA As Double = base.InvIA
-Var iB As Double = base.InvIB
+Var mA As Double = sims.InvMassA.Items[index]
+Var mB As Double = sims.InvMassB.Items[index]
+Var iA As Double = sims.InvIA.Items[index]
+Var iB As Double = sims.InvIB.Items[index]
+Var indexA As Integer = sims.IndexA.Items[index]
+Var indexB As Integer = sims.IndexB.Items[index]
 
 Var vAX As Double = 0.0
 Var vAY As Double = 0.0
@@ -174,14 +185,14 @@ Var dpAX As Double = 0.0
 Var dpAY As Double = 0.0
 Var dqAC As Double = 1.0
 Var dqAS As Double = 0.0
-If base.IndexA <> PhysicsConstants.NULL_INDEX Then
-vAX = states.LVX.Items[base.IndexA]
-vAY = states.LVY.Items[base.IndexA]
-wA = states.AngularVelocity.Items[base.IndexA]
-dpAX = states.DPX.Items[base.IndexA]
-dpAY = states.DPY.Items[base.IndexA]
-dqAC = states.DRC.Items[base.IndexA]
-dqAS = states.DRS.Items[base.IndexA]
+If indexA <> PhysicsConstants.NULL_INDEX Then
+vAX = states.LVX.Items[indexA]
+vAY = states.LVY.Items[indexA]
+wA = states.AngularVelocity.Items[indexA]
+dpAX = states.DPX.Items[indexA]
+dpAY = states.DPY.Items[indexA]
+dqAC = states.DRC.Items[indexA]
+dqAS = states.DRS.Items[indexA]
 End If
 Var vBX As Double = 0.0
 Var vBY As Double = 0.0
@@ -190,28 +201,32 @@ Var dpBX As Double = 0.0
 Var dpBY As Double = 0.0
 Var dqBC As Double = 1.0
 Var dqBS As Double = 0.0
-If base.IndexB <> PhysicsConstants.NULL_INDEX Then
-vBX = states.LVX.Items[base.IndexB]
-vBY = states.LVY.Items[base.IndexB]
-wB = states.AngularVelocity.Items[base.IndexB]
-dpBX = states.DPX.Items[base.IndexB]
-dpBY = states.DPY.Items[base.IndexB]
-dqBC = states.DRC.Items[base.IndexB]
-dqBS = states.DRS.Items[base.IndexB]
+If indexB <> PhysicsConstants.NULL_INDEX Then
+vBX = states.LVX.Items[indexB]
+vBY = states.LVY.Items[indexB]
+wB = states.AngularVelocity.Items[indexB]
+dpBX = states.DPX.Items[indexB]
+dpBY = states.DPY.Items[indexB]
+dqBC = states.DRC.Items[indexB]
+dqBS = states.DRS.Items[indexB]
 End If
 
 # Current anchors and separation. The scratch record is reused across
 # every joint solve within a step, ported from the C stack locals of
-# b2SolveDistanceJoint.
+# b2SolveDistanceJoint. The axis is reset first: with coincident anchors
+# the separation is degenerate, and a stale axis from a previously solved
+# joint would apply impulses along a phantom direction.
 Var scratch As DistanceJointScratch = context.JointScratch
-scratch.RAX = dqAC * base.AnchorAX - dqAS * base.AnchorAY
-scratch.RAY = dqAS * base.AnchorAX + dqAC * base.AnchorAY
-scratch.RBX = dqBC * base.AnchorBX - dqBS * base.AnchorBY
-scratch.RBY = dqBS * base.AnchorBX + dqBC * base.AnchorBY
+scratch.RAX = dqAC * sims.AnchorAX.Items[index] - dqAS * sims.AnchorAY.Items[index]
+scratch.RAY = dqAS * sims.AnchorAX.Items[index] + dqAC * sims.AnchorAY.Items[index]
+scratch.RBX = dqBC * sims.AnchorBX.Items[index] - dqBS * sims.AnchorBY.Items[index]
+scratch.RBY = dqBS * sims.AnchorBX.Items[index] + dqBC * sims.AnchorBY.Items[index]
 Var dsX As Double = dpBX - dpAX + scratch.RBX - scratch.RAX
 Var dsY As Double = dpBY - dpAY + scratch.RBY - scratch.RAY
-Var sepX As Double = base.DeltaCenterX + dsX
-Var sepY As Double = base.DeltaCenterY + dsY
+Var sepX As Double = sims.DeltaCenterX.Items[index] + dsX
+Var sepY As Double = sims.DeltaCenterY.Items[index] + dsY
+scratch.AxisX = 0.0
+scratch.AxisY = 0.0
 scratch.Length = Maths.Sqrt(sepX * sepX + sepY * sepY)
 If scratch.Length >= PhysicsConstants.FLT_EPSILON Then
 Var invLength As Double = 1.0 / scratch.Length
@@ -223,14 +238,14 @@ Var vrX As Double = vBX - wB * scratch.RBY - (vAX - wA * scratch.RAY)
 Var vrY As Double = vBY + wB * scratch.RBX - (vAY + wA * scratch.RAX)
 Var vDotAxis As Double = vrX * scratch.AxisX + vrY * scratch.AxisY
 
-If base.EnableSpring And (base.MinLength < base.MaxLength Or base.EnableLimit = False) Then
+If sims.EnableSpring.Items[index] = 1 And (sims.MinLength.Items[index] < sims.MaxLength.Items[index] Or sims.EnableLimit.Items[index] = 0) Then
 # Soft constraint with spring, limits, and motor.
-If base.Hertz > 0.0 Then
-Var C As Double = scratch.Length - base.Length
-Var bias As Double = base.DistanceSoftness.BiasRate * C
-Var m As Double = base.DistanceSoftness.MassScale * base.AxialMass
-Var impulse As Double = -m * (vDotAxis + bias) - base.DistanceSoftness.ImpulseScale * base.Impulse
-base.Impulse = base.Impulse + impulse
+If sims.Hertz.Items[index] > 0.0 Then
+Var C As Double = scratch.Length - sims.Length.Items[index]
+Var bias As Double = sims.DistanceSoftnessBiasRate.Items[index] * C
+Var m As Double = sims.DistanceSoftnessMassScale.Items[index] * sims.AxialMass.Items[index]
+Var impulse As Double = -m * (vDotAxis + bias) - sims.DistanceSoftnessImpulseScale.Items[index] * sims.Impulse.Items[index]
+sims.Impulse.Items[index] = sims.Impulse.Items[index] + impulse
 
 Var pX As Double = impulse * scratch.AxisX
 Var pY As Double = impulse * scratch.AxisY
@@ -242,15 +257,15 @@ vBY = vBY + mB * pY
 wB = wB + iB * (scratch.RBX * pY - scratch.RBY * pX)
 End If
 
-If base.EnableLimit Then
+If sims.EnableLimit.Items[index] = 1 Then
 scratch.VAX = vAX
 scratch.VAY = vAY
 scratch.WA = wA
 scratch.VBX = vBX
 scratch.VBY = vBY
 scratch.WB = wB
-JointSolver.SolveDistanceLowerLimit(scratch, base, context, useBias, mA, mB, iA, iB)
-JointSolver.SolveDistanceUpperLimit(scratch, base, context, useBias, mA, mB, iA, iB)
+SolveDistanceLowerLimit(scratch, sims, index, context, useBias, mA, mB, iA, iB)
+SolveDistanceUpperLimit(scratch, sims, index, context, useBias, mA, mB, iA, iB)
 vAX = scratch.VAX
 vAY = scratch.VAY
 wA = scratch.WA
@@ -259,14 +274,14 @@ vBY = scratch.VBY
 wB = scratch.WB
 End If
 
-If base.EnableMotor Then
+If sims.EnableMotor.Items[index] = 1 Then
 scratch.VAX = vAX
 scratch.VAY = vAY
 scratch.WA = wA
 scratch.VBX = vBX
 scratch.VBY = vBY
 scratch.WB = wB
-JointSolver.SolveDistanceMotor(scratch, base, context, mA, mB, iA, iB)
+SolveDistanceMotor(scratch, sims, index, context, mA, mB, iA, iB)
 vAX = scratch.VAX
 vAY = scratch.VAY
 wA = scratch.WA
@@ -280,13 +295,13 @@ Var bias As Double = 0.0
 Var massScale As Double = 1.0
 Var impulseScale As Double = 0.0
 If useBias Then
-bias = base.ConstraintSoftness.BiasRate * (scratch.Length - base.Length)
-massScale = base.ConstraintSoftness.MassScale
-impulseScale = base.ConstraintSoftness.ImpulseScale
+bias = sims.SoftnessBiasRate.Items[index] * (scratch.Length - sims.Length.Items[index])
+massScale = sims.SoftnessMassScale.Items[index]
+impulseScale = sims.SoftnessImpulseScale.Items[index]
 End If
 
-Var impulse As Double = -massScale * base.AxialMass * (vDotAxis + bias) - impulseScale * base.Impulse
-base.Impulse = base.Impulse + impulse
+Var impulse As Double = -massScale * sims.AxialMass.Items[index] * (vDotAxis + bias) - impulseScale * sims.Impulse.Items[index]
+sims.Impulse.Items[index] = sims.Impulse.Items[index] + impulse
 
 Var pX As Double = impulse * scratch.AxisX
 Var pY As Double = impulse * scratch.AxisY
@@ -298,25 +313,25 @@ vBY = vBY + mB * pY
 wB = wB + iB * (scratch.RBX * pY - scratch.RBY * pX)
 End If
 
-If base.IndexA <> PhysicsConstants.NULL_INDEX Then
-states.LVX.Items[base.IndexA] = vAX
-states.LVY.Items[base.IndexA] = vAY
-states.AngularVelocity.Items[base.IndexA] = wA
+If indexA <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexA] = vAX
+states.LVY.Items[indexA] = vAY
+states.AngularVelocity.Items[indexA] = wA
 End If
-If base.IndexB <> PhysicsConstants.NULL_INDEX Then
-states.LVX.Items[base.IndexB] = vBX
-states.LVY.Items[base.IndexB] = vBY
-states.AngularVelocity.Items[base.IndexB] = wB
+If indexB <> PhysicsConstants.NULL_INDEX Then
+states.LVX.Items[indexB] = vBX
+states.LVY.Items[indexB] = vBY
+states.AngularVelocity.Items[indexB] = wB
 End If
 End Sub
 
 ## Solves the lower length limit of a soft distance joint, ported from the
 ## lower-limit block of b2SolveDistanceJoint.
-Shared Sub SolveDistanceLowerLimit(scratch As DistanceJointScratch, base As DistanceJointSim, context As StepContext, useBias As Boolean, mA As Double, mB As Double, iA As Double, iB As Double)
+Private Shared Sub SolveDistanceLowerLimit(scratch As DistanceJointScratch, sims As JointSims, index As Integer, context As StepContext, useBias As Boolean, mA As Double, mB As Double, iA As Double, iB As Double)
 Var vrX As Double = scratch.VBX - scratch.WB * scratch.RBY - (scratch.VAX - scratch.WA * scratch.RAY)
 Var vrY As Double = scratch.VBY + scratch.WB * scratch.RBX - (scratch.VAY + scratch.WA * scratch.RAX)
 Var lowerCdot As Double = vrX * scratch.AxisX + vrY * scratch.AxisY
-Var lowerC As Double = scratch.Length - base.MinLength
+Var lowerC As Double = scratch.Length - sims.MinLength.Items[index]
 Var lowerBias As Double = 0.0
 Var lowerMassCoeff As Double = 1.0
 Var lowerImpulseCoeff As Double = 0.0
@@ -324,17 +339,17 @@ If lowerC > 0.0 Then
 # Speculative.
 lowerBias = lowerC * context.InvH
 ElseIf useBias Then
-lowerBias = base.ConstraintSoftness.BiasRate * lowerC
-lowerMassCoeff = base.ConstraintSoftness.MassScale
-lowerImpulseCoeff = base.ConstraintSoftness.ImpulseScale
+lowerBias = sims.SoftnessBiasRate.Items[index] * lowerC
+lowerMassCoeff = sims.SoftnessMassScale.Items[index]
+lowerImpulseCoeff = sims.SoftnessImpulseScale.Items[index]
 End If
-Var lowerImpulse As Double = -lowerMassCoeff * base.AxialMass * (lowerCdot + lowerBias) - lowerImpulseCoeff * base.LowerImpulse
-Var newLowerImpulse As Double = base.LowerImpulse + lowerImpulse
+Var lowerImpulse As Double = -lowerMassCoeff * sims.AxialMass.Items[index] * (lowerCdot + lowerBias) - lowerImpulseCoeff * sims.LowerImpulse.Items[index]
+Var newLowerImpulse As Double = sims.LowerImpulse.Items[index] + lowerImpulse
 If newLowerImpulse < 0.0 Then
 newLowerImpulse = 0.0
 End If
-lowerImpulse = newLowerImpulse - base.LowerImpulse
-base.LowerImpulse = newLowerImpulse
+lowerImpulse = newLowerImpulse - sims.LowerImpulse.Items[index]
+sims.LowerImpulse.Items[index] = newLowerImpulse
 
 Var lowerPX As Double = lowerImpulse * scratch.AxisX
 Var lowerPY As Double = lowerImpulse * scratch.AxisY
@@ -348,11 +363,11 @@ End Sub
 
 ## Solves the upper length limit of a soft distance joint, ported from the
 ## upper-limit block of b2SolveDistanceJoint.
-Shared Sub SolveDistanceUpperLimit(scratch As DistanceJointScratch, base As DistanceJointSim, context As StepContext, useBias As Boolean, mA As Double, mB As Double, iA As Double, iB As Double)
+Private Shared Sub SolveDistanceUpperLimit(scratch As DistanceJointScratch, sims As JointSims, index As Integer, context As StepContext, useBias As Boolean, mA As Double, mB As Double, iA As Double, iB As Double)
 Var vrUX As Double = scratch.VAX - scratch.WA * scratch.RAY - (scratch.VBX - scratch.WB * scratch.RBY)
 Var vrUY As Double = scratch.VAY + scratch.WA * scratch.RAX - (scratch.VBY + scratch.WB * scratch.RBX)
 Var upperCdot As Double = vrUX * scratch.AxisX + vrUY * scratch.AxisY
-Var upperC As Double = base.MaxLength - scratch.Length
+Var upperC As Double = sims.MaxLength.Items[index] - scratch.Length
 Var upperBias As Double = 0.0
 Var upperMassScale As Double = 1.0
 Var upperImpulseScale As Double = 0.0
@@ -360,17 +375,17 @@ If upperC > 0.0 Then
 # Speculative.
 upperBias = upperC * context.InvH
 ElseIf useBias Then
-upperBias = base.ConstraintSoftness.BiasRate * upperC
-upperMassScale = base.ConstraintSoftness.MassScale
-upperImpulseScale = base.ConstraintSoftness.ImpulseScale
+upperBias = sims.SoftnessBiasRate.Items[index] * upperC
+upperMassScale = sims.SoftnessMassScale.Items[index]
+upperImpulseScale = sims.SoftnessImpulseScale.Items[index]
 End If
-Var upperImpulse As Double = -upperMassScale * base.AxialMass * (upperCdot + upperBias) - upperImpulseScale * base.UpperImpulse
-Var newUpperImpulse As Double = base.UpperImpulse + upperImpulse
+Var upperImpulse As Double = -upperMassScale * sims.AxialMass.Items[index] * (upperCdot + upperBias) - upperImpulseScale * sims.UpperImpulse.Items[index]
+Var newUpperImpulse As Double = sims.UpperImpulse.Items[index] + upperImpulse
 If newUpperImpulse < 0.0 Then
 newUpperImpulse = 0.0
 End If
-upperImpulse = newUpperImpulse - base.UpperImpulse
-base.UpperImpulse = newUpperImpulse
+upperImpulse = newUpperImpulse - sims.UpperImpulse.Items[index]
+sims.UpperImpulse.Items[index] = newUpperImpulse
 
 Var upperPX As Double = -upperImpulse * scratch.AxisX
 Var upperPY As Double = -upperImpulse * scratch.AxisY
@@ -384,20 +399,20 @@ End Sub
 
 ## Solves the distance joint motor, ported from the motor block of
 ## b2SolveDistanceJoint.
-Shared Sub SolveDistanceMotor(scratch As DistanceJointScratch, base As DistanceJointSim, context As StepContext, mA As Double, mB As Double, iA As Double, iB As Double)
+Private Shared Sub SolveDistanceMotor(scratch As DistanceJointScratch, sims As JointSims, index As Integer, context As StepContext, mA As Double, mB As Double, iA As Double, iB As Double)
 Var vrMX As Double = scratch.VBX - scratch.WB * scratch.RBY - (scratch.VAX - scratch.WA * scratch.RAY)
 Var vrMY As Double = scratch.VBY + scratch.WB * scratch.RBX - (scratch.VAY + scratch.WA * scratch.RAX)
 Var motorCdot As Double = vrMX * scratch.AxisX + vrMY * scratch.AxisY
-Var motorImpulse As Double = base.AxialMass * (base.MotorSpeed - motorCdot)
-Var oldMotorImpulse As Double = base.MotorImpulse
-Var maxImpulse As Double = context.H * base.MaxMotorForce
-Var newMotorImpulse As Double = base.MotorImpulse + motorImpulse
+Var motorImpulse As Double = sims.AxialMass.Items[index] * (sims.MotorSpeed.Items[index] - motorCdot)
+Var oldMotorImpulse As Double = sims.MotorImpulse.Items[index]
+Var maxImpulse As Double = context.H * sims.MaxMotorForce.Items[index]
+Var newMotorImpulse As Double = sims.MotorImpulse.Items[index] + motorImpulse
 If newMotorImpulse > maxImpulse Then
 newMotorImpulse = maxImpulse
 ElseIf newMotorImpulse < -maxImpulse Then
 newMotorImpulse = -maxImpulse
 End If
-base.MotorImpulse = newMotorImpulse
+sims.MotorImpulse.Items[index] = newMotorImpulse
 motorImpulse = newMotorImpulse - oldMotorImpulse
 
 Var motorPX As Double = motorImpulse * scratch.AxisX
@@ -410,13 +425,13 @@ scratch.VBY = scratch.VBY + mB * motorPY
 scratch.WB = scratch.WB + iB * (scratch.RBX * motorPY - scratch.RBY * motorPX)
 End Sub
 
-## Total force the distance joint applied this step, ported from
+## Total force the distance joint row applied this step, ported from
 ## b2GetDistanceJointForce.
-Shared Function GetDistanceJointForce(world As World, base As DistanceJointSim) As Vector2
-Var transformA As Transform = world.GetBodyTransformById(base.BodyIdA)
-Var transformB As Transform = world.GetBodyTransformById(base.BodyIdB)
-Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(base.LocalOriginAnchorAX, base.LocalOriginAnchorAY))
-Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(base.LocalOriginAnchorBX, base.LocalOriginAnchorBY))
+Shared Function GetDistanceJointForce(world As World, sims As JointSims, index As Integer) As Vector2
+Var transformA As Transform = world.GetBodyTransformById(sims.BodyIdA.Items[index])
+Var transformB As Transform = world.GetBodyTransformById(sims.BodyIdB.Items[index])
+Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(sims.LocalOriginAnchorAX.Items[index], sims.LocalOriginAnchorAY.Items[index]))
+Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(sims.LocalOriginAnchorBX.Items[index], sims.LocalOriginAnchorBY.Items[index]))
 Var d As Vector2 = pB - pA
 Var length As Double = d.Length()
 Var axisX As Double = 0.0
@@ -426,7 +441,7 @@ Var invLength As Double = 1.0 / length
 axisX = invLength * d.X
 axisY = invLength * d.Y
 End If
-Var force As Double = (base.Impulse + base.LowerImpulse - base.UpperImpulse + base.MotorImpulse) * world.InvH
+Var force As Double = (sims.Impulse.Items[index] + sims.LowerImpulse.Items[index] - sims.UpperImpulse.Items[index] + sims.MotorImpulse.Items[index]) * world.InvH
 Return New Vector2(force * axisX, force * axisY)
 End Function
 End Class

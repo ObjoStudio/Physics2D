@@ -33,8 +33,9 @@ Property EnableLimit As Boolean
 Property EnableMotor As Boolean
 ## True when the two connected bodies may collide.
 Property CollideConnected As Boolean
-## User data attached to the joint.
-Property UserData As Integer
+## User data owned by the application, copied to the created joint. Never
+## read by the solver.
+Property UserData As Object
 
 ## Creates a definition with upstream defaults.
 Constructor()
@@ -53,6 +54,6 @@ Me.EnableSpring = False
 Me.EnableLimit = False
 Me.EnableMotor = False
 Me.CollideConnected = False
-Me.UserData = 0
+Me.UserData = Nothing
 End Constructor
 End Class

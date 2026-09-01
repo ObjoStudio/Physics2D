@@ -34,8 +34,8 @@ Property FixedRotation As Boolean
 Property AllowFastRotation As Boolean
 ## Optional body name, truncated to 31 characters like upstream.
 Property Name As String
-## User data owned by the application. Never touched by the module.
-Property UserData As Integer
+## User data owned by the application, copied to the created body. Never read by the solver.
+Property UserData As Object
 
 ## Creates the default body definition, matching upstream b2DefaultBodyDef.
 Constructor()
@@ -55,6 +55,6 @@ Me.IsBullet = False
 Me.FixedRotation = False
 Me.AllowFastRotation = False
 Me.Name = ""
-Me.UserData = 0
+Me.UserData = Nothing
 End Constructor
 End Class

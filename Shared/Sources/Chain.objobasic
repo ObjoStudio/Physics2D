@@ -33,8 +33,9 @@ Property ShapeIndices As IntegerList
 Property IsLoop As Boolean
 ## Collision filter copied to every segment shape.
 Property Filter As Filter
-## User data copied to every segment shape.
-Property UserData As Integer
+## User data copied by reference to every segment shape. Never read by
+## the solver.
+Property UserData As Object
 
 ## Creates an empty, unbound chain. Only the world may construct live
 ## chains; the zero-argument form exists for sparse array capacity.
@@ -52,7 +53,7 @@ Me.Materials = New Array(Of SurfaceMaterial)
 Me.ShapeIndices = New IntegerList(16)
 Me.IsLoop = False
 Me.Filter = New Filter()
-Me.UserData = 0
+Me.UserData = Nothing
 End Constructor
 
 ## Returns True when this façade still addresses a live chain.

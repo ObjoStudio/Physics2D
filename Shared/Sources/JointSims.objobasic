@@ -1,49 +1,361 @@
-# Dense joint sim store for one solver set or graph colour, mirroring the
-# ContactSims role for the much smaller joint rows. A row is one heap
-# JointSim (base or family subclass), so migration between sets and colours
-# moves the reference and fixes the moved joint's local index. The swap
-# removal keeps row order deterministic without allocation.
+# Dense joint simulation state for one solver set or graph colour, ported
+# from the b2JointSim rows of upstream b2SolverSet in solver_set.h. Decision
+# 0004 selects parallel scalar arrays, so every field is one list indexed by
+# the joint's local index within the set.
+#
+# Column ownership: the base columns are shared by every family. The family
+# columns below the base block belong to one family each and hold meaningful
+# values only while that row's Type matches the family; a row never reads
+# another family's columns. Unused families leave their columns empty, so no
+# family pays storage for the others. There is deliberately no per-row
+# object: transfers between sets and graph colours move scalars only, so a
+# warmed step allocates nothing.
 Class JointSims
-## Sim rows in local-index order.
-Property Rows As Array(Of JointSim)
+## Cold joint slot of each row.
+Property JointId As IntegerList
+## Body slot of the first edge.
+Property BodyIdA As IntegerList
+## Body slot of the second edge.
+Property BodyIdB As IntegerList
+## Family discriminator stored as Integer(JointType).
+Property Type As IntegerList
+## X component of the first anchor relative to body A's origin.
+Property LocalOriginAnchorAX As DoubleList
+## Y component of the first anchor relative to body A's origin.
+Property LocalOriginAnchorAY As DoubleList
+## X component of the second anchor relative to body B's origin.
+Property LocalOriginAnchorBX As DoubleList
+## Y component of the second anchor relative to body B's origin.
+Property LocalOriginAnchorBY As DoubleList
+## Inverse mass of body A.
+Property InvMassA As DoubleList
+## Inverse rotational inertia of body A.
+Property InvIA As DoubleList
+## Inverse mass of body B.
+Property InvMassB As DoubleList
+## Inverse rotational inertia of body B.
+Property InvIB As DoubleList
+## Solver hertz clamp for the joint, ported from constraintHertz.
+Property ConstraintHertz As DoubleList
+## Solver damping ratio clamp for the joint, ported from
+## constraintDampingRatio.
+Property ConstraintDampingRatio As DoubleList
+## Soft-step softness of the base constraint, ported from
+## constraintSoftness: bias rate, mass scale, impulse scale.
+Property SoftnessBiasRate As DoubleList
+## Soft-step mass scale of the base constraint.
+Property SoftnessMassScale As DoubleList
+## Soft-step impulse scale of the base constraint.
+Property SoftnessImpulseScale As DoubleList
+
+# Distance joint family columns, ported from upstream b2DistanceJoint in
+# joint.h. Valid only while Type = Integer(JointType.DistanceJoint).
+## Rest length of the rope constraint.
+Property Length As DoubleList
+## Spring stiffness in hertz. Zero means a rigid rope.
+Property Hertz As DoubleList
+## Spring damping ratio.
+Property DampingRatio As DoubleList
+## Lower clamp of the length range.
+Property MinLength As DoubleList
+## Upper clamp of the length range.
+Property MaxLength As DoubleList
+## Maximum motor force magnitude.
+Property MaxMotorForce As DoubleList
+## Target relative speed along the rope axis.
+Property MotorSpeed As DoubleList
+## Spring impulse accumulator.
+Property Impulse As DoubleList
+## Lower limit impulse accumulator.
+Property LowerImpulse As DoubleList
+## Upper limit impulse accumulator.
+Property UpperImpulse As DoubleList
+## Motor impulse accumulator.
+Property MotorImpulse As DoubleList
+## Awake-set state index of body A. NULL_INDEX for static bodies.
+Property IndexA As IntegerList
+## Awake-set state index of body B. NULL_INDEX for static bodies.
+Property IndexB As IntegerList
+## X component of the world-space anchor on body A at prepare time.
+Property AnchorAX As DoubleList
+## Y component of the world-space anchor on body A at prepare time.
+Property AnchorAY As DoubleList
+## X component of the world-space anchor on body B at prepare time.
+Property AnchorBX As DoubleList
+## Y component of the world-space anchor on body B at prepare time.
+Property AnchorBY As DoubleList
+## X component of the body-centre difference at prepare time.
+Property DeltaCenterX As DoubleList
+## Y component of the body-centre difference at prepare time.
+Property DeltaCenterY As DoubleList
+## Softness of the spring constraint: bias rate, mass scale, impulse scale.
+Property DistanceSoftnessBiasRate As DoubleList
+## Mass scale of the spring constraint softness.
+Property DistanceSoftnessMassScale As DoubleList
+## Impulse scale of the spring constraint softness.
+Property DistanceSoftnessImpulseScale As DoubleList
+## Effective mass along the rope axis.
+Property AxialMass As DoubleList
+## Enables the soft spring behaviour: 1 true, 0 false.
+Property EnableSpring As IntegerList
+## Enables the length limits: 1 true, 0 false.
+Property EnableLimit As IntegerList
+## Enables the motor: 1 true, 0 false.
+Property EnableMotor As IntegerList
 
 ## Creates an empty store.
 Constructor()
-Me.Rows = New Array(Of JointSim)
+Me.JointId = New IntegerList
+Me.BodyIdA = New IntegerList
+Me.BodyIdB = New IntegerList
+Me.Type = New IntegerList
+Me.LocalOriginAnchorAX = New DoubleList
+Me.LocalOriginAnchorAY = New DoubleList
+Me.LocalOriginAnchorBX = New DoubleList
+Me.LocalOriginAnchorBY = New DoubleList
+Me.InvMassA = New DoubleList
+Me.InvIA = New DoubleList
+Me.InvMassB = New DoubleList
+Me.InvIB = New DoubleList
+Me.ConstraintHertz = New DoubleList
+Me.ConstraintDampingRatio = New DoubleList
+Me.SoftnessBiasRate = New DoubleList
+Me.SoftnessMassScale = New DoubleList
+Me.SoftnessImpulseScale = New DoubleList
+Me.Length = New DoubleList
+Me.Hertz = New DoubleList
+Me.DampingRatio = New DoubleList
+Me.MinLength = New DoubleList
+Me.MaxLength = New DoubleList
+Me.MaxMotorForce = New DoubleList
+Me.MotorSpeed = New DoubleList
+Me.Impulse = New DoubleList
+Me.LowerImpulse = New DoubleList
+Me.UpperImpulse = New DoubleList
+Me.MotorImpulse = New DoubleList
+Me.IndexA = New IntegerList
+Me.IndexB = New IntegerList
+Me.AnchorAX = New DoubleList
+Me.AnchorAY = New DoubleList
+Me.AnchorBX = New DoubleList
+Me.AnchorBY = New DoubleList
+Me.DeltaCenterX = New DoubleList
+Me.DeltaCenterY = New DoubleList
+Me.DistanceSoftnessBiasRate = New DoubleList
+Me.DistanceSoftnessMassScale = New DoubleList
+Me.DistanceSoftnessImpulseScale = New DoubleList
+Me.AxialMass = New DoubleList
+Me.EnableSpring = New IntegerList
+Me.EnableLimit = New IntegerList
+Me.EnableMotor = New IntegerList
 End Constructor
 
 ## Number of live joint sims in this store.
 Function Count() As Integer
-Return Me.Rows.Count
+Return Me.JointId.Count
 End Function
 
-## Returns the sim at the given local index.
-Function GetItem(index As Integer) As JointSim
-Return Me.Rows[index]
+## Appends one empty sim row with neutral defaults and returns its local
+## index. The caller supplies the row identity immediately; family creation
+## paths fill the family columns before the row can be solved. Base
+## softness starts neutral (bias 0, mass scale 1, impulse scale 0), which
+## every prepare overwrites; impulse accumulators start at zero.
+Function Add(jointIdValue As Integer, bodyIdA As Integer, bodyIdB As Integer, jointType As JointType) As Integer
+Me.JointId.Append(jointIdValue)
+Me.BodyIdA.Append(bodyIdA)
+Me.BodyIdB.Append(bodyIdB)
+Me.Type.Append(Integer(jointType))
+Me.LocalOriginAnchorAX.Append(0.0)
+Me.LocalOriginAnchorAY.Append(0.0)
+Me.LocalOriginAnchorBX.Append(0.0)
+Me.LocalOriginAnchorBY.Append(0.0)
+Me.InvMassA.Append(0.0)
+Me.InvIA.Append(0.0)
+Me.InvMassB.Append(0.0)
+Me.InvIB.Append(0.0)
+Me.ConstraintHertz.Append(0.0)
+Me.ConstraintDampingRatio.Append(0.0)
+Me.SoftnessBiasRate.Append(0.0)
+Me.SoftnessMassScale.Append(1.0)
+Me.SoftnessImpulseScale.Append(0.0)
+Me.Length.Append(0.0)
+Me.Hertz.Append(0.0)
+Me.DampingRatio.Append(0.0)
+Me.MinLength.Append(0.0)
+Me.MaxLength.Append(0.0)
+Me.MaxMotorForce.Append(0.0)
+Me.MotorSpeed.Append(0.0)
+Me.Impulse.Append(0.0)
+Me.LowerImpulse.Append(0.0)
+Me.UpperImpulse.Append(0.0)
+Me.MotorImpulse.Append(0.0)
+Me.IndexA.Append(PhysicsConstants.NULL_INDEX)
+Me.IndexB.Append(PhysicsConstants.NULL_INDEX)
+Me.AnchorAX.Append(0.0)
+Me.AnchorAY.Append(0.0)
+Me.AnchorBX.Append(0.0)
+Me.AnchorBY.Append(0.0)
+Me.DeltaCenterX.Append(0.0)
+Me.DeltaCenterY.Append(0.0)
+Me.DistanceSoftnessBiasRate.Append(0.0)
+Me.DistanceSoftnessMassScale.Append(1.0)
+Me.DistanceSoftnessImpulseScale.Append(0.0)
+Me.AxialMass.Append(0.0)
+Me.EnableSpring.Append(0)
+Me.EnableLimit.Append(0)
+Me.EnableMotor.Append(0)
+Return Me.JointId.Count - 1
 End Function
 
-## Appends one sim row and returns its local index.
-Function Add(sim As JointSim) As Integer
-Me.Rows.Append(sim)
-Return Me.Rows.Count - 1
-End Function
-
-## Removes one row by swapping in the last row. Returns the moved sim, or
-## Nothing when the removed row was the last one. After the call the moved
-## sim lives at `index`.
-Function RemoveSwap(index As Integer) As JointSim
-Var lastIndex As Integer = Me.Rows.Count - 1
-Var moved As JointSim = Me.Rows[lastIndex]
-Me.Rows[index] = moved
-Me.Rows.RemoveAt(lastIndex)
-If index = lastIndex Then
-Return Nothing
+## Removes one row by swapping in the last row. Returns the cold joint id
+## of the row that was moved, or NULL_INDEX when the removed row was the
+## last one. After the call the moved row lives at `index`; read its
+## JointId there.
+Function RemoveSwap(index As Integer) As Integer
+Var lastIndex As Integer = Me.JointId.Count - 1
+Var movedJointId As Integer = PhysicsConstants.NULL_INDEX
+If index <> lastIndex Then
+movedJointId = Me.JointId.Items[lastIndex]
 End If
-Return moved
+Me.JointId.RemoveSwap(index)
+Me.BodyIdA.RemoveSwap(index)
+Me.BodyIdB.RemoveSwap(index)
+Me.Type.RemoveSwap(index)
+Me.LocalOriginAnchorAX.RemoveSwap(index)
+Me.LocalOriginAnchorAY.RemoveSwap(index)
+Me.LocalOriginAnchorBX.RemoveSwap(index)
+Me.LocalOriginAnchorBY.RemoveSwap(index)
+Me.InvMassA.RemoveSwap(index)
+Me.InvIA.RemoveSwap(index)
+Me.InvMassB.RemoveSwap(index)
+Me.InvIB.RemoveSwap(index)
+Me.ConstraintHertz.RemoveSwap(index)
+Me.ConstraintDampingRatio.RemoveSwap(index)
+Me.SoftnessBiasRate.RemoveSwap(index)
+Me.SoftnessMassScale.RemoveSwap(index)
+Me.SoftnessImpulseScale.RemoveSwap(index)
+Me.Length.RemoveSwap(index)
+Me.Hertz.RemoveSwap(index)
+Me.DampingRatio.RemoveSwap(index)
+Me.MinLength.RemoveSwap(index)
+Me.MaxLength.RemoveSwap(index)
+Me.MaxMotorForce.RemoveSwap(index)
+Me.MotorSpeed.RemoveSwap(index)
+Me.Impulse.RemoveSwap(index)
+Me.LowerImpulse.RemoveSwap(index)
+Me.UpperImpulse.RemoveSwap(index)
+Me.MotorImpulse.RemoveSwap(index)
+Me.IndexA.RemoveSwap(index)
+Me.IndexB.RemoveSwap(index)
+Me.AnchorAX.RemoveSwap(index)
+Me.AnchorAY.RemoveSwap(index)
+Me.AnchorBX.RemoveSwap(index)
+Me.AnchorBY.RemoveSwap(index)
+Me.DeltaCenterX.RemoveSwap(index)
+Me.DeltaCenterY.RemoveSwap(index)
+Me.DistanceSoftnessBiasRate.RemoveSwap(index)
+Me.DistanceSoftnessMassScale.RemoveSwap(index)
+Me.DistanceSoftnessImpulseScale.RemoveSwap(index)
+Me.AxialMass.RemoveSwap(index)
+Me.EnableSpring.RemoveSwap(index)
+Me.EnableLimit.RemoveSwap(index)
+Me.EnableMotor.RemoveSwap(index)
+Return movedJointId
 End Function
 
-## Empties the store while retaining capacity.
+## Copies one row's scalars into another store's row. Copies every column
+## so the family subtype survives; columns of other families carry unused
+## values that the owning family never reads.
+Sub MoveRowTo(target As JointSims, targetIndex As Integer, sourceIndex As Integer)
+target.JointId.Items[targetIndex] = Me.JointId.Items[sourceIndex]
+target.BodyIdA.Items[targetIndex] = Me.BodyIdA.Items[sourceIndex]
+target.BodyIdB.Items[targetIndex] = Me.BodyIdB.Items[sourceIndex]
+target.Type.Items[targetIndex] = Me.Type.Items[sourceIndex]
+target.LocalOriginAnchorAX.Items[targetIndex] = Me.LocalOriginAnchorAX.Items[sourceIndex]
+target.LocalOriginAnchorAY.Items[targetIndex] = Me.LocalOriginAnchorAY.Items[sourceIndex]
+target.LocalOriginAnchorBX.Items[targetIndex] = Me.LocalOriginAnchorBX.Items[sourceIndex]
+target.LocalOriginAnchorBY.Items[targetIndex] = Me.LocalOriginAnchorBY.Items[sourceIndex]
+target.InvMassA.Items[targetIndex] = Me.InvMassA.Items[sourceIndex]
+target.InvIA.Items[targetIndex] = Me.InvIA.Items[sourceIndex]
+target.InvMassB.Items[targetIndex] = Me.InvMassB.Items[sourceIndex]
+target.InvIB.Items[targetIndex] = Me.InvIB.Items[sourceIndex]
+target.ConstraintHertz.Items[targetIndex] = Me.ConstraintHertz.Items[sourceIndex]
+target.ConstraintDampingRatio.Items[targetIndex] = Me.ConstraintDampingRatio.Items[sourceIndex]
+target.SoftnessBiasRate.Items[targetIndex] = Me.SoftnessBiasRate.Items[sourceIndex]
+target.SoftnessMassScale.Items[targetIndex] = Me.SoftnessMassScale.Items[sourceIndex]
+target.SoftnessImpulseScale.Items[targetIndex] = Me.SoftnessImpulseScale.Items[sourceIndex]
+target.Length.Items[targetIndex] = Me.Length.Items[sourceIndex]
+target.Hertz.Items[targetIndex] = Me.Hertz.Items[sourceIndex]
+target.DampingRatio.Items[targetIndex] = Me.DampingRatio.Items[sourceIndex]
+target.MinLength.Items[targetIndex] = Me.MinLength.Items[sourceIndex]
+target.MaxLength.Items[targetIndex] = Me.MaxLength.Items[sourceIndex]
+target.MaxMotorForce.Items[targetIndex] = Me.MaxMotorForce.Items[sourceIndex]
+target.MotorSpeed.Items[targetIndex] = Me.MotorSpeed.Items[sourceIndex]
+target.Impulse.Items[targetIndex] = Me.Impulse.Items[sourceIndex]
+target.LowerImpulse.Items[targetIndex] = Me.LowerImpulse.Items[sourceIndex]
+target.UpperImpulse.Items[targetIndex] = Me.UpperImpulse.Items[sourceIndex]
+target.MotorImpulse.Items[targetIndex] = Me.MotorImpulse.Items[sourceIndex]
+target.IndexA.Items[targetIndex] = Me.IndexA.Items[sourceIndex]
+target.IndexB.Items[targetIndex] = Me.IndexB.Items[sourceIndex]
+target.AnchorAX.Items[targetIndex] = Me.AnchorAX.Items[sourceIndex]
+target.AnchorAY.Items[targetIndex] = Me.AnchorAY.Items[sourceIndex]
+target.AnchorBX.Items[targetIndex] = Me.AnchorBX.Items[sourceIndex]
+target.AnchorBY.Items[targetIndex] = Me.AnchorBY.Items[sourceIndex]
+target.DeltaCenterX.Items[targetIndex] = Me.DeltaCenterX.Items[sourceIndex]
+target.DeltaCenterY.Items[targetIndex] = Me.DeltaCenterY.Items[sourceIndex]
+target.DistanceSoftnessBiasRate.Items[targetIndex] = Me.DistanceSoftnessBiasRate.Items[sourceIndex]
+target.DistanceSoftnessMassScale.Items[targetIndex] = Me.DistanceSoftnessMassScale.Items[sourceIndex]
+target.DistanceSoftnessImpulseScale.Items[targetIndex] = Me.DistanceSoftnessImpulseScale.Items[sourceIndex]
+target.AxialMass.Items[targetIndex] = Me.AxialMass.Items[sourceIndex]
+target.EnableSpring.Items[targetIndex] = Me.EnableSpring.Items[sourceIndex]
+target.EnableLimit.Items[targetIndex] = Me.EnableLimit.Items[sourceIndex]
+target.EnableMotor.Items[targetIndex] = Me.EnableMotor.Items[sourceIndex]
+End Sub
+
+## Empties the store while retaining all capacity.
 Sub ClearAll()
-Me.Rows.Clear()
+Me.JointId.Clear()
+Me.BodyIdA.Clear()
+Me.BodyIdB.Clear()
+Me.Type.Clear()
+Me.LocalOriginAnchorAX.Clear()
+Me.LocalOriginAnchorAY.Clear()
+Me.LocalOriginAnchorBX.Clear()
+Me.LocalOriginAnchorBY.Clear()
+Me.InvMassA.Clear()
+Me.InvIA.Clear()
+Me.InvMassB.Clear()
+Me.InvIB.Clear()
+Me.ConstraintHertz.Clear()
+Me.ConstraintDampingRatio.Clear()
+Me.SoftnessBiasRate.Clear()
+Me.SoftnessMassScale.Clear()
+Me.SoftnessImpulseScale.Clear()
+Me.Length.Clear()
+Me.Hertz.Clear()
+Me.DampingRatio.Clear()
+Me.MinLength.Clear()
+Me.MaxLength.Clear()
+Me.MaxMotorForce.Clear()
+Me.MotorSpeed.Clear()
+Me.Impulse.Clear()
+Me.LowerImpulse.Clear()
+Me.UpperImpulse.Clear()
+Me.MotorImpulse.Clear()
+Me.IndexA.Clear()
+Me.IndexB.Clear()
+Me.AnchorAX.Clear()
+Me.AnchorAY.Clear()
+Me.AnchorBX.Clear()
+Me.AnchorBY.Clear()
+Me.DeltaCenterX.Clear()
+Me.DeltaCenterY.Clear()
+Me.DistanceSoftnessBiasRate.Clear()
+Me.DistanceSoftnessMassScale.Clear()
+Me.DistanceSoftnessImpulseScale.Clear()
+Me.AxialMass.Clear()
+Me.EnableSpring.Clear()
+Me.EnableLimit.Clear()
+Me.EnableMotor.Clear()
 End Sub
 End Class

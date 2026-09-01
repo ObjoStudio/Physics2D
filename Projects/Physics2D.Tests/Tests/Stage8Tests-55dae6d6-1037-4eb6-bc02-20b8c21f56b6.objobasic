@@ -69,12 +69,43 @@ shapeDef.Density = 1.0
 box.CreatePolygon(shapeDef, Polygon.MakeBox(0.1, 0.1))
 Var i As Integer = 0
 While i < 30
-world.StepWorld(1.0 / 60.0)
+world.StepWorld(1.0 / 60.0, 1)
 i = i + 1
 Wend
 Var position As Vector2 = world.GetBodyTransform(box).P
 PhysicsAssert.Near(0.0, position.X, 0.35, 0.35, "fast box stopped by thin wall")
 PhysicsAssert.Near(0.0, world.GetBodyLinearVelocity(box).X, 1.0, 1.0, "fast box velocity arrested")
+world.Validate()
+End Sub
+
+## With the default four substeps the same impact leaves a small rebound
+## drift. Upstream Box2D 3.1.1 (C probe against the pinned sources) shows
+## the identical endpoint, x=-1.976 and vx=-4.284 after 30 steps, so the
+## assertion here guards the no-tunnel invariant instead of the resting
+## position.
+Public Sub TestContinuousFastBoxDefaultSubstepsDoesNotTunnel()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var wallDef As New BodyDefinition
+wallDef.Position = New Vector2(0.0, 0.0)
+Var wall As Body = world.CreateBody(wallDef)
+Var wallShapeDef As New ShapeDefinition
+wall.CreatePolygon(wallShapeDef, Polygon.MakeBox(0.05, 2.0))
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(-6.0, 0.0)
+def.LinearVelocity = New Vector2(60.0, 0.0)
+Var box As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.1, 0.1))
+Var i As Integer = 0
+While i < 30
+world.StepWorld(1.0 / 60.0)
+Assert.True(world.GetBodyTransform(box).P.X < 0.35, "fast box never crosses the thin wall")
+i = i + 1
+Wend
+Assert.True(world.GetBodyTransform(box).P.X > -4.0, "fast box stays near the wall")
 world.Validate()
 End Sub
 
@@ -98,11 +129,42 @@ shapeDef.Density = 1.0
 box.CreatePolygon(shapeDef, Polygon.MakeBox(0.1, 0.1))
 Var i As Integer = 0
 While i < 30
-world.StepWorld(1.0 / 60.0)
+world.StepWorld(1.0 / 60.0, 1)
 i = i + 1
 Wend
 Var position As Vector2 = world.GetBodyTransform(box).P
 PhysicsAssert.Near(0.0, position.X, 0.35, 0.35, "bullet stopped by thin wall")
+world.Validate()
+End Sub
+
+## Bullet impact under the default four substeps: the caught bullet
+## rebounds away from the wall with a small residual velocity, exactly as
+## upstream Box2D 3.1.1 does (C probe: x=-1.976, vx=-4.284 after 30 steps).
+## Assert the no-tunnel invariant per step and a bounded drift.
+Public Sub TestBulletDefaultSubstepsDoesNotTunnel()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var wallDef As New BodyDefinition
+wallDef.Position = New Vector2(0.0, 0.0)
+Var wall As Body = world.CreateBody(wallDef)
+Var wallShapeDef As New ShapeDefinition
+wall.CreatePolygon(wallShapeDef, Polygon.MakeBox(0.05, 2.0))
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.IsBullet = True
+def.Position = New Vector2(-8.0, 0.0)
+def.LinearVelocity = New Vector2(120.0, 0.0)
+Var box As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.1, 0.1))
+Var i As Integer = 0
+While i < 30
+world.StepWorld(1.0 / 60.0)
+Assert.True(world.GetBodyTransform(box).P.X < 0.35, "bullet never crosses the thin wall")
+i = i + 1
+Wend
+Assert.True(world.GetBodyTransform(box).P.X > -4.0, "bullet stays near the wall")
 world.Validate()
 End Sub
 
@@ -126,11 +188,40 @@ shapeDef.Density = 1.0
 box.CreatePolygon(shapeDef, Polygon.MakeBox(0.15, 0.05))
 Var i As Integer = 0
 While i < 40
-world.StepWorld(1.0 / 60.0)
+world.StepWorld(1.0 / 60.0, 1)
 i = i + 1
 Wend
 Var position As Vector2 = world.GetBodyTransform(box).P
 PhysicsAssert.Near(0.0, position.X, 0.4, 0.4, "fast spinner stopped by wall")
+world.Validate()
+End Sub
+
+## Spinner impact under the default four substeps, matching the upstream
+## C probe endpoint x=-1.474 after 40 steps.
+Public Sub TestSpinnerDefaultSubstepsDoesNotTunnel()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var wallDef As New BodyDefinition
+wallDef.Position = New Vector2(0.0, 0.0)
+Var wall As Body = world.CreateBody(wallDef)
+Var wallShapeDef As New ShapeDefinition
+wall.CreatePolygon(wallShapeDef, Polygon.MakeBox(0.05, 1.0))
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(-5.0, 0.0)
+def.LinearVelocity = New Vector2(40.0, 0.0)
+def.AngularVelocity = 30.0
+Var box As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.15, 0.05))
+Var i As Integer = 0
+While i < 40
+world.StepWorld(1.0 / 60.0)
+Assert.True(world.GetBodyTransform(box).P.X < 0.55, "spinner never crosses the thin wall")
+i = i + 1
+Wend
+Assert.True(world.GetBodyTransform(box).P.X > -4.0, "spinner stays near the wall")
 world.Validate()
 End Sub
 

@@ -210,6 +210,11 @@ in the Objo checkout remains authoritative.
   prefer scalar slab math over constructing intermediate geometry.
 - A test-project source item needs a sidecar with `"BuildScope": "Test"`;
   `"Application"` there is a packaging error.
+- Classes owned by a module follow ordinary inheritance and may call
+  `Super.Constructor()`. This requires the Objo engine fix from issue #1315
+  (commit `b9781ccc83a87b076f5c73bb77eb1a99b3da6119`). Do not replace
+  constructor-owned base invariants with property defaults or factory-side
+  initialization to work around the former VM bug.
 - The virtual machine dispatches same-arity constructors by arity alone: a
   second constructor with the same arity is silently unreachable (the first
   wins). Expose the alternatives as shared factory functions

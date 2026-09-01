@@ -51,8 +51,8 @@ Property LocalCentroid As Vector2
 Property ProxyKey As Integer
 ## Collision filter.
 Property Filter As Filter
-## User data owned by the application.
-Property UserData As Integer
+## User data owned by the application. Never read by the solver.
+Property UserData As Object
 ## Whether this shape reports sensor events.
 Property EnableSensorEvents As Boolean
 ## Whether this shape reports contact events.
@@ -105,7 +105,7 @@ Me.FatAABB = New AABB
 Me.LocalCentroid = New Vector2(0.0, 0.0)
 Me.ProxyKey = PhysicsConstants.NULL_INDEX
 Me.Filter = New Filter()
-Me.UserData = 0
+Me.UserData = Nothing
 Me.EnableSensorEvents = False
 Me.EnableContactEvents = False
 Me.EnableHitEvents = False
@@ -169,13 +169,13 @@ Return New AABB(Me.AABB)
 End Function
 
 ## User data owned by the application.
-Function GetUserData() As Integer
+Function GetUserData() As Object
 Me.Validate()
 Return Me.UserData
 End Function
 
 ## Sets user data owned by the application.
-Sub SetUserData(userData As Integer)
+Sub SetUserData(userData As Object)
 Me.Validate()
 Me.UserData = userData
 End Sub

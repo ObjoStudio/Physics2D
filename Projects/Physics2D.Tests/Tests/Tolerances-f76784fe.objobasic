@@ -30,6 +30,17 @@ Const MASS_REL As Double = 0.0001
 Const SCENE_ABS As Double = 0.002
 Const SCENE_REL As Double = 0.002
 
+# Distance-joint constraint forces, torques, and motor forces after a full
+# simulation scene. The reported force is the applied solver impulse divided
+# by the substep size, so the float32 impulse error is amplified by 1/h =
+# 240. Impulses match to well under 1e-5 in the golden scenes, giving a
+# worst-case force error around 2.4e-3 N; 0.01 N absolute keeps a safety
+# factor of about four while staying far below the 2.5 N body weight scale
+# of the fixtures. Relative tolerance covers the saturated 2000 N motor
+# force.
+Const JOINT_FORCE_ABS As Double = 0.01
+Const JOINT_FORCE_REL As Double = 0.001
+
 # Physics2D-internal checks that never compare against C output.
 Const INTERNAL_ABS As Double = 0.000000000001
 Const INTERNAL_REL As Double = 0.000000000001

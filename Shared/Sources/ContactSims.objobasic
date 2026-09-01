@@ -131,9 +131,14 @@ End Function
 ## ContactId there.
 Function RemoveSwap(index As Integer) As Integer
 If Me.ManifoldSlots.Items[index] <> PhysicsConstants.NULL_INDEX Then
+# A recycled manifold must be blank: persisted impulses travel only with
+# row transfers, and a stale impulse on a reused row could spuriously
+# persist across an unrelated contact with matching feature ids.
+Me.ManifoldPool[Me.ManifoldSlots.Items[index]].Reset()
 Me.FreeManifolds.Append(Me.ManifoldSlots.Items[index])
 End If
 If Me.CacheSlots.Items[index] <> PhysicsConstants.NULL_INDEX Then
+Me.CachePool[Me.CacheSlots.Items[index]].Clear()
 Me.FreeCaches.Append(Me.CacheSlots.Items[index])
 End If
 Var movedIndex As Integer = Me.ContactId.RemoveSwap(index)
@@ -156,9 +161,12 @@ Return movedIndex
 End Function
 
 ## Copies one row's scalars into another store's row and adopts the
-## source's pooled manifold and cache objects. The vacated source slots are
-## marked NULL so the following RemoveSwap does not recycle an object that
-## now belongs to the target store; the slot stays as a dead pool hole.
+## source's pooled manifold and cache objects, so persisted solver state
+## travels with the row. The target row's blank placeholder objects swap
+## back into the source pool and the vacated source slots return to this
+## store's free lists, keeping pool sizes fixed across transfers. The
+## vacated slots are marked NULL so the following RemoveSwap does not
+## recycle them twice.
 Sub MoveRowTo(target As ContactSims, targetIndex As Integer, sourceIndex As Integer)
 target.ContactId.Items[targetIndex] = Me.ContactId.Items[sourceIndex]
 target.ShapeIdA.Items[targetIndex] = Me.ShapeIdA.Items[sourceIndex]
@@ -174,8 +182,19 @@ target.Restitution.Items[targetIndex] = Me.Restitution.Items[sourceIndex]
 target.RollingResistance.Items[targetIndex] = Me.RollingResistance.Items[sourceIndex]
 target.TangentSpeed.Items[targetIndex] = Me.TangentSpeed.Items[sourceIndex]
 target.SimFlags.Items[targetIndex] = Me.SimFlags.Items[sourceIndex]
+# Adopt the source's pooled objects into the target row and swap the
+# target row's blank placeholder objects back into the source pool at the
+# vacated slots. The healed source slot then returns to this store's free
+# list, so pools stay fixed-size across sleep and wake cycles and a warmed
+# transfer allocates nothing.
+Var placeholderManifold As Manifold = target.ManifoldPool[target.ManifoldSlots.Items[targetIndex]]
+Var placeholderCache As SimplexCache = target.CachePool[target.CacheSlots.Items[targetIndex]]
 target.ManifoldPool[target.ManifoldSlots.Items[targetIndex]] = Me.ManifoldPool[Me.ManifoldSlots.Items[sourceIndex]]
 target.CachePool[target.CacheSlots.Items[targetIndex]] = Me.CachePool[Me.CacheSlots.Items[sourceIndex]]
+Me.ManifoldPool[Me.ManifoldSlots.Items[sourceIndex]] = placeholderManifold
+Me.CachePool[Me.CacheSlots.Items[sourceIndex]] = placeholderCache
+Me.FreeManifolds.Append(Me.ManifoldSlots.Items[sourceIndex])
+Me.FreeCaches.Append(Me.CacheSlots.Items[sourceIndex])
 Me.ManifoldSlots.Items[sourceIndex] = PhysicsConstants.NULL_INDEX
 Me.CacheSlots.Items[sourceIndex] = PhysicsConstants.NULL_INDEX
 End Sub
@@ -201,5 +220,25 @@ Me.ManifoldSlots.Clear()
 Me.CacheSlots.Clear()
 Me.FreeManifolds.Clear()
 Me.FreeCaches.Clear()
+# Return every pooled object that still lives in this store to its free
+# list so a recycled store (for example a reused sleeping solver set) fills
+# new rows without allocating. Slots whose objects were adopted by another
+# store hold Nothing and stay dead holes.
+Var manifoldSlot As Integer = 0
+While manifoldSlot < Me.ManifoldPool.Count
+If Me.ManifoldPool[manifoldSlot] <> Nothing Then
+Me.ManifoldPool[manifoldSlot].Reset()
+Me.FreeManifolds.Append(manifoldSlot)
+End If
+manifoldSlot = manifoldSlot + 1
+Wend
+Var cacheSlot As Integer = 0
+While cacheSlot < Me.CachePool.Count
+If Me.CachePool[cacheSlot] <> Nothing Then
+Me.CachePool[cacheSlot].Clear()
+Me.FreeCaches.Append(cacheSlot)
+End If
+cacheSlot = cacheSlot + 1
+Wend
 End Sub
 End Class

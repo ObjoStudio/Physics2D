@@ -167,11 +167,6 @@ Me.EnlargeAABB.RemoveSwap(index)
 Return movedIndex
 End Function
 
-## Returns the body index stored at localIndex.
-Function BodyIdAt(localIndex As Integer) As Integer
-Return Me.BodyId.Items[localIndex]
-End Function
-
 ## Copies every field of the record at sourceIndex onto the record at
 ## targetIndex. Both indices are in this storage. Ported from the memcpy in
 ## upstream b2TransferBody, used here for set-to-set moves.

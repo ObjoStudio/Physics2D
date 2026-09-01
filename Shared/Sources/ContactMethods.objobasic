@@ -19,22 +19,22 @@ Var typeA As ShapeType = shapeA.Type
 # chainSegment-capsule, chainSegment-polygon. Segment-segment and
 # chain-segment pairs have no registered manifold.
 If typeA = ShapeType.CircleShape Then
-Return ContactMethods.ManifoldCircleA(shapeA, transformA, shapeB, transformB, cache, out)
+Return ManifoldCircleA(shapeA, transformA, shapeB, transformB, cache, out)
 ElseIf typeA = ShapeType.CapsuleShape Then
-Return ContactMethods.ManifoldCapsuleA(shapeA, transformA, shapeB, transformB, cache, out)
+Return ManifoldCapsuleA(shapeA, transformA, shapeB, transformB, cache, out)
 ElseIf typeA = ShapeType.SegmentShape Then
-Return ContactMethods.ManifoldSegmentA(shapeA, transformA, shapeB, transformB, out)
+Return ManifoldSegmentA(shapeA, transformA, shapeB, transformB, out)
 ElseIf typeA = ShapeType.PolygonShape Then
-Return ContactMethods.ManifoldPolygonA(shapeA, transformA, shapeB, transformB, cache, out)
+Return ManifoldPolygonA(shapeA, transformA, shapeB, transformB, cache, out)
 ElseIf typeA = ShapeType.ChainSegmentShape Then
-Return ContactMethods.ManifoldChainSegmentA(shapeA, transformA, shapeB, transformB, cache, out)
+Return ManifoldChainSegmentA(shapeA, transformA, shapeB, transformB, cache, out)
 End If
 out.Reset()
 Return out
 End Function
 
 ## Manifold dispatch when shape A is a circle.
-Shared Function ManifoldCircleA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Private Shared Function ManifoldCircleA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
 Pragma Unused cache
 Var typeB As ShapeType = shapeB.Type
 If typeB = ShapeType.CircleShape Then
@@ -53,7 +53,7 @@ Return out
 End Function
 
 ## Manifold dispatch when shape A is a capsule.
-Shared Function ManifoldCapsuleA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Private Shared Function ManifoldCapsuleA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
 Var typeB As ShapeType = shapeB.Type
 If typeB = ShapeType.CircleShape Then
 Return Collide.CollideCapsuleAndCircleTo(shapeA.Capsule, transformA, shapeB.Circle, transformB, out)
@@ -71,7 +71,7 @@ Return out
 End Function
 
 ## Manifold dispatch when shape A is a segment.
-Shared Function ManifoldSegmentA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, out As Manifold) As Manifold
+Private Shared Function ManifoldSegmentA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, out As Manifold) As Manifold
 Var typeB As ShapeType = shapeB.Type
 If typeB = ShapeType.CircleShape Then
 Return Collide.CollideSegmentAndCircleTo(shapeA.Segment, transformA, shapeB.Circle, transformB, out)
@@ -85,7 +85,7 @@ Return out
 End Function
 
 ## Manifold dispatch when shape A is a polygon.
-Shared Function ManifoldPolygonA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Private Shared Function ManifoldPolygonA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
 Var typeB As ShapeType = shapeB.Type
 If typeB = ShapeType.CircleShape Then
 Return Collide.CollidePolygonAndCircleTo(shapeA.Polygon, transformA, shapeB.Circle, transformB, out)
@@ -103,7 +103,7 @@ Return out
 End Function
 
 ## Manifold dispatch when shape A is a chain segment.
-Shared Function ManifoldChainSegmentA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
+Private Shared Function ManifoldChainSegmentA(shapeA As Shape, transformA As Transform, shapeB As Shape, transformB As Transform, cache As SimplexCache, out As Manifold) As Manifold
 Var typeB As ShapeType = shapeB.Type
 If typeB = ShapeType.CircleShape Then
 Return Collide.CollideChainSegmentAndCircleTo(shapeA.ChainSegment, transformA, shapeB.Circle, transformB, out)
@@ -118,7 +118,7 @@ End Function
 
 ## Returns True when the registered manifold pair exists. Segment-segment,
 ## segment-chain-segment, and chain-segment pairs never collide.
-Shared Function HasManifold(typeA As ShapeType, typeB As ShapeType) As Boolean
+Private Shared Function HasManifold(typeA As ShapeType, typeB As ShapeType) As Boolean
 If typeA = ShapeType.SegmentShape And typeB = ShapeType.SegmentShape Then
 Return False
 End If
@@ -190,10 +190,10 @@ End Function
 Shared Function CreateContact(world As World, shapeA As Shape, shapeB As Shape) As Contact
 Var typeA As ShapeType = shapeA.Type
 Var typeB As ShapeType = shapeB.Type
-If Not ContactMethods.HasManifold(typeA, typeB) Then
+If Not HasManifold(typeA, typeB) Then
 Return Nothing
 End If
-If Not ContactMethods.IsPrimaryPair(typeA, typeB) Then
+If Not IsPrimaryPair(typeA, typeB) Then
 Return ContactMethods.CreateContact(world, shapeB, shapeA)
 End If
 
@@ -214,9 +214,23 @@ Var contactSet As SolverSet = world.SolverSets[setIndex]
 
 Var contactId As Integer = world.ContactIdPool.AllocId()
 If contactId = world.Contacts.Count Then
+# Freed contact records are pooled so steady-state pair churn in
+# moving scenes allocates nothing after capacity warm-up. Growing the
+# array happens only when the world holds more simultaneous contacts
+# than ever before.
+If world.ContactPool.Count > 0 Then
+world.Contacts.Append(world.ContactPool[world.ContactPool.Count - 1])
+world.ContactPool.RemoveAt(world.ContactPool.Count - 1)
+Else
 world.Contacts.Append(New Contact)
+End If
+Else
+If world.ContactPool.Count > 0 Then
+world.Contacts[contactId] = world.ContactPool[world.ContactPool.Count - 1]
+world.ContactPool.RemoveAt(world.ContactPool.Count - 1)
 Else
 world.Contacts[contactId] = New Contact
+End If
 End If
 Var contact As Contact = world.Contacts[contactId]
 
@@ -269,7 +283,7 @@ End Function
 
 ## Returns True when the type pair is the registered primary order, ported
 ## from the b2AddType registrations in contact.c.
-Shared Function IsPrimaryPair(typeA As ShapeType, typeB As ShapeType) As Boolean
+Private Shared Function IsPrimaryPair(typeA As ShapeType, typeB As ShapeType) As Boolean
 If typeA = typeB Then
 Return True
 End If
@@ -362,6 +376,14 @@ contact.ContactId = PhysicsConstants.NULL_INDEX
 contact.SetIndex = PhysicsConstants.NULL_INDEX
 contact.ColorIndex = PhysicsConstants.NULL_INDEX
 contact.LocalIndex = PhysicsConstants.NULL_INDEX
+contact.IslandId = PhysicsConstants.NULL_INDEX
+contact.IslandPrev = PhysicsConstants.NULL_INDEX
+contact.IslandNext = PhysicsConstants.NULL_INDEX
+contact.ShapeIdA = PhysicsConstants.NULL_INDEX
+contact.ShapeIdB = PhysicsConstants.NULL_INDEX
+contact.IsMarked = False
+contact.Flags = 0
+world.ContactPool.Append(contact)
 
 world.ContactIdPool.FreeId(contactId)
 world.ContactCount = world.ContactCount - 1
@@ -452,7 +474,7 @@ End Sub
 
 ## Returns the shape's collision radius, ported from b2GetShapeRadius in
 ## shape.h. Segments and chain segments have zero radius.
-Shared Function GetShapeRadius(shape As Shape) As Double
+Private Shared Function GetShapeRadius(shape As Shape) As Double
 If shape.Type = ShapeType.CapsuleShape Then
 Return shape.Capsule.Radius
 ElseIf shape.Type = ShapeType.CircleShape Then
@@ -461,12 +483,6 @@ ElseIf shape.Type = ShapeType.PolygonShape Then
 Return shape.Polygon.Radius
 End If
 Return 0.0
-End Function
-
-## Returns the contact sim row owning the contact: the solver set's dense
-## store for non-touching and sleeping contacts.
-Shared Function GetContactSet(world As World, contact As Contact) As SolverSet
-Return world.SolverSets[contact.SetIndex]
 End Function
 
 ## Updates the contact manifold and touching status, ported from
@@ -505,8 +521,8 @@ ContactMethods.ComputeManifoldTo(shapeA, transformA, shapeB, transformB, cache, 
 sims.Friction.Items[simIndex] = world.MixFrictionWithMaterials(shapeA.Friction, shapeA.UserMaterialId, shapeB.Friction, shapeB.UserMaterialId)
 sims.Restitution.Items[simIndex] = world.MixRestitutionWithMaterials(shapeA.Restitution, shapeA.UserMaterialId, shapeB.Restitution, shapeB.UserMaterialId)
 If shapeA.RollingResistance > 0.0 Or shapeB.RollingResistance > 0.0 Then
-Var radiusA As Double = ContactMethods.GetShapeRadius(shapeA)
-Var radiusB As Double = ContactMethods.GetShapeRadius(shapeB)
+Var radiusA As Double = GetShapeRadius(shapeA)
+Var radiusB As Double = GetShapeRadius(shapeB)
 Var maxRadius As Double = radiusA
 If radiusB > maxRadius Then
 maxRadius = radiusB

@@ -1,9 +1,9 @@
 # Persistent joint record and public façade, ported from upstream b2Joint in
 # joint.h plus the b2Joint_* surface in joint.c. The record carries solver-set
 # membership, body-edge lists, and island links; the hot per-family state
-# lives in a JointSim owned by whichever solver set or graph colour the joint
-# currently occupies. Family façades such as DistanceJoint extend this class
-# with their typed tuning surface.
+# lives in the JointSims columns of whichever solver set or graph colour the
+# joint currently occupies. Family façades such as DistanceJoint extend this
+# class with their typed tuning surface.
 Class Joint
 ## Owning world. Nothing for free slots.
 Property Owner As World
@@ -11,11 +11,12 @@ Property Owner As World
 Property Id As Integer
 ## True while the slot addresses a live joint.
 Property Live As Boolean
-## Index of the solver set that owns the hot sim. NULL_INDEX when free.
+## Index of the solver set that owns the hot row. NULL_INDEX when free.
 Property SetIndex As Integer
 ## Constraint-graph colour index. NULL_INDEX outside the awake set.
 Property ColorIndex As Integer
-## Joint index within the owning set or graph colour. NULL_INDEX when free.
+## Joint row index within the owning set or graph colour. NULL_INDEX when
+## free.
 Property LocalIndex As Integer
 ## Body slot of edge zero.
 Property Edge0BodyId As Integer
@@ -45,10 +46,36 @@ Property Generation As Integer
 Property IsMarked As Boolean
 ## True when the two connected bodies may collide.
 Property CollideConnected As Boolean
-## User data attached to this joint.
-Property UserData As Integer
+## User data owned by the application. Never read by the solver.
+Property UserData As Object
 ## Debug draw size in metres.
 Property DrawSize As Double
+
+## Creates an empty, unbound joint. Only the world may construct live
+## joints; the zero-argument form also serves sparse array capacity and
+## subclass inheritance.
+Constructor()
+Me.Owner = Nothing
+Me.Id = PhysicsConstants.NULL_INDEX
+Me.Live = False
+Me.SetIndex = PhysicsConstants.NULL_INDEX
+Me.ColorIndex = PhysicsConstants.NULL_INDEX
+Me.LocalIndex = PhysicsConstants.NULL_INDEX
+Me.Edge0BodyId = PhysicsConstants.NULL_INDEX
+Me.Edge0PrevKey = PhysicsConstants.NULL_INDEX
+Me.Edge0NextKey = PhysicsConstants.NULL_INDEX
+Me.Edge1BodyId = PhysicsConstants.NULL_INDEX
+Me.Edge1PrevKey = PhysicsConstants.NULL_INDEX
+Me.Edge1NextKey = PhysicsConstants.NULL_INDEX
+Me.IslandPrev = PhysicsConstants.NULL_INDEX
+Me.IslandNext = PhysicsConstants.NULL_INDEX
+Me.IslandId = PhysicsConstants.NULL_INDEX
+Me.Generation = PhysicsConstants.INVALID_GENERATION
+Me.IsMarked = False
+Me.CollideConnected = False
+Me.UserData = Nothing
+Me.DrawSize = 1.0
+End Constructor
 
 ## Returns True when this façade still addresses a live joint.
 Function IsValid() As Boolean
@@ -97,42 +124,36 @@ Me.CheckValid()
 Return Me.Owner
 End Function
 
-## Hot sim for this joint, resolving set or graph placement.
-Function GetJointSim() As JointSim
-Me.CheckValid()
-Return Me.Owner.GetJointSim(Me)
-End Function
-
 ## Moves the first local anchor, ported from b2Joint_SetLocalAnchorA.
 Sub SetLocalAnchorA(localAnchor As Vector2)
 Me.CheckValid()
 Me.Owner.CheckNotLocked()
-Var sim As JointSim = Me.Owner.GetJointSim(Me)
-sim.LocalOriginAnchorAX = localAnchor.X
-sim.LocalOriginAnchorAY = localAnchor.Y
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+store.LocalOriginAnchorAX.Items[Me.LocalIndex] = localAnchor.X
+store.LocalOriginAnchorAY.Items[Me.LocalIndex] = localAnchor.Y
 End Sub
 
 ## First local anchor, ported from b2Joint_GetLocalAnchorA.
 Function GetLocalAnchorA() As Vector2
 Me.CheckValid()
-Var sim As JointSim = Me.Owner.GetJointSim(Me)
-Return New Vector2(sim.LocalOriginAnchorAX, sim.LocalOriginAnchorAY)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return New Vector2(store.LocalOriginAnchorAX.Items[Me.LocalIndex], store.LocalOriginAnchorAY.Items[Me.LocalIndex])
 End Function
 
 ## Moves the second local anchor, ported from b2Joint_SetLocalAnchorB.
 Sub SetLocalAnchorB(localAnchor As Vector2)
 Me.CheckValid()
 Me.Owner.CheckNotLocked()
-Var sim As JointSim = Me.Owner.GetJointSim(Me)
-sim.LocalOriginAnchorBX = localAnchor.X
-sim.LocalOriginAnchorBY = localAnchor.Y
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+store.LocalOriginAnchorBX.Items[Me.LocalIndex] = localAnchor.X
+store.LocalOriginAnchorBY.Items[Me.LocalIndex] = localAnchor.Y
 End Sub
 
 ## Second local anchor, ported from b2Joint_GetLocalAnchorB.
 Function GetLocalAnchorB() As Vector2
 Me.CheckValid()
-Var sim As JointSim = Me.Owner.GetJointSim(Me)
-Return New Vector2(sim.LocalOriginAnchorBX, sim.LocalOriginAnchorBY)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Return New Vector2(store.LocalOriginAnchorBX.Items[Me.LocalIndex], store.LocalOriginAnchorBY.Items[Me.LocalIndex])
 End Function
 
 ## Sets the reference angle for the families that have one, ported from
@@ -205,13 +226,13 @@ Return Me.CollideConnected
 End Function
 
 ## Attaches user data, ported from b2Joint_SetUserData.
-Sub SetUserData(userData As Integer)
+Sub SetUserData(userData As Object)
 Me.CheckValid()
 Me.UserData = userData
 End Sub
 
 ## User data, ported from b2Joint_GetUserData.
-Function GetUserData() As Integer
+Function GetUserData() As Object
 Me.CheckValid()
 Return Me.UserData
 End Function
@@ -230,7 +251,7 @@ End Sub
 ## b2Joint_GetConstraintTuning.
 Function GetConstraintHertz() As Double
 Me.CheckValid()
-Return Me.Owner.GetJointSim(Me).ConstraintHertz
+Return Me.Owner.GetJointSims(Me).ConstraintHertz.Items[Me.LocalIndex]
 End Function
 
 ## Sets the solver hertz for this joint, ported from b2Joint_SetConstraintTuning.
@@ -239,14 +260,14 @@ Me.CheckValid()
 If Not hertz.IsFinite() Or hertz < 0.0 Then
 Throw New InvalidArgumentException("Joint hertz must be finite and non-negative")
 End If
-Me.Owner.GetJointSim(Me).ConstraintHertz = hertz
+Me.Owner.GetJointSims(Me).ConstraintHertz.Items[Me.LocalIndex] = hertz
 End Sub
 
 ## Solver damping ratio for this joint, ported from the damping ratio
 ## out-param of b2Joint_GetConstraintTuning.
 Function GetConstraintDampingRatio() As Double
 Me.CheckValid()
-Return Me.Owner.GetJointSim(Me).ConstraintDampingRatio
+Return Me.Owner.GetJointSims(Me).ConstraintDampingRatio.Items[Me.LocalIndex]
 End Function
 
 ## Sets the solver damping ratio for this joint, ported from
@@ -256,7 +277,7 @@ Me.CheckValid()
 If Not dampingRatio.IsFinite() Or dampingRatio < 0.0 Then
 Throw New InvalidArgumentException("Joint damping ratio must be finite and non-negative")
 End If
-Me.Owner.GetJointSim(Me).ConstraintDampingRatio = dampingRatio
+Me.Owner.GetJointSims(Me).ConstraintDampingRatio.Items[Me.LocalIndex] = dampingRatio
 End Sub
 
 ## Changes the solver tuning for this joint, ported from
@@ -270,9 +291,8 @@ End Sub
 ## b2Joint_GetConstraintForce.
 Function GetConstraintForce() As Vector2
 Me.CheckValid()
-Var sim As JointSim = Me.Owner.GetJointSim(Me)
 If Me.Type = JointType.DistanceJoint Then
-Return JointSolver.GetDistanceJointForce(Me.Owner, DistanceJointSim(sim))
+Return JointSolver.GetDistanceJointForce(Me.Owner, Me.Owner.GetJointSims(Me), Me.LocalIndex)
 End If
 Return New Vector2(0.0, 0.0)
 End Function
@@ -288,26 +308,25 @@ End Function
 ## b2Joint_GetLinearSeparation.
 Function GetLinearSeparation() As Double
 Me.CheckValid()
-Var sim As JointSim = Me.Owner.GetJointSim(Me)
+Var store As JointSims = Me.Owner.GetJointSims(Me)
 Var transformA As Transform = Me.Owner.GetBodyTransformById(Me.Edge0BodyId)
 Var transformB As Transform = Me.Owner.GetBodyTransformById(Me.Edge1BodyId)
-Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(sim.LocalOriginAnchorAX, sim.LocalOriginAnchorAY))
-Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(sim.LocalOriginAnchorBX, sim.LocalOriginAnchorBY))
+Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(store.LocalOriginAnchorAX.Items[Me.LocalIndex], store.LocalOriginAnchorAY.Items[Me.LocalIndex]))
+Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(store.LocalOriginAnchorBX.Items[Me.LocalIndex], store.LocalOriginAnchorBY.Items[Me.LocalIndex]))
 Var dp As Vector2 = pB - pA
 If Me.Type = JointType.DistanceJoint Then
-Var distance As DistanceJointSim = DistanceJointSim(sim)
 Var length As Double = dp.Length()
-If distance.EnableSpring Then
-If distance.EnableLimit Then
-If length < distance.MinLength Then
-Return distance.MinLength - length
-ElseIf length > distance.MaxLength Then
-Return length - distance.MaxLength
+If store.EnableSpring.Items[Me.LocalIndex] = 1 Then
+If store.EnableLimit.Items[Me.LocalIndex] = 1 Then
+If length < store.MinLength.Items[Me.LocalIndex] Then
+Return store.MinLength.Items[Me.LocalIndex] - length
+ElseIf length > store.MaxLength.Items[Me.LocalIndex] Then
+Return length - store.MaxLength.Items[Me.LocalIndex]
 End If
 End If
 Return 0.0
 End If
-Return Maths.Abs(length - distance.Length)
+Return Maths.Abs(length - store.Length.Items[Me.LocalIndex])
 End If
 Return 0.0
 End Function

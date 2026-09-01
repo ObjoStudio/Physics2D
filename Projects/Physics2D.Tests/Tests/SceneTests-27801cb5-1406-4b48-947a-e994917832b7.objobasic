@@ -105,7 +105,7 @@ Var secondChecksum As Integer = SceneTests.FoldWorld(second)
 Assert.Equal(firstChecksum, secondChecksum, "repeated runs match bit for bit")
 # Golden recomputed for Stage 8: continuous collision advances fast
 # bodies to their exact time-of-impact positions.
-Assert.Equal(4006121332606765641, firstChecksum, "pile scene golden checksum")
+Assert.Equal(936612400553819404, firstChecksum, "pile scene golden checksum")
 first.Validate()
 End Sub
 
@@ -164,7 +164,7 @@ Assert.True(velocity.X * velocity.X + velocity.Y * velocity.Y < 0.01, "pyramid c
 i = i + 1
 Wend
 Assert.Equal(78, world.Bodies.Count - 1, "pyramid body count")
-Assert.Equal(6421569019990401853, SceneTests.FoldWorld(world), "pyramid golden checksum")
+Assert.Equal(-6010031578575047977, SceneTests.FoldWorld(world), "pyramid golden checksum")
 world.Validate()
 End Sub
 

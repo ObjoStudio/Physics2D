@@ -8,8 +8,8 @@ Property Material As SurfaceMaterial
 Property Density As Double
 ## Collision filter for this shape.
 Property Filter As Filter
-## User data owned by the application. Never touched by the module.
-Property UserData As Integer
+## User data owned by the application, copied to the created shape. Never read by the solver.
+Property UserData As Object
 ## Whether this shape reports sensor events.
 Property IsSensor As Boolean
 ## Whether this shape reports contact events.
@@ -31,7 +31,7 @@ Constructor()
 Me.Material = New SurfaceMaterial()
 Me.Density = 1.0
 Me.Filter = New Filter()
-Me.UserData = 0
+Me.UserData = Nothing
 Me.IsSensor = False
 Me.EnableContactEvents = False
 Me.EnableHitEvents = False

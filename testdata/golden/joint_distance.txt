@@ -1,0 +1,9 @@
+joint|rope|body|0|-0.999993563 0.24991256 -1.22169126e-06 1
+joint|rope|body|1|1.00000632 0.24991256 -1.17223021e-06 1
+joint|rope|joint|6.13232551e-05 0 0 1.99999988 0
+joint|limit|body|0|0 6.4999299 0 0
+joint|limit|joint|-0 2.5 0 1.5000701 0
+joint|spring|body|0|0 5.97184753 0 0
+joint|spring|joint|-0 2.50080609 0 2.02815247 0
+joint|motor|body|0|0 6.99276066 0 0
+joint|motor|joint|-0 2.49984717 0 1.00723934 2000

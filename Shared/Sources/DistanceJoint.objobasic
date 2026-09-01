@@ -1,11 +1,12 @@
 # Public distance joint façade, ported from the b2DistanceJoint_* surface in
 # distance_joint.c. Tuning changes deliberately do not wake the bodies,
-# matching upstream; the solver picks up new values on the next step.
+# matching upstream; the solver picks up new values on the next step. The
+# façade reads and writes its row in the owning JointSims store.
 Class DistanceJoint Inherits Joint
 ## Rest length, ported from b2DistanceJoint_GetLength.
 Function GetLength() As Double
 Me.CheckValid()
-Return DistanceJointSim(Me.GetJointSim()).Length
+Return Me.Owner.GetJointSims(Me).Length.Items[Me.LocalIndex]
 End Function
 
 ## Changes the rest length and clears the spring and limit impulses, ported
@@ -16,31 +17,35 @@ Me.Owner.CheckNotLocked()
 If Not length.IsFinite() Then
 Throw New InvalidArgumentException("Distance joint length must be finite")
 End If
-Var sim As DistanceJointSim = DistanceJointSim(Me.GetJointSim())
+Var store As JointSims = Me.Owner.GetJointSims(Me)
 If length < PhysicsConstants.LINEAR_SLOP Then
 length = PhysicsConstants.LINEAR_SLOP
 End If
 If length > PhysicsConstants.POSITION_LIMIT Then
 length = PhysicsConstants.POSITION_LIMIT
 End If
-sim.Length = length
-sim.Impulse = 0.0
-sim.LowerImpulse = 0.0
-sim.UpperImpulse = 0.0
+store.Length.Items[Me.LocalIndex] = length
+store.Impulse.Items[Me.LocalIndex] = 0.0
+store.LowerImpulse.Items[Me.LocalIndex] = 0.0
+store.UpperImpulse.Items[Me.LocalIndex] = 0.0
 End Sub
 
 ## Enables the length limits, ported from b2DistanceJoint_EnableLimit.
 Sub EnableLimit(enableLimit As Boolean)
 Me.CheckValid()
 Me.Owner.CheckNotLocked()
-DistanceJointSim(Me.GetJointSim()).EnableLimit = enableLimit
+Var limitBit As Integer = 0
+If enableLimit Then
+limitBit = 1
+End If
+Me.Owner.GetJointSims(Me).EnableLimit.Items[Me.LocalIndex] = limitBit
 End Sub
 
 ## True when the length limits are enabled, ported from
 ## b2DistanceJoint_IsLimitEnabled.
 Function IsLimitEnabled() As Boolean
 Me.CheckValid()
-Return DistanceJointSim(Me.GetJointSim()).EnableLimit
+Return Me.Owner.GetJointSims(Me).EnableLimit.Items[Me.LocalIndex] = 1
 End Function
 
 ## Sets the length range and clears the spring and limit impulses, ported
@@ -63,29 +68,29 @@ End If
 If maxLength > PhysicsConstants.POSITION_LIMIT Then
 maxLength = PhysicsConstants.POSITION_LIMIT
 End If
-Var sim As DistanceJointSim = DistanceJointSim(Me.GetJointSim())
+Var store As JointSims = Me.Owner.GetJointSims(Me)
 If minLength < maxLength Then
-sim.MinLength = minLength
-sim.MaxLength = maxLength
+store.MinLength.Items[Me.LocalIndex] = minLength
+store.MaxLength.Items[Me.LocalIndex] = maxLength
 Else
-sim.MinLength = maxLength
-sim.MaxLength = minLength
+store.MinLength.Items[Me.LocalIndex] = maxLength
+store.MaxLength.Items[Me.LocalIndex] = minLength
 End If
-sim.Impulse = 0.0
-sim.LowerImpulse = 0.0
-sim.UpperImpulse = 0.0
+store.Impulse.Items[Me.LocalIndex] = 0.0
+store.LowerImpulse.Items[Me.LocalIndex] = 0.0
+store.UpperImpulse.Items[Me.LocalIndex] = 0.0
 End Sub
 
 ## Lower clamp of the length range, ported from b2DistanceJoint_GetMinLength.
 Function GetMinLength() As Double
 Me.CheckValid()
-Return DistanceJointSim(Me.GetJointSim()).MinLength
+Return Me.Owner.GetJointSims(Me).MinLength.Items[Me.LocalIndex]
 End Function
 
 ## Upper clamp of the length range, ported from b2DistanceJoint_GetMaxLength.
 Function GetMaxLength() As Double
 Me.CheckValid()
-Return DistanceJointSim(Me.GetJointSim()).MaxLength
+Return Me.Owner.GetJointSims(Me).MaxLength.Items[Me.LocalIndex]
 End Function
 
 ## Current distance between the two anchors, ported from
@@ -93,11 +98,11 @@ End Function
 Function GetCurrentLength() As Double
 Me.CheckValid()
 Me.Owner.CheckNotLocked()
-Var sim As DistanceJointSim = DistanceJointSim(Me.GetJointSim())
+Var store As JointSims = Me.Owner.GetJointSims(Me)
 Var transformA As Transform = Me.Owner.GetBodyTransformById(Me.Edge0BodyId)
 Var transformB As Transform = Me.Owner.GetBodyTransformById(Me.Edge1BodyId)
-Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(sim.LocalOriginAnchorAX, sim.LocalOriginAnchorAY))
-Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(sim.LocalOriginAnchorBX, sim.LocalOriginAnchorBY))
+Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(store.LocalOriginAnchorAX.Items[Me.LocalIndex], store.LocalOriginAnchorAY.Items[Me.LocalIndex]))
+Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(store.LocalOriginAnchorBX.Items[Me.LocalIndex], store.LocalOriginAnchorBY.Items[Me.LocalIndex]))
 Var d As Vector2 = pB - pA
 Return d.Length()
 End Function
@@ -106,40 +111,44 @@ End Function
 Sub EnableSpring(enableSpring As Boolean)
 Me.CheckValid()
 Me.Owner.CheckNotLocked()
-DistanceJointSim(Me.GetJointSim()).EnableSpring = enableSpring
+Var springBit As Integer = 0
+If enableSpring Then
+springBit = 1
+End If
+Me.Owner.GetJointSims(Me).EnableSpring.Items[Me.LocalIndex] = springBit
 End Sub
 
 ## True when the spring is enabled, ported from
 ## b2DistanceJoint_IsSpringEnabled.
 Function IsSpringEnabled() As Boolean
 Me.CheckValid()
-Return DistanceJointSim(Me.GetJointSim()).EnableSpring
+Return Me.Owner.GetJointSims(Me).EnableSpring.Items[Me.LocalIndex] = 1
 End Function
 
 ## Spring stiffness in hertz, ported from b2DistanceJoint_SetSpringHertz.
 Sub SetSpringHertz(hertz As Double)
 Me.CheckValid()
 Me.Owner.CheckNotLocked()
-DistanceJointSim(Me.GetJointSim()).Hertz = hertz
+Me.Owner.GetJointSims(Me).Hertz.Items[Me.LocalIndex] = hertz
 End Sub
 
 ## Spring stiffness in hertz, ported from b2DistanceJoint_GetSpringHertz.
 Function GetSpringHertz() As Double
 Me.CheckValid()
-Return DistanceJointSim(Me.GetJointSim()).Hertz
+Return Me.Owner.GetJointSims(Me).Hertz.Items[Me.LocalIndex]
 End Function
 
 ## Spring damping ratio, ported from b2DistanceJoint_SetSpringDampingRatio.
 Sub SetSpringDampingRatio(dampingRatio As Double)
 Me.CheckValid()
 Me.Owner.CheckNotLocked()
-DistanceJointSim(Me.GetJointSim()).DampingRatio = dampingRatio
+Me.Owner.GetJointSims(Me).DampingRatio.Items[Me.LocalIndex] = dampingRatio
 End Sub
 
 ## Spring damping ratio, ported from b2DistanceJoint_GetSpringDampingRatio.
 Function GetSpringDampingRatio() As Double
 Me.CheckValid()
-Return DistanceJointSim(Me.GetJointSim()).DampingRatio
+Return Me.Owner.GetJointSims(Me).DampingRatio.Items[Me.LocalIndex]
 End Function
 
 ## Enables the motor and clears the motor impulse, ported from
@@ -147,17 +156,21 @@ End Function
 Sub EnableMotor(enableMotor As Boolean)
 Me.CheckValid()
 Me.Owner.CheckNotLocked()
-Var sim As DistanceJointSim = DistanceJointSim(Me.GetJointSim())
-If enableMotor <> sim.EnableMotor Then
-sim.EnableMotor = enableMotor
-sim.MotorImpulse = 0.0
+Var store As JointSims = Me.Owner.GetJointSims(Me)
+Var motorBit As Integer = 0
+If enableMotor Then
+motorBit = 1
+End If
+If motorBit <> store.EnableMotor.Items[Me.LocalIndex] Then
+store.EnableMotor.Items[Me.LocalIndex] = motorBit
+store.MotorImpulse.Items[Me.LocalIndex] = 0.0
 End If
 End Sub
 
 ## True when the motor is enabled, ported from b2DistanceJoint_IsMotorEnabled.
 Function IsMotorEnabled() As Boolean
 Me.CheckValid()
-Return DistanceJointSim(Me.GetJointSim()).EnableMotor
+Return Me.Owner.GetJointSims(Me).EnableMotor.Items[Me.LocalIndex] = 1
 End Function
 
 ## Target relative speed along the rope axis, ported from
@@ -165,22 +178,21 @@ End Function
 Sub SetMotorSpeed(motorSpeed As Double)
 Me.CheckValid()
 Me.Owner.CheckNotLocked()
-DistanceJointSim(Me.GetJointSim()).MotorSpeed = motorSpeed
+Me.Owner.GetJointSims(Me).MotorSpeed.Items[Me.LocalIndex] = motorSpeed
 End Sub
 
 ## Target relative speed along the rope axis, ported from
 ## b2DistanceJoint_GetMotorSpeed.
 Function GetMotorSpeed() As Double
 Me.CheckValid()
-Return DistanceJointSim(Me.GetJointSim()).MotorSpeed
+Return Me.Owner.GetJointSims(Me).MotorSpeed.Items[Me.LocalIndex]
 End Function
 
 ## Motor force applied during the last step, ported from
 ## b2DistanceJoint_GetMotorForce.
 Function GetMotorForce() As Double
 Me.CheckValid()
-Var sim As DistanceJointSim = DistanceJointSim(Me.GetJointSim())
-Return Me.Owner.InvH * sim.MotorImpulse
+Return Me.Owner.InvH * Me.Owner.GetJointSims(Me).MotorImpulse.Items[Me.LocalIndex]
 End Function
 
 ## Maximum motor force magnitude, ported from
@@ -188,13 +200,13 @@ End Function
 Sub SetMaxMotorForce(force As Double)
 Me.CheckValid()
 Me.Owner.CheckNotLocked()
-DistanceJointSim(Me.GetJointSim()).MaxMotorForce = force
+Me.Owner.GetJointSims(Me).MaxMotorForce.Items[Me.LocalIndex] = force
 End Sub
 
 ## Maximum motor force magnitude, ported from
 ## b2DistanceJoint_GetMaxMotorForce.
 Function GetMaxMotorForce() As Double
 Me.CheckValid()
-Return DistanceJointSim(Me.GetJointSim()).MaxMotorForce
+Return Me.Owner.GetJointSims(Me).MaxMotorForce.Items[Me.LocalIndex]
 End Function
 End Class

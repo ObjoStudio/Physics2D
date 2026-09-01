@@ -14,8 +14,8 @@ Property IsLoop As Boolean
 Property Materials As Array(Of SurfaceMaterial)
 ## Collision filter shared by every chain segment.
 Property Filter As Filter
-## User data copied onto every chain segment shape.
-Property UserData As Integer
+## User data copied by reference onto every chain segment shape. Never read by the solver.
+Property UserData As Object
 ## Whether chain segments report sensor events.
 Property EnableSensorEvents As Boolean
 
@@ -28,7 +28,7 @@ Me.IsLoop = False
 Me.Materials = New Array(Of SurfaceMaterial)
 Me.Materials.Append(New SurfaceMaterial())
 Me.Filter = New Filter()
-Me.UserData = 0
+Me.UserData = Nothing
 Me.EnableSensorEvents = False
 End Constructor
 End Class

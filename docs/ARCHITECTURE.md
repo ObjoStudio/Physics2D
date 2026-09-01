@@ -31,7 +31,10 @@ Protected indexed core
    Foundation containers follow the same evidence: growable sequences keep
    one backing array plus a logical count, and the pair table keeps two
    parallel scalar arrays. Nothing in the hot path stores one object per
-   element.
+   element. Stage 9 applies the rule to joints: `JointSims` stores one row
+   of parallel scalar columns per joint (base columns shared by every
+   family plus distance-family columns), so solver loops index scalars and
+   the per-step scratch lives in one reused `DistanceJointScratch` record.
 2. **Zero steady-state allocation.** After a capacity warm-up, every
    container operation on this page allocates nothing: growth happens only
    in `Reserve`-style calls, `Clear` resets a logical count or zeroes in

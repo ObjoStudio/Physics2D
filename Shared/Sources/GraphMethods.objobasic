@@ -48,25 +48,10 @@ End If
 Return colorIndex
 End Function
 
-## Allocates a fresh joint sim of the given family. Families without their
-## own solver state yet share the base record. Module classes cannot call
-## Super.Constructor(), so the factory fills the softness records here and
-## callers assign every remaining field.
-Shared Function NewJointSimOfType(jointType As JointType) As JointSim
-If jointType = JointType.DistanceJoint Then
-Var distance As DistanceJointSim = New DistanceJointSim
-distance.DistanceSoftness = New Softness
-distance.ConstraintSoftness = New Softness
-Return distance
-End If
-Var sim As JointSim = New JointSim
-sim.ConstraintSoftness = New Softness
-Return sim
-End Function
-
-## Assigns an awake joint to a colour and creates its sim row there, ported
-## from b2CreateJointInGraph. Returns the fresh sim for the caller to fill.
-Shared Function CreateJointInGraph(world As World, joint As Joint) As JointSim
+## Assigns an awake joint to a colour and appends its sim row there, ported
+## from b2CreateJointInGraph. The row carries the joint's identity columns;
+## the caller fills family columns. Returns the row's local index.
+Shared Function CreateJointInGraph(world As World, joint As Joint) As Integer
 Var graph As ConstraintGraph = world.ConstraintGraph
 Var bodyIdA As Integer = joint.Edge0BodyId
 Var bodyIdB As Integer = joint.Edge1BodyId
@@ -77,73 +62,30 @@ Var staticB As Boolean = bodyB.SetIndex = PhysicsConstants.STATIC_SET
 
 Var colorIndex As Integer = ChooseJointColor(graph, bodyIdA, bodyIdB, staticA, staticB)
 Var color As GraphColor = graph.Colors[colorIndex]
-Var sim As JointSim = GraphMethods.NewJointSimOfType(joint.Type)
 joint.ColorIndex = colorIndex
-joint.LocalIndex = color.JointSims.Add(sim)
-Return sim
+joint.LocalIndex = color.JointSims.Add(joint.Id, bodyIdA, bodyIdB, joint.Type)
+Return joint.LocalIndex
 End Function
 
-## Moves a joint sim into its colour, ported from b2AddJointToGraph. Used
-## when a sleeping joint wakes and joins the graph.
-Shared Sub AddJointToGraph(world As World, jointSim As JointSim, joint As Joint)
-Var movedSim As JointSim = GraphMethods.CreateJointInGraph(world, joint)
-GraphMethods.CopyJointSim(movedSim, jointSim)
-End Sub
-
-## Copies every field of one joint sim into another, mirroring the memcpy
-## of b2AddJointToGraph and b2TransferJoint. Family state is cloned through
-## the downcast so the family subtype is preserved.
-Shared Sub CopyJointSim(target As JointSim, source As JointSim)
-target.JointId = source.JointId
-target.BodyIdA = source.BodyIdA
-target.BodyIdB = source.BodyIdB
-target.Type = source.Type
-target.LocalOriginAnchorAX = source.LocalOriginAnchorAX
-target.LocalOriginAnchorAY = source.LocalOriginAnchorAY
-target.LocalOriginAnchorBX = source.LocalOriginAnchorBX
-target.LocalOriginAnchorBY = source.LocalOriginAnchorBY
-target.InvMassA = source.InvMassA
-target.InvIA = source.InvIA
-target.InvMassB = source.InvMassB
-target.InvIB = source.InvIB
-target.ConstraintHertz = source.ConstraintHertz
-target.ConstraintDampingRatio = source.ConstraintDampingRatio
-target.ConstraintSoftness.BiasRate = source.ConstraintSoftness.BiasRate
-target.ConstraintSoftness.MassScale = source.ConstraintSoftness.MassScale
-target.ConstraintSoftness.ImpulseScale = source.ConstraintSoftness.ImpulseScale
-If source.Type = JointType.DistanceJoint Then
-Var sourceDistance As DistanceJointSim = DistanceJointSim(source)
-Var targetDistance As DistanceJointSim = DistanceJointSim(target)
-targetDistance.Length = sourceDistance.Length
-targetDistance.Hertz = sourceDistance.Hertz
-targetDistance.DampingRatio = sourceDistance.DampingRatio
-targetDistance.MinLength = sourceDistance.MinLength
-targetDistance.MaxLength = sourceDistance.MaxLength
-targetDistance.MaxMotorForce = sourceDistance.MaxMotorForce
-targetDistance.MotorSpeed = sourceDistance.MotorSpeed
-targetDistance.Impulse = sourceDistance.Impulse
-targetDistance.LowerImpulse = sourceDistance.LowerImpulse
-targetDistance.UpperImpulse = sourceDistance.UpperImpulse
-targetDistance.MotorImpulse = sourceDistance.MotorImpulse
-targetDistance.IndexA = sourceDistance.IndexA
-targetDistance.IndexB = sourceDistance.IndexB
-targetDistance.AnchorAX = sourceDistance.AnchorAX
-targetDistance.AnchorAY = sourceDistance.AnchorAY
-targetDistance.AnchorBX = sourceDistance.AnchorBX
-targetDistance.AnchorBY = sourceDistance.AnchorBY
-targetDistance.DeltaCenterX = sourceDistance.DeltaCenterX
-targetDistance.DeltaCenterY = sourceDistance.DeltaCenterY
-targetDistance.DistanceSoftness.BiasRate = sourceDistance.DistanceSoftness.BiasRate
-targetDistance.DistanceSoftness.MassScale = sourceDistance.DistanceSoftness.MassScale
-targetDistance.DistanceSoftness.ImpulseScale = sourceDistance.DistanceSoftness.ImpulseScale
-targetDistance.AxialMass = sourceDistance.AxialMass
-targetDistance.EnableSpring = sourceDistance.EnableSpring
-targetDistance.EnableLimit = sourceDistance.EnableLimit
-targetDistance.EnableMotor = sourceDistance.EnableMotor
+## Moves a joint row from a solver set into the awake graph, ported from
+## b2AddJointToGraph. Used when a sleeping joint wakes and joins the graph.
+## Removes the source row and fixes the moved row's local index.
+Shared Sub AddJointToGraph(world As World, joint As Joint, sourceSet As SolverSet, sourceIndex As Integer)
+# Resolve the source store before CreateJointInGraph overwrites the
+# joint's colour index.
+Var sourceSims As JointSims = sourceSet.JointSims
+If sourceSet.SetIndex = PhysicsConstants.AWAKE_SET Then
+sourceSims = world.ConstraintGraph.Colors[joint.ColorIndex].JointSims
+End If
+Var targetIndex As Integer = GraphMethods.CreateJointInGraph(world, joint)
+sourceSims.MoveRowTo(world.ConstraintGraph.Colors[joint.ColorIndex].JointSims, targetIndex, sourceIndex)
+Var movedJointId As Integer = sourceSims.RemoveSwap(sourceIndex)
+If movedJointId <> PhysicsConstants.NULL_INDEX Then
+world.Joints[movedJointId].LocalIndex = sourceIndex
 End If
 End Sub
 
-## Removes a joint's sim from its colour, ported from
+## Removes a joint's sim row from its colour, ported from
 ## b2RemoveJointFromGraph.
 Shared Sub RemoveJointFromGraph(world As World, bodyIdA As Integer, bodyIdB As Integer, colorIndex As Integer, localIndex As Integer)
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
@@ -152,9 +94,9 @@ If colorIndex <> PhysicsConstants.GRAPH_OVERFLOW_INDEX Then
 color.BodySet.ClearBit(bodyIdA)
 color.BodySet.ClearBit(bodyIdB)
 End If
-Var movedSim As JointSim = color.JointSims.RemoveSwap(localIndex)
-If movedSim <> Nothing Then
-world.Joints[movedSim.JointId].LocalIndex = localIndex
+Var movedJointId As Integer = color.JointSims.RemoveSwap(localIndex)
+If movedJointId <> PhysicsConstants.NULL_INDEX Then
+world.Joints[movedJointId].LocalIndex = localIndex
 End If
 End Sub
 ## Claims the first colour whose body set has room for the pair, ported
@@ -280,15 +222,4 @@ world.Contacts[movedContactId].LocalIndex = sourceIndex
 End If
 End Sub
 
-## Removes a non-touching contact sim from its owning set's store, ported
-## from b2RemoveNonTouchingContact.
-Shared Sub RemoveNonTouchingContact(world As World, contact As Contact)
-Var contactSet As SolverSet = world.SolverSets[contact.SetIndex]
-Var localIndex As Integer = contact.LocalIndex
-Var movedIndex As Integer = contactSet.ContactSims.RemoveSwap(localIndex)
-If movedIndex <> PhysicsConstants.NULL_INDEX Then
-Var movedContactId As Integer = contactSet.ContactSims.ContactId.Items[localIndex]
-world.Contacts[movedContactId].LocalIndex = localIndex
-End If
-End Sub
 End Class

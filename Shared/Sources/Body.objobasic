@@ -65,8 +65,8 @@ Property IsSpeedCapped As Boolean
 Property IsMarked As Boolean
 ## Optional body name, truncated to 31 characters like upstream.
 Property Name As String
-## User data owned by the application.
-Property UserData As Integer
+## User data owned by the application. Never read by the solver.
+Property UserData As Object
 
 ## Creates an empty, unbound body. Only the world may construct live bodies;
 ## the zero-argument form exists for sparse array capacity.
@@ -98,7 +98,7 @@ Me.FixedRotation = False
 Me.IsSpeedCapped = False
 Me.IsMarked = False
 Me.Name = ""
-Me.UserData = 0
+Me.UserData = Nothing
 End Constructor
 
 ## Returns True when this façade still addresses a live body.
@@ -150,14 +150,14 @@ End If
 Me.Name = name
 End Sub
 
-## User data owned by the application.
-Function GetUserData() As Integer
+## User data owned by the application. Never read by the solver.
+Function GetUserData() As Object
 Me.Validate()
 Return Me.UserData
 End Function
 
 ## Sets user data owned by the application.
-Sub SetUserData(userData As Integer)
+Sub SetUserData(userData As Object)
 Me.Validate()
 Me.UserData = userData
 End Sub

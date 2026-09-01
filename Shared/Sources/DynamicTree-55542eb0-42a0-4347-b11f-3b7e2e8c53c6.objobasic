@@ -796,7 +796,7 @@ End Function
 ## Writes the root bounds into the caller-owned out box and returns out.
 ## A zero-area box at the origin is written for an empty tree. The reuse
 ## form of GetRootBounds for warm code.
-Function GetRootBoundsTo(out As AABB) As AABB
+Private Function GetRootBoundsTo(out As AABB) As AABB
 If Me.Root <> PhysicsConstants.NULL_INDEX Then
 Var rootNode As TreeNode = Me.Nodes[Me.Root]
 out.LowerBound.Set(rootNode.Bounds.LowerBound.X, rootNode.Bounds.LowerBound.Y)

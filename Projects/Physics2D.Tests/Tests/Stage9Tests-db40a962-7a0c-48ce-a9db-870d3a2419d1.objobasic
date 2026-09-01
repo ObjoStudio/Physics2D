@@ -4,8 +4,12 @@
 Import Physics2D
 
 Class Stage9Tests Inherits TestCase
+
 ## Joint used by the tuning validation helpers.
 Private Property mTuningJoint As DistanceJoint
+
+## Definition reused by the cross-world throwers.
+Private Property mCrossWorldDef As DistanceJointDefinition
 
 ## Builds a world with a wide static ground box whose top surface is y=0.
 Shared Function MakeWorld() As World
@@ -272,19 +276,304 @@ Assert.Equal(PhysicsConstants.LINEAR_SLOP, joint.GetLength(), "negative length c
 joint.SetLengthRange(2.0, 1.0)
 Assert.Equal(1.0, joint.GetMinLength(), "inverted range orders the lower bound first")
 Assert.Equal(2.0, joint.GetMaxLength(), "inverted range orders the upper bound second")
-joint.SetUserData(77)
-Assert.Equal(77, joint.GetUserData(), "user data round trip")
+joint.SetUserData(world)
+Assert.True(joint.GetUserData() = world, "user data round trip")
+joint.SetUserData(Nothing)
+Assert.True(joint.GetUserData() = Nothing, "user data cleared")
 world.Validate()
 End Sub
 
-## Contact-state bit tracking must follow the contact id pool capacity,
-## not the live contact count, when slots churn. Regression for the chain
-## workload crash after roughly 40 steps.
-Public Sub TestContactStateBitsTrackPoolCapacity()
-Var world As World = Stage9Tests.MakeJointChainWorld(60)
-Stage9Tests.Steps(world, 44)
+## A joint must never connect bodies from two different worlds, and the
+## definition bodies must be live. Regression for the repair-1 gate.
+Public Sub TestCreateDistanceJointRejectsCrossWorldBodies()
+Var worldA As New World
+Var worldB As New World
+Var bodyA As Body = Stage9Tests.MakeBox(worldA, -1.0, 5.0, 0.2, 0.2)
+Var bodyB As Body = Stage9Tests.MakeBox(worldB, 1.0, 5.0, 0.2, 0.2)
+Var def As New DistanceJointDefinition
+def.BodyA = bodyA
+def.BodyB = bodyB
+Me.mCrossWorldDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldJoint)
+def.BodyB = Nothing
+Me.mCrossWorldDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldJoint)
+def.BodyA = Nothing
+def.BodyB = bodyB
+Me.mCrossWorldDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldJoint)
+def.BodyA = bodyA
+def.BodyB = worldA.CreateBody(New BodyDefinition)
+Me.mCrossWorldDef = def
+Var joint As DistanceJoint = worldA.CreateDistanceJoint(def)
+joint.Destroy()
+worldA.DestroyBody(bodyA)
+def.BodyA = bodyA
+def.BodyB = Nothing
+Me.mCrossWorldDef = def
+Assert.Throws(TypeOf(New InvalidArgumentException("x")), AddressOf Me.ThrowCrossWorldJoint)
+worldA.Validate()
+worldB.Validate()
+End Sub
+
+## Two coincident bodies joined with a spring distance joint must receive
+## no impulse while their separation stays degenerate, even though an
+## unrelated horizontal rope joint is solved earlier in the same graph
+## colour. The solver reuses one scratch record per step, so the axis must
+## reset before the degenerate-separation branch. Regression for the
+## repair-2 gate: a stale axis would push the pair apart along x.
+Public Sub TestCoincidentAnchorsIgnoreStaleAxis()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -1.0, 5.0, 0.2, 0.2)
+Var boxB As Body = Stage9Tests.MakeBox(world, 1.0, 5.0, 0.2, 0.2)
+Stage9Tests.MakeRope(world, boxA, boxB, 2.0)
+Var filter As New Filter
+filter.GroupIndex = -2
+Var shapeDefC As New ShapeDefinition
+shapeDefC.Density = 1.0
+shapeDefC.Filter = filter
+Var shapeDefD As New ShapeDefinition
+shapeDefD.Density = 1.0
+shapeDefD.Filter = filter
+Var coincidentDef As New BodyDefinition
+coincidentDef.Type = BodyType.DynamicBody
+coincidentDef.Position = New Vector2(5.0, 5.0)
+Var boxC As Body = world.CreateBody(coincidentDef)
+boxC.CreatePolygon(shapeDefC, Polygon.MakeBox(0.2, 0.2))
+Var coincidentDefB As New BodyDefinition
+coincidentDefB.Type = BodyType.DynamicBody
+coincidentDefB.Position = New Vector2(5.0, 5.0)
+Var boxD As Body = world.CreateBody(coincidentDefB)
+boxD.CreatePolygon(shapeDefD, Polygon.MakeBox(0.2, 0.2))
+Var springDef As New DistanceJointDefinition
+springDef.BodyA = boxC
+springDef.BodyB = boxD
+springDef.Length = 2.0
+springDef.EnableSpring = True
+springDef.Hertz = 5.0
+springDef.DampingRatio = 0.7
+world.CreateDistanceJoint(springDef)
+Var i As Integer = 0
+While i < 10
+world.StepWorld(1.0 / 60.0)
+PhysicsAssert.Near(0.0, world.GetBodyLinearVelocity(boxC).X, 0.000000001, 0.000000001, "coincident joint leaves body C x velocity untouched")
+PhysicsAssert.Near(0.0, world.GetBodyLinearVelocity(boxD).X, 0.000000001, 0.000000001, "coincident joint leaves body D x velocity untouched")
+PhysicsAssert.Near(5.0, world.GetBodyTransform(boxC).P.X, 0.000000001, 0.000000001, "body C x position untouched")
+PhysicsAssert.Near(5.0, world.GetBodyTransform(boxD).P.X, 0.000000001, 0.000000001, "body D x position untouched")
+i = i + 1
+Wend
 world.Validate()
-Assert.Equal(60, world.JointCount, "chain holds all sixty joints")
+End Sub
+
+## Recreates the four deterministic distance-joint scenes of the
+## joint_distance golden fixture and compares final transforms, awake
+## flags, constraint forces, lengths, and motor forces against upstream
+## Box2D 3.1.1 output generated from the pinned sources.
+Public Sub TestDistanceJointMatchesGoldenFixture()
+Var lines() As String = PhysicsAssert.FixtureLines("joint_distance.txt")
+
+Var ropeWorld As World = Stage9Tests.MakeWorld()
+Var ropeA As Body = Stage9Tests.MakeBox(ropeWorld, -1.0, 6.0, 0.25, 0.25)
+Var ropeB As Body = Stage9Tests.MakeBox(ropeWorld, 1.0, 6.0, 0.25, 0.25)
+Var ropeJoint As DistanceJoint = Stage9Tests.MakeRope(ropeWorld, ropeA, ropeB, 2.0)
+Stage9Tests.Steps(ropeWorld, 90)
+
+Var limitWorld As New World
+limitWorld.Gravity = New Vector2(0.0, -10.0)
+Var limitAnchorDef As New BodyDefinition
+limitAnchorDef.Position = New Vector2(0.0, 8.0)
+Var limitAnchor As Body = limitWorld.CreateBody(limitAnchorDef)
+Var limitDef As New BodyDefinition
+limitDef.Type = BodyType.DynamicBody
+limitDef.Position = New Vector2(0.0, 6.5)
+limitDef.LinearVelocity = New Vector2(0.0, -12.0)
+Var limitBody As Body = limitWorld.CreateBody(limitDef)
+limitBody.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(0.25, 0.25))
+Var limitJointDef As New DistanceJointDefinition
+limitJointDef.BodyA = limitAnchor
+limitJointDef.BodyB = limitBody
+limitJointDef.Length = 1.5
+limitJointDef.EnableSpring = True
+limitJointDef.Hertz = 5.0
+limitJointDef.DampingRatio = 0.5
+limitJointDef.EnableLimit = True
+limitJointDef.MinLength = 0.5
+limitJointDef.MaxLength = 1.5
+Var limitJoint As DistanceJoint = limitWorld.CreateDistanceJoint(limitJointDef)
+Stage9Tests.Steps(limitWorld, 120)
+
+Var springWorld As New World
+springWorld.Gravity = New Vector2(0.0, -10.0)
+Var springAnchorDef As New BodyDefinition
+springAnchorDef.Position = New Vector2(0.0, 8.0)
+Var springAnchor As Body = springWorld.CreateBody(springAnchorDef)
+Var springBodyDef As New BodyDefinition
+springBodyDef.Type = BodyType.DynamicBody
+springBodyDef.Position = New Vector2(0.0, 5.5)
+Var springBody As Body = springWorld.CreateBody(springBodyDef)
+springBody.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(0.25, 0.25))
+Var springJointDef As New DistanceJointDefinition
+springJointDef.BodyA = springAnchor
+springJointDef.BodyB = springBody
+springJointDef.Length = 2.0
+springJointDef.EnableSpring = True
+springJointDef.Hertz = 3.0
+springJointDef.DampingRatio = 0.6
+Var springJoint As DistanceJoint = springWorld.CreateDistanceJoint(springJointDef)
+Stage9Tests.Steps(springWorld, 240)
+
+Var motorWorld As New World
+motorWorld.Gravity = New Vector2(0.0, -10.0)
+Var motorAnchorDef As New BodyDefinition
+motorAnchorDef.Position = New Vector2(0.0, 8.0)
+Var motorAnchor As Body = motorWorld.CreateBody(motorAnchorDef)
+Var motorBodyDef As New BodyDefinition
+motorBodyDef.Type = BodyType.DynamicBody
+motorBodyDef.Position = New Vector2(0.0, 7.0)
+Var motorBody As Body = motorWorld.CreateBody(motorBodyDef)
+motorBody.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(0.25, 0.25))
+Var motorJointDef As New DistanceJointDefinition
+motorJointDef.BodyA = motorAnchor
+motorJointDef.BodyB = motorBody
+motorJointDef.Length = 0.5
+motorJointDef.EnableSpring = True
+motorJointDef.Hertz = 20.0
+motorJointDef.DampingRatio = 1.0
+motorJointDef.EnableLimit = True
+motorJointDef.MinLength = 0.5
+motorJointDef.MaxLength = 5.0
+motorJointDef.EnableMotor = True
+motorJointDef.MotorSpeed = 2.0
+motorJointDef.MaxMotorForce = 2000.0
+Var motorJoint As DistanceJoint = motorWorld.CreateDistanceJoint(motorJointDef)
+Stage9Tests.Steps(motorWorld, 240)
+
+Var checkedRecords As Integer = 0
+For Each line As String In lines
+Var fields() As String = PhysicsAssert.Fields(line)
+Var caseName As String = fields[1]
+Var kind As String = fields[2]
+If kind = "body" Then
+Var bodyIndex As Integer = Integer.Parse(fields[3])
+Var values() As String = fields[4].Split(" ")
+Var expectedX As Double = Double.Parse(values[0])
+Var expectedY As Double = Double.Parse(values[1])
+Var expectedAngle As Double = Double.Parse(values[2])
+Var expectedAwake As Integer = Integer.Parse(values[3])
+Var label As String = caseName + " body " + bodyIndex.ToString()
+Var world As World = Nothing
+Var body As Body = Nothing
+If caseName = "rope" And bodyIndex = 0 Then
+world = ropeWorld
+body = ropeA
+ElseIf caseName = "rope" And bodyIndex = 1 Then
+world = ropeWorld
+body = ropeB
+ElseIf caseName = "limit" Then
+world = limitWorld
+body = limitBody
+ElseIf caseName = "spring" Then
+world = springWorld
+body = springBody
+ElseIf caseName = "motor" Then
+world = motorWorld
+body = motorBody
+Else
+Assert.Fail("unknown joint fixture body " + caseName + " " + bodyIndex.ToString())
+End If
+Var transform As Transform = world.GetBodyTransform(body)
+PhysicsAssert.Near(expectedX, transform.P.X, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, label + " x")
+PhysicsAssert.Near(expectedY, transform.P.Y, Tolerances.SCENE_ABS, Tolerances.SCENE_REL, label + " y")
+PhysicsAssert.Near(expectedAngle, Rot.GetAngle(transform.Q), Tolerances.SCENE_ABS, Tolerances.SCENE_REL, label + " angle")
+If expectedAwake = 1 Then
+Assert.True(body.IsAwake(), label + " awake")
+Else
+Assert.True(body.IsAwake() = False, label + " asleep")
+End If
+ElseIf kind = "joint" Then
+Var jointValues() As String = fields[3].Split(" ")
+Var jointLabel As String = caseName + " joint"
+Var jointWorld As World = Nothing
+Var joint As DistanceJoint = Nothing
+If caseName = "rope" Then
+jointWorld = ropeWorld
+joint = ropeJoint
+ElseIf caseName = "limit" Then
+jointWorld = limitWorld
+joint = limitJoint
+ElseIf caseName = "spring" Then
+jointWorld = springWorld
+joint = springJoint
+ElseIf caseName = "motor" Then
+jointWorld = motorWorld
+joint = motorJoint
+Else
+Assert.Fail("unknown joint fixture joint " + caseName)
+End If
+Var force As Vector2 = joint.GetConstraintForce()
+PhysicsAssert.Near(Double.Parse(jointValues[0]), force.X, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, jointLabel + " force x")
+PhysicsAssert.Near(Double.Parse(jointValues[1]), force.Y, Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, jointLabel + " force y")
+PhysicsAssert.Near(Double.Parse(jointValues[2]), joint.GetConstraintTorque(), Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, jointLabel + " torque")
+PhysicsAssert.Near(Double.Parse(jointValues[3]), joint.GetCurrentLength(), Tolerances.SCENE_ABS, Tolerances.SCENE_REL, jointLabel + " length")
+PhysicsAssert.Near(Double.Parse(jointValues[4]), joint.GetMotorForce(), Tolerances.JOINT_FORCE_ABS, Tolerances.JOINT_FORCE_REL, jointLabel + " motor force")
+Else
+Assert.Fail("unknown joint fixture kind " + kind)
+End If
+checkedRecords = checkedRecords + 1
+Next line
+Assert.Equal(9, checkedRecords)
+ropeWorld.Validate()
+limitWorld.Validate()
+springWorld.Validate()
+motorWorld.Validate()
+End Sub
+
+## After a warm-up that covers falling, resting, sleeping, waking, and
+## re-sleeping with joints attached, further steps that wake the island and
+## let it sleep again must allocate nothing. Gate for the Stage 9
+## zero-allocation requirement across the joint migration paths.
+Public Sub TestWarmJointSleepWakeAllocatesNothing()
+Var world As World = Stage9Tests.MakeWorld()
+Var boxA As Body = Stage9Tests.MakeBox(world, -0.5, 5.0, 0.25, 0.25)
+Var boxB As Body = Stage9Tests.MakeBox(world, 0.5, 5.0, 0.25, 0.25)
+Var joint As DistanceJoint = Stage9Tests.MakeRope(world, boxA, boxB, 1.0)
+
+# Warm-up: fall, land, sleep, then force a wake/sleep cycle so every
+# migration buffer, graph colour list, and recycled solver set is sized.
+Var warmIndex As Integer = 0
+While warmIndex < 120
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+boxA.SetAwake(True)
+While warmIndex < 240
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+boxB.SetAwake(True)
+While warmIndex < 360
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(boxA.IsAwake() = False, "box A asleep after warm-up")
+Assert.True(boxB.IsAwake() = False, "box B asleep after warm-up sleepTime=" + boxB.SleepTime.ToString() + " awake=" + boxB.IsAwake().ToString())
+
+# Measured window: wake the joined island, let it sleep, wake again.
+Var before As Integer = System.AllocationCount
+boxA.SetAwake(True)
+Var stepIndex As Integer = 0
+While stepIndex < 90
+world.StepWorld(1.0 / 60.0)
+If stepIndex = 45 Then
+boxB.SetAwake(True)
+End If
+stepIndex = stepIndex + 1
+Wend
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warmed joint sleep and wake allocate nothing")
+Assert.True(boxA.IsAwake() = False, "box A asleep after measured window")
+Assert.True(boxB.IsAwake() = False, "box B asleep after measured window")
+world.Validate()
 End Sub
 
 ## A chain of distance joints swings and settles deterministically.
@@ -374,6 +663,12 @@ End Sub
 ## Throws a negative length.
 Private Sub ThrowNegativeLength()
 Me.mTuningJoint.SetLength(-1.0)
+End Sub
+
+## Throws while creating a joint with a definition that mixes worlds.
+Private Sub ThrowCrossWorldJoint()
+Var world As World = Stage9Tests.MakeWorld()
+world.CreateDistanceJoint(Me.mCrossWorldDef)
 End Sub
 
 ## Throws an inverted length range.

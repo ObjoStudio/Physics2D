@@ -4,12 +4,14 @@
 # upstream's serial overflow work.
 Class SolverMethods
 ## Prepares one colour's joint constraints, ported from b2PrepareJointsTask
-## and b2PrepareOverflowJoints. Dispatches on each sim's family.
+## and b2PrepareOverflowJoints. Prepares every row; the family dispatch
+## happens inside the kernel.
 Shared Sub PrepareColourJoints(world As World, context As StepContext, colorIndex As Integer)
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
-Var count As Integer = color.JointSims.Count()
+Var sims As JointSims = color.JointSims
+Var count As Integer = sims.Count()
 For i As Integer = 0 To count - 1
-JointSolver.PrepareJoint(color.JointSims.GetItem(i), context)
+JointSolver.PrepareJoint(sims, i, context)
 Next i
 End Sub
 
@@ -17,11 +19,11 @@ End Sub
 ## b2WarmStartJointsTask and b2WarmStartOverflowJoints.
 Shared Sub WarmStartColourJoints(world As World, context As StepContext, colorIndex As Integer)
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
-Var count As Integer = color.JointSims.Count()
+Var sims As JointSims = color.JointSims
+Var count As Integer = sims.Count()
 For i As Integer = 0 To count - 1
-Var sim As JointSim = color.JointSims.GetItem(i)
-If sim.Type = JointType.DistanceJoint Then
-JointSolver.WarmStartDistanceJoint(DistanceJointSim(sim), context)
+If sims.Type.Items[i] = Integer(JointType.DistanceJoint) Then
+JointSolver.WarmStartDistanceJoint(sims, i, context)
 End If
 Next i
 End Sub
@@ -31,11 +33,11 @@ End Sub
 ## soft-step bias term.
 Shared Sub SolveColourJoints(world As World, context As StepContext, colorIndex As Integer, useBias As Boolean)
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
-Var count As Integer = color.JointSims.Count()
+Var sims As JointSims = color.JointSims
+Var count As Integer = sims.Count()
 For i As Integer = 0 To count - 1
-Var sim As JointSim = color.JointSims.GetItem(i)
-If sim.Type = JointType.DistanceJoint Then
-JointSolver.SolveDistanceJoint(DistanceJointSim(sim), context, useBias)
+If sims.Type.Items[i] = Integer(JointType.DistanceJoint) Then
+JointSolver.SolveDistanceJoint(sims, i, context, useBias)
 End If
 Next i
 End Sub

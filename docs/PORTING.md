@@ -124,6 +124,24 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     report zero distance and a zero normal; the Physics2D `Distance`
     module now writes the same zeros explicitly in `WriteOverlapOutput`
     because reused scratch outputs made the stale fields observable.
+27. **Scalar joint store.** Upstream keeps one `b2JointSim` object per joint
+    per solver set; Physics2D keeps parallel scalar columns in `JointSims`
+    (base columns shared by every joint family plus distance-family
+    columns), matching the Stage 2 representation decision. The step's
+    distance-joint scratch lives in one reused `DistanceJointScratch`
+    record on `StepContext` instead of a per-sim struct.
+28. **Cross-world joints are rejected.** Upstream `b2CreateJoint` asserts
+    when the two bodies come from different worlds (and asserts on null
+    bodies); Physics2D throws `InvalidArgumentException` from
+    `CheckJointBody` so misuse is visible instead of silently released in
+    distribution builds.
+29. **Solver-set recycling.** Upstream frees solver sets back to the heap
+    when islands merge or the world is destroyed; Physics2D keeps destroyed
+    sets in a `World` pool and reinitialises them in place, so sleeping-set
+    churn allocates nothing after capacity warm-up.
+30. **Joint user data.** Upstream stores `void*` user data on joints;
+    Physics2D `Joint.UserData` holds any Objo object reference and is
+    never read by the solver.
 
 ## Public Symbol Inventory
 
@@ -207,7 +225,7 @@ Mapping conventions:
 | `b2World_SetRestitutionCallback` | World.RestitutionMixer hook (explicit opt-in) | 7 |
 | `b2World_SetRestitutionThreshold` | World.RestitutionThreshold | 6 |
 | `b2World_SetUserData` | World.UserData | 6 |
-| `b2World_Step` | World.Step(timeStep) / World.Step(timeStep, substepCount) | 6 |
+| `b2World_Step` | World.StepWorld(timeStep) / World.StepWorld(timeStep, substepCount) | 6 |
 
 ### Bodies, shapes, and chains (120 symbols)
 
@@ -707,8 +725,9 @@ upstream source files where the upstream test suite does not isolate them.
 | Development Studio/CLI version | 26.9.1 (`objo version`, built from the Objo checkout at commit `485c4fab`) |
 | Runtime | .NET 10 SDK per `global.json` in the Objo checkout |
 | Required standard-library features | `Vector2`, `Matrix`, `Maths`, `Array.Reserve`, generic arrays, `TestCase`/`Assert`, modules with nested source items, `System.AllocationCount` (Objo issue #1299), `Vector2.LeftPerpendicular`, `Vector2.RightPerpendicular`, `Matrix.Inverse`, `Matrix.InvertSelf`, `Matrix.Solve`, `Double.IsFinite` (Objo issue #1302) |
+| Required engine fixes | constructor inheritance for module-owned classes (Objo issue #1315, engine commit `b9781ccc83a87b076f5c73bb77eb1a99b3da6119`) |
 | Required Studio features | `.objosln` VCS solutions (format version 4), Test build scope, desktop projects |
-| Documented minimum | Objo Studio 26.8.6, except the benchmark harness, bake-off kernels, and their tests, which require the unreleased `System.AllocationCount` runtime property and the Objo issue #1302 standard-library members until Objo ships them |
+| Documented minimum | Objo Studio 26.8.6 plus the Objo issue #1302 standard-library members and the issue #1315 engine fix, except the benchmark harness, bake-off kernels, and their tests, which additionally require the unreleased `System.AllocationCount` runtime property until Objo ships it |
 
 When Physics2D adopts a newly added standard-library member, the minimum
 version is updated here and in `docs/GETTING_STARTED.md`.
