@@ -3271,4 +3271,104 @@ Next i
 Return checksum
 End Function
 
+## Mixed joint/contact stress scene: a welded pair, a hinged pendulum, a
+## motor-driven slider, and a free box all share one world with ground
+## contacts, sleeping, and wakes. The scene must stay stable, settle
+## asleep, and repeat bit for bit across repeated worlds.
+Public Sub TestMixedJointStressSceneStable()
+Var first As World = Stage9Tests.MakeMixedJointStressWorld()
+Var second As World = Stage9Tests.MakeMixedJointStressWorld()
+Stage9Tests.Steps(first, 300)
+Stage9Tests.Steps(second, 300)
+Var firstChecksum As Integer = Stage9Tests.FoldWorld(first)
+Var secondChecksum As Integer = Stage9Tests.FoldWorld(second)
+Assert.Equal(firstChecksum, secondChecksum, "mixed stress scene repeats bit for bit")
+# Everything settles asleep: no perpetual jitter from the joint mix.
+Var awakeCount As Integer = 0
+Var i As Integer = 0
+While i < first.Bodies.Count
+Var body As Body = first.Bodies[i]
+If body <> Nothing And body.Id <> PhysicsConstants.NULL_INDEX And body.IsAwake() Then
+awakeCount = awakeCount + 1
+End If
+i = i + 1
+Wend
+Assert.Equal(0, awakeCount, "mixed stress scene settles fully asleep")
+first.Validate()
+second.Validate()
+End Sub
+
+## Builds the mixed stress scene: a welded pair and a hinged pendulum rest
+## on the ground next to a spring-mounted slider and a free box.
+Shared Function MakeMixedJointStressWorld() As World
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+Var groundShape As New ShapeDefinition
+ground.CreatePolygon(groundShape, Polygon.MakeBox(30.0, 0.5))
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+
+# Welded pair stacked on the ground.
+Var pairDef As New BodyDefinition
+pairDef.Type = BodyType.DynamicBody
+pairDef.Position = New Vector2(-3.0, 0.75)
+Var pairA As Body = world.CreateBody(pairDef)
+pairA.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var pairBDef As New BodyDefinition
+pairBDef.Type = BodyType.DynamicBody
+pairBDef.Position = New Vector2(-2.6, 0.95)
+Var pairB As Body = world.CreateBody(pairBDef)
+pairB.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var weldDef As New WeldJointDefinition
+weldDef.BodyA = pairA
+weldDef.BodyB = pairB
+weldDef.LinearHertz = 2.0
+weldDef.AngularHertz = 2.0
+weldDef.LinearDampingRatio = 0.5
+weldDef.AngularDampingRatio = 0.5
+world.CreateWeldJoint(weldDef)
+
+# Hinged pendulum swinging above the welded pair.
+Var pendulumDef As New BodyDefinition
+pendulumDef.Type = BodyType.DynamicBody
+pendulumDef.Position = New Vector2(0.0, 1.75)
+pendulumDef.AngularDamping = 1.0
+Var pendulum As Body = world.CreateBody(pendulumDef)
+pendulum.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var hingeDef As New RevoluteJointDefinition
+hingeDef.BodyA = ground
+hingeDef.BodyB = pendulum
+hingeDef.LocalAnchorA = New Vector2(0.0, 2.0)
+hingeDef.LocalAnchorB = New Vector2(0.0, 0.25)
+world.CreateRevoluteJoint(hingeDef)
+
+# Motor-driven slider resting on the ground through a prismatic rail.
+Var sliderDef As New BodyDefinition
+sliderDef.Type = BodyType.DynamicBody
+sliderDef.Position = New Vector2(3.0, 0.25)
+Var slider As Body = world.CreateBody(sliderDef)
+slider.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var railDef As New PrismaticJointDefinition
+railDef.BodyA = ground
+railDef.BodyB = slider
+railDef.LocalAnchorA = New Vector2(3.0, 0.25)
+railDef.LocalAnchorB = New Vector2(0.0, 0.0)
+railDef.LocalAxisA = New Vector2(1.0, 0.0)
+railDef.EnableMotor = True
+railDef.MotorSpeed = 0.0
+railDef.MaxMotorForce = 10.0
+world.CreatePrismaticJoint(railDef)
+
+# A free box that lands on the slider's rail line.
+Var freeDef As New BodyDefinition
+freeDef.Type = BodyType.DynamicBody
+freeDef.Position = New Vector2(3.4, 3.0)
+Var freeBox As Body = world.CreateBody(freeDef)
+freeBox.CreatePolygon(shapeDef, Polygon.MakeBox(0.15, 0.15))
+
+world.UpdateBroadPhasePairs()
+Return world
+End Function
 End Class
