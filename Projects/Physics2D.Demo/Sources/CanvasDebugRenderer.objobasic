@@ -1,0 +1,180 @@
+# Desktop debug-draw adapter for Physics2D, ported from the sample
+# application's debug-draw implementation in the upstream Box2D repository
+# (samples/draw.{h,cpp} render the same primitives). This is demo-project
+# code, not part of the Physics2D module: the module stays project-type
+# neutral while this class forwards debug primitives to the Objo desktop
+# Graphics object.
+#
+# Set Target in every Paint event (Graphics objects are event-scoped and
+# must not be stored between frames), then call world.DrawDebug(Me,
+# options). The world-to-canvas mapping is (world - origin) *
+# pixelsPerMetre with Y mapping straight through: Objo screen coordinates
+# grow downward and Physics2D never inverts the Y axis, so demos that use
+# positive-Y gravity (the recommended screen-coordinate convention) need no
+# flip, and Y-up applications set negative gravity instead.
+Import Physics2D
+
+Class CanvasDebugRenderer Inherits DebugRenderer
+## The Graphics object of the current Paint event. Nothing outside a
+## paint callback.
+Property Target As Graphics
+
+## Canvas points per world metre.
+Property PixelsPerMetre As Double
+
+## World position of the canvas top-left corner.
+Property Origin As Vector2
+
+## Creates a renderer with a 60 pixels-per-metre scale and the world
+## origin at the canvas top-left.
+Constructor()
+Me.Target = Nothing
+Me.PixelsPerMetre = 60.0
+Me.Origin = New Vector2(0.0, 0.0)
+End Constructor
+
+## Converts a world x coordinate to canvas points.
+Function CanvasX(worldX As Double) As Double
+Return (worldX - Me.Origin.X) * Me.PixelsPerMetre
+End Function
+
+## Converts a world y coordinate to canvas points.
+Function CanvasY(worldY As Double) As Double
+Return (worldY - Me.Origin.Y) * Me.PixelsPerMetre
+End Function
+
+## Draws a closed polygon outline.
+Override Sub DrawPolygon(vertices() As Vector2, vertexCount As Integer, color As Colour)
+If Me.Target = Nothing Or vertexCount < 2 Then
+Return
+End If
+Me.Target.DrawingColour = color
+Me.Target.DrawPolygon(Me.Flatten(vertices, vertexCount))
+End Sub
+
+## Draws a solid polygon: the local vertices are placed by the transform,
+## then filled.
+Override Sub DrawSolidPolygon(transform As Transform, vertices() As Vector2, vertexCount As Integer, radius As Double, color As Colour)
+Pragma Unused radius
+If Me.Target = Nothing Or vertexCount < 2 Then
+Return
+End If
+Me.Target.DrawingColour = color
+Var flat As New Array(Of Double)
+Var qc As Double = transform.Q.C
+Var qs As Double = transform.Q.S
+For i As Integer = 0 To vertexCount - 1
+Var worldX As Double = transform.P.X + qc * vertices[i].X - qs * vertices[i].Y
+Var worldY As Double = transform.P.Y + qs * vertices[i].X + qc * vertices[i].Y
+flat.Append(Me.CanvasX(worldX))
+flat.Append(Me.CanvasY(worldY))
+Next i
+Me.Target.FillPolygon(flat)
+End Sub
+
+## Draws a circle outline.
+Override Sub DrawCircle(center As Vector2, radius As Double, color As Colour)
+If Me.Target = Nothing Then
+Return
+End If
+Me.Target.DrawingColour = color
+Me.Target.DrawCircle(Me.CanvasX(center.X), Me.CanvasY(center.Y), radius * Me.PixelsPerMetre)
+End Sub
+
+## Draws a solid circle centred at transform.P.
+Override Sub DrawSolidCircle(transform As Transform, radius As Double, color As Colour)
+If Me.Target = Nothing Then
+Return
+End If
+Me.Target.DrawingColour = color
+Me.Target.FillCircle(Me.CanvasX(transform.P.X), Me.CanvasY(transform.P.Y), radius * Me.PixelsPerMetre)
+End Sub
+
+## Draws a solid capsule: the rectangle core plus the two round caps.
+Override Sub DrawSolidCapsule(p1 As Vector2, p2 As Vector2, radius As Double, color As Colour)
+If Me.Target = Nothing Then
+Return
+End If
+Me.Target.DrawingColour = color
+Var axisX As Double = p2.X - p1.X
+Var axisY As Double = p2.Y - p1.Y
+Var length As Double = Maths.Sqrt(axisX * axisX + axisY * axisY)
+Var capRadius As Double = radius * Me.PixelsPerMetre
+Var x1 As Double = Me.CanvasX(p1.X)
+Var y1 As Double = Me.CanvasY(p1.Y)
+Var x2 As Double = Me.CanvasX(p2.X)
+Var y2 As Double = Me.CanvasY(p2.Y)
+Me.Target.FillCircle(x1, y1, capRadius)
+Me.Target.FillCircle(x2, y2, capRadius)
+If length < 0.000001 Then
+Return
+End If
+# World-space perpendicular offset scaled into canvas points.
+Var offsetX As Double = -axisY / length * radius * Me.PixelsPerMetre
+Var offsetY As Double = axisX / length * radius * Me.PixelsPerMetre
+Var core As New Array(Of Double)
+core.Append(x1 + offsetX)
+core.Append(y1 + offsetY)
+core.Append(x2 + offsetX)
+core.Append(y2 + offsetY)
+core.Append(x2 - offsetX)
+core.Append(y2 - offsetY)
+core.Append(x1 - offsetX)
+core.Append(y1 - offsetY)
+Me.Target.FillPolygon(core)
+End Sub
+
+## Draws a line segment.
+Override Sub DrawSegment(p1 As Vector2, p2 As Vector2, color As Colour)
+If Me.Target = Nothing Then
+Return
+End If
+Me.Target.DrawingColour = color
+Me.Target.PenSize = 1.5
+Me.Target.DrawLine(Me.CanvasX(p1.X), Me.CanvasY(p1.Y), Me.CanvasX(p2.X), Me.CanvasY(p2.Y))
+End Sub
+
+## Draws the transform axes as one-metre red and green lines.
+Override Sub DrawTransform(transform As Transform)
+If Me.Target = Nothing Then
+Return
+End If
+Var originX As Double = Me.CanvasX(transform.P.X)
+Var originY As Double = Me.CanvasY(transform.P.Y)
+Var axisLength As Double = Me.PixelsPerMetre
+Me.Target.PenSize = 1.5
+Me.Target.DrawingColour = Colour.RGB(255, 0, 0)
+Me.Target.DrawLine(originX, originY, originX + transform.Q.C * axisLength, originY + transform.Q.S * axisLength)
+Me.Target.DrawingColour = Colour.RGB(0, 128, 0)
+Me.Target.DrawLine(originX, originY, originX - transform.Q.S * axisLength, originY + transform.Q.C * axisLength)
+End Sub
+
+## Draws a point as a filled circle whose diameter matches the size.
+Override Sub DrawPoint(p As Vector2, size As Double, color As Colour)
+If Me.Target = Nothing Then
+Return
+End If
+Me.Target.DrawingColour = color
+Me.Target.FillCircle(Me.CanvasX(p.X), Me.CanvasY(p.Y), size * 0.5)
+End Sub
+
+## Draws one line of text at a world position.
+Override Sub DrawString(p As Vector2, text As String, color As Colour)
+If Me.Target = Nothing Then
+Return
+End If
+Me.Target.DrawingColour = color
+Me.Target.DrawText(text, Me.CanvasX(p.X), Me.CanvasY(p.Y))
+End Sub
+
+## Flattens a vertex array into the flat coordinate-pair array the canvas
+## polygon API expects. Allocates per call: debug drawing is a cold path.
+Private Function Flatten(vertices() As Vector2, vertexCount As Integer) As Array(Of Double)
+Var flat As New Array(Of Double)
+For i As Integer = 0 To vertexCount - 1
+flat.Append(Me.CanvasX(vertices[i].X))
+flat.Append(Me.CanvasY(vertices[i].Y))
+Next i
+Return flat
+End Function
+End Class

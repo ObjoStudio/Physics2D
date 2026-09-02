@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "CanvasDebugRenderer",
+  "Id": "4f2b1c47-9a3d-4e8b-b5f6-1c2d3e4f5a6b",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "CanvasDebugRenderer.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

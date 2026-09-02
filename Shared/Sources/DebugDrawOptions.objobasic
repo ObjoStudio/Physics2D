@@ -1,0 +1,83 @@
+# Options controlling what World.DrawDebug draws, ported from the flag and
+# bounds fields of upstream b2DebugDraw in types.h (b2DefaultDebugDraw).
+# The drawing callbacks themselves live on the DebugRenderer passed to
+# World.DrawDebug, so this record stays plain data. Every switch defaults to
+# False like the upstream defaults; enable exactly the layers a frame needs.
+Class DebugDrawOptions
+## World-space region used when UseDrawingBounds is True. Shapes outside
+## the region are skipped entirely, so events and labels of excluded bodies
+## are not drawn either. Ignored otherwise. Zero by default, which is not
+## a valid region; set a real AABB before enabling UseDrawingBounds.
+Property DrawingBounds As AABB
+
+## Restrict drawing to DrawingBounds. May suffer from unstable depth
+## sorting for overlapping moving shapes, matching the upstream comment.
+Property UseDrawingBounds As Boolean
+
+## Draw shape outlines and fills.
+Property DrawShapes As Boolean
+
+## Draw joint ropes and anchors.
+Property DrawJoints As Boolean
+
+## Draw additional information for joints, such as revolute joint angles.
+Property DrawJointExtras As Boolean
+
+## Draw the fat AABB of every drawn shape. In bounds mode the AABBs of the
+## visited shapes are drawn; otherwise every shape of every body is drawn
+## with a body-id label at its centre of mass.
+Property DrawBounds As Boolean
+
+## Draw the centre of mass transform and mass text of dynamic bodies.
+Property DrawMass As Boolean
+
+## Draw body names next to their centre of mass. Bodies without a name are
+## skipped.
+Property DrawBodyNames As Boolean
+
+## Draw contact points for awake touching contacts.
+Property DrawContacts As Boolean
+
+## Draw constraint-graph colour points instead of contact-state colours.
+## Contact points then show which graph colour solves them and joint
+## midpoints show which colour solves each joint.
+Property DrawGraphColors As Boolean
+
+## Draw contact normal arrows. Mutually exclusive with contact impulse
+## arrows: the normal arrows win, matching the upstream else-if chain.
+Property DrawContactNormals As Boolean
+
+## Draw contact normal impulse arrows with milli-newton-second labels.
+## Ignored while DrawContactNormals is set.
+Property DrawContactImpulses As Boolean
+
+## Draw contact feature ids as text.
+Property DrawContactFeatures As Boolean
+
+## Draw contact friction impulse arrows with labels.
+Property DrawFrictionImpulses As Boolean
+
+## Draw island bounds as polygons around every island's shapes.
+Property DrawIslands As Boolean
+
+## Creates the upstream default: every switch off and no drawing bounds.
+## The bounds stay zero because there is no meaningful default world region;
+## enable UseDrawingBounds only after setting a valid DrawingBounds.
+Constructor()
+Me.DrawingBounds = New AABB
+Me.UseDrawingBounds = False
+Me.DrawShapes = False
+Me.DrawJoints = False
+Me.DrawJointExtras = False
+Me.DrawBounds = False
+Me.DrawMass = False
+Me.DrawBodyNames = False
+Me.DrawContacts = False
+Me.DrawGraphColors = False
+Me.DrawContactNormals = False
+Me.DrawContactImpulses = False
+Me.DrawContactFeatures = False
+Me.DrawFrictionImpulses = False
+Me.DrawIslands = False
+End Constructor
+End Class

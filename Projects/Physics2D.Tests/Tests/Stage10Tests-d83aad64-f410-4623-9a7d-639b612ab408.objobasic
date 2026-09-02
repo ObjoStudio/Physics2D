@@ -289,6 +289,540 @@ profile = world.Profile()
 Assert.True(profile.StepMs > 0.0, "stepped world records a positive step time")
 world.Validate()
 End Sub
+
+## DrawDebug walks every shape with the upstream state-colour ladder,
+## ported from the drawShapes stage of b2World_Draw.
+Public Sub TestDrawDebugShapes()
+Var world As New World
+Var recorder As RecordingDebugRenderer = Stage10Tests.MakeShapeGallery(world)
+Var options As New DebugDrawOptions
+options.DrawShapes = True
+world.DrawDebug(recorder, options)
+# Static box, kinematic box, custom-coloured box, sleeping box, and
+# zero-mass box draw as solid polygons; the circle and sensor draw as
+# solid circles; the capsule as a solid capsule; the ground segment and
+# chain segments draw as segments plus the chain ghost link segment; the
+# chain adds one end point.
+Assert.Equal(5, recorder.SolidPolygonCount, "five boxes draw as solid polygons")
+Assert.Equal(2, recorder.SolidCircleCount, "circle and sensor draw as solid circles")
+Assert.Equal(1, recorder.SolidCapsuleCount, "capsule draws as a solid capsule")
+# Ground segment plus one chain segment shape with its ghost-link tick;
+# a four-point open chain stores n - 3 solid segments like upstream.
+Assert.Equal(3, recorder.SegmentCount, "ground, chain segment, and ghost link draw as segments")
+Assert.Equal(1, recorder.PointCount, "the chain segment adds one end point")
+Assert.Equal(0, recorder.CircleCount, "no circles without joints")
+Assert.Equal(0, recorder.TransformCount, "no transforms without mass data")
+Assert.Equal(0, recorder.StringCount, "no strings without names")
+Assert.True(recorder.ColorSeen(DebugColors.PaleGreen), "static geometry draws pale green")
+Assert.True(recorder.ColorSeen(DebugColors.RoyalBlue), "kinematic body draws royal blue")
+Assert.True(recorder.ColorSeen(DebugColors.Pink), "awake dynamic body draws pink")
+Assert.True(recorder.ColorSeen(DebugColors.Gray), "sleeping body draws gray")
+Assert.True(recorder.ColorSeen(DebugColors.Wheat), "sensor draws wheat")
+Assert.True(recorder.ColorSeen(DebugColors.Red), "zero-mass dynamic body draws red")
+Assert.True(recorder.ColorSeen(Colour.RGB(18, 52, 86)), "custom colour overrides the state colour")
+world.Validate()
+End Sub
+
+## DrawDebug draws each joint family with its upstream decoration, ported
+## from b2DrawJoint and the per-family b2Draw*Joint functions.
+Public Sub TestDrawDebugJointFamilies()
+Var world As World = Stage10Tests.MakeJointGallery()
+Var recorder As New RecordingDebugRenderer
+Var options As New DebugDrawOptions
+options.DrawJoints = True
+world.DrawDebug(recorder, options)
+# Distance: white rope, limit ticks in light green and red, gray range
+# line, blue rest-length point for the soft spring.
+Assert.True(recorder.ColorSeen(DebugColors.White), "distance rope draws white")
+Assert.True(recorder.ColorSeen(DebugColors.LightGreen), "minimum limit tick draws light green")
+Assert.True(recorder.ColorSeen(DebugColors.Red), "maximum limit tick draws red")
+Assert.True(recorder.ColorSeen(DebugColors.Gray), "limit range line draws gray")
+Assert.True(recorder.ColorSeen(DebugColors.Blue), "spring rest length draws blue")
+# Revolute: hinge circle, limit spokes, and gold body links.
+Assert.True(recorder.CircleCount >= 1, "revolute hinge draws a circle")
+Assert.True(recorder.ColorSeen(DebugColors.Green), "revolute lower limit draws green")
+Assert.True(recorder.ColorSeen(DebugColors.Gold), "revolute links draw gold")
+# Mouse: green target and body points with a light gray tether.
+Assert.True(recorder.ColorSeen(DebugColors.LightGray), "mouse tether draws light gray")
+# Filter: gold rope. Motor and weld: dark sea green generic rope.
+Assert.True(recorder.ColorSeen(DebugColors.DarkSeaGreen), "motor rope draws dark sea green")
+# Prismatic: dim gray slide rope with a gray axis and blue anchor B.
+Assert.True(recorder.ColorSeen(DebugColors.DimGray), "prismatic slide rope draws dim gray")
+# Wheel: blue suspension rope with a dim gray anchor B.
+Assert.True(recorder.ColorSeen(DebugColors.DimGray), "wheel anchor draws dim gray")
+Assert.True(recorder.SegmentCount >= 7, "every family draws at least one segment")
+world.Validate()
+End Sub
+
+## DrawJointExtras labels the revolute joint angle and DrawGraphColors
+## marks contact points and joint midpoints with their graph colour, ported
+## from the drawJointExtras and drawGraphColors options.
+Public Sub TestDrawDebugJointExtrasAndGraphColors()
+Var world As World = Stage10Tests.MakeJointGallery()
+Var recorder As New RecordingDebugRenderer
+Var options As New DebugDrawOptions
+options.DrawJoints = True
+options.DrawJointExtras = True
+options.DrawGraphColors = True
+world.DrawDebug(recorder, options)
+Var seenDegrees As Boolean = False
+Var i As Integer = 0
+While i < recorder.Texts.Count
+If recorder.Texts[i].EndsWith(" deg") Then
+seenDegrees = True
+End If
+i = i + 1
+Wend
+Assert.True(seenDegrees, "revolute joint extra draws a degree label")
+# The awake revolute, mouse, filter, and motor joints hold graph colours,
+# so their midpoints draw as graph-colour points.
+Assert.True(recorder.PointCount >= 1, "graph colour points draw for coloured joints")
+world.Validate()
+End Sub
+
+## Bounds mode restricts drawing to the query region and adds fat AABBs,
+## body names, and mass labels, ported from b2DrawWithBounds.
+Public Sub TestDrawDebugWithBounds()
+Var world As New World
+Var nearDef As New BodyDefinition
+Var near As Body = world.CreateBody(nearDef)
+near.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(1.0, 0.5))
+Var farDef As New BodyDefinition
+farDef.Position = New Vector2(50.0, 0.0)
+Var far As Body = world.CreateBody(farDef)
+far.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(1.0, 0.5))
+Var heroDef As New BodyDefinition
+heroDef.Type = BodyType.DynamicBody
+heroDef.Position = New Vector2(0.0, 3.0)
+Var hero As Body = world.CreateBody(heroDef)
+hero.Name = "hero"
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+hero.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+world.UpdateBroadPhasePairs()
+Var recorder As New RecordingDebugRenderer
+Var options As New DebugDrawOptions
+options.UseDrawingBounds = True
+options.DrawShapes = True
+options.DrawBounds = True
+options.DrawBodyNames = True
+options.DrawMass = True
+options.DrawingBounds = New AABB(New Vector2(-2.0, -2.0), New Vector2(2.0, 5.0))
+world.DrawDebug(recorder, options)
+# Only the near static box and the falling hero are inside the region.
+Assert.Equal(2, recorder.SolidPolygonCount, "bounds exclude the far box")
+Assert.Equal(2, recorder.PolygonCount, "both visited shapes draw their fat AABB")
+Assert.True(recorder.ColorSeen(DebugColors.Gold), "fat AABBs draw gold")
+Var sawName As Boolean = False
+Var sawMass As Boolean = False
+Var i As Integer = 0
+While i < recorder.Texts.Count
+If recorder.Texts[i] = "hero" Then
+sawName = True
+End If
+If recorder.Texts[i].StartsWith("  ") Then
+sawMass = True
+End If
+i = i + 1
+Wend
+Assert.True(sawName, "bounds mode draws the body name")
+Assert.True(sawMass, "bounds mode draws the mass label")
+Assert.True(recorder.TransformCount >= 1, "mass mode draws the centre-of-mass transform")
+world.Validate()
+End Sub
+
+## DrawContacts visualises awake touching contact points with the upstream
+## state colours and the normal, impulse, feature, and friction layers,
+## ported from the drawContacts stage of b2World_Draw.
+Public Sub TestDrawDebugContacts()
+Var world As World = Stage10Tests.MakeMoverWorld()
+# Start nearly touching so ten steps press the box into the floor while
+# it is still awake: sleeping contacts leave the graph colours.
+Var box As Body = Stage9Tests.MakeDraggedBox(world, 0.0, 0.3)
+Pragma Unused box
+Stage10Tests.Steps(world, 10)
+Var recorder As New RecordingDebugRenderer
+Var options As New DebugDrawOptions
+options.DrawContacts = True
+world.DrawDebug(recorder, options)
+Assert.True(recorder.PointCount >= 1, "touching boxes draw contact points")
+Assert.True(recorder.ColorSeen(DebugColors.Blue), "persisted points draw blue")
+# The detail layers are mutually exclusive per point: normals suppress
+# impulse arrows, matching the upstream else-if chain.
+Var normalsRecorder As New RecordingDebugRenderer
+Var normalsOptions As New DebugDrawOptions
+normalsOptions.DrawContacts = True
+normalsOptions.DrawContactNormals = True
+world.DrawDebug(normalsRecorder, normalsOptions)
+Assert.True(normalsRecorder.ColorSeen(DebugColors.DimGray), "normal arrows draw dim gray")
+Var impulseRecorder As New RecordingDebugRenderer
+Var impulseOptions As New DebugDrawOptions
+impulseOptions.DrawContacts = True
+impulseOptions.DrawContactImpulses = True
+impulseOptions.DrawContactFeatures = True
+impulseOptions.DrawFrictionImpulses = True
+world.DrawDebug(impulseRecorder, impulseOptions)
+Assert.True(impulseRecorder.ColorSeen(DebugColors.Magenta), "normal impulse arrows draw magenta")
+Assert.True(impulseRecorder.ColorSeen(DebugColors.Orange), "feature ids draw orange")
+Assert.True(impulseRecorder.ColorSeen(DebugColors.Yellow), "friction impulses draw yellow")
+world.Validate()
+End Sub
+
+## DrawIslands bounds every live island, ported from the drawIslands stage
+## of b2World_Draw.
+Public Sub TestDrawDebugIslands()
+Var world As World = Stage10Tests.MakeMoverWorld()
+Stage9Tests.MakeDraggedBox(world, 0.0, 0.5)
+Stage10Tests.Steps(world, 5)
+Var recorder As New RecordingDebugRenderer
+Var options As New DebugDrawOptions
+options.DrawIslands = True
+world.DrawDebug(recorder, options)
+Assert.True(recorder.PolygonCount >= 1, "awake islands draw bounds")
+Assert.True(recorder.ColorSeen(DebugColors.OrangeRed), "island bounds draw orange red")
+world.Validate()
+End Sub
+
+## DrawDebug validates its arguments like the other world entries, ported
+## from the b2World_Draw locked assert and the port's throwing validation
+## policy.
+Public Sub TestDrawDebugValidation()
+Var world As New World
+Var recorder As New RecordingDebugRenderer
+Var options As New DebugDrawOptions
+# Non-finite bounds are not a valid region.
+options.UseDrawingBounds = True
+options.DrawingBounds = New AABB(New Vector2(Double.NaN, 0.0), New Vector2(1.0, 1.0))
+Var threw As Boolean = False
+Try
+world.DrawDebug(recorder, options)
+Assert.Fail("non-finite bounds are not a valid drawing region")
+Catch e As InvalidArgumentException
+Pragma Unused e
+threw = True
+End Try
+Assert.True(threw, "non-finite drawing bounds throw")
+# A zero-area region is valid like upstream's b2IsValidAABB (d >= 0) and
+# simply draws the shapes touching that degenerate line.
+options.DrawingBounds = New AABB(New Vector2(100.0, 100.0), New Vector2(100.0, 100.0))
+world.DrawDebug(recorder, options)
+Assert.Equal(0, recorder.SegmentCount, "an empty region draws nothing")
+options.UseDrawingBounds = False
+threw = False
+Try
+world.DrawDebug(Nothing, options)
+Assert.Fail("a missing renderer must be rejected")
+Catch e As InvalidArgumentException
+Pragma Unused e
+threw = True
+End Try
+Assert.True(threw, "missing renderer throws")
+threw = False
+Try
+world.DrawDebug(recorder, Nothing)
+Assert.Fail("missing options must be rejected")
+Catch e As InvalidArgumentException
+Pragma Unused e
+threw = True
+End Try
+Assert.True(threw, "missing options throw")
+# The default options draw nothing at all.
+world.DrawDebug(recorder, New DebugDrawOptions)
+Assert.Equal(0, recorder.SegmentCount, "default options draw nothing")
+world.Validate()
+End Sub
+
+## Builds the shape gallery used by the debug-draw tests: a ground segment
+## with a short chain, a static box, a kinematic box, an awake dynamic
+## circle with a sensor, a capsule, a zero-mass box, a sleeping box, and a
+## custom-coloured box. Returns a fresh recorder for assertions.
+Shared Function MakeShapeGallery(world As World) As RecordingDebugRenderer
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-20.0, 0.0, 20.0, 0.0))
+Var staticDef As New BodyDefinition
+staticDef.Position = New Vector2(-6.0, 0.5)
+Var staticBox As Body = world.CreateBody(staticDef)
+staticBox.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(1.0, 0.5))
+Var kinematicDef As New BodyDefinition
+kinematicDef.Type = BodyType.KinematicBody
+kinematicDef.Position = New Vector2(6.0, 0.5)
+Var kinematicBox As Body = world.CreateBody(kinematicDef)
+kinematicBox.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(1.0, 0.5))
+Var denseShape As New ShapeDefinition
+denseShape.Density = 1.0
+Var circleDef As New BodyDefinition
+circleDef.Type = BodyType.DynamicBody
+circleDef.Position = New Vector2(-2.0, 1.0)
+Var circleBody As Body = world.CreateBody(circleDef)
+circleBody.CreateCircle(denseShape, New Circle(New Vector2(0.0, 0.0), 0.5))
+Var capsuleDef As New BodyDefinition
+capsuleDef.Type = BodyType.DynamicBody
+capsuleDef.Position = New Vector2(2.0, 1.0)
+Var capsuleBody As Body = world.CreateBody(capsuleDef)
+capsuleBody.CreateCapsule(denseShape, New Capsule(New Vector2(-0.5, 0.0), New Vector2(0.5, 0.0), 0.25))
+# A dynamic body without mass draws red like upstream's bad-body colour.
+Var ghostDef As New BodyDefinition
+ghostDef.Type = BodyType.DynamicBody
+ghostDef.Position = New Vector2(-4.0, 1.0)
+Var ghost As Body = world.CreateBody(ghostDef)
+Var masslessShape As New ShapeDefinition
+masslessShape.Density = 0.0
+ghost.CreatePolygon(masslessShape, Polygon.MakeBox(0.25, 0.25))
+Var sleeperDef As New BodyDefinition
+sleeperDef.Type = BodyType.DynamicBody
+sleeperDef.Position = New Vector2(4.0, 1.0)
+Var sleeper As Body = world.CreateBody(sleeperDef)
+sleeper.CreatePolygon(denseShape, Polygon.MakeBox(0.25, 0.25))
+sleeper.SetAwake(False)
+# The sensor rides on the circle body one radius to the right.
+Var sensorShape As New ShapeDefinition
+sensorShape.IsSensor = True
+circleBody.CreateCircle(sensorShape, New Circle(New Vector2(1.5, 0.0), 0.25))
+Var customDef As New BodyDefinition
+customDef.Type = BodyType.DynamicBody
+customDef.Position = New Vector2(0.0, 6.0)
+Var customBody As Body = world.CreateBody(customDef)
+Var customShape As New ShapeDefinition
+customShape.Density = 1.0
+customShape.Material.CustomColor = 18 * 65536 + 52 * 256 + 86
+customBody.CreatePolygon(customShape, Polygon.MakeBox(0.25, 0.25))
+Var chainDef As New ChainDefinition
+chainDef.Body = ground
+chainDef.Points.Append(New Vector2(-10.0, -2.0))
+chainDef.Points.Append(New Vector2(-9.0, -2.4))
+chainDef.Points.Append(New Vector2(-8.5, -2.2))
+chainDef.Points.Append(New Vector2(-8.0, -2.5))
+world.CreateChain(chainDef)
+world.UpdateBroadPhasePairs()
+Return New RecordingDebugRenderer
+End Function
+
+## Builds the joint gallery used by the debug-draw tests: one world holding
+## a limited soft distance joint, a limited revolute hinge, a mouse joint,
+## a filter joint, a motor joint, a limited prismatic rail, and a wheel
+## suspension. The world is never stepped; joints join graph colours at
+## creation.
+Shared Function MakeJointGallery() As World
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+# Distance joint with limits and a soft spring between two boxes.
+boxDef.Position = New Vector2(-6.0, 6.0)
+Var ropeA As Body = world.CreateBody(boxDef)
+ropeA.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+boxDef.Position = New Vector2(-4.0, 6.0)
+Var ropeB As Body = world.CreateBody(boxDef)
+ropeB.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var ropeDef As New DistanceJointDefinition
+ropeDef.BodyA = ropeA
+ropeDef.BodyB = ropeB
+ropeDef.Length = 1.5
+ropeDef.MinLength = 0.5
+ropeDef.MaxLength = 2.5
+ropeDef.Hertz = 1.0
+ropeDef.EnableSpring = True
+ropeDef.EnableLimit = True
+world.CreateDistanceJoint(ropeDef)
+# Revolute hinge with limits on a box pinned to the ground.
+boxDef.Position = New Vector2(0.0, 2.0)
+Var hingeBox As Body = world.CreateBody(boxDef)
+hingeBox.CreatePolygon(shapeDef, Polygon.MakeBox(0.5, 0.25))
+Var hingeDef As New RevoluteJointDefinition
+hingeDef.BodyA = ground
+hingeDef.BodyB = hingeBox
+hingeDef.LocalAnchorA = New Vector2(0.0, 2.0)
+hingeDef.EnableLimit = True
+hingeDef.LowerAngle = -0.5
+hingeDef.UpperAngle = 0.5
+world.CreateRevoluteJoint(hingeDef)
+# Mouse joint dragging a box toward a target.
+Var dragged As Body = Stage9Tests.MakeDraggedBox(world, 2.0, 6.0)
+Stage9Tests.MakeMouseJoint(world, ground, dragged, New Vector2(3.0, 5.0), 5.0, 0.7, 1000.0)
+# Filter joint suppressing collision between two boxes.
+boxDef.Position = New Vector2(4.0, 8.0)
+Var filterA As Body = world.CreateBody(boxDef)
+filterA.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+boxDef.Position = New Vector2(5.0, 8.0)
+Var filterB As Body = world.CreateBody(boxDef)
+filterB.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var filterDef As New FilterJointDefinition
+filterDef.BodyA = filterA
+filterDef.BodyB = filterB
+world.CreateFilterJoint(filterDef)
+# Motor joint between two boxes.
+boxDef.Position = New Vector2(7.0, 8.0)
+Var motorA As Body = world.CreateBody(boxDef)
+motorA.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+boxDef.Position = New Vector2(8.0, 8.0)
+Var motorB As Body = world.CreateBody(boxDef)
+motorB.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var motorDef As New MotorJointDefinition
+motorDef.BodyA = motorA
+motorDef.BodyB = motorB
+world.CreateMotorJoint(motorDef)
+# Prismatic rail with limits sliding along world X.
+boxDef.Position = New Vector2(-2.0, 0.5)
+Var slider As Body = world.CreateBody(boxDef)
+slider.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var sliderDef As New PrismaticJointDefinition
+sliderDef.BodyA = ground
+sliderDef.BodyB = slider
+sliderDef.LocalAnchorA = New Vector2(-2.0, 0.5)
+sliderDef.LocalAxisA = New Vector2(1.0, 0.0)
+sliderDef.EnableLimit = True
+sliderDef.LowerTranslation = -1.0
+sliderDef.UpperTranslation = 1.0
+world.CreatePrismaticJoint(sliderDef)
+# Wheel suspension with the wheel hanging below the chassis.
+boxDef.Position = New Vector2(2.0, 1.0)
+Var chassis As Body = world.CreateBody(boxDef)
+chassis.CreatePolygon(shapeDef, Polygon.MakeBox(0.5, 0.125))
+boxDef.Position = New Vector2(2.0, 0.5)
+Var wheelBody As Body = world.CreateBody(boxDef)
+wheelBody.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.25))
+Var wheelDef As New WheelJointDefinition
+wheelDef.BodyA = chassis
+wheelDef.BodyB = wheelBody
+wheelDef.LocalAnchorA = New Vector2(0.0, -0.5)
+wheelDef.LocalAxisA = New Vector2(0.0, 1.0)
+world.CreateWheelJoint(wheelDef)
+world.UpdateBroadPhasePairs()
+Return world
+End Function
+End Class
+
+# Records every debug-draw primitive with its colour for the Stage 10
+# debug-draw tests.
+Class RecordingDebugRenderer Inherits DebugRenderer
+## Outlined polygons (fat AABBs and island bounds).
+Property PolygonCount As Integer
+
+## Filled polygons (boxes).
+Property SolidPolygonCount As Integer
+
+## Circle outlines (revolute hinges).
+Property CircleCount As Integer
+
+## Filled circles (circles and sensors).
+Property SolidCircleCount As Integer
+
+## Filled capsules.
+Property SolidCapsuleCount As Integer
+
+## Line segments.
+Property SegmentCount As Integer
+
+## Transform axes (mass data).
+Property TransformCount As Integer
+
+## Points (contact points, anchors, chain ends).
+Property PointCount As Integer
+
+## Text labels.
+Property StringCount As Integer
+
+## Every colour passed to any primitive, in call order.
+Property Colors As Array(Of Colour)
+
+## Every DrawString payload, in call order.
+Property Texts As Array(Of String)
+
+## Creates an empty recorder.
+Constructor()
+Me.Colors = New Array(Of Colour)
+Me.Texts = New Array(Of String)
+End Constructor
+
+## Returns True when any primitive used the given colour.
+Function ColorSeen(color As Colour) As Boolean
+Var i As Integer = 0
+While i < Me.Colors.Count
+If Me.Colors[i] = color Then
+Return True
+End If
+i = i + 1
+Wend
+Return False
+End Function
+
+## Draws nothing and records the polygon.
+Override Sub DrawPolygon(vertices() As Vector2, vertexCount As Integer, color As Colour)
+Pragma Unused vertices
+Pragma Unused vertexCount
+Me.PolygonCount = Me.PolygonCount + 1
+Me.Colors.Append(color)
+End Sub
+
+## Draws nothing and records the solid polygon.
+Override Sub DrawSolidPolygon(transform As Transform, vertices() As Vector2, vertexCount As Integer, radius As Double, color As Colour)
+Pragma Unused transform
+Pragma Unused vertices
+Pragma Unused vertexCount
+Pragma Unused radius
+Me.SolidPolygonCount = Me.SolidPolygonCount + 1
+Me.Colors.Append(color)
+End Sub
+
+## Draws nothing and records the circle.
+Override Sub DrawCircle(center As Vector2, radius As Double, color As Colour)
+Pragma Unused center
+Pragma Unused radius
+Me.CircleCount = Me.CircleCount + 1
+Me.Colors.Append(color)
+End Sub
+
+## Draws nothing and records the solid circle.
+Override Sub DrawSolidCircle(transform As Transform, radius As Double, color As Colour)
+Pragma Unused transform
+Pragma Unused radius
+Me.SolidCircleCount = Me.SolidCircleCount + 1
+Me.Colors.Append(color)
+End Sub
+
+## Draws nothing and records the capsule.
+Override Sub DrawSolidCapsule(p1 As Vector2, p2 As Vector2, radius As Double, color As Colour)
+Pragma Unused p1
+Pragma Unused p2
+Pragma Unused radius
+Me.SolidCapsuleCount = Me.SolidCapsuleCount + 1
+Me.Colors.Append(color)
+End Sub
+
+## Draws nothing and records the segment.
+Override Sub DrawSegment(p1 As Vector2, p2 As Vector2, color As Colour)
+Pragma Unused p1
+Pragma Unused p2
+Me.SegmentCount = Me.SegmentCount + 1
+Me.Colors.Append(color)
+End Sub
+
+## Draws nothing and records the transform.
+Override Sub DrawTransform(transform As Transform)
+Pragma Unused transform
+Me.TransformCount = Me.TransformCount + 1
+End Sub
+
+## Draws nothing and records the point.
+Override Sub DrawPoint(p As Vector2, size As Double, color As Colour)
+Pragma Unused p
+Pragma Unused size
+Me.PointCount = Me.PointCount + 1
+Me.Colors.Append(color)
+End Sub
+
+## Draws nothing and records the text.
+Override Sub DrawString(p As Vector2, text As String, color As Colour)
+Pragma Unused p
+Me.StringCount = Me.StringCount + 1
+Me.Texts.Append(text)
+Me.Colors.Append(color)
+End Sub
 End Class
 
 # Records mover collision planes for the Stage 10 tests. StopAfterFirst

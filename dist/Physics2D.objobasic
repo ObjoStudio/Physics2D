@@ -40,6 +40,10 @@
 # Input: CustomContactFilter.objobasic 22c6ed2347f3634c8076604defb9dbe63b7a72da3510b15ea32a6c91a46d43e5
 # Input: CustomMaterialMixer.objobasic 432de14a1d23d12f799f20147f1e89738c9958141c72437581dc5f34369554cb
 # Input: CustomPreSolve.objobasic 633a51981a6f216496f322a57c4739d6df454bd1477f101c5586c0034626aebd
+# Input: DebugColors.objobasic 572976a4e9bcf872c37fe5a18d80a2e70a3dbd7114bc774e23e22fb7f1373c7a
+# Input: DebugDrawMethods.objobasic cc738aba5803c2be57419ed457f54d7987544e9f7e42731b1c2100984b8e1473
+# Input: DebugDrawOptions.objobasic 5ea251915bb084636b911488c12f4603bf73dd3eca1ebf6bf0459350f8359e6c
+# Input: DebugRenderer.objobasic f96ef269fd56e74354e966dac03e9d24d291a5030a1fadb2b012712200b4252c
 # Input: Distance-a8dae15a-4200-4d94-9eb8-1be720713a74.objobasic c03d3e2850756899619485e0612f26fa32a423c570aedbd6fb986dc911adb65e
 # Input: DistanceInput-491bbf59-5549-4fb5-a028-a761c8544333.objobasic 0127713aa815720f9e01f2be2a5e07f93a9dd0eb3b7993e39145272cff17311a
 # Input: DistanceJoint.objobasic 03ce93d020745431c710327ab94dcb923ca343070bb39341150a4f5696e20cad
@@ -129,9 +133,10 @@
 # Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
 # Input: WheelJoint.objobasic 063db7c796ee6df9b2ed0d4db36d51dec921e3a61ec1b001cd6ab07308136b4d
 # Input: WheelJointDefinition.objobasic 1ae60874c31b501cb219d8af36f26398fea1ad6a74eb924c08d53b70109e0641
-# Input: World.objobasic 3a65212e823bac28b3a06ade608c352b09e6d62eab5791fbe4a625b5009111e8
+# Input: World.objobasic abdd142812bde19d85e26bdffe28df61e02af6f1392b4b48f996d6db10788c29
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldCounters.objobasic d77a7a134e677e6c387b086034e1ec984829d66679d8887753fcaa6254cdffb7
+# Input: WorldDebugDrawContext.objobasic 9e81237a6e02df019c321f4f4dc24003b822c22b3c3325758f818f0dcae56de2
 # Input: WorldEvents.objobasic 5fc686c5dbd43b9e63f3359d3b362f559636a96600f0f6dfe4c44a59a8c0c5df
 # Input: WorldMoverCastContext.objobasic 8fc345845092d5e3be521532ba4c2f3689ae87e4e28788620145307bc88c80b7
 # Input: WorldMoverCollideContext.objobasic 852413232a33ce66c6abbb3cebe1f62b55710e2f5a2fb75dbc13b1db58f5d641
@@ -143,7 +148,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 59ffb4e01ca87793b4bf2e04fd12cbab336ca70bf6c9cc0c270ccfedfd7ae941
+# Source content checksum (SHA-256): 400f8c8c045b952018f31aba60d2acc6ae7a5e106b4cfb5414c16ae8d793ffec
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -7034,6 +7039,774 @@ Pragma Unused shapeB
 Pragma Unused manifold
 Return True
 End Function
+End Class
+
+# Colour palette for debug drawing, ported from the upstream b2HexColor
+# enum in types.h. Upstream stores colours as 0xRRGGBB integers; Physics2D
+# uses the core-standard-library Colour type so renderers can forward values
+# directly to desktop graphics. Only the colours the debug-draw path uses
+# are listed; add new entries from the upstream enum when a new draw feature
+# needs them. Names keep the CSS spelling (Goldenrod), dropping the upstream
+# b2_ prefix.
+Class DebugColors
+## Red used for dynamic bodies with zero mass, ported from b2_colorRed.
+Public Const Red As Colour = Colour.RGB(255, 0, 0)
+
+## Green used for new contact points and mouse-joint targets, ported from
+## b2_colorGreen.
+Public Const Green As Colour = Colour.RGB(0, 128, 0)
+
+## Blue used for persisted contact points, distance-joint rest length
+## markers, revolute reference angles, and prismatic/wheel anchor B points,
+## ported from b2_colorBlue.
+Public Const Blue As Colour = Colour.RGB(0, 0, 255)
+
+## Cyan used as graph colour 4, ported from b2_colorCyan.
+Public Const Cyan As Colour = Colour.RGB(0, 255, 255)
+
+## Red-orange used for island bounds, ported from b2_colorOrangeRed.
+Public Const OrangeRed As Colour = Colour.RGB(255, 69, 0)
+
+## Orange used for graph colour 1 and contact feature labels, ported from
+## b2_colorOrange.
+Public Const Orange As Colour = Colour.RGB(255, 165, 0)
+
+## Yellow used for speed-capped bodies, contact friction impulses, and
+## graph colour 2, ported from b2_colorYellow.
+Public Const Yellow As Colour = Colour.RGB(255, 255, 0)
+
+## Black used as graph colour 11, ported from b2_colorBlack.
+Public Const Black As Colour = Colour.RGB(0, 0, 0)
+
+## White used for joint anchors and ropes, mass and impulse label text, and
+## body-id labels in bounds mode, ported from b2_colorWhite.
+Public Const White As Colour = Colour.RGB(255, 255, 255)
+
+## Gray used for sleeping bodies, distance-joint limit ranges, and
+## prismatic/wheel axis lines, ported from b2_colorGray.
+Public Const Gray As Colour = Colour.RGB(128, 128, 128)
+
+## Slate gray used for disabled bodies, ported from b2_colorSlateGray.
+Public Const SlateGray As Colour = Colour.RGB(112, 128, 144)
+
+## Dim gray used for contact normal arrows, ported from b2_colorDimGray.
+Public Const DimGray As Colour = Colour.RGB(105, 105, 105)
+
+## Light gray used for speculative contact points and mouse-joint target
+## lines, ported from b2_colorLightGray.
+Public Const LightGray As Colour = Colour.RGB(211, 211, 211)
+
+## Gainsboro used for speculative contact points in bounds mode, ported
+## from b2_colorGainsboro.
+Public Const Gainsboro As Colour = Colour.RGB(220, 220, 220)
+
+## Gold used for shape bounds and filter-joint ropes, ported from
+## b2_colorGold.
+Public Const Gold As Colour = Colour.RGB(255, 215, 0)
+
+## Goldenrod used as graph colour 9, ported from b2_colorGoldenRod.
+Public Const Goldenrod As Colour = Colour.RGB(218, 165, 32)
+
+## Violet used as graph colour 6, ported from b2_colorViolet.
+Public Const Violet As Colour = Colour.RGB(238, 130, 238)
+
+## Blue violet used for body-name labels, ported from b2_colorBlueViolet.
+Public Const BlueViolet As Colour = Colour.RGB(138, 43, 226)
+
+## Magenta used for contact normal impulse arrows, ported from
+## b2_colorMagenta.
+Public Const Magenta As Colour = Colour.RGB(255, 0, 255)
+
+## Pink used for awake dynamic bodies and graph colour 7, ported from
+## b2_colorPink.
+Public Const Pink As Colour = Colour.RGB(255, 192, 203)
+
+## Wheat used for sensor shapes, ported from b2_colorWheat.
+Public Const Wheat As Colour = Colour.RGB(245, 222, 179)
+
+## Turquoise used for awake bullets, ported from b2_colorTurquoise.
+Public Const Turquoise As Colour = Colour.RGB(64, 224, 208)
+
+## Salmon used for fast (continuous-collision) bodies, ported from
+## b2_colorSalmon.
+Public Const Salmon As Colour = Colour.RGB(250, 128, 114)
+
+## Pale green used for static bodies and chain ghost links, ported from
+## b2_colorPaleGreen.
+Public Const PaleGreen As Colour = Colour.RGB(152, 251, 152)
+
+## Light green used for distance-joint lower-limit ticks, ported from
+## b2_colorLightGreen.
+Public Const LightGreen As Colour = Colour.RGB(144, 238, 144)
+
+## Royal blue used for kinematic bodies, ported from b2_colorRoyalBlue.
+Public Const RoyalBlue As Colour = Colour.RGB(65, 105, 225)
+
+## Chocolate used as graph colour 8, ported from b2_colorChocolate.
+Public Const Chocolate As Colour = Colour.RGB(210, 105, 30)
+
+## Coral used as graph colour 10, ported from b2_colorCoral.
+Public Const Coral As Colour = Colour.RGB(255, 127, 80)
+
+## Dark sea green used for generic joint ropes, ported from
+## b2_colorDarkSeaGreen.
+Public Const DarkSeaGreen As Colour = Colour.RGB(143, 188, 143)
+
+## Returns the graph colour for a constraint-graph colour index in
+## [0, 11], ported from the graphColors tables in world.c and joint.c. The
+## order matches upstream: red, orange, yellow, green, cyan, blue, violet,
+## pink, chocolate, goldenrod, coral, black. Indices outside the range
+## return black.
+Shared Function GraphColor(index As Integer) As Colour
+Select Case index
+Case 0
+Return DebugColors.Red
+Case 1
+Return DebugColors.Orange
+Case 2
+Return DebugColors.Yellow
+Case 3
+Return DebugColors.Green
+Case 4
+Return DebugColors.Cyan
+Case 5
+Return DebugColors.Blue
+Case 6
+Return DebugColors.Violet
+Case 7
+Return DebugColors.Pink
+Case 8
+Return DebugColors.Chocolate
+Case 9
+Return DebugColors.Goldenrod
+Case 10
+Return DebugColors.Coral
+Else
+Return DebugColors.Black
+End Select
+End Function
+End Class
+
+# Debug-draw helpers shared by the two World.DrawDebug paths, ported from
+# b2DrawShape, b2DrawJoint, the four per-family b2Draw*Joint functions, and
+# the contact-point blocks of b2World_Draw in Box2D 3.1.1. Engine-internal
+# infrastructure: applications implement DebugRenderer and call
+# World.DrawDebug instead of calling into this class.
+#
+# Debug drawing is an opt-in cold path and is allowed to allocate the small
+# view objects the C version keeps on the stack. It is never part of the
+# zero-alloc step path.
+Class DebugDrawMethods
+## Selects the debug colour of a shape from its body and sensor state,
+## ported from the shared colour ladder of upstream DrawQueryCallback and
+## b2World_Draw. Custom shape colours win, then bad dynamic bodies, then
+## disabled bodies, sensors, bullets, speed-capped and fast bodies, and
+## finally the body type and sleep state.
+Shared Function ShapeColor(shape As Shape, body As Body, sims As BodySims) As Colour
+If shape.CustomColor <> 0 Then
+Var hex As Integer = shape.CustomColor
+Return Colour.RGB(hex.ShiftRight(16).BitAnd(255), hex.ShiftRight(8).BitAnd(255), hex.BitAnd(255))
+End If
+If body.Type = BodyType.DynamicBody And body.Mass = 0.0 Then
+Return DebugColors.Red
+End If
+If body.SetIndex = PhysicsConstants.DISABLED_SET Then
+Return DebugColors.SlateGray
+End If
+If shape.SensorIndex <> PhysicsConstants.NULL_INDEX Then
+Return DebugColors.Wheat
+End If
+If sims.IsBullet.Items[body.LocalIndex] <> 0 And body.SetIndex = PhysicsConstants.AWAKE_SET Then
+Return DebugColors.Turquoise
+End If
+If body.IsSpeedCapped Then
+Return DebugColors.Yellow
+End If
+If sims.IsFast.Items[body.LocalIndex] <> 0 Then
+Return DebugColors.Salmon
+End If
+If body.Type = BodyType.StaticBody Then
+Return DebugColors.PaleGreen
+End If
+If body.Type = BodyType.KinematicBody Then
+Return DebugColors.RoyalBlue
+End If
+If body.SetIndex = PhysicsConstants.AWAKE_SET Then
+Return DebugColors.Pink
+End If
+Return DebugColors.Gray
+End Function
+
+## Draws one shape in world space, ported from b2DrawShape. Circles become
+## solid circles, polygons become solid polygons with their rounding
+## radius, segments and chain segments become line segments, and chain
+## segments add an end point plus a short pale-green ghost link.
+Shared Sub DrawShape(renderer As DebugRenderer, shape As Shape, bodyTransform As Transform, color As Colour)
+If shape.Type = ShapeType.CapsuleShape Then
+Var capsule As Capsule = shape.Capsule
+Var p1 As Vector2 = Transform.TransformPoint(bodyTransform, capsule.Center1)
+Var p2 As Vector2 = Transform.TransformPoint(bodyTransform, capsule.Center2)
+renderer.DrawSolidCapsule(p1, p2, capsule.Radius, color)
+ElseIf shape.Type = ShapeType.CircleShape Then
+Var circle As Circle = shape.Circle
+Var center As Vector2 = Transform.TransformPoint(bodyTransform, circle.Center)
+Var circleTransform As New Transform(center, bodyTransform.Q)
+renderer.DrawSolidCircle(circleTransform, circle.Radius, color)
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Var polygon As Polygon = shape.Polygon
+renderer.DrawSolidPolygon(bodyTransform, polygon.Vertices, polygon.Count, polygon.Radius, color)
+ElseIf shape.Type = ShapeType.SegmentShape Then
+Var segment As Segment = shape.Segment
+Var p1 As Vector2 = Transform.TransformPoint(bodyTransform, segment.Point1)
+Var p2 As Vector2 = Transform.TransformPoint(bodyTransform, segment.Point2)
+renderer.DrawSegment(p1, p2, color)
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+Var chainSegment As Segment = shape.ChainSegment.Segment
+Var p1 As Vector2 = Transform.TransformPoint(bodyTransform, chainSegment.Point1)
+Var p2 As Vector2 = Transform.TransformPoint(bodyTransform, chainSegment.Point2)
+renderer.DrawSegment(p1, p2, color)
+renderer.DrawPoint(p2, 4.0, color)
+renderer.DrawSegment(p1, Vector2.Lerp(p1, p2, 0.1), DebugColors.PaleGreen)
+End If
+End Sub
+
+## Fills a reusable four-point array with the corners of an axis-aligned
+## box in the upstream vertex order: lower, lower-right, upper, upper-left.
+Shared Sub FillQuad(quad As Array(Of Vector2), box As AABB)
+quad[0].Set(box.LowerBound.X, box.LowerBound.Y)
+quad[1].Set(box.UpperBound.X, box.LowerBound.Y)
+quad[2].Set(box.UpperBound.X, box.UpperBound.Y)
+quad[3].Set(box.LowerBound.X, box.UpperBound.Y)
+End Sub
+
+## Draws one joint, ported from b2DrawJoint. Joints with a disabled body
+## are skipped. Each family draws its own decoration; the remaining
+## families draw the generic three-segment rope in dark sea green. A graph
+## colour point marks the joint midpoint when requested.
+Shared Sub DrawJoint(world As World, renderer As DebugRenderer, options As DebugDrawOptions, joint As Joint)
+Var bodyA As Body = world.Bodies[joint.Edge0BodyId]
+Var bodyB As Body = world.Bodies[joint.Edge1BodyId]
+If bodyA.SetIndex = PhysicsConstants.DISABLED_SET Or bodyB.SetIndex = PhysicsConstants.DISABLED_SET Then
+Return
+End If
+
+Var sims As JointSims = world.GetJointSims(joint)
+Var index As Integer = joint.LocalIndex
+Var transformA As Transform = world.GetBodyTransform(bodyA)
+Var transformB As Transform = world.GetBodyTransform(bodyB)
+Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(sims.LocalOriginAnchorAX.Items[index], sims.LocalOriginAnchorAY.Items[index]))
+Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(sims.LocalOriginAnchorBX.Items[index], sims.LocalOriginAnchorBY.Items[index]))
+
+If joint.Type = JointType.DistanceJoint Then
+DrawDistanceJoint(renderer, sims, index, pA, pB)
+ElseIf joint.Type = JointType.MouseJoint Then
+Var target As New Vector2(sims.MouseTargetX.Items[index], sims.MouseTargetY.Items[index])
+renderer.DrawPoint(target, 4.0, DebugColors.Green)
+renderer.DrawPoint(pB, 4.0, DebugColors.Green)
+renderer.DrawSegment(target, pB, DebugColors.LightGray)
+ElseIf joint.Type = JointType.FilterJoint Then
+renderer.DrawSegment(pA, pB, DebugColors.Gold)
+ElseIf joint.Type = JointType.PrismaticJoint Then
+DrawPrismaticJoint(renderer, sims, index, transformA, pA, pB)
+ElseIf joint.Type = JointType.RevoluteJoint Then
+DrawRevoluteJoint(renderer, options, sims, index, transformA, transformB, pA, pB, joint.DrawSize)
+ElseIf joint.Type = JointType.WheelJoint Then
+DrawWheelJoint(renderer, sims, index, transformA, pA, pB)
+Else
+# Motor and weld joints draw the generic rope.
+renderer.DrawSegment(transformA.P, pA, DebugColors.DarkSeaGreen)
+renderer.DrawSegment(pA, pB, DebugColors.DarkSeaGreen)
+renderer.DrawSegment(transformB.P, pB, DebugColors.DarkSeaGreen)
+End If
+
+If options.DrawGraphColors And joint.ColorIndex <> PhysicsConstants.NULL_INDEX Then
+renderer.DrawPoint(Vector2.Lerp(pA, pB, 0.5), 5.0, DebugColors.GraphColor(joint.ColorIndex))
+End If
+End Sub
+
+## Draws a distance joint, ported from b2DrawDistanceJoint. The rope is
+## white with white anchor points; enabled limits draw their ticks and the
+## range line, and a soft spring marks its rest length in blue. Physics2D
+## pins one metre per length unit, so the upstream 0.05 *
+## b2_lengthUnitsPerMeter tick offset is 0.05 m.
+Private Shared Sub DrawDistanceJoint(renderer As DebugRenderer, sims As JointSims, index As Integer, pA As Vector2, pB As Vector2)
+Var axis As Vector2 = (pB - pA).Normalized()
+
+If sims.MinLength.Items[index] < sims.MaxLength.Items[index] And sims.EnableLimit.Items[index] <> 0 Then
+Var pMin As Vector2 = pA + axis * sims.MinLength.Items[index]
+Var pMax As Vector2 = pA + axis * sims.MaxLength.Items[index]
+Var offset As Vector2 = axis.RightPerpendicular() * 0.05
+
+If sims.MinLength.Items[index] > PhysicsConstants.LINEAR_SLOP Then
+renderer.DrawSegment(pMin - offset, pMin + offset, DebugColors.LightGreen)
+End If
+
+If sims.MaxLength.Items[index] < PhysicsConstants.POSITION_LIMIT Then
+renderer.DrawSegment(pMax - offset, pMax + offset, DebugColors.Red)
+End If
+
+If sims.MinLength.Items[index] > PhysicsConstants.LINEAR_SLOP And sims.MaxLength.Items[index] < PhysicsConstants.POSITION_LIMIT Then
+renderer.DrawSegment(pMin, pMax, DebugColors.Gray)
+End If
+End If
+
+renderer.DrawSegment(pA, pB, DebugColors.White)
+renderer.DrawPoint(pA, 4.0, DebugColors.White)
+renderer.DrawPoint(pB, 4.0, DebugColors.White)
+
+If sims.Hertz.Items[index] > 0.0 And sims.EnableSpring.Items[index] <> 0 Then
+Var pRest As Vector2 = pA + axis * sims.Length.Items[index]
+renderer.DrawPoint(pRest, 4.0, DebugColors.Blue)
+End If
+End Sub
+
+## Draws a prismatic joint, ported from b2DrawPrismaticJoint. The slide
+## axis is body A's local axis rotated into world space. Enabled limits
+## draw the range line with green and red end ticks; without limits the
+## infinite axis line is drawn instead.
+Private Shared Sub DrawPrismaticJoint(renderer As DebugRenderer, sims As JointSims, index As Integer, transformA As Transform, pA As Vector2, pB As Vector2)
+Var axis As New Vector2(transformA.Q.C * sims.PrismaticLocalAxisX.Items[index] - transformA.Q.S * sims.PrismaticLocalAxisY.Items[index], transformA.Q.S * sims.PrismaticLocalAxisX.Items[index] + transformA.Q.C * sims.PrismaticLocalAxisY.Items[index])
+
+renderer.DrawSegment(pA, pB, DebugColors.DimGray)
+
+If sims.EnableLimit.Items[index] <> 0 Then
+Var lower As Vector2 = pA + axis * sims.PrismaticLowerTranslation.Items[index]
+Var upper As Vector2 = pA + axis * sims.PrismaticUpperTranslation.Items[index]
+Var perp As Vector2 = axis.LeftPerpendicular()
+renderer.DrawSegment(lower, upper, DebugColors.Gray)
+renderer.DrawSegment(lower - perp * 0.1, lower + perp * 0.1, DebugColors.Green)
+renderer.DrawSegment(upper - perp * 0.1, upper + perp * 0.1, DebugColors.Red)
+Else
+renderer.DrawSegment(pA - axis, pA + axis, DebugColors.Gray)
+End If
+
+renderer.DrawPoint(pA, 5.0, DebugColors.Gray)
+renderer.DrawPoint(pB, 5.0, DebugColors.Blue)
+End Sub
+
+## Draws a revolute joint, ported from b2DrawRevoluteJoint. A circle of
+## DrawSize radius marks the hinge with its relative angle spoke; enabled
+## limits draw green and red spokes with the blue reference spoke.
+Private Shared Sub DrawRevoluteJoint(renderer As DebugRenderer, options As DebugDrawOptions, sims As JointSims, index As Integer, transformA As Transform, transformB As Transform, pA As Vector2, pB As Vector2, drawSize As Double)
+Var l As Double = drawSize
+renderer.DrawCircle(pB, l, DebugColors.Gray)
+
+Var angle As Double = RelativeAngle(transformB.Q, transformA.Q)
+Var angleRot As Rot = Rot.Make(angle)
+Var pC As Vector2 = pB + New Vector2(l * angleRot.C, l * angleRot.S)
+renderer.DrawSegment(pB, pC, DebugColors.Gray)
+
+If options.DrawJointExtras Then
+Var jointAngle As Double = PhysicsMaths.UnwindAngle(angle - sims.RevoluteReferenceAngle.Items[index])
+renderer.DrawString(pC, " " + (180.0 * jointAngle / PhysicsConstants.PI).ToString("F1") + " deg", DebugColors.White)
+End If
+
+If sims.EnableLimit.Items[index] <> 0 Then
+Var lowerAngle As Double = sims.RevoluteLowerAngle.Items[index] + sims.RevoluteReferenceAngle.Items[index]
+Var upperAngle As Double = sims.RevoluteUpperAngle.Items[index] + sims.RevoluteReferenceAngle.Items[index]
+
+Var rotLo As Rot = Rot.Make(lowerAngle)
+Var rotHi As Rot = Rot.Make(upperAngle)
+Var rotRef As Rot = Rot.Make(sims.RevoluteReferenceAngle.Items[index])
+
+renderer.DrawSegment(pB, pB + New Vector2(l * rotLo.C, l * rotLo.S), DebugColors.Green)
+renderer.DrawSegment(pB, pB + New Vector2(l * rotHi.C, l * rotHi.S), DebugColors.Red)
+renderer.DrawSegment(pB, pB + New Vector2(l * rotRef.C, l * rotRef.S), DebugColors.Blue)
+End If
+
+renderer.DrawSegment(transformA.P, pA, DebugColors.Gold)
+renderer.DrawSegment(pA, pB, DebugColors.Gold)
+renderer.DrawSegment(transformB.P, pB, DebugColors.Gold)
+End Sub
+
+## Draws a wheel joint, ported from b2DrawWheelJoint. Like the prismatic
+## joint but with a blue suspension rope and a dim-gray anchor B point.
+Private Shared Sub DrawWheelJoint(renderer As DebugRenderer, sims As JointSims, index As Integer, transformA As Transform, pA As Vector2, pB As Vector2)
+Var axis As New Vector2(transformA.Q.C * sims.WheelLocalAxisX.Items[index] - transformA.Q.S * sims.WheelLocalAxisY.Items[index], transformA.Q.S * sims.WheelLocalAxisX.Items[index] + transformA.Q.C * sims.WheelLocalAxisY.Items[index])
+
+renderer.DrawSegment(pA, pB, DebugColors.Blue)
+
+If sims.EnableLimit.Items[index] <> 0 Then
+Var lower As Vector2 = pA + axis * sims.WheelLowerTranslation.Items[index]
+Var upper As Vector2 = pA + axis * sims.WheelUpperTranslation.Items[index]
+Var perp As Vector2 = axis.LeftPerpendicular()
+renderer.DrawSegment(lower, upper, DebugColors.Gray)
+renderer.DrawSegment(lower - perp * 0.1, lower + perp * 0.1, DebugColors.Green)
+renderer.DrawSegment(upper - perp * 0.1, upper + perp * 0.1, DebugColors.Red)
+Else
+renderer.DrawSegment(pA - axis, pA + axis, DebugColors.Gray)
+End If
+
+renderer.DrawPoint(pA, 5.0, DebugColors.Gray)
+renderer.DrawPoint(pB, 5.0, DebugColors.DimGray)
+End Sub
+
+## Returns the signed relative angle from rotation a to rotation b in
+## [-pi, pi], ported from b2RelativeAngle.
+Private Shared Function RelativeAngle(b As Rot, a As Rot) As Double
+Var s As Double = b.S * a.C - b.C * a.S
+Var c As Double = b.C * a.C + b.S * a.S
+Return PhysicsMaths.Atan2(s, c)
+End Function
+
+## Draws one contact point of an awake touching contact in the graph walk,
+## ported from the drawContacts block of b2World_Draw. Labels use the
+## total normal impulse in milli-impulses and the raw tangent impulse,
+## preserving the upstream format strings.
+Shared Sub DrawContactPoint(renderer As DebugRenderer, options As DebugDrawOptions, point As ManifoldPoint, normal As Vector2, colorIndex As Integer)
+If options.DrawGraphColors Then
+Var pointSize As Double = 5.0
+If colorIndex = PhysicsConstants.GRAPH_OVERFLOW_INDEX Then
+pointSize = 7.5
+End If
+renderer.DrawPoint(point.Point, pointSize, DebugColors.GraphColor(colorIndex))
+ElseIf point.Separation > PhysicsConstants.LINEAR_SLOP Then
+renderer.DrawPoint(point.Point, 5.0, DebugColors.LightGray)
+ElseIf point.Persisted = False Then
+renderer.DrawPoint(point.Point, 10.0, DebugColors.Green)
+Else
+renderer.DrawPoint(point.Point, 5.0, DebugColors.Blue)
+End If
+
+If options.DrawContactNormals Then
+renderer.DrawSegment(point.Point, point.Point + normal * 0.3, DebugColors.DimGray)
+ElseIf options.DrawContactImpulses Then
+renderer.DrawSegment(point.Point, point.Point + normal * point.TotalNormalImpulse, DebugColors.Magenta)
+renderer.DrawString(point.Point, (1000.0 * point.TotalNormalImpulse).ToString("F2"), DebugColors.White)
+End If
+
+If options.DrawContactFeatures Then
+renderer.DrawString(point.Point, point.Id.ToString(), DebugColors.Orange)
+End If
+
+If options.DrawFrictionImpulses Then
+Var tangent As Vector2 = normal.RightPerpendicular()
+renderer.DrawSegment(point.Point, point.Point + tangent * point.TangentImpulse, DebugColors.Yellow)
+renderer.DrawString(point.Point, point.TangentImpulse.ToString("F2"), DebugColors.White)
+End If
+End Sub
+
+## Draws one contact point in the bounds-mode body walk, ported from the
+## contact block of upstream DrawQueryCallback. The bounds path labels
+## normal and friction impulses in milli-impulses with one decimal and
+## uses gainsboro for speculative points, exactly like upstream; both
+## paths keep their own label conventions.
+Shared Sub DrawContactPointBounds(renderer As DebugRenderer, options As DebugDrawOptions, point As ManifoldPoint, normal As Vector2, colorIndex As Integer)
+If options.DrawGraphColors Then
+Var pointSize As Double = 5.0
+If colorIndex = PhysicsConstants.GRAPH_OVERFLOW_INDEX Then
+pointSize = 7.5
+End If
+renderer.DrawPoint(point.Point, pointSize, DebugColors.GraphColor(colorIndex))
+ElseIf point.Separation > PhysicsConstants.LINEAR_SLOP Then
+renderer.DrawPoint(point.Point, 5.0, DebugColors.Gainsboro)
+ElseIf point.Persisted = False Then
+renderer.DrawPoint(point.Point, 10.0, DebugColors.Green)
+Else
+renderer.DrawPoint(point.Point, 5.0, DebugColors.Blue)
+End If
+
+If options.DrawContactNormals Then
+renderer.DrawSegment(point.Point, point.Point + normal * 0.3, DebugColors.DimGray)
+ElseIf options.DrawContactImpulses Then
+renderer.DrawSegment(point.Point, point.Point + normal * point.NormalImpulse, DebugColors.Magenta)
+renderer.DrawString(point.Point, (1000.0 * point.NormalImpulse).ToString("F1"), DebugColors.White)
+End If
+
+If options.DrawContactFeatures Then
+renderer.DrawString(point.Point, point.Id.ToString(), DebugColors.Orange)
+End If
+
+If options.DrawFrictionImpulses Then
+Var tangent As Vector2 = normal.RightPerpendicular()
+renderer.DrawSegment(point.Point, point.Point + tangent * point.TangentImpulse, DebugColors.Yellow)
+renderer.DrawString(point.Point, (1000.0 * point.TangentImpulse).ToString("F1"), DebugColors.White)
+End If
+End Sub
+
+## Draws the names, mass data, joints, and contacts of the bodies the
+## bounds-mode tree query marked, ported from the marked-body walk of
+## b2DrawWithBounds. Ids arrive in ascending order from the bit-set
+## collection, and the joint and contact sets suppress double drawing of
+## edges shared between two marked bodies.
+Shared Sub DrawMarkedBodies(world As World, renderer As DebugRenderer, options As DebugDrawOptions, bodyIds As IntegerList)
+Var count As Integer = bodyIds.Count
+Var i As Integer = 0
+While i < count
+Var body As Body = world.Bodies[bodyIds.Items[i]]
+Var sims As BodySims = world.GetBodySim(body)
+If options.DrawBodyNames Then
+DrawMarkedBodyName(sims, body, renderer)
+End If
+
+If options.DrawMass And body.Type = BodyType.DynamicBody Then
+DrawMarkedBodyMass(sims, body, renderer)
+End If
+
+If options.DrawJoints Then
+DrawMarkedBodyJoints(world, renderer, options, body)
+End If
+
+If options.DrawContacts And body.Type = BodyType.DynamicBody And body.SetIndex = PhysicsConstants.AWAKE_SET Then
+DrawMarkedBodyContacts(world, renderer, options, body)
+End If
+
+i = i + 1
+Wend
+End Sub
+
+## Draws one marked body's name next to its centre of mass, ported from
+## the drawBodyNames block of the upstream marked-body walk.
+Private Shared Sub DrawMarkedBodyName(sims As BodySims, body As Body, renderer As DebugRenderer)
+If body.Name.Length = 0 Then
+Return
+End If
+Var namePoint As Vector2 = CenterOffsetPoint(sims, body.LocalIndex, 0.1, 0.1)
+renderer.DrawString(namePoint, body.Name, DebugColors.BlueViolet)
+End Sub
+
+## Draws one marked dynamic body's centre-of-mass transform and mass text,
+## ported from the drawMass block of the upstream marked-body walk.
+Private Shared Sub DrawMarkedBodyMass(sims As BodySims, body As Body, renderer As DebugRenderer)
+Var massTransform As New Transform(New Vector2(sims.CenterX.Items[body.LocalIndex], sims.CenterY.Items[body.LocalIndex]), New Rot(sims.QC.Items[body.LocalIndex], sims.QS.Items[body.LocalIndex]))
+renderer.DrawTransform(massTransform)
+Var massPoint As Vector2 = Transform.TransformPoint(massTransform, New Vector2(0.1, 0.1))
+renderer.DrawString(massPoint, "  " + body.Mass.ToString("F2"), DebugColors.White)
+End Sub
+
+## Draws the joints of one marked body once per joint, ported from the
+## drawJoints block of the upstream marked-body walk.
+Private Shared Sub DrawMarkedBodyJoints(world As World, renderer As DebugRenderer, options As DebugDrawOptions, body As Body)
+Var jointKey As Integer = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = world.Joints[jointId]
+If world.DebugDrawJointSet.GetBit(jointId) = False Then
+DrawJoint(world, renderer, options, joint)
+world.DebugDrawJointSet.SetBit(jointId)
+End If
+If edgeIndex = 0 Then
+jointKey = joint.Edge0NextKey
+Else
+jointKey = joint.Edge1NextKey
+End If
+Wend
+End Sub
+
+## Draws the awake touching contacts of one marked dynamic body once per
+## contact, ported from the drawContacts block of the upstream marked-body
+## walk. Manifold rows come from the contact's graph colour.
+Private Shared Sub DrawMarkedBodyContacts(world As World, renderer As DebugRenderer, options As DebugDrawOptions, body As Body)
+Var contactKey As Integer = body.HeadContactKey
+While contactKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = contactKey.ShiftRight(1)
+Var edgeIndex As Integer = contactKey.BitAnd(1)
+Var contact As Contact = world.Contacts[contactId]
+# Advance the edge walk once; upstream advances twice with the
+# identical value, which is idempotent.
+If edgeIndex = 0 Then
+contactKey = contact.Edge0NextKey
+Else
+contactKey = contact.Edge1NextKey
+End If
+
+If contact.SetIndex = PhysicsConstants.AWAKE_SET And contact.ColorIndex <> PhysicsConstants.NULL_INDEX Then
+If world.DebugDrawContactSet.GetBit(contactId) = False Then
+Var color As GraphColor = world.ConstraintGraph.Colors[contact.ColorIndex]
+Var manifold As Manifold = color.ContactSims.GetManifold(contact.LocalIndex)
+Var pointCount As Integer = manifold.PointCount
+Var j As Integer = 0
+While j < pointCount
+Var point As ManifoldPoint = manifold.Point1
+If j = 1 Then
+point = manifold.Point2
+End If
+DrawContactPointBounds(renderer, options, point, manifold.Normal, contact.ColorIndex)
+j = j + 1
+Wend
+world.DebugDrawContactSet.SetBit(contactId)
+End If
+End If
+Wend
+End Sub
+
+
+## Builds the world-space point at a body centre offset by a local offset
+## rotated by the body rotation, matching the upstream label placement
+## transform { bodySim->center, bodySim->transform.q }.
+Private Shared Function CenterOffsetPoint(sims As BodySims, simIndex As Integer, offsetX As Double, offsetY As Double) As Vector2
+Var qc As Double = sims.QC.Items[simIndex]
+Var qs As Double = sims.QS.Items[simIndex]
+Return New Vector2(sims.CenterX.Items[simIndex] + qc * offsetX - qs * offsetY, sims.CenterY.Items[simIndex] + qs * offsetX + qc * offsetY)
+End Function
+End Class
+
+# Options controlling what World.DrawDebug draws, ported from the flag and
+# bounds fields of upstream b2DebugDraw in types.h (b2DefaultDebugDraw).
+# The drawing callbacks themselves live on the DebugRenderer passed to
+# World.DrawDebug, so this record stays plain data. Every switch defaults to
+# False like the upstream defaults; enable exactly the layers a frame needs.
+Class DebugDrawOptions
+## World-space region used when UseDrawingBounds is True. Shapes outside
+## the region are skipped entirely, so events and labels of excluded bodies
+## are not drawn either. Ignored otherwise. Zero by default, which is not
+## a valid region; set a real AABB before enabling UseDrawingBounds.
+Property DrawingBounds As AABB
+
+## Restrict drawing to DrawingBounds. May suffer from unstable depth
+## sorting for overlapping moving shapes, matching the upstream comment.
+Property UseDrawingBounds As Boolean
+
+## Draw shape outlines and fills.
+Property DrawShapes As Boolean
+
+## Draw joint ropes and anchors.
+Property DrawJoints As Boolean
+
+## Draw additional information for joints, such as revolute joint angles.
+Property DrawJointExtras As Boolean
+
+## Draw the fat AABB of every drawn shape. In bounds mode the AABBs of the
+## visited shapes are drawn; otherwise every shape of every body is drawn
+## with a body-id label at its centre of mass.
+Property DrawBounds As Boolean
+
+## Draw the centre of mass transform and mass text of dynamic bodies.
+Property DrawMass As Boolean
+
+## Draw body names next to their centre of mass. Bodies without a name are
+## skipped.
+Property DrawBodyNames As Boolean
+
+## Draw contact points for awake touching contacts.
+Property DrawContacts As Boolean
+
+## Draw constraint-graph colour points instead of contact-state colours.
+## Contact points then show which graph colour solves them and joint
+## midpoints show which colour solves each joint.
+Property DrawGraphColors As Boolean
+
+## Draw contact normal arrows. Mutually exclusive with contact impulse
+## arrows: the normal arrows win, matching the upstream else-if chain.
+Property DrawContactNormals As Boolean
+
+## Draw contact normal impulse arrows with milli-newton-second labels.
+## Ignored while DrawContactNormals is set.
+Property DrawContactImpulses As Boolean
+
+## Draw contact feature ids as text.
+Property DrawContactFeatures As Boolean
+
+## Draw contact friction impulse arrows with labels.
+Property DrawFrictionImpulses As Boolean
+
+## Draw island bounds as polygons around every island's shapes.
+Property DrawIslands As Boolean
+
+## Creates the upstream default: every switch off and no drawing bounds.
+## The bounds stay zero because there is no meaningful default world region;
+## enable UseDrawingBounds only after setting a valid DrawingBounds.
+Constructor()
+Me.DrawingBounds = New AABB
+Me.UseDrawingBounds = False
+Me.DrawShapes = False
+Me.DrawJoints = False
+Me.DrawJointExtras = False
+Me.DrawBounds = False
+Me.DrawMass = False
+Me.DrawBodyNames = False
+Me.DrawContacts = False
+Me.DrawGraphColors = False
+Me.DrawContactNormals = False
+Me.DrawContactImpulses = False
+Me.DrawContactFeatures = False
+Me.DrawFrictionImpulses = False
+Me.DrawIslands = False
+End Constructor
+End Class
+
+# Client callback receiving debug-draw primitives, ported from the function
+# pointers of upstream b2DebugDraw in types.h. Every method already has a
+# no-op body matching the upstream b2DefaultDebugDraw stubs, so a renderer
+# implements only the primitives it can draw; unimplemented primitives cost
+# one virtual call and draw nothing. All vectors, transforms, and vertex
+# arrays passed to these methods are reusable engine views: read them inside
+# the call and never retain them, because the next draw call overwrites
+# them. Called between steps with the world unlocked; the renderer may read
+# the world but must not mutate it.
+Abstract Class DebugRenderer
+## Draws a closed polygon provided in counter-clockwise order. The vertex
+## array is a borrowed engine view valid only during the call.
+Sub DrawPolygon(vertices() As Vector2, vertexCount As Integer, color As Colour)
+Pragma Unused vertices
+Pragma Unused vertexCount
+Pragma Unused color
+End Sub
+
+## Draws a solid closed polygon provided in counter-clockwise order. The
+## vertices are in local space; transform places the polygon in the world.
+## Radius rounds convex corners; zero means sharp. The vertex array is a
+## borrowed engine view valid only during the call.
+Sub DrawSolidPolygon(transform As Transform, vertices() As Vector2, vertexCount As Integer, radius As Double, color As Colour)
+Pragma Unused transform
+Pragma Unused vertices
+Pragma Unused vertexCount
+Pragma Unused radius
+Pragma Unused color
+End Sub
+
+## Draws a circle outline.
+Sub DrawCircle(center As Vector2, radius As Double, color As Colour)
+Pragma Unused center
+Pragma Unused radius
+Pragma Unused color
+End Sub
+
+## Draws a solid circle. The centre is transform.P; the rotation is
+## available for textured or shaded renderers.
+Sub DrawSolidCircle(transform As Transform, radius As Double, color As Colour)
+Pragma Unused transform
+Pragma Unused radius
+Pragma Unused color
+End Sub
+
+## Draws a solid capsule between two world-space segment centres.
+Sub DrawSolidCapsule(p1 As Vector2, p2 As Vector2, radius As Double, color As Colour)
+Pragma Unused p1
+Pragma Unused p2
+Pragma Unused radius
+Pragma Unused color
+End Sub
+
+## Draws a line segment between two world-space points.
+Sub DrawSegment(p1 As Vector2, p2 As Vector2, color As Colour)
+Pragma Unused p1
+Pragma Unused p2
+Pragma Unused color
+End Sub
+
+## Draws a transform. Choose a length scale that reads well at the current
+## zoom; physics uses metres.
+Sub DrawTransform(transform As Transform)
+Pragma Unused transform
+End Sub
+
+## Draws a point. The size is a renderer-space extent (upstream passes
+## pixel-space sizes between 4 and 10); world renderers may scale it.
+Sub DrawPoint(p As Vector2, size As Double, color As Colour)
+Pragma Unused p
+Pragma Unused size
+Pragma Unused color
+End Sub
+
+## Draws one line of text at a world-space position. Strings are short
+## labels such as body names or impulse values.
+Sub DrawString(p As Vector2, text As String, color As Colour)
+Pragma Unused p
+Pragma Unused text
+Pragma Unused color
+End Sub
 End Class
 
 # Distance computations, ported from upstream distance.c.
@@ -21557,6 +22330,32 @@ Property mCounters As WorldCounters
 
 ## Reusable profile record; engine-internal.
 Property mProfile As WorldProfile
+
+## Reusable debug-draw context; engine-internal.
+Private Property mDebugDrawContext As WorldDebugDrawContext
+
+## Reused id list collecting the marked bodies of a bounds-mode debug draw.
+## Engine-internal bookkeeping.
+Private Property mDebugDrawIds As IntegerList
+
+## Bit set marking the bodies the last bounds-mode debug draw visited.
+## Engine-internal bookkeeping shared with the reusable debug-draw context
+## and the marked-body walk.
+Property DebugDrawBodySet As BitSet
+
+## Bit set suppressing double draws of joints shared between two marked
+## bodies in a bounds-mode debug draw. Engine-internal bookkeeping.
+Property DebugDrawJointSet As BitSet
+
+## Bit set suppressing double draws of contacts shared between two marked
+## bodies in a bounds-mode debug draw. Engine-internal bookkeeping.
+Property DebugDrawContactSet As BitSet
+
+## Reused four-point array holding the corners of the AABB polygons drawn
+## by a debug draw. Engine-internal bookkeeping; renderer callbacks must
+## not retain the array.
+Property DebugDrawQuad As Array(Of Vector2)
+
 ## Reused local ray cast input for shape casts.
 Private Property mLocalRayInput As RayCastInput
 ## Reused local shape cast input for shape casts.
@@ -21825,6 +22624,258 @@ Me.Validate()
 Return Me.mProfile
 End Function
 
+## Draws the world through a client renderer, ported from b2World_Draw.
+## The renderer receives primitives for the layers enabled in options:
+## shapes, joints, fat AABBs with body-id labels, body names, mass data,
+## awake contact points with normals and impulses, constraint-graph
+## colours, and island bounds. With UseDrawingBounds set, only bodies whose
+## proxies overlap options.DrawingBounds are drawn. Throws while the world
+## is locked, when the renderer or options are missing, or when drawing
+## bounds are requested without a valid AABB. Allocates small view objects
+## per call: debug drawing is an opt-in cold path, not part of the
+## zero-alloc step path. Call between steps; the renderer may read the
+## world but must not mutate it.
+Sub DrawDebug(renderer As DebugRenderer, options As DebugDrawOptions)
+Me.CheckNotLocked()
+Me.CheckDefinition(renderer, "DebugRenderer")
+Me.CheckDefinition(options, "DebugDrawOptions")
+If options.UseDrawingBounds Then
+Me.DrawDebugWithBounds(renderer, options)
+Else
+Me.DrawDebugAll(renderer, options)
+End If
+End Sub
+
+## Bounds-mode draw, ported from b2DrawWithBounds. Tree queries mark the
+## visited bodies; the marked-body walk then draws labels, mass data,
+## joints, and contacts without revisiting shared edges.
+Private Sub DrawDebugWithBounds(renderer As DebugRenderer, options As DebugDrawOptions)
+If Not AABB.IsValid(options.DrawingBounds) Then
+Throw New InvalidArgumentException("Drawing bounds must be a valid AABB when UseDrawingBounds is set")
+End If
+Me.DebugDrawBodySet.SetCountAndClear(Me.BodyIdPool.IdCapacity())
+Me.DebugDrawJointSet.SetCountAndClear(Me.JointIdPool.IdCapacity())
+Me.DebugDrawContactSet.SetCountAndClear(Me.ContactIdPool.IdCapacity())
+Me.mDebugDrawContext.Renderer = renderer
+Me.mDebugDrawContext.Options = options
+Var stats As New TreeStats
+For i As Integer = 0 To 2
+Me.BroadPhase.Trees[i].QueryTo(options.DrawingBounds, PhysicsConstants.DEFAULT_MASK_BITS, Me.mDebugDrawContext, stats)
+Next i
+Me.mDebugDrawIds.Clear()
+Me.DebugDrawBodySet.CollectSetBits(Me.mDebugDrawIds)
+DebugDrawMethods.DrawMarkedBodies(Me, renderer, options, Me.mDebugDrawIds)
+End Sub
+
+## Full draw without bounds restriction, ported from the main body of
+## b2World_Draw. Layers draw in the upstream order: shapes, joints, fat
+## AABBs with body-id labels, body names, mass data, awake contact points,
+## and island bounds.
+Private Sub DrawDebugAll(renderer As DebugRenderer, options As DebugDrawOptions)
+If options.DrawShapes Then
+Me.DrawAllShapes(renderer)
+End If
+
+If options.DrawJoints Then
+Me.DrawAllJoints(renderer, options)
+End If
+
+If options.DrawBounds Then
+Me.DrawAllBounds(renderer)
+End If
+
+If options.DrawBodyNames Then
+Me.DrawAllBodyNames(renderer)
+End If
+
+If options.DrawMass Then
+Me.DrawAllMassData(renderer)
+End If
+
+If options.DrawContacts Then
+Me.DrawAllContacts(renderer, options)
+End If
+
+If options.DrawIslands Then
+Me.DrawAllIslands(renderer)
+End If
+End Sub
+
+## Draws every shape of every body with its state colour, ported from the
+## drawShapes stage of b2World_Draw. Solver-set order keeps the draw
+## deterministic.
+Private Sub DrawAllShapes(renderer As DebugRenderer)
+For setIndex As Integer = 0 To Me.SolverSets.Count - 1
+Var solverSet As SolverSet = Me.SolverSets[setIndex]
+If solverSet <> Nothing Then
+Var sims As BodySims = solverSet.Sims
+Var simCount As Integer = sims.Count()
+For simIndex As Integer = 0 To simCount - 1
+Var body As Body = Me.Bodies[sims.BodyId.Items[simIndex]]
+Var bodyTransform As New Transform(New Vector2(sims.PX.Items[simIndex], sims.PY.Items[simIndex]), New Rot(sims.QC.Items[simIndex], sims.QS.Items[simIndex]))
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+Var color As Colour = DebugDrawMethods.ShapeColor(shape, body, sims)
+DebugDrawMethods.DrawShape(renderer, shape, bodyTransform, color)
+shapeId = shape.NextShapeId
+Wend
+Next simIndex
+End If
+Next setIndex
+End Sub
+
+## Draws every live joint, ported from the drawJoints stage of
+## b2World_Draw.
+Private Sub DrawAllJoints(renderer As DebugRenderer, options As DebugDrawOptions)
+Var jointCount As Integer = Me.Joints.Count
+For i As Integer = 0 To jointCount - 1
+Var joint As Joint = Me.Joints[i]
+If joint.SetIndex <> PhysicsConstants.NULL_INDEX Then
+DebugDrawMethods.DrawJoint(Me, renderer, options, joint)
+End If
+Next i
+End Sub
+
+## Draws every shape's fat AABB in gold with a white body-id label at the
+## body centre, ported from the drawBounds stage of b2World_Draw.
+Private Sub DrawAllBounds(renderer As DebugRenderer)
+For setIndex As Integer = 0 To Me.SolverSets.Count - 1
+Var solverSet As SolverSet = Me.SolverSets[setIndex]
+If solverSet <> Nothing Then
+Var sims As BodySims = solverSet.Sims
+Var simCount As Integer = sims.Count()
+For simIndex As Integer = 0 To simCount - 1
+Var body As Body = Me.Bodies[sims.BodyId.Items[simIndex]]
+renderer.DrawString(New Vector2(sims.CenterX.Items[simIndex], sims.CenterY.Items[simIndex]), body.Id.ToString(), DebugColors.White)
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+DebugDrawMethods.FillQuad(Me.DebugDrawQuad, shape.FatAABB)
+renderer.DrawPolygon(Me.DebugDrawQuad, 4, DebugColors.Gold)
+shapeId = shape.NextShapeId
+Wend
+Next simIndex
+End If
+Next setIndex
+End Sub
+
+## Draws every named body's name next to its centre of mass, ported from
+## the drawBodyNames stage of b2World_Draw.
+Private Sub DrawAllBodyNames(renderer As DebugRenderer)
+Var offset As New Vector2(0.05, 0.05)
+Var bodyCount As Integer = Me.Bodies.Count
+For i As Integer = 0 To bodyCount - 1
+Var body As Body = Me.Bodies[i]
+If body <> Nothing And body.SetIndex <> PhysicsConstants.NULL_INDEX And body.Name.Length > 0 Then
+Var sims As BodySims = Me.GetBodySim(body)
+Var labelTransform As New Transform(New Vector2(sims.CenterX.Items[body.LocalIndex], sims.CenterY.Items[body.LocalIndex]), New Rot(sims.QC.Items[body.LocalIndex], sims.QS.Items[body.LocalIndex]))
+Var labelPoint As Vector2 = Transform.TransformPoint(labelTransform, offset)
+renderer.DrawString(labelPoint, body.Name, DebugColors.BlueViolet)
+End If
+Next i
+End Sub
+
+## Draws the centre-of-mass transform and mass text of every body, ported
+## from the drawMass stage of b2World_Draw. Like upstream, this stage does
+## not filter by body type; static bodies report their zero mass.
+Private Sub DrawAllMassData(renderer As DebugRenderer)
+For setIndex As Integer = 0 To Me.SolverSets.Count - 1
+Var solverSet As SolverSet = Me.SolverSets[setIndex]
+If solverSet <> Nothing Then
+Var sims As BodySims = solverSet.Sims
+Var simCount As Integer = sims.Count()
+For simIndex As Integer = 0 To simCount - 1
+Var massTransform As New Transform(New Vector2(sims.CenterX.Items[simIndex], sims.CenterY.Items[simIndex]), New Rot(sims.QC.Items[simIndex], sims.QS.Items[simIndex]))
+renderer.DrawTransform(massTransform)
+Var mass As Double = 0.0
+If sims.InvMass.Items[simIndex] > 0.0 Then
+mass = 1.0 / sims.InvMass.Items[simIndex]
+End If
+Var labelPoint As Vector2 = Transform.TransformPoint(massTransform, New Vector2(0.1, 0.1))
+renderer.DrawString(labelPoint, "  " + mass.ToString("F2"), DebugColors.White)
+Next simIndex
+End If
+Next setIndex
+End Sub
+
+## Draws every contact point held by the constraint-graph colours, ported
+## from the drawContacts stage of b2World_Draw. Only awake touching
+## contacts live in the graph, matching the upstream source of rows.
+Private Sub DrawAllContacts(renderer As DebugRenderer, options As DebugDrawOptions)
+For colorIndex As Integer = 0 To PhysicsConstants.GRAPH_COLOUR_COUNT - 1
+Var color As GraphColor = Me.ConstraintGraph.Colors[colorIndex]
+Var contactSims As ContactSims = color.ContactSims
+Var contactCount As Integer = contactSims.Count()
+For contactIndex As Integer = 0 To contactCount - 1
+Var manifold As Manifold = contactSims.GetManifold(contactIndex)
+Var pointCount As Integer = manifold.PointCount
+Var j As Integer = 0
+While j < pointCount
+Var point As ManifoldPoint = manifold.Point1
+If j = 1 Then
+point = manifold.Point2
+End If
+DebugDrawMethods.DrawContactPoint(renderer, options, point, manifold.Normal, colorIndex)
+j = j + 1
+Wend
+Next contactIndex
+Next colorIndex
+End Sub
+
+## Draws a bounds polygon around every live island's shapes, ported from
+## the drawIslands stage of b2World_Draw.
+Private Sub DrawAllIslands(renderer As DebugRenderer)
+Var islandCount As Integer = Me.Islands.Count
+For i As Integer = 0 To islandCount - 1
+Var island As Island = Me.Islands[i]
+If island.SetIndex <> PhysicsConstants.NULL_INDEX Then
+Me.DrawIslandBounds(renderer, island)
+End If
+Next i
+End Sub
+
+## Unions the fat AABBs of one island's shapes and draws the polygon,
+## ported from the island body walk of b2World_Draw.
+Private Sub DrawIslandBounds(renderer As DebugRenderer, island As Island)
+Var shapeCount As Integer = 0
+Var minX As Double = Double.Infinity
+Var minY As Double = Double.Infinity
+Var maxX As Double = -Double.Infinity
+Var maxY As Double = -Double.Infinity
+Var bodyId As Integer = island.HeadBody
+While bodyId <> PhysicsConstants.NULL_INDEX
+Var body As Body = Me.Bodies[bodyId]
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+If shape.FatAABB.LowerBound.X < minX Then
+minX = shape.FatAABB.LowerBound.X
+End If
+If shape.FatAABB.LowerBound.Y < minY Then
+minY = shape.FatAABB.LowerBound.Y
+End If
+If shape.FatAABB.UpperBound.X > maxX Then
+maxX = shape.FatAABB.UpperBound.X
+End If
+If shape.FatAABB.UpperBound.Y > maxY Then
+maxY = shape.FatAABB.UpperBound.Y
+End If
+shapeCount = shapeCount + 1
+shapeId = shape.NextShapeId
+Wend
+bodyId = body.IslandNext
+Wend
+If shapeCount > 0 Then
+Me.DebugDrawQuad[0].Set(minX, minY)
+Me.DebugDrawQuad[1].Set(maxX, minY)
+Me.DebugDrawQuad[2].Set(maxX, maxY)
+Me.DebugDrawQuad[3].Set(minX, maxY)
+renderer.DrawPolygon(Me.DebugDrawQuad, 4, DebugColors.OrangeRed)
+End If
+End Sub
+
+
 ## Collides a capsule mover against the world and registers one collision
 ## plane per overlapping shape, ported from b2World_CollideMover. The
 ## callback receives each hit shape and its world-space plane result and
@@ -21987,6 +23038,17 @@ Me.mMoverCollideContext = New WorldMoverCollideContext
 Me.mExplosionContext = New ExplosionContext
 Me.mCounters = New WorldCounters
 Me.mProfile = New WorldProfile
+Me.mDebugDrawContext = New WorldDebugDrawContext
+Me.mDebugDrawContext.Owner = Me
+Me.mDebugDrawIds = New IntegerList
+Me.DebugDrawBodySet = New BitSet(16)
+Me.DebugDrawJointSet = New BitSet(16)
+Me.DebugDrawContactSet = New BitSet(16)
+Me.DebugDrawQuad = New Array(Of Vector2)
+Me.DebugDrawQuad.Append(New Vector2)
+Me.DebugDrawQuad.Append(New Vector2)
+Me.DebugDrawQuad.Append(New Vector2)
+Me.DebugDrawQuad.Append(New Vector2)
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
 Me.mTransformScratchB = New Transform
@@ -27181,6 +28243,56 @@ Property ColorCounts() As Integer
 Constructor()
 Me.ColorCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 End Constructor
+End Class
+
+# Engine-internal tree query adapter for bounds-mode debug drawing, ported
+# from upstream DrawContext/DrawQueryCallback in world.c. One instance is
+# owned by the World and reused across draws. Every leaf inside the drawing
+# bounds marks its body for the label, joint, and contact passes and draws
+# the shape and its fat AABB when the options ask for them.
+Class WorldDebugDrawContext Inherits TreeQueryCallback
+## The world driving the draw.
+Property Owner As World
+
+## The renderer receiving the primitives.
+Property Renderer As DebugRenderer
+
+## The layer switches for this draw.
+Property Options As DebugDrawOptions
+
+## Creates an unbound context; the world fills the fields per draw.
+Constructor()
+Me.Owner = Nothing
+Me.Renderer = Nothing
+Me.Options = Nothing
+End Constructor
+
+## Tree leaf visit: mark the body, then draw the shape with its state
+## colour and the fat AABB polygon when enabled. Always continues the
+## traversal, matching the upstream callback.
+Override Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Var shape As Shape = Me.Owner.Shapes[userData]
+If Not shape.Live Then
+Return True
+End If
+Var body As Body = Me.Owner.Bodies[shape.BodyId]
+Me.Owner.DebugDrawBodySet.SetBit(body.Id)
+
+If Me.Options.DrawShapes Then
+Var sims As BodySims = Me.Owner.GetBodySim(body)
+Var color As Colour = DebugDrawMethods.ShapeColor(shape, body, sims)
+Var transform As New Transform(New Vector2(sims.PX.Items[body.LocalIndex], sims.PY.Items[body.LocalIndex]), New Rot(sims.QC.Items[body.LocalIndex], sims.QS.Items[body.LocalIndex]))
+DebugDrawMethods.DrawShape(Me.Renderer, shape, transform, color)
+End If
+
+If Me.Options.DrawBounds Then
+DebugDrawMethods.FillQuad(Me.Owner.DebugDrawQuad, shape.FatAABB)
+Me.Renderer.DrawPolygon(Me.Owner.DebugDrawQuad, 4, DebugColors.Gold)
+End If
+
+Return True
+End Function
 End Class
 
 # Reusable view over the world's internal event buffers, valid until the

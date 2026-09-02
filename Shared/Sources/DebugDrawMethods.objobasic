@@ -1,0 +1,454 @@
+# Debug-draw helpers shared by the two World.DrawDebug paths, ported from
+# b2DrawShape, b2DrawJoint, the four per-family b2Draw*Joint functions, and
+# the contact-point blocks of b2World_Draw in Box2D 3.1.1. Engine-internal
+# infrastructure: applications implement DebugRenderer and call
+# World.DrawDebug instead of calling into this class.
+#
+# Debug drawing is an opt-in cold path and is allowed to allocate the small
+# view objects the C version keeps on the stack. It is never part of the
+# zero-alloc step path.
+Class DebugDrawMethods
+## Selects the debug colour of a shape from its body and sensor state,
+## ported from the shared colour ladder of upstream DrawQueryCallback and
+## b2World_Draw. Custom shape colours win, then bad dynamic bodies, then
+## disabled bodies, sensors, bullets, speed-capped and fast bodies, and
+## finally the body type and sleep state.
+Shared Function ShapeColor(shape As Shape, body As Body, sims As BodySims) As Colour
+If shape.CustomColor <> 0 Then
+Var hex As Integer = shape.CustomColor
+Return Colour.RGB(hex.ShiftRight(16).BitAnd(255), hex.ShiftRight(8).BitAnd(255), hex.BitAnd(255))
+End If
+If body.Type = BodyType.DynamicBody And body.Mass = 0.0 Then
+Return DebugColors.Red
+End If
+If body.SetIndex = PhysicsConstants.DISABLED_SET Then
+Return DebugColors.SlateGray
+End If
+If shape.SensorIndex <> PhysicsConstants.NULL_INDEX Then
+Return DebugColors.Wheat
+End If
+If sims.IsBullet.Items[body.LocalIndex] <> 0 And body.SetIndex = PhysicsConstants.AWAKE_SET Then
+Return DebugColors.Turquoise
+End If
+If body.IsSpeedCapped Then
+Return DebugColors.Yellow
+End If
+If sims.IsFast.Items[body.LocalIndex] <> 0 Then
+Return DebugColors.Salmon
+End If
+If body.Type = BodyType.StaticBody Then
+Return DebugColors.PaleGreen
+End If
+If body.Type = BodyType.KinematicBody Then
+Return DebugColors.RoyalBlue
+End If
+If body.SetIndex = PhysicsConstants.AWAKE_SET Then
+Return DebugColors.Pink
+End If
+Return DebugColors.Gray
+End Function
+
+## Draws one shape in world space, ported from b2DrawShape. Circles become
+## solid circles, polygons become solid polygons with their rounding
+## radius, segments and chain segments become line segments, and chain
+## segments add an end point plus a short pale-green ghost link.
+Shared Sub DrawShape(renderer As DebugRenderer, shape As Shape, bodyTransform As Transform, color As Colour)
+If shape.Type = ShapeType.CapsuleShape Then
+Var capsule As Capsule = shape.Capsule
+Var p1 As Vector2 = Transform.TransformPoint(bodyTransform, capsule.Center1)
+Var p2 As Vector2 = Transform.TransformPoint(bodyTransform, capsule.Center2)
+renderer.DrawSolidCapsule(p1, p2, capsule.Radius, color)
+ElseIf shape.Type = ShapeType.CircleShape Then
+Var circle As Circle = shape.Circle
+Var center As Vector2 = Transform.TransformPoint(bodyTransform, circle.Center)
+Var circleTransform As New Transform(center, bodyTransform.Q)
+renderer.DrawSolidCircle(circleTransform, circle.Radius, color)
+ElseIf shape.Type = ShapeType.PolygonShape Then
+Var polygon As Polygon = shape.Polygon
+renderer.DrawSolidPolygon(bodyTransform, polygon.Vertices, polygon.Count, polygon.Radius, color)
+ElseIf shape.Type = ShapeType.SegmentShape Then
+Var segment As Segment = shape.Segment
+Var p1 As Vector2 = Transform.TransformPoint(bodyTransform, segment.Point1)
+Var p2 As Vector2 = Transform.TransformPoint(bodyTransform, segment.Point2)
+renderer.DrawSegment(p1, p2, color)
+ElseIf shape.Type = ShapeType.ChainSegmentShape Then
+Var chainSegment As Segment = shape.ChainSegment.Segment
+Var p1 As Vector2 = Transform.TransformPoint(bodyTransform, chainSegment.Point1)
+Var p2 As Vector2 = Transform.TransformPoint(bodyTransform, chainSegment.Point2)
+renderer.DrawSegment(p1, p2, color)
+renderer.DrawPoint(p2, 4.0, color)
+renderer.DrawSegment(p1, Vector2.Lerp(p1, p2, 0.1), DebugColors.PaleGreen)
+End If
+End Sub
+
+## Fills a reusable four-point array with the corners of an axis-aligned
+## box in the upstream vertex order: lower, lower-right, upper, upper-left.
+Shared Sub FillQuad(quad As Array(Of Vector2), box As AABB)
+quad[0].Set(box.LowerBound.X, box.LowerBound.Y)
+quad[1].Set(box.UpperBound.X, box.LowerBound.Y)
+quad[2].Set(box.UpperBound.X, box.UpperBound.Y)
+quad[3].Set(box.LowerBound.X, box.UpperBound.Y)
+End Sub
+
+## Draws one joint, ported from b2DrawJoint. Joints with a disabled body
+## are skipped. Each family draws its own decoration; the remaining
+## families draw the generic three-segment rope in dark sea green. A graph
+## colour point marks the joint midpoint when requested.
+Shared Sub DrawJoint(world As World, renderer As DebugRenderer, options As DebugDrawOptions, joint As Joint)
+Var bodyA As Body = world.Bodies[joint.Edge0BodyId]
+Var bodyB As Body = world.Bodies[joint.Edge1BodyId]
+If bodyA.SetIndex = PhysicsConstants.DISABLED_SET Or bodyB.SetIndex = PhysicsConstants.DISABLED_SET Then
+Return
+End If
+
+Var sims As JointSims = world.GetJointSims(joint)
+Var index As Integer = joint.LocalIndex
+Var transformA As Transform = world.GetBodyTransform(bodyA)
+Var transformB As Transform = world.GetBodyTransform(bodyB)
+Var pA As Vector2 = Transform.TransformPoint(transformA, New Vector2(sims.LocalOriginAnchorAX.Items[index], sims.LocalOriginAnchorAY.Items[index]))
+Var pB As Vector2 = Transform.TransformPoint(transformB, New Vector2(sims.LocalOriginAnchorBX.Items[index], sims.LocalOriginAnchorBY.Items[index]))
+
+If joint.Type = JointType.DistanceJoint Then
+DrawDistanceJoint(renderer, sims, index, pA, pB)
+ElseIf joint.Type = JointType.MouseJoint Then
+Var target As New Vector2(sims.MouseTargetX.Items[index], sims.MouseTargetY.Items[index])
+renderer.DrawPoint(target, 4.0, DebugColors.Green)
+renderer.DrawPoint(pB, 4.0, DebugColors.Green)
+renderer.DrawSegment(target, pB, DebugColors.LightGray)
+ElseIf joint.Type = JointType.FilterJoint Then
+renderer.DrawSegment(pA, pB, DebugColors.Gold)
+ElseIf joint.Type = JointType.PrismaticJoint Then
+DrawPrismaticJoint(renderer, sims, index, transformA, pA, pB)
+ElseIf joint.Type = JointType.RevoluteJoint Then
+DrawRevoluteJoint(renderer, options, sims, index, transformA, transformB, pA, pB, joint.DrawSize)
+ElseIf joint.Type = JointType.WheelJoint Then
+DrawWheelJoint(renderer, sims, index, transformA, pA, pB)
+Else
+# Motor and weld joints draw the generic rope.
+renderer.DrawSegment(transformA.P, pA, DebugColors.DarkSeaGreen)
+renderer.DrawSegment(pA, pB, DebugColors.DarkSeaGreen)
+renderer.DrawSegment(transformB.P, pB, DebugColors.DarkSeaGreen)
+End If
+
+If options.DrawGraphColors And joint.ColorIndex <> PhysicsConstants.NULL_INDEX Then
+renderer.DrawPoint(Vector2.Lerp(pA, pB, 0.5), 5.0, DebugColors.GraphColor(joint.ColorIndex))
+End If
+End Sub
+
+## Draws a distance joint, ported from b2DrawDistanceJoint. The rope is
+## white with white anchor points; enabled limits draw their ticks and the
+## range line, and a soft spring marks its rest length in blue. Physics2D
+## pins one metre per length unit, so the upstream 0.05 *
+## b2_lengthUnitsPerMeter tick offset is 0.05 m.
+Private Shared Sub DrawDistanceJoint(renderer As DebugRenderer, sims As JointSims, index As Integer, pA As Vector2, pB As Vector2)
+Var axis As Vector2 = (pB - pA).Normalized()
+
+If sims.MinLength.Items[index] < sims.MaxLength.Items[index] And sims.EnableLimit.Items[index] <> 0 Then
+Var pMin As Vector2 = pA + axis * sims.MinLength.Items[index]
+Var pMax As Vector2 = pA + axis * sims.MaxLength.Items[index]
+Var offset As Vector2 = axis.RightPerpendicular() * 0.05
+
+If sims.MinLength.Items[index] > PhysicsConstants.LINEAR_SLOP Then
+renderer.DrawSegment(pMin - offset, pMin + offset, DebugColors.LightGreen)
+End If
+
+If sims.MaxLength.Items[index] < PhysicsConstants.POSITION_LIMIT Then
+renderer.DrawSegment(pMax - offset, pMax + offset, DebugColors.Red)
+End If
+
+If sims.MinLength.Items[index] > PhysicsConstants.LINEAR_SLOP And sims.MaxLength.Items[index] < PhysicsConstants.POSITION_LIMIT Then
+renderer.DrawSegment(pMin, pMax, DebugColors.Gray)
+End If
+End If
+
+renderer.DrawSegment(pA, pB, DebugColors.White)
+renderer.DrawPoint(pA, 4.0, DebugColors.White)
+renderer.DrawPoint(pB, 4.0, DebugColors.White)
+
+If sims.Hertz.Items[index] > 0.0 And sims.EnableSpring.Items[index] <> 0 Then
+Var pRest As Vector2 = pA + axis * sims.Length.Items[index]
+renderer.DrawPoint(pRest, 4.0, DebugColors.Blue)
+End If
+End Sub
+
+## Draws a prismatic joint, ported from b2DrawPrismaticJoint. The slide
+## axis is body A's local axis rotated into world space. Enabled limits
+## draw the range line with green and red end ticks; without limits the
+## infinite axis line is drawn instead.
+Private Shared Sub DrawPrismaticJoint(renderer As DebugRenderer, sims As JointSims, index As Integer, transformA As Transform, pA As Vector2, pB As Vector2)
+Var axis As New Vector2(transformA.Q.C * sims.PrismaticLocalAxisX.Items[index] - transformA.Q.S * sims.PrismaticLocalAxisY.Items[index], transformA.Q.S * sims.PrismaticLocalAxisX.Items[index] + transformA.Q.C * sims.PrismaticLocalAxisY.Items[index])
+
+renderer.DrawSegment(pA, pB, DebugColors.DimGray)
+
+If sims.EnableLimit.Items[index] <> 0 Then
+Var lower As Vector2 = pA + axis * sims.PrismaticLowerTranslation.Items[index]
+Var upper As Vector2 = pA + axis * sims.PrismaticUpperTranslation.Items[index]
+Var perp As Vector2 = axis.LeftPerpendicular()
+renderer.DrawSegment(lower, upper, DebugColors.Gray)
+renderer.DrawSegment(lower - perp * 0.1, lower + perp * 0.1, DebugColors.Green)
+renderer.DrawSegment(upper - perp * 0.1, upper + perp * 0.1, DebugColors.Red)
+Else
+renderer.DrawSegment(pA - axis, pA + axis, DebugColors.Gray)
+End If
+
+renderer.DrawPoint(pA, 5.0, DebugColors.Gray)
+renderer.DrawPoint(pB, 5.0, DebugColors.Blue)
+End Sub
+
+## Draws a revolute joint, ported from b2DrawRevoluteJoint. A circle of
+## DrawSize radius marks the hinge with its relative angle spoke; enabled
+## limits draw green and red spokes with the blue reference spoke.
+Private Shared Sub DrawRevoluteJoint(renderer As DebugRenderer, options As DebugDrawOptions, sims As JointSims, index As Integer, transformA As Transform, transformB As Transform, pA As Vector2, pB As Vector2, drawSize As Double)
+Var l As Double = drawSize
+renderer.DrawCircle(pB, l, DebugColors.Gray)
+
+Var angle As Double = RelativeAngle(transformB.Q, transformA.Q)
+Var angleRot As Rot = Rot.Make(angle)
+Var pC As Vector2 = pB + New Vector2(l * angleRot.C, l * angleRot.S)
+renderer.DrawSegment(pB, pC, DebugColors.Gray)
+
+If options.DrawJointExtras Then
+Var jointAngle As Double = PhysicsMaths.UnwindAngle(angle - sims.RevoluteReferenceAngle.Items[index])
+renderer.DrawString(pC, " " + (180.0 * jointAngle / PhysicsConstants.PI).ToString("F1") + " deg", DebugColors.White)
+End If
+
+If sims.EnableLimit.Items[index] <> 0 Then
+Var lowerAngle As Double = sims.RevoluteLowerAngle.Items[index] + sims.RevoluteReferenceAngle.Items[index]
+Var upperAngle As Double = sims.RevoluteUpperAngle.Items[index] + sims.RevoluteReferenceAngle.Items[index]
+
+Var rotLo As Rot = Rot.Make(lowerAngle)
+Var rotHi As Rot = Rot.Make(upperAngle)
+Var rotRef As Rot = Rot.Make(sims.RevoluteReferenceAngle.Items[index])
+
+renderer.DrawSegment(pB, pB + New Vector2(l * rotLo.C, l * rotLo.S), DebugColors.Green)
+renderer.DrawSegment(pB, pB + New Vector2(l * rotHi.C, l * rotHi.S), DebugColors.Red)
+renderer.DrawSegment(pB, pB + New Vector2(l * rotRef.C, l * rotRef.S), DebugColors.Blue)
+End If
+
+renderer.DrawSegment(transformA.P, pA, DebugColors.Gold)
+renderer.DrawSegment(pA, pB, DebugColors.Gold)
+renderer.DrawSegment(transformB.P, pB, DebugColors.Gold)
+End Sub
+
+## Draws a wheel joint, ported from b2DrawWheelJoint. Like the prismatic
+## joint but with a blue suspension rope and a dim-gray anchor B point.
+Private Shared Sub DrawWheelJoint(renderer As DebugRenderer, sims As JointSims, index As Integer, transformA As Transform, pA As Vector2, pB As Vector2)
+Var axis As New Vector2(transformA.Q.C * sims.WheelLocalAxisX.Items[index] - transformA.Q.S * sims.WheelLocalAxisY.Items[index], transformA.Q.S * sims.WheelLocalAxisX.Items[index] + transformA.Q.C * sims.WheelLocalAxisY.Items[index])
+
+renderer.DrawSegment(pA, pB, DebugColors.Blue)
+
+If sims.EnableLimit.Items[index] <> 0 Then
+Var lower As Vector2 = pA + axis * sims.WheelLowerTranslation.Items[index]
+Var upper As Vector2 = pA + axis * sims.WheelUpperTranslation.Items[index]
+Var perp As Vector2 = axis.LeftPerpendicular()
+renderer.DrawSegment(lower, upper, DebugColors.Gray)
+renderer.DrawSegment(lower - perp * 0.1, lower + perp * 0.1, DebugColors.Green)
+renderer.DrawSegment(upper - perp * 0.1, upper + perp * 0.1, DebugColors.Red)
+Else
+renderer.DrawSegment(pA - axis, pA + axis, DebugColors.Gray)
+End If
+
+renderer.DrawPoint(pA, 5.0, DebugColors.Gray)
+renderer.DrawPoint(pB, 5.0, DebugColors.DimGray)
+End Sub
+
+## Returns the signed relative angle from rotation a to rotation b in
+## [-pi, pi], ported from b2RelativeAngle.
+Private Shared Function RelativeAngle(b As Rot, a As Rot) As Double
+Var s As Double = b.S * a.C - b.C * a.S
+Var c As Double = b.C * a.C + b.S * a.S
+Return PhysicsMaths.Atan2(s, c)
+End Function
+
+## Draws one contact point of an awake touching contact in the graph walk,
+## ported from the drawContacts block of b2World_Draw. Labels use the
+## total normal impulse in milli-impulses and the raw tangent impulse,
+## preserving the upstream format strings.
+Shared Sub DrawContactPoint(renderer As DebugRenderer, options As DebugDrawOptions, point As ManifoldPoint, normal As Vector2, colorIndex As Integer)
+If options.DrawGraphColors Then
+Var pointSize As Double = 5.0
+If colorIndex = PhysicsConstants.GRAPH_OVERFLOW_INDEX Then
+pointSize = 7.5
+End If
+renderer.DrawPoint(point.Point, pointSize, DebugColors.GraphColor(colorIndex))
+ElseIf point.Separation > PhysicsConstants.LINEAR_SLOP Then
+renderer.DrawPoint(point.Point, 5.0, DebugColors.LightGray)
+ElseIf point.Persisted = False Then
+renderer.DrawPoint(point.Point, 10.0, DebugColors.Green)
+Else
+renderer.DrawPoint(point.Point, 5.0, DebugColors.Blue)
+End If
+
+If options.DrawContactNormals Then
+renderer.DrawSegment(point.Point, point.Point + normal * 0.3, DebugColors.DimGray)
+ElseIf options.DrawContactImpulses Then
+renderer.DrawSegment(point.Point, point.Point + normal * point.TotalNormalImpulse, DebugColors.Magenta)
+renderer.DrawString(point.Point, (1000.0 * point.TotalNormalImpulse).ToString("F2"), DebugColors.White)
+End If
+
+If options.DrawContactFeatures Then
+renderer.DrawString(point.Point, point.Id.ToString(), DebugColors.Orange)
+End If
+
+If options.DrawFrictionImpulses Then
+Var tangent As Vector2 = normal.RightPerpendicular()
+renderer.DrawSegment(point.Point, point.Point + tangent * point.TangentImpulse, DebugColors.Yellow)
+renderer.DrawString(point.Point, point.TangentImpulse.ToString("F2"), DebugColors.White)
+End If
+End Sub
+
+## Draws one contact point in the bounds-mode body walk, ported from the
+## contact block of upstream DrawQueryCallback. The bounds path labels
+## normal and friction impulses in milli-impulses with one decimal and
+## uses gainsboro for speculative points, exactly like upstream; both
+## paths keep their own label conventions.
+Shared Sub DrawContactPointBounds(renderer As DebugRenderer, options As DebugDrawOptions, point As ManifoldPoint, normal As Vector2, colorIndex As Integer)
+If options.DrawGraphColors Then
+Var pointSize As Double = 5.0
+If colorIndex = PhysicsConstants.GRAPH_OVERFLOW_INDEX Then
+pointSize = 7.5
+End If
+renderer.DrawPoint(point.Point, pointSize, DebugColors.GraphColor(colorIndex))
+ElseIf point.Separation > PhysicsConstants.LINEAR_SLOP Then
+renderer.DrawPoint(point.Point, 5.0, DebugColors.Gainsboro)
+ElseIf point.Persisted = False Then
+renderer.DrawPoint(point.Point, 10.0, DebugColors.Green)
+Else
+renderer.DrawPoint(point.Point, 5.0, DebugColors.Blue)
+End If
+
+If options.DrawContactNormals Then
+renderer.DrawSegment(point.Point, point.Point + normal * 0.3, DebugColors.DimGray)
+ElseIf options.DrawContactImpulses Then
+renderer.DrawSegment(point.Point, point.Point + normal * point.NormalImpulse, DebugColors.Magenta)
+renderer.DrawString(point.Point, (1000.0 * point.NormalImpulse).ToString("F1"), DebugColors.White)
+End If
+
+If options.DrawContactFeatures Then
+renderer.DrawString(point.Point, point.Id.ToString(), DebugColors.Orange)
+End If
+
+If options.DrawFrictionImpulses Then
+Var tangent As Vector2 = normal.RightPerpendicular()
+renderer.DrawSegment(point.Point, point.Point + tangent * point.TangentImpulse, DebugColors.Yellow)
+renderer.DrawString(point.Point, (1000.0 * point.TangentImpulse).ToString("F1"), DebugColors.White)
+End If
+End Sub
+
+## Draws the names, mass data, joints, and contacts of the bodies the
+## bounds-mode tree query marked, ported from the marked-body walk of
+## b2DrawWithBounds. Ids arrive in ascending order from the bit-set
+## collection, and the joint and contact sets suppress double drawing of
+## edges shared between two marked bodies.
+Shared Sub DrawMarkedBodies(world As World, renderer As DebugRenderer, options As DebugDrawOptions, bodyIds As IntegerList)
+Var count As Integer = bodyIds.Count
+Var i As Integer = 0
+While i < count
+Var body As Body = world.Bodies[bodyIds.Items[i]]
+Var sims As BodySims = world.GetBodySim(body)
+If options.DrawBodyNames Then
+DrawMarkedBodyName(sims, body, renderer)
+End If
+
+If options.DrawMass And body.Type = BodyType.DynamicBody Then
+DrawMarkedBodyMass(sims, body, renderer)
+End If
+
+If options.DrawJoints Then
+DrawMarkedBodyJoints(world, renderer, options, body)
+End If
+
+If options.DrawContacts And body.Type = BodyType.DynamicBody And body.SetIndex = PhysicsConstants.AWAKE_SET Then
+DrawMarkedBodyContacts(world, renderer, options, body)
+End If
+
+i = i + 1
+Wend
+End Sub
+
+## Draws one marked body's name next to its centre of mass, ported from
+## the drawBodyNames block of the upstream marked-body walk.
+Private Shared Sub DrawMarkedBodyName(sims As BodySims, body As Body, renderer As DebugRenderer)
+If body.Name.Length = 0 Then
+Return
+End If
+Var namePoint As Vector2 = CenterOffsetPoint(sims, body.LocalIndex, 0.1, 0.1)
+renderer.DrawString(namePoint, body.Name, DebugColors.BlueViolet)
+End Sub
+
+## Draws one marked dynamic body's centre-of-mass transform and mass text,
+## ported from the drawMass block of the upstream marked-body walk.
+Private Shared Sub DrawMarkedBodyMass(sims As BodySims, body As Body, renderer As DebugRenderer)
+Var massTransform As New Transform(New Vector2(sims.CenterX.Items[body.LocalIndex], sims.CenterY.Items[body.LocalIndex]), New Rot(sims.QC.Items[body.LocalIndex], sims.QS.Items[body.LocalIndex]))
+renderer.DrawTransform(massTransform)
+Var massPoint As Vector2 = Transform.TransformPoint(massTransform, New Vector2(0.1, 0.1))
+renderer.DrawString(massPoint, "  " + body.Mass.ToString("F2"), DebugColors.White)
+End Sub
+
+## Draws the joints of one marked body once per joint, ported from the
+## drawJoints block of the upstream marked-body walk.
+Private Shared Sub DrawMarkedBodyJoints(world As World, renderer As DebugRenderer, options As DebugDrawOptions, body As Body)
+Var jointKey As Integer = body.HeadJointKey
+While jointKey <> PhysicsConstants.NULL_INDEX
+Var jointId As Integer = jointKey.ShiftRight(1)
+Var edgeIndex As Integer = jointKey.BitAnd(1)
+Var joint As Joint = world.Joints[jointId]
+If world.DebugDrawJointSet.GetBit(jointId) = False Then
+DrawJoint(world, renderer, options, joint)
+world.DebugDrawJointSet.SetBit(jointId)
+End If
+If edgeIndex = 0 Then
+jointKey = joint.Edge0NextKey
+Else
+jointKey = joint.Edge1NextKey
+End If
+Wend
+End Sub
+
+## Draws the awake touching contacts of one marked dynamic body once per
+## contact, ported from the drawContacts block of the upstream marked-body
+## walk. Manifold rows come from the contact's graph colour.
+Private Shared Sub DrawMarkedBodyContacts(world As World, renderer As DebugRenderer, options As DebugDrawOptions, body As Body)
+Var contactKey As Integer = body.HeadContactKey
+While contactKey <> PhysicsConstants.NULL_INDEX
+Var contactId As Integer = contactKey.ShiftRight(1)
+Var edgeIndex As Integer = contactKey.BitAnd(1)
+Var contact As Contact = world.Contacts[contactId]
+# Advance the edge walk once; upstream advances twice with the
+# identical value, which is idempotent.
+If edgeIndex = 0 Then
+contactKey = contact.Edge0NextKey
+Else
+contactKey = contact.Edge1NextKey
+End If
+
+If contact.SetIndex = PhysicsConstants.AWAKE_SET And contact.ColorIndex <> PhysicsConstants.NULL_INDEX Then
+If world.DebugDrawContactSet.GetBit(contactId) = False Then
+Var color As GraphColor = world.ConstraintGraph.Colors[contact.ColorIndex]
+Var manifold As Manifold = color.ContactSims.GetManifold(contact.LocalIndex)
+Var pointCount As Integer = manifold.PointCount
+Var j As Integer = 0
+While j < pointCount
+Var point As ManifoldPoint = manifold.Point1
+If j = 1 Then
+point = manifold.Point2
+End If
+DrawContactPointBounds(renderer, options, point, manifold.Normal, contact.ColorIndex)
+j = j + 1
+Wend
+world.DebugDrawContactSet.SetBit(contactId)
+End If
+End If
+Wend
+End Sub
+
+
+## Builds the world-space point at a body centre offset by a local offset
+## rotated by the body rotation, matching the upstream label placement
+## transform { bodySim->center, bodySim->transform.q }.
+Private Shared Function CenterOffsetPoint(sims As BodySims, simIndex As Integer, offsetX As Double, offsetY As Double) As Vector2
+Var qc As Double = sims.QC.Items[simIndex]
+Var qs As Double = sims.QS.Items[simIndex]
+Return New Vector2(sims.CenterX.Items[simIndex] + qc * offsetX - qs * offsetY, sims.CenterY.Items[simIndex] + qs * offsetX + qc * offsetY)
+End Function
+End Class

@@ -121,6 +121,32 @@ Property mCounters As WorldCounters
 
 ## Reusable profile record; engine-internal.
 Property mProfile As WorldProfile
+
+## Reusable debug-draw context; engine-internal.
+Private Property mDebugDrawContext As WorldDebugDrawContext
+
+## Reused id list collecting the marked bodies of a bounds-mode debug draw.
+## Engine-internal bookkeeping.
+Private Property mDebugDrawIds As IntegerList
+
+## Bit set marking the bodies the last bounds-mode debug draw visited.
+## Engine-internal bookkeeping shared with the reusable debug-draw context
+## and the marked-body walk.
+Property DebugDrawBodySet As BitSet
+
+## Bit set suppressing double draws of joints shared between two marked
+## bodies in a bounds-mode debug draw. Engine-internal bookkeeping.
+Property DebugDrawJointSet As BitSet
+
+## Bit set suppressing double draws of contacts shared between two marked
+## bodies in a bounds-mode debug draw. Engine-internal bookkeeping.
+Property DebugDrawContactSet As BitSet
+
+## Reused four-point array holding the corners of the AABB polygons drawn
+## by a debug draw. Engine-internal bookkeeping; renderer callbacks must
+## not retain the array.
+Property DebugDrawQuad As Array(Of Vector2)
+
 ## Reused local ray cast input for shape casts.
 Private Property mLocalRayInput As RayCastInput
 ## Reused local shape cast input for shape casts.
@@ -389,6 +415,258 @@ Me.Validate()
 Return Me.mProfile
 End Function
 
+## Draws the world through a client renderer, ported from b2World_Draw.
+## The renderer receives primitives for the layers enabled in options:
+## shapes, joints, fat AABBs with body-id labels, body names, mass data,
+## awake contact points with normals and impulses, constraint-graph
+## colours, and island bounds. With UseDrawingBounds set, only bodies whose
+## proxies overlap options.DrawingBounds are drawn. Throws while the world
+## is locked, when the renderer or options are missing, or when drawing
+## bounds are requested without a valid AABB. Allocates small view objects
+## per call: debug drawing is an opt-in cold path, not part of the
+## zero-alloc step path. Call between steps; the renderer may read the
+## world but must not mutate it.
+Sub DrawDebug(renderer As DebugRenderer, options As DebugDrawOptions)
+Me.CheckNotLocked()
+Me.CheckDefinition(renderer, "DebugRenderer")
+Me.CheckDefinition(options, "DebugDrawOptions")
+If options.UseDrawingBounds Then
+Me.DrawDebugWithBounds(renderer, options)
+Else
+Me.DrawDebugAll(renderer, options)
+End If
+End Sub
+
+## Bounds-mode draw, ported from b2DrawWithBounds. Tree queries mark the
+## visited bodies; the marked-body walk then draws labels, mass data,
+## joints, and contacts without revisiting shared edges.
+Private Sub DrawDebugWithBounds(renderer As DebugRenderer, options As DebugDrawOptions)
+If Not AABB.IsValid(options.DrawingBounds) Then
+Throw New InvalidArgumentException("Drawing bounds must be a valid AABB when UseDrawingBounds is set")
+End If
+Me.DebugDrawBodySet.SetCountAndClear(Me.BodyIdPool.IdCapacity())
+Me.DebugDrawJointSet.SetCountAndClear(Me.JointIdPool.IdCapacity())
+Me.DebugDrawContactSet.SetCountAndClear(Me.ContactIdPool.IdCapacity())
+Me.mDebugDrawContext.Renderer = renderer
+Me.mDebugDrawContext.Options = options
+Var stats As New TreeStats
+For i As Integer = 0 To 2
+Me.BroadPhase.Trees[i].QueryTo(options.DrawingBounds, PhysicsConstants.DEFAULT_MASK_BITS, Me.mDebugDrawContext, stats)
+Next i
+Me.mDebugDrawIds.Clear()
+Me.DebugDrawBodySet.CollectSetBits(Me.mDebugDrawIds)
+DebugDrawMethods.DrawMarkedBodies(Me, renderer, options, Me.mDebugDrawIds)
+End Sub
+
+## Full draw without bounds restriction, ported from the main body of
+## b2World_Draw. Layers draw in the upstream order: shapes, joints, fat
+## AABBs with body-id labels, body names, mass data, awake contact points,
+## and island bounds.
+Private Sub DrawDebugAll(renderer As DebugRenderer, options As DebugDrawOptions)
+If options.DrawShapes Then
+Me.DrawAllShapes(renderer)
+End If
+
+If options.DrawJoints Then
+Me.DrawAllJoints(renderer, options)
+End If
+
+If options.DrawBounds Then
+Me.DrawAllBounds(renderer)
+End If
+
+If options.DrawBodyNames Then
+Me.DrawAllBodyNames(renderer)
+End If
+
+If options.DrawMass Then
+Me.DrawAllMassData(renderer)
+End If
+
+If options.DrawContacts Then
+Me.DrawAllContacts(renderer, options)
+End If
+
+If options.DrawIslands Then
+Me.DrawAllIslands(renderer)
+End If
+End Sub
+
+## Draws every shape of every body with its state colour, ported from the
+## drawShapes stage of b2World_Draw. Solver-set order keeps the draw
+## deterministic.
+Private Sub DrawAllShapes(renderer As DebugRenderer)
+For setIndex As Integer = 0 To Me.SolverSets.Count - 1
+Var solverSet As SolverSet = Me.SolverSets[setIndex]
+If solverSet <> Nothing Then
+Var sims As BodySims = solverSet.Sims
+Var simCount As Integer = sims.Count()
+For simIndex As Integer = 0 To simCount - 1
+Var body As Body = Me.Bodies[sims.BodyId.Items[simIndex]]
+Var bodyTransform As New Transform(New Vector2(sims.PX.Items[simIndex], sims.PY.Items[simIndex]), New Rot(sims.QC.Items[simIndex], sims.QS.Items[simIndex]))
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+Var color As Colour = DebugDrawMethods.ShapeColor(shape, body, sims)
+DebugDrawMethods.DrawShape(renderer, shape, bodyTransform, color)
+shapeId = shape.NextShapeId
+Wend
+Next simIndex
+End If
+Next setIndex
+End Sub
+
+## Draws every live joint, ported from the drawJoints stage of
+## b2World_Draw.
+Private Sub DrawAllJoints(renderer As DebugRenderer, options As DebugDrawOptions)
+Var jointCount As Integer = Me.Joints.Count
+For i As Integer = 0 To jointCount - 1
+Var joint As Joint = Me.Joints[i]
+If joint.SetIndex <> PhysicsConstants.NULL_INDEX Then
+DebugDrawMethods.DrawJoint(Me, renderer, options, joint)
+End If
+Next i
+End Sub
+
+## Draws every shape's fat AABB in gold with a white body-id label at the
+## body centre, ported from the drawBounds stage of b2World_Draw.
+Private Sub DrawAllBounds(renderer As DebugRenderer)
+For setIndex As Integer = 0 To Me.SolverSets.Count - 1
+Var solverSet As SolverSet = Me.SolverSets[setIndex]
+If solverSet <> Nothing Then
+Var sims As BodySims = solverSet.Sims
+Var simCount As Integer = sims.Count()
+For simIndex As Integer = 0 To simCount - 1
+Var body As Body = Me.Bodies[sims.BodyId.Items[simIndex]]
+renderer.DrawString(New Vector2(sims.CenterX.Items[simIndex], sims.CenterY.Items[simIndex]), body.Id.ToString(), DebugColors.White)
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+DebugDrawMethods.FillQuad(Me.DebugDrawQuad, shape.FatAABB)
+renderer.DrawPolygon(Me.DebugDrawQuad, 4, DebugColors.Gold)
+shapeId = shape.NextShapeId
+Wend
+Next simIndex
+End If
+Next setIndex
+End Sub
+
+## Draws every named body's name next to its centre of mass, ported from
+## the drawBodyNames stage of b2World_Draw.
+Private Sub DrawAllBodyNames(renderer As DebugRenderer)
+Var offset As New Vector2(0.05, 0.05)
+Var bodyCount As Integer = Me.Bodies.Count
+For i As Integer = 0 To bodyCount - 1
+Var body As Body = Me.Bodies[i]
+If body <> Nothing And body.SetIndex <> PhysicsConstants.NULL_INDEX And body.Name.Length > 0 Then
+Var sims As BodySims = Me.GetBodySim(body)
+Var labelTransform As New Transform(New Vector2(sims.CenterX.Items[body.LocalIndex], sims.CenterY.Items[body.LocalIndex]), New Rot(sims.QC.Items[body.LocalIndex], sims.QS.Items[body.LocalIndex]))
+Var labelPoint As Vector2 = Transform.TransformPoint(labelTransform, offset)
+renderer.DrawString(labelPoint, body.Name, DebugColors.BlueViolet)
+End If
+Next i
+End Sub
+
+## Draws the centre-of-mass transform and mass text of every body, ported
+## from the drawMass stage of b2World_Draw. Like upstream, this stage does
+## not filter by body type; static bodies report their zero mass.
+Private Sub DrawAllMassData(renderer As DebugRenderer)
+For setIndex As Integer = 0 To Me.SolverSets.Count - 1
+Var solverSet As SolverSet = Me.SolverSets[setIndex]
+If solverSet <> Nothing Then
+Var sims As BodySims = solverSet.Sims
+Var simCount As Integer = sims.Count()
+For simIndex As Integer = 0 To simCount - 1
+Var massTransform As New Transform(New Vector2(sims.CenterX.Items[simIndex], sims.CenterY.Items[simIndex]), New Rot(sims.QC.Items[simIndex], sims.QS.Items[simIndex]))
+renderer.DrawTransform(massTransform)
+Var mass As Double = 0.0
+If sims.InvMass.Items[simIndex] > 0.0 Then
+mass = 1.0 / sims.InvMass.Items[simIndex]
+End If
+Var labelPoint As Vector2 = Transform.TransformPoint(massTransform, New Vector2(0.1, 0.1))
+renderer.DrawString(labelPoint, "  " + mass.ToString("F2"), DebugColors.White)
+Next simIndex
+End If
+Next setIndex
+End Sub
+
+## Draws every contact point held by the constraint-graph colours, ported
+## from the drawContacts stage of b2World_Draw. Only awake touching
+## contacts live in the graph, matching the upstream source of rows.
+Private Sub DrawAllContacts(renderer As DebugRenderer, options As DebugDrawOptions)
+For colorIndex As Integer = 0 To PhysicsConstants.GRAPH_COLOUR_COUNT - 1
+Var color As GraphColor = Me.ConstraintGraph.Colors[colorIndex]
+Var contactSims As ContactSims = color.ContactSims
+Var contactCount As Integer = contactSims.Count()
+For contactIndex As Integer = 0 To contactCount - 1
+Var manifold As Manifold = contactSims.GetManifold(contactIndex)
+Var pointCount As Integer = manifold.PointCount
+Var j As Integer = 0
+While j < pointCount
+Var point As ManifoldPoint = manifold.Point1
+If j = 1 Then
+point = manifold.Point2
+End If
+DebugDrawMethods.DrawContactPoint(renderer, options, point, manifold.Normal, colorIndex)
+j = j + 1
+Wend
+Next contactIndex
+Next colorIndex
+End Sub
+
+## Draws a bounds polygon around every live island's shapes, ported from
+## the drawIslands stage of b2World_Draw.
+Private Sub DrawAllIslands(renderer As DebugRenderer)
+Var islandCount As Integer = Me.Islands.Count
+For i As Integer = 0 To islandCount - 1
+Var island As Island = Me.Islands[i]
+If island.SetIndex <> PhysicsConstants.NULL_INDEX Then
+Me.DrawIslandBounds(renderer, island)
+End If
+Next i
+End Sub
+
+## Unions the fat AABBs of one island's shapes and draws the polygon,
+## ported from the island body walk of b2World_Draw.
+Private Sub DrawIslandBounds(renderer As DebugRenderer, island As Island)
+Var shapeCount As Integer = 0
+Var minX As Double = Double.Infinity
+Var minY As Double = Double.Infinity
+Var maxX As Double = -Double.Infinity
+Var maxY As Double = -Double.Infinity
+Var bodyId As Integer = island.HeadBody
+While bodyId <> PhysicsConstants.NULL_INDEX
+Var body As Body = Me.Bodies[bodyId]
+Var shapeId As Integer = body.HeadShapeId
+While shapeId <> PhysicsConstants.NULL_INDEX
+Var shape As Shape = Me.Shapes[shapeId]
+If shape.FatAABB.LowerBound.X < minX Then
+minX = shape.FatAABB.LowerBound.X
+End If
+If shape.FatAABB.LowerBound.Y < minY Then
+minY = shape.FatAABB.LowerBound.Y
+End If
+If shape.FatAABB.UpperBound.X > maxX Then
+maxX = shape.FatAABB.UpperBound.X
+End If
+If shape.FatAABB.UpperBound.Y > maxY Then
+maxY = shape.FatAABB.UpperBound.Y
+End If
+shapeCount = shapeCount + 1
+shapeId = shape.NextShapeId
+Wend
+bodyId = body.IslandNext
+Wend
+If shapeCount > 0 Then
+Me.DebugDrawQuad[0].Set(minX, minY)
+Me.DebugDrawQuad[1].Set(maxX, minY)
+Me.DebugDrawQuad[2].Set(maxX, maxY)
+Me.DebugDrawQuad[3].Set(minX, maxY)
+renderer.DrawPolygon(Me.DebugDrawQuad, 4, DebugColors.OrangeRed)
+End If
+End Sub
+
+
 ## Collides a capsule mover against the world and registers one collision
 ## plane per overlapping shape, ported from b2World_CollideMover. The
 ## callback receives each hit shape and its world-space plane result and
@@ -551,6 +829,17 @@ Me.mMoverCollideContext = New WorldMoverCollideContext
 Me.mExplosionContext = New ExplosionContext
 Me.mCounters = New WorldCounters
 Me.mProfile = New WorldProfile
+Me.mDebugDrawContext = New WorldDebugDrawContext
+Me.mDebugDrawContext.Owner = Me
+Me.mDebugDrawIds = New IntegerList
+Me.DebugDrawBodySet = New BitSet(16)
+Me.DebugDrawJointSet = New BitSet(16)
+Me.DebugDrawContactSet = New BitSet(16)
+Me.DebugDrawQuad = New Array(Of Vector2)
+Me.DebugDrawQuad.Append(New Vector2)
+Me.DebugDrawQuad.Append(New Vector2)
+Me.DebugDrawQuad.Append(New Vector2)
+Me.DebugDrawQuad.Append(New Vector2)
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
 Me.mTransformScratchB = New Transform

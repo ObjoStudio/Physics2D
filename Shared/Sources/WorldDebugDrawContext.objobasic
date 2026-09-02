@@ -1,0 +1,49 @@
+# Engine-internal tree query adapter for bounds-mode debug drawing, ported
+# from upstream DrawContext/DrawQueryCallback in world.c. One instance is
+# owned by the World and reused across draws. Every leaf inside the drawing
+# bounds marks its body for the label, joint, and contact passes and draws
+# the shape and its fat AABB when the options ask for them.
+Class WorldDebugDrawContext Inherits TreeQueryCallback
+## The world driving the draw.
+Property Owner As World
+
+## The renderer receiving the primitives.
+Property Renderer As DebugRenderer
+
+## The layer switches for this draw.
+Property Options As DebugDrawOptions
+
+## Creates an unbound context; the world fills the fields per draw.
+Constructor()
+Me.Owner = Nothing
+Me.Renderer = Nothing
+Me.Options = Nothing
+End Constructor
+
+## Tree leaf visit: mark the body, then draw the shape with its state
+## colour and the fat AABB polygon when enabled. Always continues the
+## traversal, matching the upstream callback.
+Override Function VisitLeaf(proxyId As Integer, userData As Integer) As Boolean
+Pragma Unused proxyId
+Var shape As Shape = Me.Owner.Shapes[userData]
+If Not shape.Live Then
+Return True
+End If
+Var body As Body = Me.Owner.Bodies[shape.BodyId]
+Me.Owner.DebugDrawBodySet.SetBit(body.Id)
+
+If Me.Options.DrawShapes Then
+Var sims As BodySims = Me.Owner.GetBodySim(body)
+Var color As Colour = DebugDrawMethods.ShapeColor(shape, body, sims)
+Var transform As New Transform(New Vector2(sims.PX.Items[body.LocalIndex], sims.PY.Items[body.LocalIndex]), New Rot(sims.QC.Items[body.LocalIndex], sims.QS.Items[body.LocalIndex]))
+DebugDrawMethods.DrawShape(Me.Renderer, shape, transform, color)
+End If
+
+If Me.Options.DrawBounds Then
+DebugDrawMethods.FillQuad(Me.Owner.DebugDrawQuad, shape.FatAABB)
+Me.Renderer.DrawPolygon(Me.Owner.DebugDrawQuad, 4, DebugColors.Gold)
+End If
+
+Return True
+End Function
+End Class

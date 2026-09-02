@@ -233,6 +233,19 @@ provenance record must be added to `THIRD_PARTY_NOTICES.md` first.
     including the solver no-op (the filter joint joins the constraint
     graph like every family and every kernel case returns zero, so its
     only effect is the connected-joint collision rule while it lives).
+39. **Debug drawing preserves the per-path label conventions.** Upstream
+    `b2World_Draw` labels contact normal impulses with the total impulse
+    scaled by 1000 (`%.2f`) and friction impulses raw (`%.2f`), while the
+    bounds path of `b2DrawWithBounds` labels both in milli-impulses
+    (`%.1f`) from the per-point normal impulse; the speculative point
+    colour also differs (light gray versus gainsboro). Physics2D ports
+    each path faithfully through `DrawContactPoint` and
+    `DrawContactPointBounds` instead of silently unifying the two visual
+    dialects. Debug colours are core-standard-library `Colour` values on
+    `DebugColors` rather than `b2HexColor` integers, and shape custom
+    colours stay the documented 0xRRGGBB integer, converted for drawing.
+    The distance-joint limit tick offset pins the upstream default length
+    scale (`0.05 * b2_lengthUnitsPerMeter` at one metre per unit).
 
 ## Public Symbol Inventory
 
@@ -708,7 +721,7 @@ through `BroadPhasePairSink`.
 |---|---|---|
 | `b2DefaultBodyDef` | BodyDefinition with documented defaults | 6 |
 | `b2DefaultChainDef` | ChainDefinition with documented defaults | 6 |
-| `b2DefaultDebugDraw` | DebugDrawOptions with documented defaults | 10 |
+| `b2DefaultDebugDraw` | DebugDrawOptions with documented defaults; the drawing callbacks live on DebugRenderer | 10 |
 | `b2DefaultDistanceJointDef` | DistanceJointDefinition with documented defaults | 9 |
 | `b2DefaultExplosionDef` | ExplosionDefinition with documented defaults | 10 |
 | `b2DefaultFilter` | Filter with documented defaults | 6 |
@@ -725,12 +738,10 @@ through `BroadPhasePairSink`.
 | `b2DefaultWorldDef` | WorldSettings with documented defaults | 6 |
 
 
-### Length scale and plane solving (3 symbols)
+### Length scale and plane solving (1 symbol)
 
 | Upstream symbol | Physics2D mapping | Stage |
 |---|---|---|
-| `b2GetLengthUnitsPerMeter` | Length-scale configuration only if pinned upstream requires it | 10 |
-| `b2SetLengthUnitsPerMeter` | Length-scale configuration only if pinned upstream requires it | 10 |
 | `b2SolvePlanes` | Protected internal plane solver used by World.CollideMover | 10 |
 
 
@@ -740,11 +751,12 @@ through `BroadPhasePairSink`.
 |---|---|---|
 | `b2Hash` | PhysicsMaths.HashKey (Murmur3 finaliser behind PairKeySet) | 3 |
 
-### Approved version 1 exclusions (10 symbols)
+### Approved version 1 exclusions (12 symbols)
 
 | Upstream symbol | Physics2D mapping | Stage |
 |---|---|---|
 | `b2GetByteCount` | Excluded (v1): C allocator statistics replaced by World.Counters | 0 |
+| `b2GetLengthUnitsPerMeter` | Excluded (v1): Physics2D pins one metre per length unit like the upstream default; screen-scale converters belong to the render adapter, as in the demo's CanvasDebugRenderer | 10 |
 | `b2GetMilliseconds` | Excluded (v1): native timers; benchmarks use the Objo clock | 0 |
 | `b2GetMillisecondsAndReset` | Excluded (v1): native timers; benchmarks use the Objo clock | 0 |
 | `b2GetTicks` | Excluded (v1): native timers; benchmarks use the Objo clock | 0 |
@@ -753,6 +765,7 @@ through `BroadPhasePairSink`.
 | `b2InternalAssertFcn` | Excluded (v1): internal validation uses exceptions and test assertions | 0 |
 | `b2SetAllocator` | Excluded (v1): Objo manages memory; no custom C allocators | 0 |
 | `b2SetAssertFcn` | Excluded (v1): internal validation uses exceptions and test assertions | 0 |
+| `b2SetLengthUnitsPerMeter` | Excluded (v1): Physics2D pins one metre per length unit like the upstream default; screen-scale converters belong to the render adapter, as in the demo's CanvasDebugRenderer | 10 |
 | `b2Yield` | Excluded (v1): task scheduler callbacks are out of scope | 0 |
 
 
@@ -778,6 +791,7 @@ Upstream line counts are for orientation only.
 | `src/broad_phase.[ch]` | `BroadPhase` | 5 |
 | `src/body.[ch]`, `src/shape.[ch]` | body/shape stores and façades | 6 |
 | `src/world.[ch]`, `src/types.c` | `World` façade and world core including stepping and events | 8 |
+| `src/world.c` (`b2DrawShape`, `b2DrawWithBounds`), `src/joint.c` (`b2DrawJoint`), `src/distance_joint.c` … `src/wheel_joint.c` (`b2Draw*Joint`) | `DebugColors`, `DebugDrawOptions`, `DebugRenderer`, `DebugDrawMethods`, `WorldDebugDrawContext`, and `World.DrawDebug` | 10 |
 | `src/contact.[ch]`, `src/contact_solver.c` | contact store and contact solver | 7 |
 | `src/island.[ch]`, `src/solver_set.[ch]`, `src/solver.[ch]` | islands, solver sets, Soft Step solver, and continuous collision | 7/8 |
 | `src/constraint_graph.[ch]` | constraint graph colours | 7 |

@@ -1,0 +1,145 @@
+# Colour palette for debug drawing, ported from the upstream b2HexColor
+# enum in types.h. Upstream stores colours as 0xRRGGBB integers; Physics2D
+# uses the core-standard-library Colour type so renderers can forward values
+# directly to desktop graphics. Only the colours the debug-draw path uses
+# are listed; add new entries from the upstream enum when a new draw feature
+# needs them. Names keep the CSS spelling (Goldenrod), dropping the upstream
+# b2_ prefix.
+Class DebugColors
+## Red used for dynamic bodies with zero mass, ported from b2_colorRed.
+Public Const Red As Colour = Colour.RGB(255, 0, 0)
+
+## Green used for new contact points and mouse-joint targets, ported from
+## b2_colorGreen.
+Public Const Green As Colour = Colour.RGB(0, 128, 0)
+
+## Blue used for persisted contact points, distance-joint rest length
+## markers, revolute reference angles, and prismatic/wheel anchor B points,
+## ported from b2_colorBlue.
+Public Const Blue As Colour = Colour.RGB(0, 0, 255)
+
+## Cyan used as graph colour 4, ported from b2_colorCyan.
+Public Const Cyan As Colour = Colour.RGB(0, 255, 255)
+
+## Red-orange used for island bounds, ported from b2_colorOrangeRed.
+Public Const OrangeRed As Colour = Colour.RGB(255, 69, 0)
+
+## Orange used for graph colour 1 and contact feature labels, ported from
+## b2_colorOrange.
+Public Const Orange As Colour = Colour.RGB(255, 165, 0)
+
+## Yellow used for speed-capped bodies, contact friction impulses, and
+## graph colour 2, ported from b2_colorYellow.
+Public Const Yellow As Colour = Colour.RGB(255, 255, 0)
+
+## Black used as graph colour 11, ported from b2_colorBlack.
+Public Const Black As Colour = Colour.RGB(0, 0, 0)
+
+## White used for joint anchors and ropes, mass and impulse label text, and
+## body-id labels in bounds mode, ported from b2_colorWhite.
+Public Const White As Colour = Colour.RGB(255, 255, 255)
+
+## Gray used for sleeping bodies, distance-joint limit ranges, and
+## prismatic/wheel axis lines, ported from b2_colorGray.
+Public Const Gray As Colour = Colour.RGB(128, 128, 128)
+
+## Slate gray used for disabled bodies, ported from b2_colorSlateGray.
+Public Const SlateGray As Colour = Colour.RGB(112, 128, 144)
+
+## Dim gray used for contact normal arrows, ported from b2_colorDimGray.
+Public Const DimGray As Colour = Colour.RGB(105, 105, 105)
+
+## Light gray used for speculative contact points and mouse-joint target
+## lines, ported from b2_colorLightGray.
+Public Const LightGray As Colour = Colour.RGB(211, 211, 211)
+
+## Gainsboro used for speculative contact points in bounds mode, ported
+## from b2_colorGainsboro.
+Public Const Gainsboro As Colour = Colour.RGB(220, 220, 220)
+
+## Gold used for shape bounds and filter-joint ropes, ported from
+## b2_colorGold.
+Public Const Gold As Colour = Colour.RGB(255, 215, 0)
+
+## Goldenrod used as graph colour 9, ported from b2_colorGoldenRod.
+Public Const Goldenrod As Colour = Colour.RGB(218, 165, 32)
+
+## Violet used as graph colour 6, ported from b2_colorViolet.
+Public Const Violet As Colour = Colour.RGB(238, 130, 238)
+
+## Blue violet used for body-name labels, ported from b2_colorBlueViolet.
+Public Const BlueViolet As Colour = Colour.RGB(138, 43, 226)
+
+## Magenta used for contact normal impulse arrows, ported from
+## b2_colorMagenta.
+Public Const Magenta As Colour = Colour.RGB(255, 0, 255)
+
+## Pink used for awake dynamic bodies and graph colour 7, ported from
+## b2_colorPink.
+Public Const Pink As Colour = Colour.RGB(255, 192, 203)
+
+## Wheat used for sensor shapes, ported from b2_colorWheat.
+Public Const Wheat As Colour = Colour.RGB(245, 222, 179)
+
+## Turquoise used for awake bullets, ported from b2_colorTurquoise.
+Public Const Turquoise As Colour = Colour.RGB(64, 224, 208)
+
+## Salmon used for fast (continuous-collision) bodies, ported from
+## b2_colorSalmon.
+Public Const Salmon As Colour = Colour.RGB(250, 128, 114)
+
+## Pale green used for static bodies and chain ghost links, ported from
+## b2_colorPaleGreen.
+Public Const PaleGreen As Colour = Colour.RGB(152, 251, 152)
+
+## Light green used for distance-joint lower-limit ticks, ported from
+## b2_colorLightGreen.
+Public Const LightGreen As Colour = Colour.RGB(144, 238, 144)
+
+## Royal blue used for kinematic bodies, ported from b2_colorRoyalBlue.
+Public Const RoyalBlue As Colour = Colour.RGB(65, 105, 225)
+
+## Chocolate used as graph colour 8, ported from b2_colorChocolate.
+Public Const Chocolate As Colour = Colour.RGB(210, 105, 30)
+
+## Coral used as graph colour 10, ported from b2_colorCoral.
+Public Const Coral As Colour = Colour.RGB(255, 127, 80)
+
+## Dark sea green used for generic joint ropes, ported from
+## b2_colorDarkSeaGreen.
+Public Const DarkSeaGreen As Colour = Colour.RGB(143, 188, 143)
+
+## Returns the graph colour for a constraint-graph colour index in
+## [0, 11], ported from the graphColors tables in world.c and joint.c. The
+## order matches upstream: red, orange, yellow, green, cyan, blue, violet,
+## pink, chocolate, goldenrod, coral, black. Indices outside the range
+## return black.
+Shared Function GraphColor(index As Integer) As Colour
+Select Case index
+Case 0
+Return DebugColors.Red
+Case 1
+Return DebugColors.Orange
+Case 2
+Return DebugColors.Yellow
+Case 3
+Return DebugColors.Green
+Case 4
+Return DebugColors.Cyan
+Case 5
+Return DebugColors.Blue
+Case 6
+Return DebugColors.Violet
+Case 7
+Return DebugColors.Pink
+Case 8
+Return DebugColors.Chocolate
+Case 9
+Return DebugColors.Goldenrod
+Case 10
+Return DebugColors.Coral
+Else
+Return DebugColors.Black
+End Select
+End Function
+End Class

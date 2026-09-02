@@ -1,0 +1,82 @@
+# Client callback receiving debug-draw primitives, ported from the function
+# pointers of upstream b2DebugDraw in types.h. Every method already has a
+# no-op body matching the upstream b2DefaultDebugDraw stubs, so a renderer
+# implements only the primitives it can draw; unimplemented primitives cost
+# one virtual call and draw nothing. All vectors, transforms, and vertex
+# arrays passed to these methods are reusable engine views: read them inside
+# the call and never retain them, because the next draw call overwrites
+# them. Called between steps with the world unlocked; the renderer may read
+# the world but must not mutate it.
+Abstract Class DebugRenderer
+## Draws a closed polygon provided in counter-clockwise order. The vertex
+## array is a borrowed engine view valid only during the call.
+Sub DrawPolygon(vertices() As Vector2, vertexCount As Integer, color As Colour)
+Pragma Unused vertices
+Pragma Unused vertexCount
+Pragma Unused color
+End Sub
+
+## Draws a solid closed polygon provided in counter-clockwise order. The
+## vertices are in local space; transform places the polygon in the world.
+## Radius rounds convex corners; zero means sharp. The vertex array is a
+## borrowed engine view valid only during the call.
+Sub DrawSolidPolygon(transform As Transform, vertices() As Vector2, vertexCount As Integer, radius As Double, color As Colour)
+Pragma Unused transform
+Pragma Unused vertices
+Pragma Unused vertexCount
+Pragma Unused radius
+Pragma Unused color
+End Sub
+
+## Draws a circle outline.
+Sub DrawCircle(center As Vector2, radius As Double, color As Colour)
+Pragma Unused center
+Pragma Unused radius
+Pragma Unused color
+End Sub
+
+## Draws a solid circle. The centre is transform.P; the rotation is
+## available for textured or shaded renderers.
+Sub DrawSolidCircle(transform As Transform, radius As Double, color As Colour)
+Pragma Unused transform
+Pragma Unused radius
+Pragma Unused color
+End Sub
+
+## Draws a solid capsule between two world-space segment centres.
+Sub DrawSolidCapsule(p1 As Vector2, p2 As Vector2, radius As Double, color As Colour)
+Pragma Unused p1
+Pragma Unused p2
+Pragma Unused radius
+Pragma Unused color
+End Sub
+
+## Draws a line segment between two world-space points.
+Sub DrawSegment(p1 As Vector2, p2 As Vector2, color As Colour)
+Pragma Unused p1
+Pragma Unused p2
+Pragma Unused color
+End Sub
+
+## Draws a transform. Choose a length scale that reads well at the current
+## zoom; physics uses metres.
+Sub DrawTransform(transform As Transform)
+Pragma Unused transform
+End Sub
+
+## Draws a point. The size is a renderer-space extent (upstream passes
+## pixel-space sizes between 4 and 10); world renderers may scale it.
+Sub DrawPoint(p As Vector2, size As Double, color As Colour)
+Pragma Unused p
+Pragma Unused size
+Pragma Unused color
+End Sub
+
+## Draws one line of text at a world-space position. Strings are short
+## labels such as body names or impulse values.
+Sub DrawString(p As Vector2, text As String, color As Colour)
+Pragma Unused p
+Pragma Unused text
+Pragma Unused color
+End Sub
+End Class
