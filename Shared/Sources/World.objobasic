@@ -1,16 +1,17 @@
-# World façade, ported from upstream b2World in world.h plus the world and
-# lifecycle API family in box2d.h. This is the first usable, non-solving
-# public world API: bodies, shapes, chains, mass maintenance, proxy
-# synchronisation, transforms, and overlap/ray/shape-cast queries.
+# The Physics2D world: owns bodies, shapes, chains, contacts, islands,
+# joints, and sensors, and advances them with a deterministic Soft Step
+# solver. Constructed empty (zero gravity), with settings, or through the
+# World.WithGravity factory; stepped with World.StepWorld using a fixed
+# timestep. Bodies, shapes, chains, and joints are created through
+# definitions and addressed through facade objects that stay stable across
+# solver-set moves; destruction frees the slot and bumps the generation so
+# stale facades fail IsValid and raise on use. After a short warm-up the
+# fixed-timestep step allocates nothing on the normal path.
 #
-# Storage follows upstream: bodies live in solver sets (static, disabled,
-# awake, and per-body sleeping sets in Stage 6), with dense BodySim and
-# BodyState records in parallel scalar arrays per decision 0004. Body,
-# Shape, and Chain are sparse façade arrays; destruction frees the slot and
-# bumps the generation, so stale façades fail IsValid and raise on use.
-#
-# Contact, joint, island, and stepping machinery arrives from Stage 7; the
-# world reports itself as unlocked until then and World.Step throws.
+# Ported from upstream b2World in world.h plus the world and lifecycle API
+# family in box2d.h. Storage follows upstream: bodies live in solver sets
+# (static, disabled, awake, and per-island sleeping sets) with dense sim and
+# state records in parallel scalar columns per decision 0004.
 Class World Inherits BroadPhasePairSink
 ## Gravity vector (metres per second squared).
 Property Gravity As Vector2
@@ -39,7 +40,7 @@ Property SpeculativeEnabled As Boolean
 Property Locked As Boolean
 ## User data owned by the application.
 Property UserData As Integer
-## The broad phase owning the three proxy trees.
+## The broad phase owning the three proxy trees. Internal solver bookkeeping.
 Property BroadPhase As BroadPhase
 ## Sparse body façade store indexed by body slot.
 Property Bodies As Array(Of Body)
@@ -48,13 +49,13 @@ Property Shapes As Array(Of Shape)
 ## Sparse chain façade store indexed by chain slot.
 Property Chains As Array(Of Chain)
 ## Per-slot generation counters, bumped when a slot is freed so that reused
-## slots never reuse a generation.
+## slots never reuse a generation. Internal solver bookkeeping.
 Property BodyGenerations As IntegerList
-## Per-slot generation counters for shape slots.
+## Per-slot generation counters for shape slots. Internal solver bookkeeping.
 Property ShapeGenerations As IntegerList
-## Per-slot generation counters for chain slots.
+## Per-slot generation counters for chain slots. Internal solver bookkeeping.
 Property ChainGenerations As IntegerList
-## Contact slot pool.
+## Contact slot pool. Internal solver bookkeeping.
 Property ContactIdPool As IdPool
 ## Sparse contact record store indexed by contact slot.
 Property Contacts As Array(Of Contact)
@@ -62,7 +63,7 @@ Property Contacts As Array(Of Contact)
 ## Recycled contact records. Destroyed contacts keep their record here so
 ## steady-state pair churn in moving scenes allocates nothing after
 ## capacity warm-up. Internal solver bookkeeping; applications do not
-## touch this list.
+## touch this list. Internal solver bookkeeping.
 Property ContactPool As Array(Of Contact)
 ## Number of live contacts.
 Property ContactCount As Integer
@@ -70,34 +71,34 @@ Property ContactCount As Integer
 ## phase applies only the built-in shape and body rules and the hook adds
 ## no overhead.
 Property CustomFilter As CustomContactFilter
-## Island slot pool.
+## Island slot pool. Internal solver bookkeeping.
 Property IslandIdPool As IdPool
-## Sparse island record store indexed by island slot.
+## Sparse island record store indexed by island slot. Internal solver bookkeeping.
 Property Islands As Array(Of Island)
-## Island selected for splitting during the step. NULL_INDEX when none.
+## Island selected for splitting during the step. NULL_INDEX when none. Internal solver bookkeeping.
 Property SplitIslandId As Integer
-## Constraint graph holding the touching contacts in twelve colours.
+## Constraint graph holding the touching contacts in twelve colours. Internal solver bookkeeping.
 Property ConstraintGraph As ConstraintGraph
-## Solver sets. Index 0 static, 1 disabled, 2 awake, 3+ sleeping.
+## Solver sets. Index 0 static, 1 disabled, 2 awake, 3+ sleeping. Internal solver bookkeeping.
 Property SolverSets As Array(Of SolverSet)
-## Body slot pool.
+## Body slot pool. Internal solver bookkeeping.
 Property BodyIdPool As IdPool
-## Shape slot pool.
+## Shape slot pool. Internal solver bookkeeping.
 Property ShapeIdPool As IdPool
-## Chain slot pool.
+## Chain slot pool. Internal solver bookkeeping.
 Property ChainIdPool As IdPool
-## Solver-set slot pool for sleeping sets.
+## Solver-set slot pool for sleeping sets. Internal solver bookkeeping.
 Property SolverSetIdPool As IdPool
-## Joint slot pool.
+## Joint slot pool. Internal solver bookkeeping.
 Property JointIdPool As IdPool
 ## Number of live joints, ported from b2World_GetJointCount.
 Property JointCount As Integer
-## Persistent joint records, indexed by joint slot.
+## Persistent joint records, indexed by joint slot. Internal solver bookkeeping.
 Property Joints As Array(Of Joint)
-## Generation per joint slot, surviving record replacement.
+## Generation per joint slot, surviving record replacement. Internal solver bookkeeping.
 Property JointGenerations As IntegerList
 ## Cached inverse substep length from the last step, used by the joint
-## force accessors. Zero before the first step.
+## force accessors. Zero before the first step. Internal solver bookkeeping.
 Property InvH As Double
 
 ## Reused overlap query adapter.
@@ -190,9 +191,6 @@ Private Property mSolverSetPool As Array(Of SolverSet)
 ## Scratch list reused by island splitting. Island splitting runs whenever
 ## a contact or joint is removed from an awake island, so this list is
 ## world-owned and cleared per use. Internal solver bookkeeping.
-## Scratch list reused by island splitting. Island splitting runs whenever
-## a contact or joint is removed from an awake island, so this list is
-## world-owned and cleared per use. Internal solver bookkeeping.
 Property SplitBodyIdsScratch As Array(Of Integer)
 
 ## DFS stack for island splitting, paired with SplitBodyIdsScratch.
@@ -215,73 +213,73 @@ Private Property mEnlargedBodyBits As BitSet
 # Stage 8 event storage. The columns are deliberately public so the
 # WorldEvents view can read them; treat them as internal state and never
 # write them from application code.
-## Sensor store, one record per live sensor shape.
+## Sensor store, one record per live sensor shape. Internal solver bookkeeping.
 Property Sensors As Array(Of Sensor)
-## End-event buffer being filled during the current step.
+## End-event buffer being filled during the current step. Internal solver bookkeeping.
 Property EndEventWriteIndex As Integer
-## End-event buffer readable after the current step completes.
+## End-event buffer readable after the current step completes. Internal solver bookkeeping.
 Property ReadableEndIndex As Integer
-## Sensor begin event sensor shape slots.
+## Sensor begin event sensor shape slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property SensorBeginSensorIds As IntegerList
-## Sensor begin event sensor shape generations.
+## Sensor begin event sensor shape generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property SensorBeginSensorGens As IntegerList
-## Sensor begin event visitor shape slots.
+## Sensor begin event visitor shape slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property SensorBeginVisitorIds As IntegerList
-## Sensor begin event visitor shape generations.
+## Sensor begin event visitor shape generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property SensorBeginVisitorGens As IntegerList
-## Per-buffer sensor end event sensor shape slots.
+## Per-buffer sensor end event sensor shape slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property SensorEndSensorIds As Array(Of IntegerList)
-## Per-buffer sensor end event sensor shape generations.
+## Per-buffer sensor end event sensor shape generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property SensorEndSensorGens As Array(Of IntegerList)
-## Per-buffer sensor end event visitor shape slots.
+## Per-buffer sensor end event visitor shape slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property SensorEndVisitorIds As Array(Of IntegerList)
-## Per-buffer sensor end event visitor shape generations.
+## Per-buffer sensor end event visitor shape generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property SensorEndVisitorGens As Array(Of IntegerList)
-## Contact begin event first shape slots.
+## Contact begin event first shape slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactBeginShapeAIds As IntegerList
-## Contact begin event first shape generations.
+## Contact begin event first shape generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactBeginShapeAGens As IntegerList
-## Contact begin event second shape slots.
+## Contact begin event second shape slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactBeginShapeBIds As IntegerList
-## Contact begin event second shape generations.
+## Contact begin event second shape generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactBeginShapeBGens As IntegerList
-## Contact begin event manifold snapshots.
+## Contact begin event manifold snapshots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactBeginManifolds As Array(Of Manifold)
-## Per-buffer contact end event first shape slots.
+## Per-buffer contact end event first shape slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactEndShapeAIds As Array(Of IntegerList)
-## Per-buffer contact end event first shape generations.
+## Per-buffer contact end event first shape generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactEndShapeAGens As Array(Of IntegerList)
-## Per-buffer contact end event second shape slots.
+## Per-buffer contact end event second shape slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactEndShapeBIds As Array(Of IntegerList)
-## Per-buffer contact end event second shape generations.
+## Per-buffer contact end event second shape generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactEndShapeBGens As Array(Of IntegerList)
-## Contact hit event first shape slots.
+## Contact hit event first shape slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactHitShapeAIds As IntegerList
-## Contact hit event first shape generations.
+## Contact hit event first shape generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactHitShapeAGens As IntegerList
-## Contact hit event second shape slots.
+## Contact hit event second shape slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactHitShapeBIds As IntegerList
-## Contact hit event second shape generations.
+## Contact hit event second shape generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactHitShapeBGens As IntegerList
-## Contact hit event approach speeds.
+## Contact hit event approach speeds. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactHitSpeeds As DoubleList
-## Contact hit event point X coordinates.
+## Contact hit event point X coordinates. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactHitPointXs As DoubleList
-## Contact hit event point Y coordinates.
+## Contact hit event point Y coordinates. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property ContactHitPointYs As DoubleList
-## Moved-body event body slots.
+## Moved-body event body slots. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property MoveEventBodyIds As IntegerList
-## Moved-body event body generations.
+## Moved-body event body generations. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property MoveEventBodyGens As IntegerList
-## Moved-body event position X coordinates.
+## Moved-body event position X coordinates. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property MoveEventPXs As DoubleList
-## Moved-body event position Y coordinates.
+## Moved-body event position Y coordinates. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property MoveEventPYs As DoubleList
-## Moved-body event rotation cosines.
+## Moved-body event rotation cosines. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property MoveEventQCs As DoubleList
-## Moved-body event rotation sines.
+## Moved-body event rotation sines. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property MoveEventQSs As DoubleList
-## Moved-body event fell-asleep flags.
+## Moved-body event fell-asleep flags. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property MoveEventFellAsleep As IntegerList
 
 ## Reusable event view over this world's buffers.

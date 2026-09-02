@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ApiExamplesTests",
+  "Id": "c7e4a901-5b32-4f6d-8e21-9a0b4c6d7e8f",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "ApiExamplesTests-c7e4a901-5b32-4f6d-8e21-9a0b4c6d7e8f.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

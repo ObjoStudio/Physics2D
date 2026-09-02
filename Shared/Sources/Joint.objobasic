@@ -5,44 +5,44 @@
 # joint currently occupies. Family façades such as DistanceJoint extend this
 # class with their typed tuning surface.
 Class Joint
-## Owning world. Nothing for free slots.
+## Owning world. Nothing for free slots. Internal solver bookkeeping.
 Property Owner As World
 ## Joint slot index.
 Property Id As Integer
-## True while the slot addresses a live joint.
+## True while the slot addresses a live joint. Internal solver bookkeeping.
 Property Live As Boolean
-## Index of the solver set that owns the hot row. NULL_INDEX when free.
+## Index of the solver set that owns the hot row. NULL_INDEX when free. Internal solver bookkeeping.
 Property SetIndex As Integer
-## Constraint-graph colour index. NULL_INDEX outside the awake set.
+## Constraint-graph colour index. NULL_INDEX outside the awake set. Internal solver bookkeeping.
 Property ColorIndex As Integer
 ## Joint row index within the owning set or graph colour. NULL_INDEX when
-## free.
+## free. Internal solver bookkeeping.
 Property LocalIndex As Integer
-## Body slot of edge zero.
+## Body slot of edge zero. Internal solver bookkeeping.
 Property Edge0BodyId As Integer
-## Doubly linked list key of the previous joint on edge zero's body.
+## Doubly linked list key of the previous joint on edge zero's body. Internal solver bookkeeping.
 Property Edge0PrevKey As Integer
-## Doubly linked list key of the next joint on edge zero's body.
+## Doubly linked list key of the next joint on edge zero's body. Internal solver bookkeeping.
 Property Edge0NextKey As Integer
-## Body slot of edge one.
+## Body slot of edge one. Internal solver bookkeeping.
 Property Edge1BodyId As Integer
-## Doubly linked list key of the previous joint on edge one's body.
+## Doubly linked list key of the previous joint on edge one's body. Internal solver bookkeeping.
 Property Edge1PrevKey As Integer
-## Doubly linked list key of the next joint on edge one's body.
+## Doubly linked list key of the next joint on edge one's body. Internal solver bookkeeping.
 Property Edge1NextKey As Integer
-## Island linked list: previous joint. NULL_INDEX when unlinked.
+## Island linked list: previous joint. NULL_INDEX when unlinked. Internal solver bookkeeping.
 Property IslandPrev As Integer
-## Island linked list: next joint.
+## Island linked list: next joint. Internal solver bookkeeping.
 Property IslandNext As Integer
 ## Island slot this joint belongs to. NULL_INDEX when unlinked or outside
-## the simulated sets.
+## the simulated sets. Internal solver bookkeeping.
 Property IslandId As Integer
 ## Family discriminator.
 Property Type As JointType
 ## Generation used to invalidate stale façades, ported from
-## b2Joint.generation.
+## b2Joint.generation. Internal solver bookkeeping.
 Property Generation As Integer
-## Scratch mark used by island traversal.
+## Scratch mark used by island traversal. Internal solver bookkeeping.
 Property IsMarked As Boolean
 ## True when the two connected bodies may collide.
 Property CollideConnected As Boolean

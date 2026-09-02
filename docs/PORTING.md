@@ -321,12 +321,12 @@ Mapping conventions:
 | `b2World_RebuildStaticTree` | World.RebuildStaticTree | 6 |
 | `b2World_SetContactTuning` | World.ContactHertz, World.ContactDampingRatio, and World.MaxContactPushSpeed (settable properties) | 6 |
 | `b2World_SetCustomFilterCallback` | World.CustomFilter hook (explicit opt-in) | 7 |
-| `b2World_SetFrictionCallback` | World.FrictionMixer hook (explicit opt-in) | 7 |
+| `b2World_SetFrictionCallback` | World.MaterialMixer hook (explicit opt-in) | 7 |
 | `b2World_SetGravity` | World.Gravity | 6 |
 | `b2World_SetHitEventThreshold` | World.HitEventThreshold | 6 |
 | `b2World_SetMaximumLinearSpeed` | World.MaximumLinearSpeed | 6 |
 | `b2World_SetPreSolveCallback` | World.PreSolve hook (explicit opt-in) | 7 |
-| `b2World_SetRestitutionCallback` | World.RestitutionMixer hook (explicit opt-in) | 7 |
+| `b2World_SetRestitutionCallback` | World.MaterialMixer hook (explicit opt-in) | 7 |
 | `b2World_SetRestitutionThreshold` | World.RestitutionThreshold | 6 |
 | `b2World_SetUserData` | World.UserData | 6 |
 | `b2World_Step` | World.StepWorld(timeStep) / World.StepWorld(timeStep, substepCount) | 6 |

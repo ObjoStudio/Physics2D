@@ -1,0 +1,600 @@
+# Compile-only API examples covering every public overload family, one
+# world-building and query/joint surface per test. These tests exercise the
+# documented construction and call patterns end to end with a few sanity
+# assertions; the behavioural guarantees live in the stage test files.
+Import Physics2D
+
+Class ApiExamplesTests Inherits TestCase
+
+## World construction, stepping, and world-level services.
+Public Sub TestWorldLifecycleExamples()
+# Three construction paths: defaults, explicit settings, and the shared
+# gravity factory.
+Var plain As New World()
+Var settings As New WorldSettings
+settings.Gravity = New Vector2(0.0, -10.0)
+settings.RestitutionThreshold = 1.0
+settings.HitEventThreshold = 1.0
+settings.MaxContactPushSpeed = 3.0
+settings.ContactHertz = 30.0
+settings.ContactDampingRatio = 10.0
+settings.MaximumLinearSpeed = 500.0
+settings.EnableSleep = True
+settings.EnableContinuous = True
+Var configured As New World(settings)
+Var gravityWorld As World = World.WithGravity(New Vector2(0.0, -10.0))
+
+# Both stepping overloads.
+plain.StepWorld(1.0 / 60.0)
+configured.StepWorld(1.0 / 60.0, 4)
+
+# Tuning properties and controls.
+configured.EnableSleeping = False
+configured.ContinuousEnabled = True
+configured.SpeculativeEnabled = True
+configured.WarmStartingEnabled = True
+configured.ContactHertz = 60.0
+configured.ContactDampingRatio = 2.0
+configured.MaxContactPushSpeed = 4.0
+configured.MaximumLinearSpeed = 400.0
+configured.RestitutionThreshold = 1.0
+configured.HitEventThreshold = 1.0
+Var sleeping As Boolean = configured.EnableSleeping
+Pragma Unused sleeping
+
+# Counters, profile, validation, and clear.
+Var counters As WorldCounters = configured.Counters()
+Var profile As WorldProfile = configured.Profile()
+Pragma Unused counters
+Pragma Unused profile
+configured.Validate()
+configured.Clear()
+Assert.Equal(0, configured.Counters().BodyCount, "Clear empties the world")
+Pragma Unused gravityWorld
+End Sub
+
+## Body creation, every shape family, and the body action surface.
+Public Sub TestBodyAndShapeExamples()
+Var world As World = ApiExamplesTests.MakeExampleWorld()
+
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(0.0, 3.0)
+def.Rotation = New Rot(1.0, 0.0)
+def.LinearVelocity = New Vector2(0.0, 0.0)
+def.AngularVelocity = 0.0
+def.LinearDamping = 0.1
+def.AngularDamping = 0.1
+def.GravityScale = 1.0
+def.SleepThreshold = 0.05
+def.EnableSleep = True
+def.IsAwake = True
+def.IsEnabled = True
+def.IsBullet = False
+def.FixedRotation = False
+def.AllowFastRotation = False
+def.Name = "example"
+def.UserData = 42
+Var body As Body = world.CreateBody(def)
+
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.5
+shapeDef.Material.Restitution = 0.2
+shapeDef.Material.RollingResistance = 0.0
+shapeDef.Material.TangentSpeed = 0.0
+shapeDef.Material.UserMaterialId = 0
+shapeDef.Material.CustomColor = 0
+shapeDef.Filter.CategoryBits = 1
+shapeDef.Filter.MaskBits = -1
+shapeDef.Filter.GroupIndex = 0
+shapeDef.UserData = 7
+shapeDef.IsSensor = False
+shapeDef.EnableContactEvents = True
+shapeDef.EnableHitEvents = False
+shapeDef.EnablePreSolveEvents = False
+shapeDef.EnableSensorEvents = False
+shapeDef.InvokeContactCreation = True
+shapeDef.UpdateBodyMass = True
+
+Var circle As Shape = body.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.5))
+Var capsule As Shape = body.CreateCapsule(shapeDef, New Capsule(New Vector2(-0.5, 0.0), New Vector2(0.5, 0.0), 0.25))
+Var polygonShape As Shape = body.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Var segment As Shape = body.CreateSegment(shapeDef, New Segment(-1.0, 0.0, 1.0, 0.0))
+Pragma Unused circle
+Pragma Unused capsule
+Pragma Unused polygonShape
+Pragma Unused segment
+
+# Forces, impulses, velocities, and transforms.
+body.ApplyForce(New Vector2(0.0, 10.0), body.GetPosition(), True)
+body.ApplyForceToCenter(New Vector2(0.0, 10.0), True)
+body.ApplyTorque(0.5, True)
+body.ApplyLinearImpulse(New Vector2(0.1, 0.0), body.GetPosition(), True)
+body.ApplyLinearImpulseToCenter(New Vector2(0.1, 0.0), True)
+body.ApplyAngularImpulse(0.05, True)
+body.SetLinearVelocity(New Vector2(0.0, -1.0))
+body.SetAngularVelocity(0.0)
+body.SetTransform(New Vector2(0.0, 3.0), New Rot(1.0, 0.0))
+body.SetTargetTransform(New Transform(New Vector2(0.0, 3.0), New Rot(1.0, 0.0)), 1.0 / 60.0)
+body.SetAwake(True)
+body.SetSleepThreshold(0.05)
+body.SetEnableSleep(True)
+body.SetFixedRotation(False)
+body.SetBullet(False)
+body.Enable()
+body.SetGravityScale(1.0)
+body.SetLinearDamping(0.1)
+body.SetAngularDamping(0.1)
+body.EnableContactEvents(True)
+body.EnableHitEvents(True)
+body.SetName("example")
+body.SetUserData(42)
+Var localPoint As Vector2 = body.GetLocalPoint(New Vector2(0.0, 0.0))
+Var worldPoint As Vector2 = body.GetWorldPoint(New Vector2(0.0, 0.0))
+Pragma Unused localPoint
+Pragma Unused worldPoint
+Var shapes As Array(Of Shape) = body.GetShapes()
+Assert.Equal(4, shapes.Count, "four shapes attach to the example body")
+Var joints As Array(Of Joint) = body.GetJoints()
+Assert.Equal(0, joints.Count, "no joints yet")
+
+# Static and kinematic construction paths.
+Var staticDef As New BodyDefinition
+staticDef.Type = BodyType.StaticBody
+Var ground As Body = world.CreateBody(staticDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-20.0, 0.0, 20.0, 0.0))
+Var kinematicDef As New BodyDefinition
+kinematicDef.Type = BodyType.KinematicBody
+kinematicDef.Position = New Vector2(4.0, 2.0)
+Var platform As Body = world.CreateBody(kinematicDef)
+platform.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(1.0, 0.25))
+platform.SetLinearVelocity(New Vector2(1.0, 0.0))
+
+# Chains wrap segments around a body.
+Var chainDef As New ChainDefinition
+chainDef.Body = ground
+chainDef.IsLoop = False
+chainDef.Points.Append(New Vector2(-8.0, -2.0))
+chainDef.Points.Append(New Vector2(-7.0, -2.4))
+chainDef.Points.Append(New Vector2(-6.5, -2.2))
+chainDef.Points.Append(New Vector2(-6.0, -2.5))
+Var chain As Chain = world.CreateChain(chainDef)
+Assert.True(chain.IsValid(), "the chain constructs")
+world.UpdateBroadPhasePairs()
+world.Validate()
+End Sub
+
+## Every joint family with definitions and runtime setters.
+Public Sub TestJointFamilyExamples()
+Var world As World = ApiExamplesTests.MakeExampleWorld()
+Var ground As Body = ApiExamplesTests.GroundOf(world)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+boxDef.Position = New Vector2(0.0, 4.0)
+Var box As Body = world.CreateBody(boxDef)
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+
+Var ropeDef As New DistanceJointDefinition
+ropeDef.BodyA = ground
+ropeDef.BodyB = box
+ropeDef.LocalAnchorA = New Vector2(0.0, 4.0)
+ropeDef.LocalAnchorB = New Vector2(0.0, 0.0)
+ropeDef.Length = 2.0
+ropeDef.MinLength = 1.0
+ropeDef.MaxLength = 3.0
+ropeDef.Hertz = 1.0
+ropeDef.DampingRatio = 0.5
+ropeDef.EnableSpring = True
+ropeDef.EnableLimit = True
+ropeDef.EnableMotor = False
+ropeDef.MaxMotorForce = 100.0
+ropeDef.MotorSpeed = 0.0
+ropeDef.CollideConnected = False
+ropeDef.UserData = 1
+Var rope As DistanceJoint = world.CreateDistanceJoint(ropeDef)
+rope.SetLength(2.0)
+rope.SetLengthRange(1.0, 3.0)
+rope.EnableLimit(True)
+rope.EnableSpring(True)
+rope.SetSpringHertz(1.0)
+rope.SetSpringDampingRatio(0.5)
+rope.EnableMotor(False)
+rope.SetMotorSpeed(0.0)
+rope.SetMaxMotorForce(100.0)
+Var ropeForce As Vector2 = rope.GetConstraintForce()
+Var ropeTorque As Double = rope.GetConstraintTorque()
+Pragma Unused ropeForce
+Pragma Unused ropeTorque
+
+Var mouseDef As New MouseJointDefinition
+mouseDef.BodyA = ground
+mouseDef.BodyB = box
+mouseDef.Target = New Vector2(0.0, 4.0)
+mouseDef.Hertz = 5.0
+mouseDef.DampingRatio = 0.7
+mouseDef.MaxForce = 1000.0
+mouseDef.CollideConnected = False
+mouseDef.UserData = 2
+Var mouse As MouseJoint = world.CreateMouseJoint(mouseDef)
+mouse.SetTarget(New Vector2(1.0, 4.0))
+mouse.SetTarget(1.0, 4.0)
+mouse.SetSpringHertz(5.0)
+mouse.SetSpringDampingRatio(0.7)
+mouse.SetMaxForce(1000.0)
+
+Var motorDef As New MotorJointDefinition
+motorDef.BodyA = ground
+motorDef.BodyB = box
+motorDef.LinearOffset = New Vector2(1.0, 0.0)
+motorDef.AngularOffset = 0.25
+motorDef.MaxForce = 100.0
+motorDef.MaxTorque = 10.0
+motorDef.CorrectionFactor = 0.3
+motorDef.CollideConnected = False
+motorDef.UserData = 3
+Var motor As MotorJoint = world.CreateMotorJoint(motorDef)
+motor.SetLinearOffset(New Vector2(1.0, 0.0))
+motor.SetLinearOffset(1.0, 0.0)
+motor.SetAngularOffset(0.25)
+motor.SetMaxForce(100.0)
+motor.SetMaxTorque(10.0)
+motor.SetCorrectionFactor(0.3)
+
+Var hingeDef As New RevoluteJointDefinition
+hingeDef.BodyA = ground
+hingeDef.BodyB = box
+hingeDef.LocalAnchorA = New Vector2(0.0, 2.0)
+hingeDef.LocalAnchorB = New Vector2(0.0, -0.5)
+hingeDef.ReferenceAngle = 0.0
+hingeDef.EnableLimit = True
+hingeDef.LowerAngle = -0.5
+hingeDef.UpperAngle = 0.5
+hingeDef.EnableSpring = False
+hingeDef.Hertz = 0.0
+hingeDef.DampingRatio = 0.0
+hingeDef.TargetAngle = 0.0
+hingeDef.EnableMotor = False
+hingeDef.MotorSpeed = 0.0
+hingeDef.MaxMotorTorque = 10.0
+hingeDef.CollideConnected = False
+hingeDef.UserData = 4
+Var hinge As RevoluteJoint = world.CreateRevoluteJoint(hingeDef)
+hinge.SetLimits(-0.5, 0.5)
+hinge.EnableLimit(True)
+hinge.EnableSpring(False)
+hinge.SetSpringHertz(0.0)
+hinge.SetSpringDampingRatio(0.0)
+hinge.SetTargetAngle(0.0)
+hinge.EnableMotor(False)
+hinge.SetMotorSpeed(0.0)
+hinge.SetMaxMotorTorque(10.0)
+Var hingeAngle As Double = hinge.GetAngle()
+Pragma Unused hingeAngle
+
+Var sliderDef As New PrismaticJointDefinition
+sliderDef.BodyA = ground
+sliderDef.BodyB = box
+sliderDef.LocalAnchorA = New Vector2(0.0, 0.0)
+sliderDef.LocalAnchorB = New Vector2(0.0, 0.0)
+sliderDef.LocalAxisA = New Vector2(1.0, 0.0)
+sliderDef.ReferenceAngle = 0.0
+sliderDef.TargetTranslation = 0.0
+sliderDef.EnableSpring = False
+sliderDef.Hertz = 0.0
+sliderDef.DampingRatio = 0.0
+sliderDef.EnableLimit = True
+sliderDef.LowerTranslation = -1.0
+sliderDef.UpperTranslation = 1.0
+sliderDef.EnableMotor = False
+sliderDef.MotorSpeed = 0.0
+sliderDef.MaxMotorForce = 50.0
+sliderDef.CollideConnected = False
+sliderDef.UserData = 5
+Var slider As PrismaticJoint = world.CreatePrismaticJoint(sliderDef)
+slider.SetLimits(-1.0, 1.0)
+slider.EnableLimit(True)
+slider.EnableSpring(False)
+slider.SetSpringHertz(0.0)
+slider.SetSpringDampingRatio(0.0)
+slider.SetTargetTranslation(0.0)
+slider.EnableMotor(False)
+slider.SetMotorSpeed(0.0)
+slider.SetMaxMotorForce(50.0)
+Var sliderTranslation As Double = slider.GetTranslation()
+Pragma Unused sliderTranslation
+
+Var weldDef As New WeldJointDefinition
+weldDef.BodyA = box
+weldDef.BodyB = ground
+weldDef.LocalAnchorA = New Vector2(0.0, 0.5)
+weldDef.LocalAnchorB = New Vector2(0.0, 0.5)
+weldDef.ReferenceAngle = 0.0
+weldDef.LinearHertz = 1.0
+weldDef.LinearDampingRatio = 0.5
+weldDef.AngularHertz = 1.0
+weldDef.AngularDampingRatio = 0.5
+weldDef.CollideConnected = False
+weldDef.UserData = 6
+Var weld As WeldJoint = world.CreateWeldJoint(weldDef)
+weld.SetLinearHertz(1.0)
+weld.SetLinearDampingRatio(0.5)
+weld.SetAngularHertz(1.0)
+weld.SetAngularDampingRatio(0.5)
+Var weldForce As Vector2 = weld.GetConstraintForce()
+Pragma Unused weldForce
+
+Var wheelDef As New WheelJointDefinition
+wheelDef.BodyA = ground
+wheelDef.BodyB = box
+wheelDef.LocalAnchorA = New Vector2(0.0, 1.0)
+wheelDef.LocalAnchorB = New Vector2(0.0, 0.0)
+wheelDef.LocalAxisA = New Vector2(0.0, 1.0)
+wheelDef.EnableSpring = True
+wheelDef.Hertz = 2.0
+wheelDef.DampingRatio = 0.7
+wheelDef.EnableLimit = False
+wheelDef.LowerTranslation = -1.0
+wheelDef.UpperTranslation = 1.0
+wheelDef.EnableMotor = True
+wheelDef.MotorSpeed = 3.0
+wheelDef.MaxMotorTorque = 15.0
+wheelDef.CollideConnected = False
+wheelDef.UserData = 7
+Var wheel As WheelJoint = world.CreateWheelJoint(wheelDef)
+wheel.SetSpringHertz(2.0)
+wheel.SetSpringDampingRatio(0.7)
+wheel.EnableLimit(False)
+wheel.SetLimits(-1.0, 1.0)
+wheel.EnableMotor(True)
+wheel.SetMotorSpeed(3.0)
+wheel.SetMaxMotorTorque(15.0)
+Var wheelTranslation As Double = wheel.GetTranslation()
+Var wheelSpeed As Double = wheel.GetSpeed()
+Pragma Unused wheelTranslation
+Pragma Unused wheelSpeed
+
+Var filterDef As New FilterJointDefinition
+filterDef.BodyA = ground
+filterDef.BodyB = box
+filterDef.UserData = 8
+Var filter As FilterJoint = world.CreateFilterJoint(filterDef)
+Pragma Unused filter
+
+Assert.Equal(8, world.JointCount, "all eight joint families construct")
+world.Validate()
+End Sub
+
+## Every query overload family with callbacks and reusable hit lists.
+Public Sub TestQueryExamples()
+Var world As World = ApiExamplesTests.MakeExampleWorld()
+Var overlapRecorder As ExampleOverlapCallback = New ExampleOverlapCallback
+Var rayRecorder As ExampleCastCallback = New ExampleCastCallback
+Var planeRecorder As ExamplePlaneCallback = New ExamplePlaneCallback
+Var hits As New ShapeHitList
+Var filter As New QueryFilter
+
+# Overlaps: callback and collecting forms for both bounds and shapes.
+Var bounds As New AABB(New Vector2(-5.0, -1.0), New Vector2(5.0, 1.0))
+world.OverlapBounds(bounds, filter, overlapRecorder)
+world.OverlapBoundsInto(bounds, filter, hits)
+Assert.True(hits.Count >= 1, "bounds overlap collects the ground")
+Var proxyPoints() As Vector2 = [New Vector2(0.0, 0.5)]
+Var proxy As ShapeProxy = ShapeProxy.Make(proxyPoints, 1, 0.1)
+world.OverlapShape(proxy, filter, overlapRecorder)
+world.OverlapShapeInto(proxy, filter, hits)
+
+# Rays: callback, collecting, closest, and closest-to forms.
+world.CastRay(New Vector2(0.0, 3.0), New Vector2(0.0, -10.0), filter, rayRecorder)
+world.CastRayInto(New Vector2(0.0, 3.0), New Vector2(0.0, -10.0), filter, hits)
+Var closest As ShapeHit = world.CastRayClosest(New Vector2(0.0, 3.0), New Vector2(0.0, -10.0), filter)
+Assert.True(closest <> Nothing, "the ray reaches the ground")
+Var hitOut As New ShapeHit
+hitOut = world.CastRayClosestTo(New Vector2(0.0, 3.0), New Vector2(0.0, -10.0), filter, hitOut)
+Assert.True(hitOut <> Nothing, "the reused-output closest form fills the hit")
+
+# Shape casts: proxy sweep in callback and collecting forms.
+world.CastShape(proxy, New Vector2(0.0, -4.0), filter, rayRecorder)
+world.CastShapeInto(proxy, New Vector2(0.0, -4.0), filter, hits)
+
+# Movers: sweep fraction and registered planes.
+Var mover As New Capsule(New Vector2(0.0, 0.5), New Vector2(0.0, 0.9), 0.2)
+Var fraction As Double = world.CastMover(mover, New Vector2(0.0, -2.0), filter)
+Assert.True(fraction >= 0.0 And fraction <= 1.0, "the mover fraction stays in range")
+world.CollideMover(mover, filter, planeRecorder)
+world.Validate()
+End Sub
+
+## Debug drawing through a renderer subclass, plus the reusable records.
+Public Sub TestDebugDrawExamples()
+Var world As World = ApiExamplesTests.MakeExampleWorld()
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+boxDef.Position = New Vector2(0.0, 0.3)
+Var box As Body = world.CreateBody(boxDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+box.Name = "example box"
+ApiExamplesTests.Steps(world, 10)
+
+Var renderer As ExampleDebugRenderer = New ExampleDebugRenderer
+Var options As New DebugDrawOptions
+options.DrawShapes = True
+options.DrawJoints = True
+options.DrawJointExtras = True
+options.DrawBounds = True
+options.DrawMass = True
+options.DrawBodyNames = True
+options.DrawContacts = True
+options.DrawContactNormals = True
+options.DrawContactFeatures = True
+options.DrawIslands = True
+world.DrawDebug(renderer, options)
+Assert.True(renderer.Segments > 0, "the example renderer receives segments")
+
+# Graph colours replace the contact state colours and label joints.
+Var graphOptions As New DebugDrawOptions
+graphOptions.DrawContacts = True
+graphOptions.DrawContactImpulses = True
+graphOptions.DrawFrictionImpulses = True
+graphOptions.DrawGraphColors = True
+world.DrawDebug(renderer, graphOptions)
+
+# Bounds mode restricts drawing to a region.
+Var regionOptions As New DebugDrawOptions
+regionOptions.UseDrawingBounds = True
+regionOptions.DrawShapes = True
+regionOptions.DrawingBounds = New AABB(New Vector2(-2.0, -2.0), New Vector2(2.0, 2.0))
+world.DrawDebug(renderer, regionOptions)
+
+# The palette exposes the upstream debug colours.
+Var palette As Colour = DebugColors.GraphColor(0)
+Pragma Unused palette
+
+Var counters As WorldCounters = world.Counters()
+Var profile As WorldProfile = world.Profile()
+Pragma Unused counters
+Pragma Unused profile
+world.Validate()
+End Sub
+
+## Events, lifetime rules, and body-level world helpers.
+Public Sub TestEventAndLifetimeExamples()
+Var world As World = ApiExamplesTests.MakeExampleWorld()
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+boxDef.Position = New Vector2(0.0, 0.3)
+Var box As Body = world.CreateBody(boxDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.EnableContactEvents = True
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+ApiExamplesTests.Steps(world, 10)
+
+# The polled batch view resolves stale references to Nothing safely.
+Var events As WorldEvents = world.Events
+Var beginCount As Integer = events.ContactBeginCount()
+For i As Integer = 0 To beginCount - 1
+Var shapeA As Shape = events.ContactBeginShapeA(i)
+Var manifold As Manifold = events.ContactBeginManifold(i)
+Pragma Unused shapeA
+Pragma Unused manifold
+Next i
+Var hitCount As Integer = events.ContactHitCount()
+Pragma Unused hitCount
+Var sensorBeginCount As Integer = events.SensorBeginCount()
+Pragma Unused sensorBeginCount
+
+# World-level body services and event record resolution.
+world.SetBodyAwake(box, True)
+world.SetBodyLinearVelocity(box, New Vector2(0.0, -1.0))
+Var velocity As Vector2 = world.GetBodyLinearVelocity(box)
+Pragma Unused velocity
+Var transform As Transform = world.GetBodyTransform(box)
+Pragma Unused transform
+Var awakeCount As Integer = world.AwakeBodyCount()
+Assert.True(awakeCount >= 1, "the example box is awake")
+Var resolved As Shape = world.EventShape(0, 1)
+Pragma Unused resolved
+Var resolvedBody As Body = world.EventBody(0, 1)
+Pragma Unused resolvedBody
+
+# Destruction detaches shapes, contacts, and joints, and a stale facade
+# reports invalid.
+Var firstShape As Shape = box.GetShapes()[0]
+Var slot As Integer = firstShape.Id
+Pragma Unused slot
+box.Destroy()
+Assert.True(box.IsValid() = False, "a destroyed body facade reports invalid")
+world.Clear()
+Assert.True(world.Bodies[0] = Nothing, "Clear empties the body store")
+world.Validate()
+End Sub
+
+## Steps a world the recommended fixed-timestep way.
+Shared Sub Steps(world As World, count As Integer)
+Var i As Integer = 0
+While i < count
+world.StepWorld(1.0 / 60.0)
+i = i + 1
+Wend
+End Sub
+
+## Builds the example world: gravity, a ground segment, and broad-phase
+## pairs ready for queries.
+Shared Function MakeExampleWorld() As World
+Var world As World = World.WithGravity(New Vector2(0.0, -10.0))
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-20.0, 0.0, 20.0, 0.0))
+world.UpdateBroadPhasePairs()
+Return world
+End Function
+
+## Returns the first (ground) body of an example world.
+Shared Function GroundOf(world As World) As Body
+Return world.Bodies[0]
+End Function
+End Class
+
+# Overlap callback recording visited shapes.
+Class ExampleOverlapCallback Inherits WorldOverlapCallback
+## Number of shapes reported.
+Property Visited As Integer
+
+## Counts the shape and continues.
+Override Function VisitShape(shape As Shape) As Boolean
+Pragma Unused shape
+Me.Visited = Me.Visited + 1
+Return True
+End Function
+End Class
+
+# Ray and shape-cast callback recording hits.
+Class ExampleCastCallback Inherits WorldCastCallback
+## Number of hits reported.
+Property Hits As Integer
+
+## Counts the hit and continues the full ray.
+Override Function VisitShape(shape As Shape, point As Vector2, normal As Vector2, fraction As Double) As Double
+Pragma Unused shape
+Pragma Unused point
+Pragma Unused normal
+Pragma Unused fraction
+Me.Hits = Me.Hits + 1
+Return 1.0
+End Function
+End Class
+
+# Mover plane callback recording registered planes.
+Class ExamplePlaneCallback Inherits WorldMoverPlaneCallback
+## Number of planes reported.
+Property Planes As Integer
+
+## Counts the plane and continues.
+Override Function VisitPlane(shape As Shape, result As PlaneResult) As Boolean
+Pragma Unused shape
+Pragma Unused result
+Me.Planes = Me.Planes + 1
+Return True
+End Function
+End Class
+
+# Minimal debug renderer counting one primitive kind, showing the smallest
+# useful DebugRenderer subclass.
+Class ExampleDebugRenderer Inherits DebugRenderer
+## Number of segments received.
+Property Segments As Integer
+
+## Counts the segment; every other primitive keeps its no-op default.
+Override Sub DrawSegment(p1 As Vector2, p2 As Vector2, color As Colour)
+Pragma Unused p1
+Pragma Unused p2
+Pragma Unused color
+Me.Segments = Me.Segments + 1
+End Sub
+End Class

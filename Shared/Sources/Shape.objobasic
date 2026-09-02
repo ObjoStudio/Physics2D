@@ -14,16 +14,16 @@ Property Owner As World
 Property Id As Integer
 ## Generation counter, incremented when the slot is freed and reused.
 Property Generation As Integer
-## Whether this shape is live. Stale façades keep the object but flip this.
+## Whether this shape is live. Stale façades keep the object but flip this. Internal solver bookkeeping.
 Property Live As Boolean
 ## Slot index of the owning body.
 Property BodyId As Integer
-## Previous shape in the body's doubly linked shape list.
+## Previous shape in the body's doubly linked shape list. Internal solver bookkeeping.
 Property PrevShapeId As Integer
-## Next shape in the body's doubly linked shape list.
+## Next shape in the body's doubly linked shape list. Internal solver bookkeeping.
 Property NextShapeId As Integer
 ## Sensor store index, or the null sentinel. The sensor store arrives in
-## Stage 8; until then this stays null and IsSensor reports the definition.
+## Stage 8; until then this stays null and IsSensor reports the definition. Internal solver bookkeeping.
 Property SensorIndex As Integer
 ## The geometry type of this shape.
 Property Type As ShapeType
@@ -43,11 +43,11 @@ Property UserMaterialId As Integer
 Property CustomColor As Integer
 ## Axis-aligned bounding box including the speculative margin.
 Property AABB As AABB
-## Fat AABB stored for tree move decisions.
+## Fat AABB stored for tree move decisions. Internal solver bookkeeping.
 Property FatAABB As AABB
 ## Local centroid of the geometry.
 Property LocalCentroid As Vector2
-## Broad-phase proxy key, or the null sentinel when the body is disabled.
+## Broad-phase proxy key, or the null sentinel when the body is disabled. Internal solver bookkeeping.
 Property ProxyKey As Integer
 ## Collision filter.
 Property Filter As Filter
@@ -62,7 +62,7 @@ Property EnableHitEvents As Boolean
 ## Whether this shape reports pre-solve events.
 Property EnablePreSolveEvents As Boolean
 ## Whether the AABB was enlarged by a shape change and the proxy needs
-## attention. Consumed by contact updates from Stage 7.
+## attention. Consumed by contact updates from Stage 7. Internal solver bookkeeping.
 Property EnlargedAABB As Boolean
 ## Whether this shape was created as a sensor. The sensor store itself
 ## arrives in Stage 8.

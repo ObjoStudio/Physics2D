@@ -13,13 +13,13 @@ Property Owner As World
 Property Id As Integer
 ## Generation counter, incremented when the slot is freed and reused.
 Property Generation As Integer
-## Whether this chain is live. Stale façades keep the object but flip this.
+## Whether this chain is live. Stale façades keep the object but flip this. Internal solver bookkeeping.
 Property Live As Boolean
-## Slot index of the owning body.
+## Slot index of the owning body. Internal solver bookkeeping.
 Property BodyId As Integer
-## Previous chain in the body's doubly linked chain list.
+## Previous chain in the body's doubly linked chain list. Internal solver bookkeeping.
 Property PrevChainId As Integer
-## Next chain in the body's doubly linked chain list.
+## Next chain in the body's doubly linked chain list. Internal solver bookkeeping.
 Property NextChainId As Integer
 ## Number of solid segments, one per stored shape index.
 Property SegmentCount As Integer

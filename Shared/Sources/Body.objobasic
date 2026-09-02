@@ -13,36 +13,36 @@ Property Owner As World
 Property Id As Integer
 ## Generation counter, incremented when the slot is freed and reused.
 Property Generation As Integer
-## Whether this body is live. Stale façades keep the object but flip this.
+## Whether this body is live. Stale façades keep the object but flip this. Internal solver bookkeeping.
 Property Live As Boolean
-## Solver set index: 0 static, 1 disabled, 2 awake, 3+ sleeping sets.
+## Solver set index: 0 static, 1 disabled, 2 awake, 3+ sleeping sets. Internal solver bookkeeping.
 Property SetIndex As Integer
-## Dense-record index of this body inside its solver set.
+## Dense-record index of this body inside its solver set. Internal solver bookkeeping.
 Property LocalIndex As Integer
-## Head of the doubly linked shape list.
+## Head of the doubly linked shape list. Internal solver bookkeeping.
 Property HeadShapeId As Integer
 ## Number of shapes attached to this body.
 Property ShapeCount As Integer
-## Head of the doubly linked chain list.
+## Head of the doubly linked chain list. Internal solver bookkeeping.
 Property HeadChainId As Integer
 ## Head of the doubly linked contact list as a contact edge key:
-## (contactId << 1) | edgeIndex.
+## (contactId << 1) | edgeIndex. Internal solver bookkeeping.
 Property HeadContactKey As Integer
 ## Number of contacts attached to this body.
 Property ContactCount As Integer
 ## Head of the doubly linked joint list as a joint edge key:
-## (jointId << 1) | edgeIndex.
+## (jointId << 1) | edgeIndex. Internal solver bookkeeping.
 Property HeadJointKey As Integer
 ## Number of joints attached to this body.
 Property JointCount As Integer
-## Island this body belongs to. NULL_INDEX for static and disabled bodies.
+## Island this body belongs to. NULL_INDEX for static and disabled bodies. Internal solver bookkeeping.
 Property IslandId As Integer
-## Doubly linked island list: previous body.
+## Doubly linked island list: previous body. Internal solver bookkeeping.
 Property IslandPrev As Integer
-## Doubly linked island list: next body.
+## Doubly linked island list: next body. Internal solver bookkeeping.
 Property IslandNext As Integer
 ## Index of this body's moved-body event in the current step, or -1. Set by
-## the finalize stage and consumed by island sleeping. Internal.
+## the finalize stage and consumed by island sleeping. Internal. Internal solver bookkeeping.
 Property MoveEventIndex As Integer
 ## Total mass from shapes (kilograms). Overridden by SetMassData.
 Property Mass As Double
@@ -61,7 +61,7 @@ Property FixedRotation As Boolean
 ## Whether the speed cap engaged in the last step.
 Property IsSpeedCapped As Boolean
 ## Whether the body is marked during island traversal. Solver bookkeeping
-## from Stage 7.
+## from Stage 7. Internal solver bookkeeping.
 Property IsMarked As Boolean
 ## Optional body name, truncated to 31 characters like upstream.
 Property Name As String
