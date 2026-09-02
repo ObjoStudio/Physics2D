@@ -1,7 +1,31 @@
-# Desktop demo entry point. The interactive demo scenes are implemented in
-# Stage 11; see docs/DEMO.md.
+# Physics2D demo entry point. Runs the interactive teaching demo; pass
+# --soak [minutes] to cycle every scene automatically for the given amount
+# of simulated physics time (30 minutes by default) and quit, which is the
+# automated soak gate. The soak counts fixed simulation steps, so it
+# terminates even when macOS throttles an occluded window.
 Class App Inherits DesktopApplication
 Event Opening(args() As String)
-Pragma Unused args
+Var soakMinutes As Double = 0.0
+Var i As Integer = 0
+While i < args.Count
+If args[i] = "--soak" Then
+soakMinutes = 30.0
+If i + 1 < args.Count And args[i + 1].StartsWith("-") = False Then
+soakMinutes = Double.Parse(args[i + 1])
+i = i + 1
+End If
+End If
+i = i + 1
+Wend
+Var window As New DemoWindow(soakMinutes)
+Var j As Integer = 0
+While j < args.Count
+If args[j] = "--start" And j + 1 < args.Count Then
+window.SetStartScene(Integer.Parse(args[j + 1]) - 1)
+j = j + 1
+End If
+j = j + 1
+Wend
+window.ShowCentered()
 End Event
 End Class

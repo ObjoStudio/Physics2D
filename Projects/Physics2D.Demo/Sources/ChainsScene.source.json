@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ChainsScene",
+  "Id": "b8c9d0e1-f2a3-4b4c-5d6e-7f8091021324",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "ChainsScene.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

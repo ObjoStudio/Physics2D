@@ -133,7 +133,7 @@
 # Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
 # Input: WheelJoint.objobasic 063db7c796ee6df9b2ed0d4db36d51dec921e3a61ec1b001cd6ab07308136b4d
 # Input: WheelJointDefinition.objobasic 1ae60874c31b501cb219d8af36f26398fea1ad6a74eb924c08d53b70109e0641
-# Input: World.objobasic fb8501721e05033530ce246cdbb9ad72168f2dfe5026fa56014f4f338bc48ef5
+# Input: World.objobasic a737bc7923f10d52131b584cae3b3e90b9b93e59ab319b361970f10fd808bc7e
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldCounters.objobasic d77a7a134e677e6c387b086034e1ec984829d66679d8887753fcaa6254cdffb7
 # Input: WorldDebugDrawContext.objobasic 9e81237a6e02df019c321f4f4dc24003b822c22b3c3325758f818f0dcae56de2
@@ -148,7 +148,7 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
 #
-# Source content checksum (SHA-256): 05eaf1a885ec7447811c79453cd9c842b4e4a73aa11d18eb0acd3b4b645af43d
+# Source content checksum (SHA-256): e03113fff6fe0d6801f4b57b03a7083518f2ba13c45bdd4aaf12c1120a9c2e4d
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -22724,12 +22724,14 @@ Next setIndex
 End Sub
 
 ## Draws every live joint, ported from the drawJoints stage of
-## b2World_Draw.
+## b2World_Draw. Upstream iterates a dense joint array; the port's joint
+## array is id-indexed and keeps Nothing holes after destruction, so the
+## loop skips them before the live check.
 Private Sub DrawAllJoints(renderer As DebugRenderer, options As DebugDrawOptions)
 Var jointCount As Integer = Me.Joints.Count
 For i As Integer = 0 To jointCount - 1
 Var joint As Joint = Me.Joints[i]
-If joint.SetIndex <> PhysicsConstants.NULL_INDEX Then
+If joint <> Nothing And joint.SetIndex <> PhysicsConstants.NULL_INDEX Then
 DebugDrawMethods.DrawJoint(Me, renderer, options, joint)
 End If
 Next i

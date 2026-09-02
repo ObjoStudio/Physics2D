@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "MoverScene",
+  "Id": "c9d0e1f2-a3b4-4c5d-6e7f-809102132435",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "MoverScene.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

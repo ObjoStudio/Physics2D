@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "QueryScene",
+  "Id": "a7b8c9d0-e1f2-4a3b-4c5d-6e7f80910213",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "QueryScene.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

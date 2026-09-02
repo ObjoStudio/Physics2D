@@ -1,0 +1,62 @@
+# Base class for the Physics2D demo scenes, part of the demo application
+# only. A scene owns no engine state: it populates a fresh world in Build,
+# runs per-frame logic in Update, and may draw query visuals in
+# PaintExtras. Scenes use only documented public Physics2D APIs so they
+# teach the same patterns as the user documentation.
+Abstract Class DemoScene
+## Scene name shown in the HUD and the scene list.
+Property Title As String
+
+## One-line explanation of what the scene teaches, drawn under the HUD.
+Property Description As String
+
+## Whether the window should draw the cursor ray cast and overlap region
+## for this scene.
+Property WantsCursorQuery As Boolean
+
+## Whether the window should draw the mover capsule and its planes for
+## this scene.
+Property WantsMover As Boolean
+
+## Creates a scene with its title and explanation.
+Constructor(title As String, description As String)
+Me.Title = title
+Me.Description = description
+Me.WantsCursorQuery = False
+Me.WantsMover = False
+End Constructor
+
+## Populates a fresh world with the scene's bodies. The world arrives with
+## gravity already set and no bodies.
+Sub Build(world As World)
+End Sub
+
+## Runs once per rendered frame after the physics steps. Scenes that spawn
+## objects on timers or read events use this hook. May step the world
+## clock forward but must not call World.StepWorld itself.
+Sub Update(world As World, elapsed As Double)
+Pragma Unused world
+Pragma Unused elapsed
+End Sub
+
+## Draws scene-specific query visuals after the debug layers, using the
+## same canvas renderer the window configured for the current frame.
+Sub PaintExtras(world As World, renderer As CanvasDebugRenderer)
+Pragma Unused world
+Pragma Unused renderer
+End Sub
+
+## Physics substeps the window uses for this scene. Heavy scenes may
+## reduce the count for interactivity; the default matches the
+## documented four substeps.
+Function Substeps() As Integer
+Return 4
+End Function
+
+## Log lines shown under the HUD, such as recent sensor events. Scenes
+## without a log return an empty array.
+Function EventLines() As Array(Of String)
+Var empty As New Array(Of String)
+Return empty
+End Function
+End Class

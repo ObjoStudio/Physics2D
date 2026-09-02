@@ -215,6 +215,19 @@ in the Objo checkout remains authoritative.
   (commit `b9781ccc83a87b076f5c73bb77eb1a99b3da6119`). Do not replace
   constructor-owned base invariants with property defaults or factory-side
   initialization to work around the former VM bug.
+- A Window (or other native-desktop) subclass constructor MUST call
+  `Super.Constructor()` before configuring controls. Without it the native
+  backing object never registers: the window shows as an empty shell,
+  `Opening`/`Opened` never fire, and timers wired in `Opened` never tick —
+  with no error at build or run time.
+- Event handlers run with `Me` bound to the event source (the canvas or
+  timer that raised the event) and `Self` bound to the instance that owns
+  the handler method. Use `Self.field` inside handlers to reach the
+  owning object's state.
+- Declared object properties default to a live empty instance, not
+  `Nothing` (`Property mQuad As Array(Of Vector2)` starts as an empty
+  array), so `x = Nothing` lazy-initialisation never fires. Construct
+  state explicitly in the constructor, as the module's own classes do.
 - The virtual machine dispatches same-arity constructors by arity alone: a
   second constructor with the same arity is silently unreachable (the first
   wins). Expose the alternatives as shared factory functions

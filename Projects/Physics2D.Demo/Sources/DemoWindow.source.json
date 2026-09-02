@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "DemoWindow",
+  "Id": "e1f2a3b4-c5d6-4e7f-8091-021324354657",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "DemoWindow.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

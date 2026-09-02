@@ -1,0 +1,72 @@
+# The materials scene: rows of equal boxes with varying friction,
+# restitution, rolling resistance, and conveyor tangent speed, teaching
+# the SurfaceMaterial surface and how the mixer combines contacts.
+Class MaterialsScene Inherits DemoScene
+## Creates the materials scene.
+Constructor()
+Super.Constructor("Materials", "Friction, restitution, rolling resistance, and conveyor rows. Push the boxes around to feel the differences.")
+End Constructor
+
+## Builds four labelled material rows.
+Override Sub Build(world As World)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+Var groundSegment As New Segment(-16.0, 0.0, 16.0, 0.0)
+Var groundShapeDef As New ShapeDefinition
+ground.CreateSegment(groundShapeDef, groundSegment)
+
+# Row one: friction ladder. Same push, different slide.
+Var frictionValues() As Double = [0.0, 0.2, 0.5, 0.9]
+MaterialsScene.SpawnRow(world, frictionValues, 4.0, -3.0, "friction")
+
+# Row two: restitution ladder.
+Var restitutionValues() As Double = [0.0, 0.3, 0.6, 0.9]
+MaterialsScene.SpawnRow(world, restitutionValues, 4.0, -6.5, "bounce")
+
+# Row three: rolling resistance on wheels.
+Var i As Integer = 0
+While i < 4
+Var wheelDef As New BodyDefinition
+wheelDef.Type = BodyType.DynamicBody
+wheelDef.Position = New Vector2(-4.5 + i * 3.0, -10.0)
+Var wheel As Body = world.CreateBody(wheelDef)
+Var wheelShape As New ShapeDefinition
+wheelShape.Density = 1.0
+wheelShape.Material.RollingResistance = i * 0.03
+wheelShape.Material.Restitution = 0.1
+wheel.CreateCircle(wheelShape, New Circle(New Vector2(0.0, 0.0), 0.5))
+i = i + 1
+Wend
+
+# Row four: a conveyor segment pushing boxes right.
+Var conveyorDef As New BodyDefinition
+Var conveyor As Body = world.CreateBody(conveyorDef)
+Var conveyorShape As New ShapeDefinition
+Var conveyorMaterial As New SurfaceMaterial
+conveyorMaterial.TangentSpeed = 2.0
+conveyorShape.Material = conveyorMaterial
+conveyor.CreateSegment(conveyorShape, New Segment(-6.0, -12.5, 6.0, -12.5))
+MaterialsScene.SpawnRow(world, [0.5], 4.0, -13.7, "conveyor")
+world.Validate()
+End Sub
+
+## Spawns one labelled box per value in a row.
+Private Shared Sub SpawnRow(world As World, values() As Double, spacing As Double, y As Double, label As String)
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+Var i As Integer = 0
+While i < values.Count
+def.Position = New Vector2((i - (values.Count - 1) * 0.5) * spacing, y)
+Var box As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material = New SurfaceMaterial
+shapeDef.Material.Friction = 0.4
+shapeDef.Material.Restitution = values[i]
+Var halfSize As Double = 0.4 + 0.1 * i
+box.CreatePolygon(shapeDef, Polygon.MakeBox(halfSize, halfSize))
+box.Name = label + " " + i.ToString()
+i = i + 1
+Wend
+End Sub
+End Class

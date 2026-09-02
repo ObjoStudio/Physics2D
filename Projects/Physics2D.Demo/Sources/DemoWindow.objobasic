@@ -1,0 +1,658 @@
+# The Physics2D demo window: a fixed-timestep physics loop with an
+# accumulator driving a paint-based canvas view, a scene manager for the
+# teaching scenes, and the full control surface (pause, single step,
+# reset, scene selection, gravity control, debug-draw layer toggles,
+# mouse-joint dragging, shape spawning, and CCD/sleeping toggles). All
+# physics goes through documented public APIs; rendering never mutates
+# the world during a step because Paint only reads.
+Class DemoWindow Inherits Window
+## Fixed physics timestep in seconds.
+Private Shared Const FIXED_DT As Double = 1.0 / 60.0
+
+## Canvas points per world metre.
+Private Shared Const PIXELS_PER_METRE As Double = 40.0
+
+## The simulated world for the current scene.
+Private Property mWorld As World
+
+## The active scene.
+Private Property mScene As DemoScene
+
+## All scenes in selection order.
+Private Property mScenes As Array(Of DemoScene)
+
+## Index of the active scene in the scene list.
+Private Property mSceneIndex As Integer
+
+## Canvas renderer shared by every paint pass.
+Private Property mRenderer As CanvasDebugRenderer
+
+## Debug-draw layer options.
+Private Property mOptions As DebugDrawOptions
+
+## Runtime errors caught and logged since launch. The soak gate exits
+## non-zero when this is above zero.
+Private Property mErrorCount As Integer
+
+## Canvas control the world paints into.
+Private Property mCanvas As Canvas
+
+## Frame timer driving the accumulator.
+Private Property mTimer As Timer
+
+## Leftover frame time awaiting the next fixed step.
+Private Property mAccumulator As Double
+
+## Monotonic time of the previous tick.
+Private Property mLastTicks As Double
+
+## Whether the physics loop is paused.
+Private Property mPaused As Boolean
+
+## Whether one single step was requested while paused.
+Private Property mStepOnce As Boolean
+
+## Gravity preset: 0 down, 1 zero, 2 up.
+Private Property mGravityPreset As Integer
+
+## Live mouse joint while dragging.
+Private Property mDragJoint As MouseJoint
+
+## The dragged body.
+Private Property mDragBody As Body
+
+## A static body used as the mouse-joint anchor.
+Private Property mStaticAnchor As Body
+
+## Last cursor position in world coordinates.
+Private Property mCursorWorld As Vector2
+
+## Whether the cursor is over the canvas.
+Private Property mCursorInside As Boolean
+
+## Most recent overlap hits under the cursor, reused per frame.
+Private Property mCursorHits As ShapeHitList
+
+## Frames rendered since the scene reset, for the FPS estimate.
+Private Property mFrameCount As Integer
+
+## Monotonic time of the FPS window start.
+Private Property mFpsWindowStart As Double
+
+## Estimated frames per second over the last window.
+Private Property mFps As Double
+
+## Soak mode: cycle scenes automatically and quit when finished.
+Private Property mSoakMode As Boolean
+
+## Remaining soak steps: fixed 1/60 s simulation steps, not wall frames,
+## so the gate terminates regardless of timer throttling.
+Private Property mSoakStepsLeft As Integer
+
+## Remaining soak steps in the current scene before the next switch.
+Private Property mSoakSceneStepsLeft As Integer
+
+## Simulated seconds per scene while soaking, in fixed steps: 30 s at
+## 60 steps per second.
+Private Shared Const SOAK_SCENE_STEPS As Integer = 1800
+
+## Creates the demo window. SoakMinutes above zero enables automated
+## scene cycling for the given duration.
+Constructor(soakMinutes As Double)
+Super.Constructor()
+Me.Title = "Physics2D Demo"
+Me.Width = 1200
+Me.Height = 800
+Me.mPaused = False
+Me.mStepOnce = False
+Me.mGravityPreset = 0
+Me.mCursorInside = False
+Me.mCursorWorld = New Vector2(0.0, 0.0)
+Me.mCursorHits = New ShapeHitList
+Me.mAccumulator = 0.0
+Me.mFps = 0.0
+Me.mSoakMode = soakMinutes > 0.0
+Me.mSoakStepsLeft = Integer(soakMinutes * 3600.0)
+Me.mSoakSceneStepsLeft = DemoWindow.SOAK_SCENE_STEPS
+
+Me.mScenes = New Array(Of DemoScene)
+Me.mScenes.Append(New WelcomeScene)
+Me.mScenes.Append(New PyramidScene)
+Me.mScenes.Append(New MaterialsScene)
+Me.mScenes.Append(New SensorFilterScene)
+Me.mScenes.Append(New JointsScene)
+Me.mScenes.Append(New ContinuousScene)
+Me.mScenes.Append(New QueryScene)
+Me.mScenes.Append(New ChainsScene)
+Me.mScenes.Append(New MoverScene)
+Me.mScenes.Append(New BenchmarkScene)
+
+Me.mRenderer = New CanvasDebugRenderer
+Me.mRenderer.PixelsPerMetre = DemoWindow.PIXELS_PER_METRE
+Me.mErrorCount = 0
+Me.mOptions = New DebugDrawOptions
+Me.mOptions.DrawShapes = True
+Me.mOptions.DrawJoints = True
+Me.mQuad = New Array(Of Vector2)
+Me.mQuad.Append(New Vector2)
+Me.mQuad.Append(New Vector2)
+Me.mQuad.Append(New Vector2)
+Me.mQuad.Append(New Vector2)
+
+Me.mCanvas = New Canvas
+Me.mCanvas.Left = 0
+Me.mCanvas.Top = 0
+Me.mCanvas.Width = 1180
+Me.mCanvas.Height = 760
+Me.mCanvas.AllowFocus = True
+Me.mCanvas.AllowFocusRing = False
+Me.Add(Me.mCanvas)
+AddHandler Me.mCanvas.Paint, AddressOf CanvasPaint
+AddHandler Me.mCanvas.KeyDown, AddressOf CanvasKey
+AddHandler Me.mCanvas.MouseDown, AddressOf CanvasMouseDown
+AddHandler Me.mCanvas.MouseDrag, AddressOf CanvasMouseDrag
+AddHandler Me.mCanvas.MouseUp, AddressOf CanvasMouseUp
+AddHandler Me.mCanvas.MouseMove, AddressOf CanvasMouseMove
+
+Me.mTimer = New Timer
+Me.mTimer.Interval = (1000.0 / 120.0).Milliseconds()
+AddHandler Me.mTimer.Tick, AddressOf FrameTick
+
+AddHandler Me.Opened, AddressOf SelfOpened
+Me.SelectScene(0)
+End Constructor
+
+## Selects the starting scene before the window opens.
+Sub SetStartScene(index As Integer)
+Me.SelectScene(index)
+End Sub
+
+## Prepares the window: focuses the canvas and starts the frame timer.
+Sub SelfOpened()
+Self.mCanvas.SetFocus()
+Self.mLastTicks = System.Ticks
+Self.mFpsWindowStart = Self.mLastTicks
+Self.mFrameCount = 0
+Self.mTimer.Start()
+End Sub
+
+## Selects a scene by index, rebuilding the world with the current
+## gravity preset.
+Private Sub SelectScene(index As Integer)
+Me.mSceneIndex = index
+Me.mScene = Me.mScenes[index]
+Me.mWorld = DemoWindow.MakeWorld(Me.mGravityPreset)
+Me.mScene.Build(Me.mWorld)
+Me.mDragJoint = Nothing
+Me.mDragBody = Nothing
+Me.mStaticAnchor = DemoWindow.FindStaticBody(Me.mWorld)
+Me.mAccumulator = 0.0
+End Sub
+
+## Creates a world with the gravity for the given preset: 0 down (the
+## screen convention, positive Y), 1 zero, 2 up (negative Y).
+Private Shared Function MakeWorld(gravityPreset As Integer) As World
+If gravityPreset = 1 Then
+Return World.WithGravity(New Vector2(0.0, 0.0))
+End If
+If gravityPreset = 2 Then
+Return World.WithGravity(New Vector2(0.0, -10.0))
+End If
+Return World.WithGravity(New Vector2(0.0, 10.0))
+End Function
+
+## Returns the first static body of a freshly built scene, or Nothing.
+Private Shared Function FindStaticBody(world As World) As Body
+Var count As Integer = world.Bodies.Count
+Var i As Integer = 0
+While i < count
+Var body As Body = world.Bodies[i]
+If body <> Nothing And body.GetBodyType() = BodyType.StaticBody Then
+Return body
+End If
+i = i + 1
+Wend
+Return Nothing
+End Function
+
+## Advances the fixed-timestep loop, runs scene logic, and repaints.
+Private Sub FrameTick()
+Try
+Var now As Double = System.Ticks
+Var frame As Double = now - Self.mLastTicks
+Self.mLastTicks = now
+If frame < 0.0 Then
+frame = 0.0
+End If
+If frame > 0.25 Then
+# Clamp extreme catch-up so a backgrounded window does not spiral.
+frame = 0.25
+End If
+
+If Self.mPaused = False Or Self.mStepOnce Then
+If Self.mSoakMode Then
+# The soak runs flat out: every tick feeds the full catch-up budget
+# (the 0.25 s clamp, 15 steps) so the gate measures simulated physics
+# time rather than throttled wall time.
+Self.mAccumulator = Self.mAccumulator + 0.25
+End If
+Self.mAccumulator = Self.mAccumulator + frame
+While Self.mAccumulator >= DemoWindow.FIXED_DT
+Self.mWorld.StepWorld(DemoWindow.FIXED_DT, Self.mScene.Substeps())
+Self.mAccumulator = Self.mAccumulator - DemoWindow.FIXED_DT
+If Self.mSoakMode Then
+Self.mSoakStepsLeft = Self.mSoakStepsLeft - 1
+Self.mSoakSceneStepsLeft = Self.mSoakSceneStepsLeft - 1
+End If
+If Self.mPaused Then
+# A single step consumes exactly one fixed step.
+Self.mAccumulator = 0.0
+Break
+End If
+Wend
+Self.mStepOnce = False
+End If
+
+# The soak counts simulated steps, so scene switches and the exit fire
+# on executed work even while macOS throttles an occluded window.
+If Self.mSoakMode Then
+If Self.mSoakStepsLeft <= 0 Then
+Self.mTimer.Stop()
+If Self.mErrorCount > 0 Then
+System.Quit(1)
+Else
+System.Quit(0)
+End If
+Return
+End If
+If Self.mSoakSceneStepsLeft <= 0 Then
+Self.mSoakSceneStepsLeft = DemoWindow.SOAK_SCENE_STEPS
+Var nextIndex As Integer = (Self.mSceneIndex + 1) Mod Self.mScenes.Count
+Self.SelectScene(nextIndex)
+End If
+End If
+
+Self.mScene.Update(Self.mWorld, frame)
+
+Self.mCanvas.Refresh()
+Catch e As RuntimeException
+Self.mErrorCount = Self.mErrorCount + 1
+Self.LogError(e, "tick")
+End Try
+End Sub
+
+## Writes one runtime error and its stack to /tmp so swallowed event-loop
+## exceptions stay diagnosable; the soak gate counts them in its exit code.
+Private Sub LogError(e As RuntimeException, context As String)
+Var line As String = context + " | " + e.Message
+If e.ThrowSite <> Nothing Then
+line = line + " | " + e.ThrowSite.ToString()
+End If
+Var frames As Array(Of StackFrame) = e.StackFrames
+If frames <> Nothing Then
+Var i As Integer = 0
+While i < frames.Count And i < 12
+line = line + " | " + frames[i].Name + " (" + frames[i].FileName + ":" + frames[i].LineNumber.ToString() + ")"
+i = i + 1
+Wend
+End If
+Var file As FileSystemItem = New FileSystemItem("/tmp/physics2d-demo-errors.log")
+file.AppendText(line + EndOfLine.Native)
+End Sub
+
+## Paints the world, the scene extras, and the HUD. Paint reads the
+## world; it never steps or mutates it.
+Private Sub CanvasPaint(g As Graphics)
+Try
+Self.mFrameCount = Self.mFrameCount + 1
+Var now As Double = System.Ticks
+If now - Self.mFpsWindowStart >= 0.5 Then
+Self.mFps = Self.mFrameCount / (now - Self.mFpsWindowStart)
+Self.mFrameCount = 0
+Self.mFpsWindowStart = now
+End If
+g.DrawingColour = Colour.RGB(16, 18, 24)
+g.FillRectangle(0.0, 0.0, Self.mCanvas.Width, Self.mCanvas.Height)
+
+Self.mRenderer.Target = g
+Self.mRenderer.Origin = DemoWindow.ViewOrigin(g.Width, g.Height)
+Self.mWorld.DrawDebug(Self.mRenderer, Self.mOptions)
+Self.mScene.PaintExtras(Self.mWorld, Self.mRenderer)
+
+If Self.mScene.WantsCursorQuery And Self.mCursorInside Then
+Self.PaintCursorQuery(g)
+End If
+
+If Self.mScene.WantsMover Then
+Self.PaintMover(g)
+End If
+
+Self.PaintHud(g)
+Catch e As RuntimeException
+Self.mErrorCount = Self.mErrorCount + 1
+Self.LogError(e, "paint")
+End Try
+End Sub
+
+## Returns the world position of the canvas top-left corner: world origin
+## centred horizontally, three quarters down.
+Private Shared Function ViewOrigin(width As Double, height As Double) As Vector2
+Return New Vector2(-0.5 * width / DemoWindow.PIXELS_PER_METRE, -0.75 * height / DemoWindow.PIXELS_PER_METRE)
+End Function
+
+## Paints the cursor ray and overlap region for query scenes.
+Private Sub PaintCursorQuery(g As Graphics)
+Pragma Unused g
+Var bounds As New AABB(Me.mCursorWorld + New Vector2(-0.5, -0.5), Me.mCursorWorld + New Vector2(0.5, 0.5))
+Var hit As ShapeHit = Me.mWorld.CastRayClosest(Me.mCursorWorld, New Vector2(4.0, -4.0), New QueryFilter)
+Me.mRenderer.DrawSegment(Me.mCursorWorld, Me.mCursorWorld + New Vector2(4.0, -4.0), Colour.RGB(235, 235, 235))
+If hit <> Nothing Then
+Me.mRenderer.DrawSegment(hit.Point, hit.Point + hit.Normal * 0.5, Colour.RGB(255, 210, 80))
+Me.mRenderer.DrawPoint(hit.Point, 6.0, Colour.RGB(255, 210, 80))
+End If
+
+Me.mCursorHits.Clear()
+Me.mWorld.OverlapBoundsInto(bounds, New QueryFilter, Me.mCursorHits)
+Var quad As Array(Of Vector2) = Me.mRendererDebugQuad()
+quad[0].Set(bounds.LowerBound.X, bounds.LowerBound.Y)
+quad[1].Set(bounds.UpperBound.X, bounds.LowerBound.Y)
+quad[2].Set(bounds.UpperBound.X, bounds.UpperBound.Y)
+quad[3].Set(bounds.LowerBound.X, bounds.UpperBound.Y)
+Me.mRenderer.DrawPolygon(quad, 4, Colour.RGB(255, 215, 0))
+End Sub
+
+## Paints the mover capsule and its grounded state.
+Private Sub PaintMover(g As Graphics)
+Pragma Unused g
+Var moverScene As MoverScene = MoverScene(Me.mScene)
+Var mover As Capsule = moverScene.GetMover()
+Var color As Colour = Colour.RGB(90, 200, 250)
+If moverScene.IsGrounded() = False Then
+color = Colour.RGB(230, 150, 90)
+End If
+Me.mRenderer.DrawSolidCapsule(mover.Center1, mover.Center2, mover.Radius, color)
+End Sub
+
+## Paints the HUD lines over the scene.
+Private Sub PaintHud(g As Graphics)
+Var counters As WorldCounters = Me.mWorld.Counters()
+Var profile As WorldProfile = Me.mWorld.Profile()
+Var sleeping As Integer = counters.BodyCount - Me.mWorld.AwakeBodyCount()
+
+g.DrawingColour = Colour.RGB(240, 240, 240)
+g.DrawText(Me.mScene.Title, 12.0, 8.0)
+g.DrawingColour = Colour.RGB(170, 180, 190)
+g.DrawText(Me.mScene.Description, 12.0, 26.0)
+
+Var stats As String = Me.mFps.ToString("F0") + " fps | step " + profile.StepMs.ToString("F1") + " ms | bodies " + counters.BodyCount.ToString()
+stats = stats + " | contacts " + counters.ContactCount.ToString() + " | joints " + counters.JointCount.ToString()
+stats = stats + " | sleeping " + sleeping.ToString() + " | substeps " + Me.mScene.Substeps().ToString()
+g.DrawText(stats, 12.0, 44.0)
+
+Var state As String = ""
+If Me.mPaused Then
+state = "PAUSED "
+End If
+state = state + "gravity " + Me.GravityLabel() + " | CCD " + Me.OnOff(Me.mWorld.ContinuousEnabled) + " | sleeping " + Me.OnOff(Me.mWorld.EnableSleeping)
+g.DrawText(state, 12.0, 62.0)
+
+g.DrawingColour = Colour.RGB(140, 150, 160)
+Var help As String = "Digits: scenes | P pause | S step | R reset | G gravity | C CCD | W sleeping | F1-F8 layers | drag: mouse joint | right: box | middle: circle"
+g.DrawText(help, 12.0, Me.mCanvas.Height - 22.0)
+
+# Scene log lines from sensor scenes, drawn under the state line.
+Var logLines As Array(Of String) = Me.mScene.EventLines()
+Var i As Integer = 0
+While i < logLines.Count
+g.DrawText(logLines[i], 12.0, 84.0 + i * 18.0)
+i = i + 1
+Wend
+End Sub
+
+## Returns the gravity preset label.
+Private Function GravityLabel() As String
+If Me.mGravityPreset = 1 Then
+Return "zero"
+End If
+If Me.mGravityPreset = 2 Then
+Return "up"
+End If
+Return "down"
+End Function
+
+## Returns "on" or "off" for a flag.
+Private Function OnOff(flag As Boolean) As String
+If flag Then
+Return "on"
+End If
+Return "off"
+End Function
+
+## Builds a fresh empty world for paint-time quad reuse; the demo keeps
+## one quad array outside the module.
+Private Function mRendererDebugQuad() As Array(Of Vector2)
+Return Me.mQuad
+End Function
+
+## Reused four-point array for the overlap region outline.
+Private Property mQuad As Array(Of Vector2)
+
+## Converts a canvas point to world coordinates.
+Private Function WorldPoint(x As Double, y As Double) As Vector2
+Return New Vector2(x / DemoWindow.PIXELS_PER_METRE, y / DemoWindow.PIXELS_PER_METRE) + DemoWindow.ViewOrigin(Me.mCanvas.Width, Me.mCanvas.Height)
+End Function
+
+## Handles keyboard controls. Returns True when the key was consumed.
+Private Function CanvasKey(keyName As String) As Boolean
+If keyName = Key.Space Or keyName = Key.P Then
+Self.mPaused = Not Self.mPaused
+Return True
+End If
+If keyName = Key.S Then
+Self.mPaused = True
+Self.mStepOnce = True
+Return True
+End If
+If keyName = Key.R Then
+Self.SelectScene(Self.mSceneIndex)
+Return True
+End If
+If keyName = Key.G Then
+Self.mGravityPreset = (Self.mGravityPreset + 1) Mod 3
+Self.SelectScene(Self.mSceneIndex)
+Return True
+End If
+If keyName = Key.C Then
+Self.mWorld.ContinuousEnabled = Not Self.mWorld.ContinuousEnabled
+Return True
+End If
+If keyName = Key.W Then
+Self.mWorld.EnableSleeping = Not Self.mWorld.EnableSleeping
+Return True
+End If
+If keyName = Key.Up Then
+Var moverScene As MoverScene = MoverScene(Self.mScene)
+moverScene.QueueJump()
+Return True
+End If
+If keyName = Key.Left Then
+Var moverScene As MoverScene = MoverScene(Self.mScene)
+moverScene.MoveInput = -1.0
+Return True
+End If
+If keyName = Key.Right Then
+Var moverScene As MoverScene = MoverScene(Self.mScene)
+moverScene.MoveInput = 1.0
+Return True
+End If
+# F1-F8 toggle debug-draw layers.
+If keyName = Key.F1 Then
+Self.mOptions.DrawShapes = Not Self.mOptions.DrawShapes
+Return True
+End If
+If keyName = Key.F2 Then
+Self.mOptions.DrawJoints = Not Self.mOptions.DrawJoints
+Return True
+End If
+If keyName = Key.F3 Then
+Self.mOptions.DrawBounds = Not Self.mOptions.DrawBounds
+Return True
+End If
+If keyName = Key.F4 Then
+Self.mOptions.DrawContacts = Not Self.mOptions.DrawContacts
+Return True
+End If
+If keyName = Key.F5 Then
+Self.mOptions.DrawGraphColors = Not Self.mOptions.DrawGraphColors
+Return True
+End If
+If keyName = Key.F6 Then
+Self.mOptions.DrawMass = Not Self.mOptions.DrawMass
+Return True
+End If
+If keyName = Key.F7 Then
+Self.mOptions.DrawBodyNames = Not Self.mOptions.DrawBodyNames
+Return True
+End If
+If keyName = Key.F8 Then
+Self.mOptions.DrawIslands = Not Self.mOptions.DrawIslands
+Return True
+End If
+# Digits select scenes; Down and Up release mover input.
+If keyName = Key.Down Then
+Var moverScene As MoverScene = MoverScene(Self.mScene)
+moverScene.MoveInput = 0.0
+Return True
+End If
+Var sceneKey As Integer = DemoWindow.SceneDigit(keyName)
+If sceneKey >= 0 Then
+Self.SelectScene(sceneKey)
+Return True
+End If
+Return False
+End Function
+
+## Maps a digit key name to a scene index, or -1.
+Private Shared Function SceneDigit(keyName As String) As Integer
+Var digits() As String = [Key.D1, Key.D2, Key.D3, Key.D4, Key.D5, Key.D6, Key.D7, Key.D8, Key.D9, Key.D0]
+Var i As Integer = 0
+While i < digits.Count
+If keyName = digits[i] Then
+Return i
+End If
+i = i + 1
+Wend
+Return -1
+End Function
+
+## Begins a mouse-joint drag on the dynamic body under the cursor, or
+## spawns a shape for right and middle clicks.
+Private Sub CanvasMouseDown(x As Double, y As Double, button As MouseButton)
+Try
+Var world As Vector2 = Self.WorldPoint(x, y)
+Self.mCursorWorld = world
+Self.mCursorInside = True
+If button = MouseButton.Right Then
+Self.SpawnBox(world)
+Return
+End If
+If button = MouseButton.Middle Then
+Self.SpawnCircle(world)
+Return
+End If
+If button <> MouseButton.Left Then
+Return
+End If
+
+# Pick the topmost dynamic body whose AABB contains the cursor.
+Var bounds As New AABB(world + New Vector2(-0.05, -0.05), world + New Vector2(0.05, 0.05))
+Self.mCursorHits.Clear()
+Self.mWorld.OverlapBoundsInto(bounds, New QueryFilter, Self.mCursorHits)
+Var i As Integer = 0
+While i < Self.mCursorHits.Count
+Var shape As Shape = Self.mCursorHits.Hits[i].Shape
+Var body As Body = shape.GetBody()
+If body <> Nothing And body.GetBodyType() = BodyType.DynamicBody Then
+body.SetAwake(True)
+If Self.mStaticAnchor <> Nothing Then
+Var def As New MouseJointDefinition
+def.BodyA = Self.mStaticAnchor
+def.BodyB = body
+def.Target = world
+def.Hertz = 5.0
+def.DampingRatio = 0.8
+def.MaxForce = body.GetMass() * 1000.0
+Self.mDragBody = body
+Self.mDragJoint = Self.mWorld.CreateMouseJoint(def)
+End If
+Return
+End If
+i = i + 1
+Wend
+Catch e As RuntimeException
+Self.mErrorCount = Self.mErrorCount + 1
+Self.LogError(e, "mouse-down")
+End Try
+End Sub
+
+## Moves the mouse-joint target while dragging.
+Private Sub CanvasMouseDrag(x As Double, y As Double)
+Try
+Self.mCursorWorld = Self.WorldPoint(x, y)
+Self.mCursorInside = True
+If Self.mDragJoint <> Nothing Then
+Self.mDragJoint.SetTarget(Self.mCursorWorld)
+End If
+Catch e As RuntimeException
+Self.mErrorCount = Self.mErrorCount + 1
+Self.LogError(e, "mouse-drag")
+End Try
+End Sub
+
+## Ends the drag and releases the joint.
+Private Sub CanvasMouseUp(x As Double, y As Double, button As MouseButton)
+Try
+Pragma Unused x
+Pragma Unused y
+Pragma Unused button
+If Self.mDragJoint <> Nothing Then
+Self.mDragJoint.Destroy()
+Self.mDragJoint = Nothing
+Self.mDragBody = Nothing
+End If
+Catch e As RuntimeException
+Self.mErrorCount = Self.mErrorCount + 1
+Self.LogError(e, "mouse-up")
+End Try
+End Sub
+
+## Tracks the cursor for query scenes.
+Private Sub CanvasMouseMove(x As Double, y As Double)
+Self.mCursorWorld = Self.WorldPoint(x, y)
+Self.mCursorInside = True
+End Sub
+
+## Spawns a dynamic box at the world point.
+Private Sub SpawnBox(position As Vector2)
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = position
+Var box As Body = Me.mWorld.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.CustomColor = 15130806
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.35, 0.35))
+End Sub
+
+## Spawns a dynamic circle at the world point.
+Private Sub SpawnCircle(position As Vector2)
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = position
+Var ball As Body = Me.mWorld.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.CustomColor = 30 * 65536 + 174 * 256 + 191
+ball.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.3))
+End Sub
+End Class

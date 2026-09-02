@@ -1,0 +1,143 @@
+# The sensors and filters scene: a visible sensor counting begin and end
+# events plus three pairs demonstrating category/mask filtering and a
+# negative group index, teaching the event and filter surfaces.
+Class SensorFilterScene Inherits DemoScene
+## Recent sensor events for the HUD, most recent last.
+Property EventLog As Array(Of String)
+
+## Creates the sensors and filters scene.
+Constructor()
+Super.Constructor("Sensors and filters", "The ring logs entries and exits. Red collides with blue when categories and masks match; the dark pair shares a negative group and never touches.")
+Me.EventLog = New Array(Of String)
+Me.mDrops = New Array(Of Body)
+Me.mSpawnTimer = 1.0
+End Constructor
+
+## Builds the sensor ring and filter demo pairs.
+Override Sub Build(world As World)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-16.0, 0.0, 16.0, 0.0))
+
+# A static sensor ring. Begin and end events light up the HUD log.
+Var sensorDef As New BodyDefinition
+sensorDef.Position = New Vector2(0.0, -3.0)
+Var sensorBody As Body = world.CreateBody(sensorDef)
+Var sensorShape As New ShapeDefinition
+sensorShape.IsSensor = True
+sensorShape.EnableSensorEvents = True
+sensorBody.CreateCircle(sensorShape, New Circle(New Vector2(0.0, 0.0), 1.5))
+
+# Pair one: categories 1 and 2 with mutual masks collide.
+SensorFilterScene.SpawnPair(world, New Vector2(-6.0, -4.0), 1, 2, 2, 1, False, 15118152)
+
+# Pair two: each mask excludes the other category, so they pass through.
+SensorFilterScene.SpawnPair(world, New Vector2(6.0, -4.0), 1, 1, 2, 2, False, 8947807)
+
+# Pair three: a negative group index suppresses the collision entirely.
+SensorFilterScene.SpawnPair(world, New Vector2(0.0, -9.0), 1, -1, 2, -1, True, 4737096)
+world.Validate()
+End Sub
+
+## Builds two boxes with the given category, mask, and group bits.
+Private Shared Sub SpawnPair(world As World, base As Vector2, categoryA As Integer, maskA As Integer, categoryB As Integer, maskB As Integer, sameGroup As Boolean, customColor As Integer)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.CustomColor = customColor
+
+Var defA As New BodyDefinition
+defA.Type = BodyType.DynamicBody
+defA.Position = base + New Vector2(-0.4, 0.0)
+Var bodyA As Body = world.CreateBody(defA)
+Var filterA As New Filter
+filterA.CategoryBits = categoryA
+filterA.MaskBits = maskA
+If sameGroup Then
+filterA.GroupIndex = -2
+End If
+shapeDef.Filter = filterA
+bodyA.CreatePolygon(shapeDef, Polygon.MakeBox(0.4, 0.4))
+
+Var defB As New BodyDefinition
+defB.Type = BodyType.DynamicBody
+defB.Position = base + New Vector2(0.4, 0.0)
+Var bodyB As Body = world.CreateBody(defB)
+Var filterB As New Filter
+filterB.CategoryBits = categoryB
+filterB.MaskBits = maskB
+If sameGroup Then
+filterB.GroupIndex = -2
+End If
+shapeDef.Filter = filterB
+bodyB.CreatePolygon(shapeDef, Polygon.MakeBox(0.4, 0.4))
+End Sub
+
+## Drops a ball through the ring every few seconds and trims the log.
+Override Sub Update(world As World, elapsed As Double)
+Me.mSpawnTimer = Me.mSpawnTimer - elapsed
+If Me.mSpawnTimer <= 0.0 Then
+Me.mSpawnTimer = 3.0
+Me.mDropIndex = Me.mDropIndex + 1
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+# A sine sweep keeps the drops deterministic without a random source.
+def.Position = New Vector2(0.4 * Maths.Sin(0.9 * Me.mDropIndex), -10.0)
+def.Name = "drop " + Me.mDropIndex.ToString()
+Var ball As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+ball.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.35))
+Me.mDrops.Append(ball)
+End If
+
+# Destroy drops that fell past the floor so the scene never grows.
+Var i As Integer = Me.mDrops.Count - 1
+While i >= 0
+Var drop As Body = Me.mDrops[i]
+If drop.IsValid() = False Or drop.GetPosition().Y > 12.0 Then
+If drop.IsValid() Then
+drop.Destroy()
+End If
+Me.mDrops.RemoveAt(i)
+End If
+i = i - 1
+Wend
+
+# Collect sensor begin and end events into a short log. Event shapes can
+# be stale between steps; Nothing references are skipped.
+Var events As WorldEvents = world.Events
+i = 0
+While i < events.SensorBeginCount()
+Var entered As Shape = events.SensorBeginVisitorShape(i)
+If entered <> Nothing And entered.GetBody() <> Nothing Then
+Me.AppendLog("enter " + entered.GetBody().GetName())
+End If
+i = i + 1
+Wend
+i = 0
+While i < events.SensorEndCount()
+Var left As Shape = events.SensorEndVisitorShape(i)
+If left <> Nothing And left.GetBody() <> Nothing Then
+Me.AppendLog("exit " + left.GetBody().GetName())
+End If
+i = i + 1
+Wend
+End Sub
+
+## Appends one log line, keeping the last four.
+Private Sub AppendLog(line As String)
+Me.EventLog.Append(line)
+While Me.EventLog.Count > 4
+Me.EventLog.RemoveAt(0)
+Wend
+End Sub
+
+## Seconds until the next drop.
+Private Property mSpawnTimer As Double
+
+## Number of drops spawned so far.
+Private Property mDropIndex As Integer
+
+## Live drop balls, pruned as they fall out of the scene.
+Private Property mDrops As Array(Of Body)
+End Class

@@ -1,0 +1,53 @@
+# The chains scene: a rolling hill of one-sided chain segments, a closed
+# loop platform, and a ball that rolls across the ghost-collision joints,
+# teaching ChainDefinition and chain behaviour.
+Class ChainsScene Inherits DemoScene
+## Creates the chains scene.
+Constructor()
+Super.Constructor("Chains", "Roll the ball across the hill and loop. Chain segments are one-sided with ghost collision at the junctions.")
+End Constructor
+
+## Builds the hill, the loop, and a heavy roller. The terrain crest
+## sits at negative Y so it reads as a hill under the screen convention.
+Override Sub Build(world As World)
+Var groundDef As New BodyDefinition
+Var terrain As Body = world.CreateBody(groundDef)
+
+# Rolling hill as an open chain.
+Var hillDef As New ChainDefinition
+hillDef.Body = terrain
+hillDef.IsLoop = False
+hillDef.Points.Append(New Vector2(-14.0, 2.0))
+hillDef.Points.Append(New Vector2(-10.0, 1.0))
+hillDef.Points.Append(New Vector2(-6.0, 0.0))
+hillDef.Points.Append(New Vector2(-2.0, 0.5))
+hillDef.Points.Append(New Vector2(2.0, -0.5))
+hillDef.Points.Append(New Vector2(6.0, 0.0))
+hillDef.Points.Append(New Vector2(10.0, 1.0))
+hillDef.Points.Append(New Vector2(14.0, 2.0))
+world.CreateChain(hillDef)
+
+# A closed loop platform to roll through.
+Var loopDef As New ChainDefinition
+loopDef.Body = terrain
+loopDef.IsLoop = True
+loopDef.Points.Append(New Vector2(-4.0, -4.0))
+loopDef.Points.Append(New Vector2(4.0, -4.0))
+loopDef.Points.Append(New Vector2(4.0, -6.5))
+loopDef.Points.Append(New Vector2(-4.0, -6.5))
+world.CreateChain(loopDef)
+
+# A heavy smooth ball rolls in from the left.
+Var ballDef As New BodyDefinition
+ballDef.Type = BodyType.DynamicBody
+ballDef.Position = New Vector2(3.5, -1.4)
+ballDef.AngularDamping = 0.05
+Var roller As Body = world.CreateBody(ballDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 2.0
+shapeDef.Material.Friction = 0.3
+roller.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.75))
+roller.Name = "roller"
+world.Validate()
+End Sub
+End Class

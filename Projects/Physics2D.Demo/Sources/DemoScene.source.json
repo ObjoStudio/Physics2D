@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "DemoScene",
+  "Id": "f1a2b3c4-d5e6-4f70-8a91-2b3c4d5e6f70",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "DemoScene.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

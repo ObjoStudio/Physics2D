@@ -1,0 +1,36 @@
+# The queries scene: the cursor fires a ray (white line and hit points)
+# while an overlap region follows the mouse (gold bounds), teaching the
+# callback query forms. The window supplies the cursor state.
+Class QueryScene Inherits DemoScene
+## Creates the queries scene.
+Constructor()
+Super.Constructor("Queries", "The white ray casts from the cursor toward the mouse offset and shows every hit. The gold box overlaps shapes under the cursor.")
+Me.WantsCursorQuery = True
+End Constructor
+
+## Builds a cluttered field of mixed shapes to query against.
+Override Sub Build(world As World)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-16.0, 0.0, 16.0, 0.0))
+
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+Var i As Integer = 0
+While i < 14
+def.Position = New Vector2(-6.0 + (i Mod 7) * 2.0, -(2.0 + (i \ 7) * 2.5))
+Var body As Body = world.CreateBody(def)
+If i Mod 3 = 0 Then
+body.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.5))
+ElseIf i Mod 3 = 1 Then
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.4, 0.4))
+Else
+body.CreateCapsule(shapeDef, New Capsule(New Vector2(-0.4, 0.0), New Vector2(0.4, 0.0), 0.2))
+End If
+i = i + 1
+Wend
+world.Validate()
+End Sub
+End Class

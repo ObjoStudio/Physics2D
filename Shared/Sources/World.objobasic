@@ -515,12 +515,14 @@ Next setIndex
 End Sub
 
 ## Draws every live joint, ported from the drawJoints stage of
-## b2World_Draw.
+## b2World_Draw. Upstream iterates a dense joint array; the port's joint
+## array is id-indexed and keeps Nothing holes after destruction, so the
+## loop skips them before the live check.
 Private Sub DrawAllJoints(renderer As DebugRenderer, options As DebugDrawOptions)
 Var jointCount As Integer = Me.Joints.Count
 For i As Integer = 0 To jointCount - 1
 Var joint As Joint = Me.Joints[i]
-If joint.SetIndex <> PhysicsConstants.NULL_INDEX Then
+If joint <> Nothing And joint.SetIndex <> PhysicsConstants.NULL_INDEX Then
 DebugDrawMethods.DrawJoint(Me, renderer, options, joint)
 End If
 Next i

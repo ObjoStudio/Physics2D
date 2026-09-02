@@ -1,0 +1,197 @@
+# The character mover scene: a capsule character swept with
+# World.CastMover, grounded with World.CollideMover planes, and relaxed
+# with the plane solver, teaching the mover/planes API for character
+# controllers. Screen convention: gravity pulls toward positive Y (down
+# the canvas), jumps push toward negative Y (up the canvas).
+Class MoverScene Inherits DemoScene
+## Horizontal mover input, -1 to 1, set by the window's arrow keys.
+Property MoveInput As Double
+
+## Creates the mover scene.
+Constructor()
+Super.Constructor("Character mover", "Arrow keys move the capsule. It sweeps with World.CastMover, registers planes with World.CollideMover, and hops with the up arrow.")
+Me.WantsMover = True
+Me.mVelocity = New Vector2(0.0, 0.0)
+Me.mFilter = New QueryFilter
+Me.mCollector = New MoverPlaneCollector
+Me.mSolverResult = New PlaneSolverResult
+Me.mGrounded = False
+Me.mJumpQueued = False
+End Constructor
+
+## Builds stairs, a platform, and a wall for the mover.
+Override Sub Build(world As World)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-16.0, 0.0, 16.0, 0.0))
+
+# Stairs to climb, rising up-screen (negative Y).
+Var stairDef As New BodyDefinition
+Var stairShape As New ShapeDefinition
+Var i As Integer = 0
+While i < 6
+stairDef.Position = New Vector2(4.0 + i * 1.0, -(0.35 + i * 0.5))
+Var stair As Body = world.CreateBody(stairDef)
+stair.CreatePolygon(stairShape, Polygon.MakeBox(0.5, 0.35))
+i = i + 1
+Wend
+
+# A floating platform and a wall to block movement.
+Var platformDef As New BodyDefinition
+platformDef.Position = New Vector2(-6.0, -3.0)
+Var platform As Body = world.CreateBody(platformDef)
+platform.CreatePolygon(stairShape, Polygon.MakeBox(1.5, 0.25))
+Var wallDef As New BodyDefinition
+wallDef.Position = New Vector2(-11.0, -1.5)
+Var wall As Body = world.CreateBody(wallDef)
+wall.CreatePolygon(stairShape, Polygon.MakeBox(0.5, 1.5))
+
+# The mover state starts just above the floor (negative Y is up).
+Me.mMover = New Capsule(New Vector2(-3.0, -0.5), New Vector2(-3.0, -1.4), 0.3)
+Me.mVelocity.Set(0.0, 0.0)
+Me.mGrounded = False
+Me.mJumpQueued = False
+world.Validate()
+End Sub
+
+## Steps the capsule with the upstream character pattern: register
+## planes at the current pose, relax the velocity step against them
+## with the plane solver, sweep the relaxed translation with
+## World.CastMover, and repeat until the delta settles. Clipping the
+## velocity afterwards keeps the capsule resting on floors instead of
+## creeping through them.
+Override Sub Update(world As World, elapsed As Double)
+# Integrate gravity and input.
+Me.mVelocity.Y = Me.mVelocity.Y + 22.0 * elapsed
+Me.mVelocity.X = Me.MoveInput * 6.0
+If Me.mGrounded And Me.mJumpQueued Then
+Me.mVelocity.Y = -8.0
+End If
+Me.mJumpQueued = False
+
+Var desiredX As Double = Me.mVelocity.X * elapsed
+Var desiredY As Double = Me.mVelocity.Y * elapsed
+Var movedX As Double = 0.0
+Var movedY As Double = 0.0
+
+Var iteration As Integer = 0
+Var settled As Boolean = False
+While iteration < 5 And settled = False
+Me.mCollector.BeginProbe()
+world.CollideMover(Me.mMover, Me.mFilter, Me.mCollector)
+Var remaining As New Vector2(desiredX - movedX, desiredY - movedY)
+Mover.SolvePlanesTo(remaining, Me.mCollector.Planes, Me.mCollector.PlanesCount, Me.mSolverResult)
+Var fraction As Double = world.CastMover(Me.mMover, Me.mSolverResult.Translation, Me.mFilter)
+Var dx As Double = Me.mSolverResult.Translation.X * fraction
+Var dy As Double = Me.mSolverResult.Translation.Y * fraction
+If dx <> 0.0 Or dy <> 0.0 Then
+Me.mMover = MoverScene.Translate(Me.mMover, New Vector2(dx, dy))
+movedX = movedX + dx
+movedY = movedY + dy
+End If
+If dx * dx + dy * dy < 0.0001 Then
+settled = True
+End If
+iteration = iteration + 1
+Wend
+
+# Remove velocity into planes that registered push, then report the
+# grounded state from floor-facing planes.
+Me.mVelocity = Mover.ClipVector(Me.mVelocity, Me.mCollector.Planes, Me.mCollector.PlanesCount)
+Me.mGrounded = Me.mCollector.SawFloor
+End Sub
+
+## Queues a jump for the next update.
+Sub QueueJump()
+Me.mJumpQueued = True
+End Sub
+
+## The capsule the scene drives, for painting.
+Function GetMover() As Capsule
+Return Me.mMover
+End Function
+
+## Whether the mover currently stands on a plane.
+Function IsGrounded() As Boolean
+Return Me.mGrounded
+End Function
+
+## Returns the capsule translated by the given offset. Capsules are
+## immutable value-like records, so movement builds a new one; the demo
+## runs at most a few translations per frame.
+Private Shared Function Translate(capsule As Capsule, offset As Vector2) As Capsule
+Return New Capsule(capsule.Center1 + offset, capsule.Center2 + offset, capsule.Radius)
+End Function
+
+## The mover capsule driven by the scene.
+Private Property mMover As Capsule
+
+## Velocity of the mover in metres per second.
+Private Property mVelocity As Vector2
+
+## Whether the mover stands on a floor-facing plane.
+Private Property mGrounded As Boolean
+
+## Whether a jump was queued this frame.
+Private Property mJumpQueued As Boolean
+
+## Reusable query filter for the mover queries.
+Private Property mFilter As QueryFilter
+
+## Reusable plane collector fed by World.CollideMover.
+Private Property mCollector As MoverPlaneCollector
+
+## Reusable plane solver output.
+Private Property mSolverResult As PlaneSolverResult
+End Class
+
+# Plane callback that collects CollisionPlane values for the plane
+# solver and remembers whether any plane faces up-screen (a floor under
+# the character). The plane array is pre-built and reused every frame.
+Class MoverPlaneCollector Inherits WorldMoverPlaneCallback
+## Pre-built collision planes, reused every frame.
+Property Planes As Array(Of CollisionPlane)
+
+## Number of planes registered by the latest probe.
+Property PlanesCount As Integer
+
+## True when the latest probe registered a floor-facing plane.
+Property SawFloor As Boolean
+
+## Creates a collector with a fixed plane budget.
+Constructor()
+Me.Planes = New Array(Of CollisionPlane)
+Var i As Integer = 0
+While i < 16
+Me.Planes.Append(New CollisionPlane)
+i = i + 1
+Wend
+Me.PlanesCount = 0
+Me.SawFloor = False
+End Constructor
+
+## Clears the state before one CollideMover probe.
+Sub BeginProbe()
+Me.PlanesCount = 0
+Me.SawFloor = False
+End Sub
+
+## Copies one registered plane into the reusable budget.
+Override Function VisitPlane(shape As Shape, result As PlaneResult) As Boolean
+Pragma Unused shape
+If result.Hit = False Or Me.PlanesCount >= Me.Planes.Count Then
+Return True
+End If
+Var slot As CollisionPlane = Me.Planes[Me.PlanesCount]
+slot.Plane.Normal.Set(result.Plane.Normal.X, result.Plane.Normal.Y)
+slot.Plane.Offset = result.Plane.Offset
+slot.Push = 0.0
+slot.PushLimit = 1.7976931348623157e308
+slot.ClipVelocity = True
+Me.PlanesCount = Me.PlanesCount + 1
+If result.Plane.Normal.Y < -0.5 Then
+Me.SawFloor = True
+End If
+Return True
+End Function
+End Class

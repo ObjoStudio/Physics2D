@@ -1,0 +1,41 @@
+# The benchmark view: a forty level pyramid, visually throttled to one
+# physics step per rendered frame so the scene stays interactive. This is
+# the stress view; benchmark MEASUREMENT happens in the Benchmarks
+# project, never here.
+Class BenchmarkScene Inherits DemoScene
+## Creates the benchmark scene.
+Constructor()
+Super.Constructor("Benchmark pyramid", "Forty levels, one step per frame. Physics time in the HUD comes from World.Profile().")
+End Constructor
+
+## Builds the forty level pyramid.
+Override Sub Build(world As World)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-30.0, 0.0, 30.0, 0.0))
+
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.6
+
+Var halfWidth As Double = 0.5
+Var levels As Integer = 40
+Var level As Integer = 0
+While level < levels
+Var count As Integer = levels - level
+Var y As Double = -(halfWidth + level * (2.0 * halfWidth + 0.01))
+Var i As Integer = 0
+While i < count
+Var x As Double = (i - (count - 1) * 0.5) * (2.0 * halfWidth + 0.02)
+boxDef.Position = New Vector2(x, y)
+Var box As Body = world.CreateBody(boxDef)
+box.CreatePolygon(shapeDef, Polygon.MakeBox(halfWidth, halfWidth))
+i = i + 1
+Wend
+level = level + 1
+Wend
+world.Validate()
+End Sub
+End Class

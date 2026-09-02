@@ -1,0 +1,89 @@
+# The continuous collision scene: fast bullets fired across thin wall
+# stacks. With CCD enabled (World.ContinuousEnabled) the bullets stop on
+# the far wall; with it disabled they tunnel, teaching the CCD toggle.
+Class ContinuousScene Inherits DemoScene
+## Creates the continuous collision scene.
+Constructor()
+Super.Constructor("Continuous collision", "Bullets cross thin walls. Press C to toggle CCD and watch tunnelling versus clean stops.")
+Me.mBullets = New Array(Of Body)
+Me.mFireTimer = 1.0
+End Constructor
+
+## Builds a firing range with three thin walls.
+Override Sub Build(world As World)
+# No gravity by design: the range is a clean horizontal corridor, so the
+# scene pins zero gravity even when the window's gravity preset changes.
+world.Gravity = New Vector2(0.0, 0.0)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+# Corridor walls keep bullets on screen.
+ground.CreateSegment(New ShapeDefinition, New Segment(-14.0, -5.0, 14.0, -5.0))
+ground.CreateSegment(New ShapeDefinition, New Segment(-14.0, 5.0, 14.0, 5.0))
+
+# Three thin walls: bullets must stop on the far one.
+Var wallDef As New BodyDefinition
+Var wallShape As New ShapeDefinition
+wallShape.Material.CustomColor = 15118152
+Var i As Integer = 0
+While i < 3
+wallDef.Position = New Vector2(2.0 + i * 5.0, 0.0)
+Var wall As Body = world.CreateBody(wallDef)
+wall.CreatePolygon(wallShape, Polygon.MakeBox(0.15, 4.5))
+i = i + 1
+Wend
+
+Me.mFireTimer = 1.0
+Me.mBulletIndex = 0
+world.Validate()
+End Sub
+
+## Fires one bullet every second from the left edge.
+Override Sub Update(world As World, elapsed As Double)
+Me.mFireTimer = Me.mFireTimer - elapsed
+If Me.mFireTimer <= 0.0 Then
+Me.mFireTimer = 1.0
+Me.mBulletIndex = Me.mBulletIndex + 1
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(-13.0, 1.5 * Maths.Sin(0.7 * Me.mBulletIndex))
+def.LinearVelocity = New Vector2(55.0, 0.0)
+def.IsBullet = True
+def.Name = "bullet " + Me.mBulletIndex.ToString()
+Var bullet As Body = world.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 20.0
+shapeDef.Material.CustomColor = 16750899
+bullet.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.18))
+Me.mBullets.Append(bullet)
+End If
+
+# Retire bullets that left the corridor or stopped, so the scene never
+# grows unboundedly.
+Var i As Integer = Me.mBullets.Count - 1
+While i >= 0
+Var bullet As Body = Me.mBullets[i]
+Var retired As Boolean = bullet.IsValid() = False
+If retired = False Then
+Var position As Vector2 = bullet.GetPosition()
+Var speed As Double = bullet.GetLinearVelocity().Length()
+retired = position.X > 15.0 Or (bullet.IsAwake() = False And speed < 0.5)
+End If
+If retired Then
+If bullet.IsValid() Then
+bullet.Destroy()
+End If
+Me.mBullets.RemoveAt(i)
+End If
+i = i - 1
+Wend
+End Sub
+
+## Seconds until the next bullet.
+Private Property mFireTimer As Double
+
+## Bullets fired so far.
+Private Property mBulletIndex As Integer
+
+## Live bullets, pruned as they leave the range.
+Private Property mBullets As Array(Of Body)
+End Class

@@ -483,6 +483,38 @@ Assert.True(recorder.ColorSeen(DebugColors.OrangeRed), "island bounds draw orang
 world.Validate()
 End Sub
 
+## DrawDebug tolerates destroyed joints. The port keeps Nothing holes in
+## the id-indexed joint array where upstream compacts a dense array, so
+## the drawJoints stage must skip holes before its live check. Regression
+## for a soak crash that read SetIndex on a destroyed joint slot.
+Public Sub TestDrawDebugSkipsDestroyedJointSlots()
+Var world As New World
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+boxDef.Position = New Vector2(0.0, 3.0)
+Var box As Body = world.CreateBody(boxDef)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.5, 0.5))
+Var def As New DistanceJointDefinition
+def.BodyA = ground
+def.BodyB = box
+def.Length = 2.5
+Var joint As Joint = world.CreateDistanceJoint(def)
+Var recorder As New RecordingDebugRenderer
+Var options As New DebugDrawOptions
+options.DrawJoints = True
+world.DrawDebug(recorder, options)
+Var segmentsBefore As Integer = recorder.SegmentCount
+Assert.True(segmentsBefore >= 1, "the live distance rope draws as a segment")
+joint.Destroy()
+world.DrawDebug(recorder, options)
+Assert.Equal(segmentsBefore, recorder.SegmentCount, "destroyed joints draw nothing and crash nothing")
+world.Validate()
+End Sub
+
 ## DrawDebug validates its arguments like the other world entries, ported
 ## from the b2World_Draw locked assert and the port's throwing validation
 ## policy.

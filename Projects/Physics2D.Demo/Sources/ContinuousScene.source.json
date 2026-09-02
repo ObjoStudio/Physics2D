@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "ContinuousScene",
+  "Id": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809102",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "ContinuousScene.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

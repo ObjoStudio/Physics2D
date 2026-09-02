@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "PyramidScene",
+  "Id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "PyramidScene.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

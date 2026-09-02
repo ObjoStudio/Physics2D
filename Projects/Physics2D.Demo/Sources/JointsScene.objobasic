@@ -1,0 +1,144 @@
+# The joints gallery: all seven physical joint families in one scene,
+# each labelled and behaving normally, teaching the definition and runtime
+# surfaces at a glance. The filter joint is invisible by design (it only
+# suppresses collision), so the gallery shows six moving rigs.
+Class JointsScene Inherits DemoScene
+## Creates the joints gallery.
+Constructor()
+Super.Constructor("Joints gallery", "Distance rope, mouse target, motor pose, revolute hinge, prismatic rail, weld pair, and wheel suspension. Drag any body to feel the constraints.")
+End Constructor
+
+## Builds one rig per joint family.
+Override Sub Build(world As World)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-16.0, 0.0, 16.0, 0.0))
+
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+
+# Distance joint: a soft rope between two boxes.
+JointsScene.MakeBox(world, shapeDef, New Vector2(-12.0, -5.0), "rope end")
+Var ropeTop As Body = JointsScene.MakeBox(world, shapeDef, New Vector2(-12.0, -9.0), "rope start")
+Var ropeBottom As Body = world.Bodies[world.Bodies.Count - 2]
+Var ropeDef As New DistanceJointDefinition
+ropeDef.BodyA = ropeTop
+ropeDef.BodyB = ropeBottom
+ropeDef.Length = 2.5
+ropeDef.Hertz = 1.0
+ropeDef.DampingRatio = 0.4
+ropeDef.EnableSpring = True
+world.CreateDistanceJoint(ropeDef)
+
+# Mouse joint target: a box that the user drags with the tether.
+Var dragged As Body = JointsScene.MakeBox(world, shapeDef, New Vector2(-7.0, -5.0), "drag me")
+Var mouseDef As New MouseJointDefinition
+mouseDef.BodyA = ground
+mouseDef.BodyB = dragged
+mouseDef.Target = New Vector2(-7.0, -5.0)
+mouseDef.Hertz = 4.0
+mouseDef.DampingRatio = 0.8
+mouseDef.MaxForce = 800.0
+world.CreateMouseJoint(mouseDef)
+
+# Motor joint: a box chasing a pose offset from the ground.
+Var motorBox As Body = JointsScene.MakeBox(world, shapeDef, New Vector2(-2.0, -2.0), "motor pose")
+Var motorDef As New MotorJointDefinition
+motorDef.BodyA = ground
+motorDef.BodyB = motorBox
+motorDef.LinearOffset = New Vector2(1.5, -3.0)
+motorDef.AngularOffset = 0.5
+motorDef.MaxForce = 200.0
+motorDef.MaxTorque = 20.0
+motorDef.CorrectionFactor = 0.3
+world.CreateMotorJoint(motorDef)
+
+# Revolute joint: a hinged bar with limits and a soft spring.
+Var armDef As New BodyDefinition
+armDef.Type = BodyType.DynamicBody
+armDef.Position = New Vector2(3.0, -2.5)
+Var arm As Body = world.CreateBody(armDef)
+arm.CreatePolygon(shapeDef, Polygon.MakeBox(1.0, 0.2))
+arm.Name = "hinged arm"
+Var hingeDef As New RevoluteJointDefinition
+hingeDef.BodyA = ground
+hingeDef.BodyB = arm
+hingeDef.LocalAnchorA = New Vector2(3.0, -2.5)
+hingeDef.LocalAnchorB = New Vector2(-1.0, 0.0)
+hingeDef.EnableLimit = True
+hingeDef.LowerAngle = -0.7
+hingeDef.UpperAngle = 0.7
+world.CreateRevoluteJoint(hingeDef)
+
+# Prismatic joint: a slider on a vertical rail with limits.
+Var sliderDef As New BodyDefinition
+sliderDef.Type = BodyType.DynamicBody
+sliderDef.Position = New Vector2(6.5, -2.0)
+Var slider As Body = world.CreateBody(sliderDef)
+slider.CreatePolygon(shapeDef, Polygon.MakeBox(0.3, 0.5))
+slider.Name = "slider"
+Var railDef As New PrismaticJointDefinition
+railDef.BodyA = ground
+railDef.BodyB = slider
+railDef.LocalAnchorA = New Vector2(6.5, -2.0)
+railDef.LocalAxisA = New Vector2(0.0, 1.0)
+railDef.EnableLimit = True
+railDef.LowerTranslation = -1.0
+railDef.UpperTranslation = 2.5
+world.CreatePrismaticJoint(railDef)
+
+# Weld joint: two boxes softly welded into a bent pair.
+Var weldA As Body = JointsScene.MakeBox(world, shapeDef, New Vector2(9.5, -10.0), "weld a")
+Var weldB As Body = JointsScene.MakeBox(world, shapeDef, New Vector2(10.4, -10.2), "weld b")
+Var weldDef As New WeldJointDefinition
+weldDef.BodyA = weldA
+weldDef.BodyB = weldB
+weldDef.LocalAnchorA = New Vector2(0.5, 0.0)
+weldDef.LocalAnchorB = New Vector2(-0.4, 0.0)
+weldDef.LinearHertz = 2.0
+weldDef.AngularHertz = 2.0
+weldDef.LinearDampingRatio = 0.5
+weldDef.AngularDampingRatio = 0.5
+world.CreateWeldJoint(weldDef)
+
+# Wheel joint: a suspended wheel under a static chassis anchor.
+Var wheelDef As New BodyDefinition
+wheelDef.Type = BodyType.DynamicBody
+wheelDef.Position = New Vector2(13.5, -1.0)
+Var wheel As Body = world.CreateBody(wheelDef)
+wheel.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.5))
+wheel.Name = "wheel"
+Var suspensionDef As New WheelJointDefinition
+suspensionDef.BodyA = ground
+suspensionDef.BodyB = wheel
+suspensionDef.LocalAnchorA = New Vector2(13.5, -2.0)
+suspensionDef.LocalAxisA = New Vector2(0.0, -1.0)
+suspensionDef.EnableSpring = True
+suspensionDef.Hertz = 1.5
+suspensionDef.DampingRatio = 0.6
+world.CreateWheelJoint(suspensionDef)
+
+# The filter joint is created between the welded pair to demonstrate
+# collision suppression between touching bodies.
+Var filterDef As New FilterJointDefinition
+filterDef.BodyA = weldA
+filterDef.BodyB = weldB
+world.CreateFilterJoint(filterDef)
+
+world.Validate()
+End Sub
+
+## Creates one dynamic box with a custom colour and name.
+Private Shared Function MakeBox(world As World, shapeDef As ShapeDefinition, position As Vector2, name As String) As Body
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = position
+def.Name = name
+Var box As Body = world.CreateBody(def)
+Var boxedShape As New ShapeDefinition
+boxedShape.Density = 1.0
+boxedShape.Material.Friction = 0.4
+box.CreatePolygon(boxedShape, Polygon.MakeBox(0.5, 0.5))
+Return box
+End Function
+End Class

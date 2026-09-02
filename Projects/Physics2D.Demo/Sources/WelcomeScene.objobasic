@@ -1,0 +1,56 @@
+# The welcome playground: a ground line with one body of every shape
+# family dropped on it. Click spawning (right click box, middle click
+# circle) turns it into a sandbox; the scene teaches basic body and shape
+# construction.
+Class WelcomeScene Inherits DemoScene
+## Creates the playground scene.
+Constructor()
+Super.Constructor("Welcome playground", "Right click spawns a box, middle click a circle. Drag bodies with the left button. Keys: P pause, S step, R reset.")
+End Constructor
+
+## Drops one body of every shape family onto the ground. Screen demos
+## place content above the ground at negative Y (the screen convention:
+## positive-Y gravity pulls toward positive Y, down the canvas).
+Override Sub Build(world As World)
+Var groundDef As New BodyDefinition
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-14.0, 0.0, 14.0, 0.0))
+
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Restitution = 0.15
+shapeDef.Material.Friction = 0.4
+
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+boxDef.Position = New Vector2(-3.0, -4.0)
+Var box As Body = world.CreateBody(boxDef)
+box.CreatePolygon(shapeDef, Polygon.MakeBox(0.5, 0.5))
+box.Name = "box"
+
+boxDef.Position = New Vector2(-1.0, -6.0)
+Var circle As Body = world.CreateBody(boxDef)
+circle.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.5))
+circle.Name = "circle"
+
+boxDef.Position = New Vector2(1.0, -8.0)
+Var capsule As Body = world.CreateBody(boxDef)
+capsule.CreateCapsule(shapeDef, New Capsule(New Vector2(0.0, -0.4), New Vector2(0.0, 0.4), 0.25))
+capsule.Name = "capsule"
+
+boxDef.Position = New Vector2(3.0, -10.0)
+Var capsuleBox As Body = world.CreateBody(boxDef)
+capsuleBox.CreateCapsule(shapeDef, New Capsule(New Vector2(-0.7, 0.0), New Vector2(0.7, 0.0), 0.35))
+capsuleBox.Name = "capsule bar"
+
+# A convex pentagon built from a hull of points.
+Var points() As Vector2 = [New Vector2(0.0, 0.6), New Vector2(0.55, 0.2), New Vector2(0.35, -0.5), New Vector2(-0.35, -0.5), New Vector2(-0.55, 0.2)]
+Var pentagon As Polygon = New Polygon(Hull.Compute(points, points.Count), 0.0)
+boxDef.Position = New Vector2(5.0, -12.0)
+Var pentagonBody As Body = world.CreateBody(boxDef)
+pentagonBody.CreatePolygon(shapeDef, pentagon)
+pentagonBody.Name = "pentagon"
+
+world.Validate()
+End Sub
+End Class
