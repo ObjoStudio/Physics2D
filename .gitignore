@@ -5,3 +5,5 @@ Publish/
 bin/
 obj/
 .DS_Store
+# Python tooling caches
+__pycache__/

@@ -198,7 +198,7 @@ pools grow. To pre-warm deterministically:
 
 ## Substeps
 
-`World.Step(timeStep)` defaults to four substeps; the explicit overload
+`World.StepWorld(timeStep)` defaults to four substeps; the explicit overload
 accepts a positive count. Substeps divide the solver's integration and
 iteration work, so per-frame cost scales roughly linearly with the
 substep count:

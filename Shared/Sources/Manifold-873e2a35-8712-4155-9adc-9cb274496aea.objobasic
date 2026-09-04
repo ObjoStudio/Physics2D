@@ -22,7 +22,10 @@ Property Point2 As ManifoldPoint
 ## The number of contact points: 0, 1, or 2.
 Property PointCount As Integer
 
-## Lazily created reusable workspace for collision functions.
+## Internal engine bookkeeping: the private-name backing store for the
+## Scratch() accessor. Applications call Scratch() and never assign this
+## property. Created eagerly in the constructor so a pooled manifold never
+## allocates on its first narrow-phase use.
 Property mScratch As CollideScratch
 
 ## Creates an empty manifold.

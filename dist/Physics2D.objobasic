@@ -70,7 +70,7 @@
 # Input: JointSims.objobasic e67ea5f4802c2bdce3aeded684b073f1c730e56ba8569d18e4ea8ac5f70b9b3d
 # Input: JointSolver.objobasic 8b28cb9d7cd20a8de2afe81133abffa72ee016c3522c3930b70901d3b9e12fd1
 # Input: JointType-856da3bd-dadf-41a2-af79-4e1fcc92c642.objobasic 595178f214846dc7716badeb118dfb5729356f738f99204ff34b849f6fd14838
-# Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 9c5ad5aca4175fbace6a2e4f2c1fbdd21a36192d73cadc0af70016557011f3d0
+# Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 771df570a1d99949c8cfa9bc013978b66fce0f0794139bc2e95b298182a4c8dd
 # Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic dcebd68c0b3500bb6ab7688775a8056b75304728e39537252715a4309cc96402
 # Input: MassData-cd26f83f-962d-4695-aa00-893f86fd1099.objobasic 954cf89f8f01ac0ba9e4d378506536bbb64de2e1630351bf9373731366488987
 # Input: MotorJoint.objobasic ea21c6179216c79e6189262613e9865eba867e21fbddad904c55d19ea703fe22
@@ -79,7 +79,7 @@
 # Input: MouseJointDefinition.objobasic 28be646a98699dbd233dba1bc466b171d372095f1a5b0ad6c34412916b34d655
 # Input: Mover-89f8b58a-a5cb-43a1-bb4e-216fd2e79a45.objobasic 30b498c55b884371019b1c0f9d080b7185e30ba3aea0a305b083efb2fbb50a1e
 # Input: PairKeySet-7d0b7f56-d56b-4fa5-a84f-5f9f8e86c8b1.objobasic e9ed9cfcac78bbfa2b440fbcc2b61d7c2ad25393624cd226b00a22f274b068b0
-# Input: Physics2D-7e9c2aae.objobasic a482a18a11941d5220f84b085c0175ac07d421ba3760abd25e67ef39e73d443d
+# Input: Physics2D-7e9c2aae.objobasic 9789cc7372862bbcd377db94b794c7de80bcd331c648852acc04a025540af404
 # Input: PhysicsConstants-cc1468ea-13f1-45de-b144-e417e51bf847.objobasic 40d6c1e2b2eaa11a3e599e4e2b09ff29058ba0dcdb22d69143dad2e0612f97a2
 # Input: PhysicsMaths-907a0865-dfe0-466e-92d2-dc339e472d3a.objobasic 475acbcbb6d39a8143a5f8381b071f8c13859989dc22dfda817990971543ffbe
 # Input: Plane-611e5a3a-dc4a-476b-9289-e6bec1dbe7a1.objobasic c8afffbec196c1cdbc82c22286eae1965bc8ead71573f533542997b0ac2afb5f
@@ -133,7 +133,7 @@
 # Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
 # Input: WheelJoint.objobasic 063db7c796ee6df9b2ed0d4db36d51dec921e3a61ec1b001cd6ab07308136b4d
 # Input: WheelJointDefinition.objobasic 1ae60874c31b501cb219d8af36f26398fea1ad6a74eb924c08d53b70109e0641
-# Input: World.objobasic 75ad04174998ea3bbc611a58f0ae47520d16651de05a8f3da9511aac25408cfd
+# Input: World.objobasic 24cf274e7144332d7e22fa6f026b32fd0e2bfdeba8d6e0ccac061a875957af1a
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldCounters.objobasic d77a7a134e677e6c387b086034e1ec984829d66679d8887753fcaa6254cdffb7
 # Input: WorldDebugDrawContext.objobasic 9e81237a6e02df019c321f4f4dc24003b822c22b3c3325758f818f0dcae56de2
@@ -148,13 +148,74 @@
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
 # Input: WorldShapeCastContext.objobasic 560a1c040fa0a8ce87b09b3a52d6ad382295226014c80595a457b94fd9471ecf
 #
-# Source content checksum (SHA-256): f5841102f240433a91c7a87d9de807096031d3f6f2faa8e138f13a4cec2ae891
+# Physics2D version: 1.0.0-rc.1
+# Compatibility: Objo Studio 26.8.6 or newer, including the Objo issue
+# #1302 standard-library additions (Vector2.LeftPerpendicular/
+# RightPerpendicular, Matrix.Inverse/InvertSelf/Solve, Double.IsFinite)
+# and the issue #1315 constructor-inheritance fix. The module itself
+# needs no other runtime feature; System.AllocationCount (issue #1299)
+# is required only by the repository's test suite and benchmarks.
+# See docs/PORTING.md ('Minimum Objo Version') for the full record.
+#
+# Physics2D is MIT licensed:
+#
+# MIT License
+#
+# Copyright (c) 2026 Objo Studio
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# The ported algorithms come from Box2D v3.1.1 (see docs/PORTING.md), MIT licensed:
+#
+# MIT License
+#
+# Copyright (c) 2022 Erin Catto
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# Source content checksum (SHA-256): 0316779bff23b3bd915d5d5e0462ae203723aa8d3307fbdbf2915e33ddf9a4ba
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
 
 Module Physics2D
-
+## Semantic version of this Physics2D module, following SemVer 2.0.0.
+## The suffix `-rc.N` marks a release candidate; dropping the suffix is the
+## release act. This is a plain constant: the module has no package manager,
+## so the version travels with the source you install.
+Const VERSION As String = "1.0.0-rc.1"
 
 # Axis-aligned bounding box, ported from upstream b2AABB in math_functions.h
 # and src/aabb.c. Used by the broad phase, queries, and shape bounds.
@@ -16649,7 +16710,10 @@ Property Point2 As ManifoldPoint
 ## The number of contact points: 0, 1, or 2.
 Property PointCount As Integer
 
-## Lazily created reusable workspace for collision functions.
+## Internal engine bookkeeping: the private-name backing store for the
+## Scratch() accessor. Applications call Scratch() and never assign this
+## property. Created eagerly in the constructor so a pooled manifold never
+## allocates on its first narrow-phase use.
 Property mScratch As CollideScratch
 
 ## Creates an empty manifold.
@@ -22448,8 +22512,6 @@ Private Property mLocalRayInput As RayCastInput
 Private Property mLocalCastInput As ShapeCastInput
 ## Reused local proxy for shape casts.
 Private Property mLocalProxy As ShapeProxy
-## Reused scratch point for local space conversions.
-Private Property mLocalPoint As Vector2
 ## Reused cast output for the world's query leaf visits. Engine internal;
 ## values are copied out before the next leaf reuses it.
 Private Property mQueryCastOutput As CastOutput
@@ -23205,7 +23267,6 @@ Me.mContinuousBoxScratch = New AABB
 Me.mContinuousBoxScratchB = New AABB
 Me.mVectorScratch = New Vector2
 Me.mLocalProxy = New ShapeProxy
-Me.mLocalPoint = New Vector2
 Me.Sensors = New Array(Of Sensor)
 Me.EndEventWriteIndex = 0
 Me.ReadableEndIndex = 1

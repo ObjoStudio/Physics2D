@@ -52,7 +52,9 @@ the monotonic `System.Ticks` clock, feeds an accumulator, and runs whole
 fixed steps until the accumulator is drained:
 
 ```objo
-frame = Min(now - mLastTicks, 0.25)   # Clamp extreme catch-up
+Var now As Double = System.Ticks
+Var frame As Double = Maths.Min(now - mLastTicks, 0.25)
+mLastTicks = now
 mAccumulator = mAccumulator + frame
 While mAccumulator >= 1.0 / 60.0
 mWorld.StepWorld(1.0 / 60.0)      # Default four substeps
@@ -76,8 +78,10 @@ Physics uses metres. The renderer owns the conversion:
 the world origin at the horizontal centre, three quarters down:
 
 ```objo
-renderer.Origin = New Vector2(-0.5 * width / ppm, -0.75 * height / ppm)
+Var ppm As Double = 40.0
+Var origin As Vector2 = New Vector2(-0.5 * width / ppm, -0.75 * height / ppm)
 canvasX = (worldX - origin.X) * ppm
+canvasY = (worldY - origin.Y) * ppm
 ```
 
 There is no Y-axis flip: Objo screen coordinates grow downward and
@@ -116,9 +120,10 @@ it:
 Var events As WorldEvents = world.Events
 Var i As Integer = 0
 While i < events.SensorBeginCount()
-Var shape As Shape = events.SensorBeginVisitorShape(i)
-If shape <> Nothing And shape.GetBody() <> Nothing Then
-' ... read names, counts ...
+Var entered As Shape = events.SensorBeginVisitorShape(i)
+If entered <> Nothing And entered.GetBody() <> Nothing Then
+# ... react here: read names, counts, positions ...
+Pragma Unused entered
 End If
 i = i + 1
 Wend

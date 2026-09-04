@@ -50,7 +50,12 @@ Import Physics2D
 | Sensors and collision events | Event callbacks and material hooks |
 | Explosions | Radial impulse scenes |
 | Debug drawing | `World.DrawDebug`, options, colours, and the renderer interface |
+| Module constants | The module-level release version |
 | Internal infrastructure | Engine-owned classes that applications normally never touch |
+## Module constants
+
+- `VERSION As String = "1.0.0-rc.1"` — Semantic version of this Physics2D module, following SemVer 2.0.0. The suffix `-rc.N` marks a release candidate; dropping the suffix is the release act. This is a plain constant: the module has no package manager, so the version travels with the source you install.
+
 ## World and stepping
 
 ### World
@@ -87,6 +92,10 @@ The Physics2D world: owns bodies, shapes, chains, contacts, islands, joints, and
 - `PreSolve As CustomPreSolve` — Opt-in pre-solve manifold editor consulted during the narrow phase.
 - `MaterialMixer As CustomMaterialMixer` — Opt-in material mixer consulted when contacts compute friction and restitution.
 - `Events As WorldEvents` — Returns the batched event views for the most recent step. Contact begin/end, sensor begin/end, hit, and body-move events stay valid until the next step begins or ends respectively; see WorldEvents for the validity windows. This is the polled equivalent of the upstream equivalent, b2World_GetSensorEvents, and b2World_GetBodyEvents.
+- `ContactManifoldPool As Array(Of Manifold)` — World-shared pool of reusable contact manifold objects. Every solver-set and graph-colour contact store indexes this pool, so a slot freed by any store is immediately reusable by any other store's row append. Per-store pools were replaced because contact rows migrate between stores every step (touch begins/ends, wake/sleep transfers, island merges) and per-store free lists scattered recycled slots away from the store that needed them next, forcing fresh pool objects on nearly every begin.
+- `ContactCachePool As Array(Of SimplexCache)` — World-shared pool of reusable simplex cache objects paired with ContactManifoldPool.
+- `FreeContactManifoldSlots As IntegerList` — LIFO free list of ContactManifoldPool slots shared by every contact store.
+- `FreeContactCacheSlots As IntegerList` — LIFO free list of ContactCachePool slots shared by every contact store.
 
 **Shared members**
 

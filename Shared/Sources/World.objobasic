@@ -154,8 +154,6 @@ Private Property mLocalRayInput As RayCastInput
 Private Property mLocalCastInput As ShapeCastInput
 ## Reused local proxy for shape casts.
 Private Property mLocalProxy As ShapeProxy
-## Reused scratch point for local space conversions.
-Private Property mLocalPoint As Vector2
 ## Reused cast output for the world's query leaf visits. Engine internal;
 ## values are copied out before the next leaf reuses it.
 Private Property mQueryCastOutput As CastOutput
@@ -911,7 +909,6 @@ Me.mContinuousBoxScratch = New AABB
 Me.mContinuousBoxScratchB = New AABB
 Me.mVectorScratch = New Vector2
 Me.mLocalProxy = New ShapeProxy
-Me.mLocalPoint = New Vector2
 Me.Sensors = New Array(Of Sensor)
 Me.EndEventWriteIndex = 0
 Me.ReadableEndIndex = 1

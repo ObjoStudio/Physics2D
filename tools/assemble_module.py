@@ -31,6 +31,59 @@ OUTPUT = REPO_ROOT / "dist" / "Physics2D.objobasic"
 
 MODULE_NAME = "Physics2D"
 
+# The distribution is one file that users copy into their own projects, so it
+# carries the full licence text for both the port and the upstream algorithms
+# (mirroring LICENSE and THIRD_PARTY_NOTICES.md).
+PHYSICS2D_LICENCE = """MIT License
+
+Copyright (c) 2026 Objo Studio
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE."""
+
+BOX2D_LICENCE = """MIT License
+
+Copyright (c) 2022 Erin Catto
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE."""
+
+
+def comment_block(title, body):
+    lines = [f"# {title}", "#"]
+    lines.extend(f"# {line}" if line else "#" for line in body.split("\n"))
+    return lines
+
 
 def load_sources():
     sources = []
@@ -142,6 +195,35 @@ def main() -> int:
 
     # Assemble: root body, then nested items sorted by name before End Module.
     root_body = strip_module_wrapper(root["code"], root["name"])
+
+    # The module's semantic version is authored as Const VERSION in the root
+    # source and mirrored into the header so the shipped file is
+    # self-describing. Parsing it here keeps the two from drifting.
+    version_match = re.search(
+        r"^Const\s+VERSION\s+As\s+String\s*=\s*\"([^\"]+)\"\s*$",
+        root_body,
+        re.IGNORECASE | re.MULTILINE,
+    )
+    if not version_match:
+        raise SystemExit("root source must declare Const VERSION As String")
+    module_version = version_match.group(1)
+
+    compatibility_lines = [
+        f"# Physics2D version: {module_version}",
+        "# Compatibility: Objo Studio 26.8.6 or newer, including the Objo issue",
+        "# #1302 standard-library additions (Vector2.LeftPerpendicular/",
+        "# RightPerpendicular, Matrix.Inverse/InvertSelf/Solve, Double.IsFinite)",
+        "# and the issue #1315 constructor-inheritance fix. The module itself",
+        "# needs no other runtime feature; System.AllocationCount (issue #1299)",
+        "# is required only by the repository's test suite and benchmarks.",
+        "# See docs/PORTING.md ('Minimum Objo Version') for the full record.",
+    ]
+    licence_lines = comment_block(
+        "Physics2D is MIT licensed:", PHYSICS2D_LICENCE
+    ) + ["#"] + comment_block(
+        "The ported algorithms come from Box2D v3.1.1 (see docs/PORTING.md), MIT licensed:",
+        BOX2D_LICENCE,
+    )
     flat = []
     for source in sources:
         if source is root:
@@ -160,6 +242,10 @@ def main() -> int:
         "# the generated module from its canonical source.\n"
         "#\n"
         + "\n".join(input_lines)
+        + "\n#\n"
+        + "\n".join(compatibility_lines)
+        + "\n#\n"
+        + "\n".join(licence_lines)
         + "\n#\n"
         f"# Source content checksum (SHA-256): {content_hash}\n"
         "# Upstream algorithms: Box2D v3.1.1, commit\n"

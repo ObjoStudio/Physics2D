@@ -539,6 +539,14 @@ End Function
 Shared Function GroundOf(world As World) As Body
 Return world.Bodies[0]
 End Function
+
+## The released module reports its semantic version through the module
+## constant; this keeps the constant compiled and format-checked.
+Public Sub TestModuleVersionConstant()
+Var version As String = Physics2D.VERSION
+Assert.True(version.Length > 0, "the version constant is non-empty")
+Assert.True(version.StartsWith("1.0.0"), "the v1 release line is 1.0.0")
+End Sub
 End Class
 
 # Overlap callback recording visited shapes.

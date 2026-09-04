@@ -7,7 +7,7 @@ behind non-obvious representations. Public API documentation lives in
 `docs/PORTING.md`.
 
 ```text
-Physics2D public API (later stages)
+Physics2D public API
 ├── World / Body / Shape / Chain / Joint façades
 ├── Definitions, geometry values, query results, and events
 └── DebugRenderer

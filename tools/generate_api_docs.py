@@ -72,6 +72,7 @@ Import Physics2D
 | Sensors and collision events | Event callbacks and material hooks |
 | Explosions | Radial impulse scenes |
 | Debug drawing | `World.DrawDebug`, options, colours, and the renderer interface |
+| Module constants | The module-level release version |
 | Internal infrastructure | Engine-owned classes that applications normally never touch |
 """
 
@@ -331,6 +332,37 @@ def render_class(name, record):
     return out
 
 
+def parse_module_constants():
+    """Returns module-level constants as [(name, type, value, doc)] from the dist.
+
+    Module-level members live between ``Module Physics2D`` and the first nested
+    type declaration; each carries a ``##`` doc comment like every public
+    member.
+    """
+    lines = DIST.read_text().splitlines()
+    constants = []
+    in_module = False
+    doc_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if re.match(r"^Module\s+Physics2D\s*$", stripped, re.IGNORECASE):
+            in_module = True
+            continue
+        if not in_module:
+            continue
+        if re.match(r"^(?:Abstract )?(?:Class|Enum)\s", stripped):
+            break  # first nested type: module-level scope ends
+        if stripped.startswith("#"):
+            doc_lines.append(stripped.lstrip("#").strip())
+            continue
+        match = re.match(r"^Const\s+([A-Za-z_][A-Za-z0-9_]*)\s+As\s+(\w+)\s*=\s*(.+)$", stripped)
+        if match:
+            doc = " ".join(part for part in doc_lines if part)
+            constants.append((match.group(1), match.group(2), match.group(3), doc))
+        doc_lines = []
+    return constants
+
+
 def main():
     classes, order = parse_dist()
     problems = []
@@ -344,6 +376,16 @@ def main():
         sys.exit(1)
 
     lines = INTRO.splitlines()
+    module_constants = parse_module_constants()
+    if module_constants:
+        lines.append("## Module constants")
+        lines.append("")
+        for name, const_type, value, doc in module_constants:
+            if doc:
+                lines.append(f"- `{name} As {const_type} = {value}` — {doc}")
+            else:
+                lines.append(f"- `{name} As {const_type} = {value}`")
+        lines.append("")
     documented = set()
     for title, names in CATEGORIES:
         lines.append(f"## {title}")

@@ -1,4 +1,12 @@
 # Physics2D is a native Objo port of the Box2D 3.1.1 rigid-body physics engine.
-# The public surface grows stage by stage; see IMPLEMENTATION_PLAN.md and docs/.
+# The module constants below carry the release version so applications and
+# support diagnostics can report which build they run against. The full
+# compatibility record (minimum Objo Studio version and required engine
+# features) lives in the generated distribution header and docs/PORTING.md.
 Module Physics2D
+## Semantic version of this Physics2D module, following SemVer 2.0.0.
+## The suffix `-rc.N` marks a release candidate; dropping the suffix is the
+## release act. This is a plain constant: the module has no package manager,
+## so the version travels with the source you install.
+Const VERSION As String = "1.0.0-rc.1"
 End Module
