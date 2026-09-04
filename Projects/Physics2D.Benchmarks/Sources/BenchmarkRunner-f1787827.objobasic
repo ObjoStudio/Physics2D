@@ -17,12 +17,32 @@ Sub Add(scenario As BenchmarkScenario)
 Me.mScenarios.Append(scenario)
 End Sub
 
+## Keeps only the scenarios whose name contains one of the comma-separated
+## substrings in the filter, so a focused subset can be measured.
+Sub KeepMatching(filter As String)
+Var kept As New Array(Of BenchmarkScenario)
+Var tokens() As String = filter.Split(",")
+For Each scenario As BenchmarkScenario In Me.mScenarios
+Var tokenIndex As Integer = 0
+While tokenIndex < tokens.Count
+If scenario.Name.IndexOf(tokens[tokenIndex].Trim()) >= 0 Then
+kept.Append(scenario)
+End If
+tokenIndex = tokenIndex + 1
+Wend
+Next scenario
+Me.mScenarios = kept
+End Sub
+
 # Runs every registered scenario. Returns one result per scenario.
 ## Runs every registered scenario. Returns one result per scenario.
 Function RunAll() As Array(Of BenchmarkResult)
 Var results() As BenchmarkResult
 For Each scenario As BenchmarkScenario In Me.mScenarios
+  Var scenarioStart As Double = System.Ticks
   results.Append(Run(scenario))
+  Var elapsed As Double = (System.Ticks - scenarioStart) * 1000.0
+  System.ErrorPrint("completed " + scenario.Name + " total_ms=" + Maths.Round(elapsed, 1).ToString())
 Next scenario
 Return results
 End Function

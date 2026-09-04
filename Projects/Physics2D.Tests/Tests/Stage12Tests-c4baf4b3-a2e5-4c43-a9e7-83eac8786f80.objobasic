@@ -1,0 +1,260 @@
+# Stage 12 tests: zero steady-state allocation gates for the ordinary step
+# path at island scale and for the sleep/wake, sensor, and continuous
+# subsystems, per the Stage 12 exit criteria. Complements the small-scene
+# TestWarmStepAllocatesNothing gate in WorldTests.
+Import Physics2D
+
+Class Stage12Tests Inherits TestCase
+
+## Steps a twelve-level pyramid awake, settled, and asleep with zero
+## allocations after warm-up. Covers broad-phase pairing, the narrow phase,
+## island merge/split accounting, the serial overflow solve, body
+## finalisation, refit, and natural island sleeping at contact scale.
+Public Sub TestPyramidWarmStepAllocatesNothing()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(30.0, 0.5))
+
+Var rows As Integer = 12
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.5
+Var row As Integer = 0
+While row < rows
+Var column As Integer = 0
+While column < rows - row
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2((column - 0.5 * (rows - row - 1)) * 0.52, 0.25 + row * 0.51)
+Var body As Body = world.CreateBody(def)
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+column = column + 1
+Wend
+row = row + 1
+Wend
+
+# Warm every reusable buffer through settling, contact churn, and the
+# transition into natural island sleeping.
+Var warmIndex As Integer = 0
+While warmIndex < 420
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+Assert.True(world.Counters().BodyCount = rows * (rows + 1) / 2 + 1, "pyramid bodies alive")
+
+Var before As Integer = System.AllocationCount
+Var stepIndex As Integer = 0
+While stepIndex < 60
+world.StepWorld(1.0 / 60.0)
+stepIndex = stepIndex + 1
+Wend
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warm pyramid steps allocate nothing")
+world.Validate()
+End Sub
+
+## Steps a stacked wall through full wake, solve, island-aware forced
+## sleep, and asleep-world cycles with zero allocations after warm-up.
+## This is the migration gate: solver-set transfers, graph retargeting, and
+## contact/store moves must recycle, not allocate.
+Public Sub TestSleepWakeMigrationAllocatesNothing()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(40.0, 1.0))
+
+Var columns As Integer = 20
+Var rows As Integer = 10
+Var bodies As New Array(Of Body)
+bodies.Reserve(columns * rows)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.4
+Var row As Integer = 0
+While row < rows
+Var column As Integer = 0
+While column < columns
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.IsAwake = False
+def.Position = New Vector2((column - 0.5 * (columns - 1)) * 1.02, 0.251 + row * 1.01)
+Var body As Body = world.CreateBody(def)
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.5, 0.5))
+bodies.Append(body)
+column = column + 1
+Wend
+row = row + 1
+Wend
+
+# One wake/solve/sleep cycle warms the migration buffers through the
+# island-aware public path.
+world.SetBodyAwake(bodies[0], True)
+Var warmIndex As Integer = 0
+While warmIndex < 36
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+world.SetBodyAwake(bodies[0], False)
+world.StepWorld(1.0 / 60.0)
+world.StepWorld(1.0 / 60.0)
+Assert.True(bodies[0].IsAwake() = False, "wall asleep after warm-up cycle")
+
+# Measured window: one full wake, solve, forced-sleep, asleep-step cycle.
+Var before As Integer = System.AllocationCount
+world.SetBodyAwake(bodies[0], True)
+Var stepIndex As Integer = 0
+While stepIndex < 36
+world.StepWorld(1.0 / 60.0)
+stepIndex = stepIndex + 1
+Wend
+world.SetBodyAwake(bodies[0], False)
+world.StepWorld(1.0 / 60.0)
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "sleep/wake migration allocates nothing")
+world.Validate()
+End Sub
+
+## Steps movers through a sensor field with sensor events enabled and
+## published every step, with zero allocations after warm-up. Covers the
+## post-solve sensor overlap stage, both double buffers, and the event
+## publication path.
+Public Sub TestSensorOverlapAllocatesNothing()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(30.0, 0.5))
+
+Var sensorShapeDef As New ShapeDefinition
+sensorShapeDef.IsSensor = True
+sensorShapeDef.EnableSensorEvents = True
+Var sensorIndex As Integer = 0
+While sensorIndex < 16
+Var def As New BodyDefinition
+def.Position = New Vector2(sensorIndex Mod 4 * 1.6 - 2.4, sensorIndex / 4 * 1.6)
+Var sensor As Body = world.CreateBody(def)
+sensor.CreatePolygon(sensorShapeDef, Polygon.MakeBox(0.7, 0.7))
+sensorIndex = sensorIndex + 1
+Wend
+
+Var moverDef As New ShapeDefinition
+moverDef.Density = 0.5
+Var movers As New Array(Of Body)
+movers.Reserve(24)
+Var moverIndex As Integer = 0
+While moverIndex < 24
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(moverIndex Mod 8 * 0.9 - 3.2, 1.0 + (moverIndex / 8) * 2.0)
+def.LinearVelocity = New Vector2(0.5 * (moverIndex Mod 3 - 1), 1.5)
+Var mover As Body = world.CreateBody(def)
+mover.CreateCircle(moverDef, New Circle(New Vector2(0.0, 0.0), 0.2))
+movers.Append(mover)
+moverIndex = moverIndex + 1
+Wend
+
+# Warm-up: enough steps for every mover to cross sensor boundaries in both
+# directions so both event buffers reach their maximum sizes.
+Var warmIndex As Integer = 0
+Var sawEvents As Boolean = False
+While warmIndex < 180
+world.StepWorld(1.0 / 60.0)
+If world.Events.SensorBeginCount() > 0 Then
+sawEvents = True
+End If
+warmIndex = warmIndex + 1
+Wend
+Assert.True(sawEvents, "sensor events published during warm-up")
+
+Var before As Integer = System.AllocationCount
+Var stepIndex As Integer = 0
+While stepIndex < 60
+world.StepWorld(1.0 / 60.0)
+stepIndex = stepIndex + 1
+Wend
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warm sensor steps allocate nothing")
+world.Validate()
+End Sub
+
+## Steps a bullet stream into a wall with continuous collision resolving
+## time-of-impact every step, with zero allocations after warm-up. Covers
+## the swept queries, hit-branch transforms, and the post-refit bullet
+## stage.
+Public Sub TestContinuousBulletStepAllocatesNothing()
+Var world As New World
+world.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = world.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 0.5))
+
+Var staticDef As New BodyDefinition
+Var wall As Body = world.CreateBody(staticDef)
+wall.CreatePolygon(New ShapeDefinition, Polygon.MakeOffsetBox(0.1, 4.0, New Vector2(8.0, 4.0), New Rot(1.0, 0.0)))
+
+Var clutterDef As New ShapeDefinition
+clutterDef.Density = 0.0
+Var clutterIndex As Integer = 0
+While clutterIndex < 16
+Var def As New BodyDefinition
+def.Position = New Vector2(-5.0 + 0.9 * clutterIndex, 0.5 + (clutterIndex Mod 4) * 1.7)
+Var box As Body = world.CreateBody(def)
+box.CreatePolygon(clutterDef, Polygon.MakeBox(0.4, 0.2))
+clutterIndex = clutterIndex + 1
+Wend
+
+Var bulletDef As New ShapeDefinition
+bulletDef.Density = 4.0
+bulletDef.Material.Restitution = 0.3
+Var bullets As New Array(Of Body)
+bullets.Reserve(8)
+Var bulletIndex As Integer = 0
+While bulletIndex < 8
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.IsBullet = True
+def.Position = New Vector2(-8.0, 0.5 + 1.0 * bulletIndex)
+def.LinearVelocity = New Vector2(30.0, 0.0)
+Var bullet As Body = world.CreateBody(def)
+bullet.CreateCircle(bulletDef, New Circle(New Vector2(0.0, 0.0), 0.06))
+bullets.Append(bullet)
+bulletIndex = bulletIndex + 1
+Wend
+
+# Warm-up: one full flight into the wall primes the swept-query scratch,
+# TOI buffers, and contact pools along the bullet path.
+Var warmIndex As Integer = 0
+While warmIndex < 90
+world.StepWorld(1.0 / 60.0)
+warmIndex = warmIndex + 1
+Wend
+
+# Reset the stream to a fresh flight; the reset itself may allocate, so it
+# happens before the measured window.
+Var resetIndex As Integer = 0
+While resetIndex < bullets.Count
+Var bullet As Body = bullets[resetIndex]
+world.SetBodyTransform(bullet, New Vector2(-8.0, 0.5 + 1.0 * resetIndex), New Rot(1.0, 0.0))
+bullet.SetLinearVelocity(New Vector2(30.0, 0.0))
+bullet.SetAngularVelocity(0.0)
+resetIndex = resetIndex + 1
+Wend
+
+Var before As Integer = System.AllocationCount
+Var stepIndex As Integer = 0
+While stepIndex < 45
+world.StepWorld(1.0 / 60.0)
+stepIndex = stepIndex + 1
+Wend
+Var after As Integer = System.AllocationCount
+Assert.Equal(0, after - before, "warm continuous bullet steps allocate nothing")
+world.Validate()
+End Sub
+End Class

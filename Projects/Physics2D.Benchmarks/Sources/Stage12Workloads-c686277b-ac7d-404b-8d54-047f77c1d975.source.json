@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage12Workloads",
+  "Id": "c686277b-ac7d-404b-8d54-047f77c1d975",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage12Workloads-c686277b-ac7d-404b-8d54-047f77c1d975.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

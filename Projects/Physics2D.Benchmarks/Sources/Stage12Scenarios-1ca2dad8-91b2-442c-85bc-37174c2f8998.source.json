@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage12Scenarios",
+  "Id": "1ca2dad8-91b2-442c-85bc-37174c2f8998",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage12Scenarios-1ca2dad8-91b2-442c-85bc-37174c2f8998.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

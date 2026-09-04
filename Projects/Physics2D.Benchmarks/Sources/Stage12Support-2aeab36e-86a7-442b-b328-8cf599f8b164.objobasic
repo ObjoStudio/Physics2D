@@ -1,0 +1,38 @@
+# Stage 12 shared benchmark helpers.
+#
+# The fold matches the PhysicsAssert fold used by every other workload:
+# round to nine decimals, then FNV-1a over the little-end octets. Sharing
+# the helper keeps the new Stage 12 workloads small without changing any
+# recorded fold value.
+Class Stage12Fold
+## Folds one Double into the checksum: round to nine decimals, then
+## FNV-1a over the little-end octets.
+Shared Function FoldDouble(checksum As Integer, value As Double) As Integer
+Var scaled As Integer = Integer(Maths.Round(value * 1000000000.0))
+Var hash As Integer = checksum
+Var octetIndex As Integer = 0
+While octetIndex < 8
+Var octet As Integer = scaled.BitAnd(255)
+hash = hash.BitXor(octet)
+hash = hash * 1099511628211
+scaled = scaled.ShiftRight(8)
+octetIndex = octetIndex + 1
+Wend
+Return hash
+End Function
+
+## Folds one Integer into the checksum with the same little-end octet
+## FNV-1a scheme, for counts and hit tallies.
+Shared Function FoldInt(checksum As Integer, value As Integer) As Integer
+Var hash As Integer = checksum
+Var octetIndex As Integer = 0
+While octetIndex < 8
+Var octet As Integer = value.BitAnd(255)
+hash = hash.BitXor(octet)
+hash = hash * 1099511628211
+value = value.ShiftRight(8)
+octetIndex = octetIndex + 1
+Wend
+Return hash
+End Function
+End Class

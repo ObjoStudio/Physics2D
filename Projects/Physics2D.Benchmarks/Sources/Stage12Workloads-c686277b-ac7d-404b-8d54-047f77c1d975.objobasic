@@ -1,0 +1,1297 @@
+# Stage 12 workloads: the full optimisation-audit benchmark coverage.
+#
+# Every workload is deterministic, evolves its world across iterations, and
+# folds the final public state through Stage12Fold so a stable checksum
+# proves how much simulated work happened. Scenarios wrap these workloads in
+# Stage12Scenarios. The fold matches the PhysicsAssert fold used by every
+# earlier stage, so checksums stay comparable across releases.
+Import Physics2D
+
+# Forty level pyramid stepped for 256 frames per iteration, the long-horizon
+# required scenario. Geometry matches the Stage 7 baseline exactly.
+Class Pyramid256Workload
+## The stepped world.
+Property World As World
+## Bodies of the pyramid, bottom row first.
+Property Stack As Array(Of Body)
+## Substep count per step call.
+Property SubSteps As Integer
+## Frames stepped per measured iteration.
+Property Frames As Integer
+
+## Builds a fresh forty level pyramid world.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 0.5))
+
+Me.Stack = New Array(Of Body)
+Me.Stack.Reserve(820)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.5
+Var rows As Integer = 40
+Var row As Integer = 0
+While row < rows
+Var column As Integer = 0
+While column < rows - row
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2((column - 0.5 * (rows - row - 1)) * 0.52, 0.25 + row * 0.51)
+Var body As Body = Me.World.CreateBody(def)
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Me.Stack.Append(body)
+column = column + 1
+Wend
+row = row + 1
+Wend
+Me.SubSteps = 1
+Me.Frames = 256
+Me.World.UpdateBroadPhasePairs()
+End Sub
+
+## Steps the pyramid for 256 frames, then folds live transforms.
+Sub RunKernels()
+Var frame As Integer = 0
+While frame < Me.Frames
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+frame = frame + 1
+Wend
+Var checksum As Integer = 0
+Var count As Integer = Me.Stack.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Stack[i])
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.X)
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class
+
+# Large sleeping and waking stacks: a twenty by thirty stacked wall created
+# asleep, with islands pre-formed, cycled through wake, four solved frames,
+# an island-aware forced sleep, and one asleep-world frame per iteration.
+Class SleepWakeStacksWorkload
+## The stepped world.
+Property World As World
+## The wall bodies, bottom row first.
+Property Stack As Array(Of Body)
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Builds the stacked wall asleep, then forms its islands with one wake,
+## solve, and forced-sleep cycle.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 1.0))
+
+Me.Stack = New Array(Of Body)
+Me.Stack.Reserve(600)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.4
+Var columns As Integer = 20
+Var rows As Integer = 30
+Var row As Integer = 0
+While row < rows
+Var column As Integer = 0
+While column < columns
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.IsAwake = False
+def.Position = New Vector2((column - 0.5 * (columns - 1)) * 1.02, 0.251 + row * 1.01)
+Var body As Body = Me.World.CreateBody(def)
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.5, 0.5))
+Me.Stack.Append(body)
+column = column + 1
+Wend
+row = row + 1
+Wend
+Me.SubSteps = 1
+
+# Form contacts and islands: wake everything, solve three frames, then
+# force the whole wall back to sleep through the island-aware path.
+Me.WakeAll()
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+Me.SleepAll()
+End Sub
+
+## Wakes every wall body. The first call wakes the wall's island; the rest
+## observe awake bodies and do no work.
+Sub WakeAll()
+Var count As Integer = Me.Stack.Count
+Var i As Integer = 0
+While i < count
+Me.World.SetBodyAwake(Me.Stack[i], True)
+i = i + 1
+Wend
+End Sub
+
+## Force-sleeps every wall body through the island-aware public path.
+Sub SleepAll()
+Var count As Integer = Me.Stack.Count
+Var i As Integer = 0
+While i < count
+Me.World.SetBodyAwake(Me.Stack[i], False)
+i = i + 1
+Wend
+End Sub
+
+## Runs one wake, solve, sleep, asleep-frame cycle, then folds transforms.
+Sub RunKernels()
+Me.WakeAll()
+Var frame As Integer = 0
+While frame < 4
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+frame = frame + 1
+Wend
+Me.SleepAll()
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+Var checksum As Integer = 0
+Var count As Integer = Me.Stack.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Stack[i])
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.X)
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class
+
+# Tumbler: a motor-driven three-walled tube spinning about its centre with
+# boxes raining in, carried by the rotation, and destroyed continuously.
+# Exercises body creation, destruction cascades, tree churn, and contact
+# lifecycle inside the full step pipeline.
+Class TumblerWorkload
+## The stepped world.
+Property World As World
+## Live dropped boxes, oldest first.
+Property Boxes As Array(Of Body)
+## Maximum live boxes before the oldest is destroyed.
+Property BoxLimit As Integer
+## Deterministic spawn state.
+Property SeedValue As Integer
+## Frames stepped per iteration.
+Property Frames As Integer
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Returns the next deterministic non-negative 31-bit pseudo-random value.
+Function NextRandom() As Integer
+Me.SeedValue = Me.SeedValue * 6364136223846793005 + 1442695040888963407
+Return Me.SeedValue.ShiftRight(33).BitAnd(2147483647)
+End Function
+
+## Returns the next deterministic value in [0, 1).
+Function NextUnit() As Double
+Return Me.NextRandom() / 2147483647.0
+End Function
+
+## Builds the ground, the spinning tube with its revolute motor, and the
+## initial box supply.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 0.5))
+
+# Three-walled tube, open on top, centred at (0, 7).
+Var tubeDef As New BodyDefinition
+tubeDef.Type = BodyType.DynamicBody
+tubeDef.Position = New Vector2(0.0, 7.0)
+Var tube As Body = Me.World.CreateBody(tubeDef)
+Var wallDef As New ShapeDefinition
+wallDef.Density = 2.0
+wallDef.Material.Friction = 0.4
+Var identity As New Rot(1.0, 0.0)
+tube.CreatePolygon(wallDef, Polygon.MakeOffsetBox(0.25, 3.25, New Vector2(-2.75, 0.0), identity))
+tube.CreatePolygon(wallDef, Polygon.MakeOffsetBox(0.25, 3.25, New Vector2(2.75, 0.0), identity))
+tube.CreatePolygon(wallDef, Polygon.MakeOffsetBox(2.5, 0.25, New Vector2(0.0, -3.0), identity))
+
+Var motorDef As New RevoluteJointDefinition
+motorDef.BodyA = ground
+motorDef.BodyB = tube
+motorDef.LocalAnchorA = New Vector2(0.0, 7.5)
+motorDef.LocalAnchorB = New Vector2(0.0, 0.0)
+motorDef.EnableMotor = True
+motorDef.MotorSpeed = 1.0
+motorDef.MaxMotorTorque = 10000.0
+Me.World.CreateRevoluteJoint(motorDef)
+
+Me.Boxes = New Array(Of Body)
+Me.BoxLimit = 40
+Me.SeedValue = 20260902
+Me.Frames = 30
+Me.SubSteps = 1
+End Sub
+
+## Spawns one box above the tube with deterministic jitter.
+Sub SpawnBox()
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(-1.5 + 3.0 * Me.NextUnit(), 11.0)
+def.AngularVelocity = 2.0 * (Me.NextUnit() - 0.5)
+Var body As Body = Me.World.CreateBody(def)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.3
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Me.Boxes.Append(body)
+End Sub
+
+## Destroys boxes that fell or were flung out of the tumbler.
+Sub CullBoxes()
+Var survivors As New Array(Of Body)
+Var count As Integer = Me.Boxes.Count
+Var i As Integer = 0
+While i < count
+Var box As Body = Me.Boxes[i]
+Var position As Vector2 = box.GetPosition()
+If position.Y < -1.0 Or position.X < -25.0 Or position.X > 25.0 Then
+Me.World.DestroyBody(box)
+Else
+survivors.Append(box)
+End If
+i = i + 1
+Wend
+Me.Boxes = survivors
+End Sub
+
+## Steps the tumbler for its frame count, spawning and culling boxes,
+## then folds the live box count and transforms.
+Sub RunKernels()
+Var frame As Integer = 0
+While frame < Me.Frames
+If Me.Boxes.Count < Me.BoxLimit And frame Mod 2 = 0 Then
+Me.SpawnBox()
+End If
+Me.CullBoxes()
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+frame = frame + 1
+Wend
+Var checksum As Integer = Stage12Fold.FoldInt(0, Me.Boxes.Count)
+Var count As Integer = Me.Boxes.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Boxes[i])
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.X)
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class
+
+# Mixed dense contacts: a packed pile of alternating boxes, circles, and
+# capsules woken and re-solved every iteration, stressing the narrow phase
+# and the constraint graph with mixed shape pairs.
+Class DenseContactsWorkload
+## The stepped world.
+Property World As World
+## The pile bodies.
+Property Pile As Array(Of Body)
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Builds the ground and the packed mixed-shape pile.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 0.5))
+
+Me.Pile = New Array(Of Body)
+Me.Pile.Reserve(240)
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.35
+Var columns As Integer = 16
+Var rows As Integer = 15
+Var row As Integer = 0
+While row < rows
+Var column As Integer = 0
+While column < columns
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2((column - 0.5 * (columns - 1)) * 0.78, 0.45 + row * 0.78)
+Var body As Body = Me.World.CreateBody(def)
+Var kind As Integer = (column + row) Mod 3
+If kind = 0 Then
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.35, 0.35))
+ElseIf kind = 1 Then
+body.CreateCircle(shapeDef, New Circle(New Vector2(0.0, 0.0), 0.33))
+Else
+body.CreateCapsule(shapeDef, New Capsule(New Vector2(0.0, -0.18), New Vector2(0.0, 0.18), 0.2))
+End If
+Me.Pile.Append(body)
+column = column + 1
+Wend
+row = row + 1
+Wend
+Me.SubSteps = 1
+Me.World.UpdateBroadPhasePairs()
+End Sub
+
+## Wakes every pile body.
+Sub WakeAll()
+Var count As Integer = Me.Pile.Count
+Var i As Integer = 0
+While i < count
+Me.World.SetBodyAwake(Me.Pile[i], True)
+i = i + 1
+Wend
+End Sub
+
+## Wakes the whole pile and solves six frames, then folds transforms.
+Sub RunKernels()
+Me.WakeAll()
+Var count As Integer = Me.Pile.Count
+Var i As Integer = 0
+Var frame As Integer = 0
+While frame < 6
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+frame = frame + 1
+Wend
+Var checksum As Integer = 0
+i = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Pile[i])
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.X)
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class
+
+# Bullet CCD stress: a stream of fast bullet circles fired at a thin static
+# wall through a static clutter field, recycled to the launcher when they
+# stop, so every iteration keeps sweeping and resolving time-of-impact.
+Class BulletCcdWorkload
+## The stepped world.
+Property World As World
+## The recycled bullet bodies.
+Property Bullets As Array(Of Body)
+## Deterministic recycle jitter state.
+Property SeedValue As Integer
+## Frames stepped per iteration.
+Property Frames As Integer
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Returns the next deterministic non-negative 31-bit pseudo-random value.
+Function NextRandom() As Integer
+Me.SeedValue = Me.SeedValue * 6364136223846793005 + 1442695040888963407
+Return Me.SeedValue.ShiftRight(33).BitAnd(2147483647)
+End Function
+
+## Returns the next deterministic value in [0, 1).
+Function NextUnit() As Double
+Return Me.NextRandom() / 2147483647.0
+End Function
+
+## Builds the wall, the clutter field, and the bullet stream.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 0.5))
+
+Var staticDef As New BodyDefinition
+Var wall As Body = Me.World.CreateBody(staticDef)
+wall.CreatePolygon(New ShapeDefinition, Polygon.MakeOffsetBox(0.1, 6.0, New Vector2(8.0, 6.0), New Rot(1.0, 0.0)))
+
+# Static clutter gives the swept queries a tree to descend.
+Var clutterDef As New ShapeDefinition
+clutterDef.Density = 0.0
+Me.SeedValue = 987654321
+Var clutterIndex As Integer = 0
+While clutterIndex < 40
+Var def As New BodyDefinition
+def.Position = New Vector2(-6.0 + 20.0 * Me.NextUnit(), 0.5 + 11.0 * Me.NextUnit())
+Var box As Body = Me.World.CreateBody(def)
+box.CreatePolygon(clutterDef, Polygon.MakeBox(0.5, 0.25))
+clutterIndex = clutterIndex + 1
+Wend
+
+Me.Bullets = New Array(Of Body)
+Me.Bullets.Reserve(24)
+Var bulletDef As New ShapeDefinition
+bulletDef.Density = 4.0
+bulletDef.Material.Friction = 0.2
+bulletDef.Material.Restitution = 0.3
+Var bulletIndex As Integer = 0
+While bulletIndex < 24
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.IsBullet = True
+def.Position = New Vector2(-8.0, 0.5 + 0.5 * bulletIndex)
+def.LinearVelocity = New Vector2(60.0, 0.0)
+Var bullet As Body = Me.World.CreateBody(def)
+bullet.CreateCircle(bulletDef, New Circle(New Vector2(0.0, 0.0), 0.06))
+Me.Bullets.Append(bullet)
+bulletIndex = bulletIndex + 1
+Wend
+Me.Frames = 30
+Me.SubSteps = 1
+End Sub
+
+## Recycles one bullet back to the launcher with deterministic jitter.
+Sub Recycle(bullet As Body, lane As Integer)
+Var transform As Transform = Me.World.GetBodyTransform(bullet)
+Var position As Vector2 = transform.P
+Var velocity As Vector2 = bullet.GetLinearVelocity()
+If position.X > 9.9 Or position.X < -10.0 Or velocity.X < 5.0 Then
+Me.World.SetBodyTransform(bullet, New Vector2(-8.0, 0.5 + 0.5 * lane), New Rot(1.0, 0.0))
+bullet.SetLinearVelocity(New Vector2(60.0, 2.0 * (Me.NextUnit() - 0.5)))
+bullet.SetAngularVelocity(0.0)
+End If
+End Sub
+
+## Steps the bullet stream, recycling spent bullets, then folds transforms.
+Sub RunKernels()
+Var frame As Integer = 0
+While frame < Me.Frames
+Var count As Integer = Me.Bullets.Count
+Var i As Integer = 0
+While i < count
+Me.Recycle(Me.Bullets[i], i)
+i = i + 1
+Wend
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+frame = frame + 1
+Wend
+Var checksum As Integer = 0
+Var count As Integer = Me.Bullets.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Bullets[i])
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.X)
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class
+
+# World query throughput: closest-ray, all-hit ray, shape cast, shape
+# overlap, and bounds overlap over a 2500-shape static grid, all through
+# the allocation-free Into forms with reused records.
+Class WorldQueriesWorkload
+## The queried world.
+Property World As World
+## Reused query filter.
+Property TheFilter As QueryFilter
+## Reused all-hit list.
+Property HitList As ShapeHitList
+## Reused closest-hit record.
+Property ClosestHit As ShapeHit
+## Reused one-point shape proxy.
+Property TheProxy As ShapeProxy
+## Reused query bounds.
+Property TheBounds As AABB
+## Deterministic query state.
+Property SeedValue As Integer
+## Closest-ray queries per iteration.
+Property Rays As Integer
+## All-hit ray queries per iteration.
+Property RayAlls As Integer
+## Shape-cast queries per iteration.
+Property ShapeCasts As Integer
+## Shape-overlap queries per iteration.
+Property ShapeOverlaps As Integer
+## Bounds-overlap queries per iteration.
+Property BoundsOverlaps As Integer
+
+## Returns the next deterministic non-negative 31-bit pseudo-random value.
+Function NextRandom() As Integer
+Me.SeedValue = Me.SeedValue * 6364136223846793005 + 1442695040888963407
+Return Me.SeedValue.ShiftRight(33).BitAnd(2147483647)
+End Function
+
+## Builds the static query grid and the reused query state.
+Sub Prepare()
+Me.World = New World
+Me.TheFilter = New QueryFilter
+Me.HitList = New ShapeHitList
+Me.ClosestHit = New ShapeHit
+Me.TheProxy = New ShapeProxy
+Me.TheBounds = New AABB
+Me.SeedValue = 424242
+
+Var def As New BodyDefinition
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 0.0
+Var column As Integer = 0
+While column < 50
+Var row As Integer = 0
+While row < 50
+Var body As Body = Me.World.CreateBody(def)
+body.CreatePolygon(shapeDef, Polygon.MakeOffsetBox(0.2, 0.2, New Vector2(column - 24.5, row - 24.5), New Rot(1.0, 0.0)))
+row = row + 1
+Wend
+column = column + 1
+Wend
+Me.World.UpdateBroadPhasePairs()
+
+Me.Rays = 4000
+Me.RayAlls = 1000
+Me.ShapeCasts = 1000
+Me.ShapeOverlaps = 1000
+Me.BoundsOverlaps = 2000
+End Sub
+
+## Runs the five query families and folds their tallies.
+Sub RunKernels()
+Var checksum As Integer = 0
+Var fractionSum As Double = 0.0
+
+Var i As Integer = 0
+While i < Me.Rays
+Var x As Double = -25.0 + 50.0 * (Me.NextRandom() / 2147483647.0)
+Var hit As ShapeHit = Me.World.CastRayClosestTo(New Vector2(x, 25.0), New Vector2(0.0, -50.0), Me.TheFilter, Me.ClosestHit)
+fractionSum = fractionSum + hit.Fraction
+i = i + 1
+Wend
+checksum = Stage12Fold.FoldInt(checksum, Me.Rays)
+checksum = Stage12Fold.FoldDouble(checksum, fractionSum)
+
+checksum = Stage12Fold.FoldInt(checksum, Me.RayAlls)
+i = 0
+While i < Me.RayAlls
+Var x As Double = -25.0 + 50.0 * (Me.NextRandom() / 2147483647.0)
+Me.World.CastRayInto(New Vector2(x, 25.0), New Vector2(0.0, -50.0), Me.TheFilter, Me.HitList)
+checksum = Stage12Fold.FoldInt(checksum, Me.HitList.Count)
+i = i + 1
+Wend
+
+checksum = Stage12Fold.FoldInt(checksum, Me.ShapeCasts)
+i = 0
+While i < Me.ShapeCasts
+Var x As Double = -25.0 + 50.0 * (Me.NextRandom() / 2147483647.0)
+ShapeProxy.MakeOnePointTo(Me.TheProxy, x, 25.0, 0.1)
+Me.World.CastShapeInto(Me.TheProxy, New Vector2(0.0, -50.0), Me.TheFilter, Me.HitList)
+checksum = Stage12Fold.FoldInt(checksum, Me.HitList.Count)
+i = i + 1
+Wend
+
+checksum = Stage12Fold.FoldInt(checksum, Me.ShapeOverlaps)
+i = 0
+While i < Me.ShapeOverlaps
+Var x As Double = -25.0 + 50.0 * (Me.NextRandom() / 2147483647.0)
+Var y As Double = -25.0 + 50.0 * (Me.NextRandom() / 2147483647.0)
+ShapeProxy.MakeOnePointTo(Me.TheProxy, x, y, 0.5)
+Me.World.OverlapShapeInto(Me.TheProxy, Me.TheFilter, Me.HitList)
+checksum = Stage12Fold.FoldInt(checksum, Me.HitList.Count)
+i = i + 1
+Wend
+
+checksum = Stage12Fold.FoldInt(checksum, Me.BoundsOverlaps)
+i = 0
+While i < Me.BoundsOverlaps
+Var x As Double = -25.0 + 50.0 * (Me.NextRandom() / 2147483647.0)
+Var y As Double = -25.0 + 50.0 * (Me.NextRandom() / 2147483647.0)
+Me.TheBounds.LowerBound.Set(x - 1.0, y - 1.0)
+Me.TheBounds.UpperBound.Set(x + 1.0, y + 1.0)
+Me.World.OverlapBoundsInto(Me.TheBounds, Me.TheFilter, Me.HitList)
+checksum = Stage12Fold.FoldInt(checksum, Me.HitList.Count)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class
+
+# Sensor-heavy scene: one hundred static sensors with event publication over
+# a stream of two hundred recycled movers crossing the field, exercising the
+# post-solve sensor overlap stage every frame.
+Class SensorFieldWorkload
+## The stepped world.
+Property World As World
+## The recycled movers.
+Property Movers As Array(Of Body)
+## Frames stepped per iteration.
+Property Frames As Integer
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Builds the sensor grid and the mover stream.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+groundDef.Position = New Vector2(0.0, -0.5)
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 0.5))
+
+Var sensorDef As New BodyDefinition
+Var sensorShapeDef As New ShapeDefinition
+sensorShapeDef.IsSensor = True
+sensorShapeDef.EnableSensorEvents = True
+Var column As Integer = 0
+While column < 10
+Var row As Integer = 0
+While row < 10
+Var body As Body = Me.World.CreateBody(sensorDef)
+body.CreatePolygon(sensorShapeDef, Polygon.MakeOffsetBox(0.75, 0.75, New Vector2(column * 2.0 - 9.0, row * 2.0), New Rot(1.0, 0.0)))
+row = row + 1
+Wend
+column = column + 1
+Wend
+
+Me.Movers = New Array(Of Body)
+Me.Movers.Reserve(200)
+Var moverDef As New ShapeDefinition
+moverDef.Density = 0.5
+moverDef.Material.Restitution = 0.9
+Var i As Integer = 0
+While i < 200
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2((i Mod 10) * 2.0 - 9.0, -1.0 - (i Mod 5) * 2.0)
+def.LinearVelocity = New Vector2(0.2 * ((i Mod 5) - 2), 8.0)
+Var mover As Body = Me.World.CreateBody(def)
+mover.CreateCircle(moverDef, New Circle(New Vector2(0.0, 0.0), 0.15))
+Me.Movers.Append(mover)
+i = i + 1
+Wend
+Me.Frames = 30
+Me.SubSteps = 1
+End Sub
+
+## Recycles movers that left the top of the field back to the bottom.
+Sub RecycleMovers()
+Var count As Integer = Me.Movers.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Movers[i])
+If transform.P.Y > 22.0 Then
+Me.World.SetBodyTransform(Me.Movers[i], New Vector2((i Mod 10) * 2.0 - 9.0, -1.0), New Rot(1.0, 0.0))
+Me.Movers[i].SetLinearVelocity(New Vector2(0.2 * ((i Mod 5) - 2), 8.0))
+End If
+i = i + 1
+Wend
+End Sub
+
+## Steps the field, recycling movers and folding event counts, then folds
+## transforms.
+Sub RunKernels()
+Var checksum As Integer = 0
+Var frame As Integer = 0
+While frame < Me.Frames
+Me.RecycleMovers()
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+checksum = Stage12Fold.FoldInt(checksum, Me.World.Events.SensorBeginCount())
+checksum = Stage12Fold.FoldInt(checksum, Me.World.Events.SensorEndCount())
+checksum = Stage12Fold.FoldInt(checksum, Me.World.Events.ContactBeginCount())
+frame = frame + 1
+Wend
+Var count As Integer = Me.Movers.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Movers[i])
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.X)
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class
+
+# Mixed-joint machine: all seven solver families working in one awake scene
+# with per-frame runtime retargets, free boxes the car plows into, and a
+# filter joint suppressing one collision pair.
+Class JointMachineWorkload
+## The stepped world.
+Property World As World
+## Tracked bodies folded into the checksum.
+Property Tracked As Array(Of Body)
+## The car's rear wheel motor.
+Property WheelLeft As WheelJoint
+## The car's front wheel motor.
+Property WheelRight As WheelJoint
+## The elevator platform's prismatic joint.
+Property Elevator As PrismaticJoint
+## The pendulum's driving revolute joint.
+Property PendulumMotor As RevoluteJoint
+## The turntable's motor joint.
+Property Turntable As MotorJoint
+## The trapeze rope.
+Property Rope As DistanceJoint
+## The dragged box's mouse joint.
+Property Drag As MouseJoint
+## Frames stepped per iteration.
+Property Frames As Integer
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Wakes every tracked dynamic body.
+Sub WakeAll()
+Var count As Integer = Me.Tracked.Count
+Var i As Integer = 0
+While i < count
+Me.World.SetBodyAwake(Me.Tracked[i], True)
+i = i + 1
+Wend
+End Sub
+
+## Builds the machine: ground, car, elevator, pendulum, welded tower,
+## turntable, trapeze, dragged box, free boxes, and the filter pair.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Me.Tracked = New Array(Of Body)
+
+Var groundDef As New BodyDefinition
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(60.0, 0.5))
+
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.4
+
+# Car: chassis, two sprung wheels with retargeted drive motors.
+Var chassisDef As New BodyDefinition
+chassisDef.Type = BodyType.DynamicBody
+chassisDef.Position = New Vector2(-8.0, 1.0)
+Var chassis As Body = Me.World.CreateBody(chassisDef)
+chassis.CreatePolygon(shapeDef, Polygon.MakeBox(0.9, 0.25))
+Me.Tracked.Append(chassis)
+
+Var wheelDef As New ShapeDefinition
+wheelDef.Density = 1.0
+wheelDef.Material.Friction = 0.9
+Var rearDef As New BodyDefinition
+rearDef.Type = BodyType.DynamicBody
+rearDef.Position = New Vector2(-8.7, 0.5)
+Var rear As Body = Me.World.CreateBody(rearDef)
+rear.CreateCircle(wheelDef, New Circle(New Vector2(0.0, 0.0), 0.4))
+Me.Tracked.Append(rear)
+Var frontDef As New BodyDefinition
+frontDef.Type = BodyType.DynamicBody
+frontDef.Position = New Vector2(-7.3, 0.5)
+Var front As Body = Me.World.CreateBody(frontDef)
+front.CreateCircle(wheelDef, New Circle(New Vector2(0.0, 0.0), 0.4))
+Me.Tracked.Append(front)
+
+Var rearJointDef As New WheelJointDefinition
+rearJointDef.BodyA = chassis
+rearJointDef.BodyB = rear
+rearJointDef.LocalAnchorA = New Vector2(-0.7, -0.5)
+rearJointDef.LocalAnchorB = New Vector2(0.0, 0.0)
+rearJointDef.LocalAxisA = New Vector2(0.0, 1.0)
+rearJointDef.EnableSpring = True
+rearJointDef.Hertz = 4.0
+rearJointDef.DampingRatio = 0.7
+rearJointDef.EnableMotor = True
+rearJointDef.MaxMotorTorque = 6.0
+Me.WheelLeft = Me.World.CreateWheelJoint(rearJointDef)
+
+Var frontJointDef As New WheelJointDefinition
+frontJointDef.BodyA = chassis
+frontJointDef.BodyB = front
+frontJointDef.LocalAnchorA = New Vector2(0.7, -0.5)
+frontJointDef.LocalAnchorB = New Vector2(0.0, 0.0)
+frontJointDef.LocalAxisA = New Vector2(0.0, 1.0)
+frontJointDef.EnableSpring = True
+frontJointDef.Hertz = 4.0
+frontJointDef.DampingRatio = 0.7
+frontJointDef.EnableMotor = True
+frontJointDef.MaxMotorTorque = 6.0
+Me.WheelRight = Me.World.CreateWheelJoint(frontJointDef)
+
+# Elevator: kinematic platform on a motorised prismatic rail carrying
+# two free boxes.
+Var railDef As New BodyDefinition
+Var rail As Body = Me.World.CreateBody(railDef)
+rail.CreatePolygon(New ShapeDefinition, Polygon.MakeOffsetBox(0.1, 1.5, New Vector2(4.0, 2.0), New Rot(1.0, 0.0)))
+Var platformDef As New BodyDefinition
+platformDef.Type = BodyType.DynamicBody
+platformDef.Position = New Vector2(4.0, 2.0)
+Var platform As Body = Me.World.CreateBody(platformDef)
+platform.CreatePolygon(shapeDef, Polygon.MakeBox(1.2, 0.1))
+Me.Tracked.Append(platform)
+
+Var elevatorDef As New PrismaticJointDefinition
+elevatorDef.BodyA = rail
+elevatorDef.BodyB = platform
+elevatorDef.LocalAnchorA = New Vector2(0.0, 0.0)
+elevatorDef.LocalAnchorB = New Vector2(0.0, 0.0)
+elevatorDef.LocalAxisA = New Vector2(0.0, 1.0)
+elevatorDef.EnableMotor = True
+elevatorDef.MaxMotorForce = 2000.0
+elevatorDef.EnableLimit = True
+elevatorDef.LowerTranslation = -1.0
+elevatorDef.UpperTranslation = 1.5
+Me.Elevator = Me.World.CreatePrismaticJoint(elevatorDef)
+
+Var crateDef As New BodyDefinition
+crateDef.Type = BodyType.DynamicBody
+Var crateIndex As Integer = 0
+While crateIndex < 2
+crateDef.Position = New Vector2(3.7 + 0.6 * crateIndex, 2.5)
+Var crate As Body = Me.World.CreateBody(crateDef)
+crate.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Me.Tracked.Append(crate)
+crateIndex = crateIndex + 1
+Wend
+
+# Pendulum: a six-link chain driven by a retargeted hinge motor.
+Var anchorDef As New BodyDefinition
+Var anchor As Body = Me.World.CreateBody(anchorDef)
+anchor.CreatePolygon(New ShapeDefinition, Polygon.MakeOffsetBox(0.1, 0.1, New Vector2(-2.0, 8.0), New Rot(1.0, 0.0)))
+Var linkIndex As Integer = 0
+Var previous As Body = anchor
+While linkIndex < 6
+Var linkPos As New BodyDefinition
+linkPos.Type = BodyType.DynamicBody
+linkPos.Position = New Vector2(-2.0, 7.0 - 1.0 * linkIndex)
+Var link As Body = Me.World.CreateBody(linkPos)
+link.CreatePolygon(shapeDef, Polygon.MakeBox(0.12, 0.5))
+Me.Tracked.Append(link)
+
+Var hingeDef As New RevoluteJointDefinition
+If linkIndex = 0 Then
+hingeDef.BodyA = anchor
+hingeDef.LocalAnchorA = New Vector2(-2.0, 7.5)
+Else
+hingeDef.BodyA = previous
+hingeDef.LocalAnchorA = New Vector2(0.0, -0.5)
+End If
+hingeDef.BodyB = link
+hingeDef.LocalAnchorB = New Vector2(0.0, 0.5)
+If linkIndex = 0 Then
+hingeDef.EnableMotor = True
+hingeDef.MaxMotorTorque = 50.0
+Me.PendulumMotor = Me.World.CreateRevoluteJoint(hingeDef)
+Else
+Me.World.CreateRevoluteJoint(hingeDef)
+End If
+previous = link
+linkIndex = linkIndex + 1
+Wend
+
+# Soft-welded tower on the car's path.
+Var towerIndex As Integer = 0
+Var towerY As Double = 0.45
+Var blockA As Body = Nothing
+While towerIndex < 4
+Var blockDef As New BodyDefinition
+blockDef.Type = BodyType.DynamicBody
+blockDef.Position = New Vector2(10.0, towerY)
+Var block As Body = Me.World.CreateBody(blockDef)
+block.CreatePolygon(shapeDef, Polygon.MakeBox(0.4, 0.4))
+Me.Tracked.Append(block)
+If towerIndex > 0 Then
+Var weldDef As New WeldJointDefinition
+weldDef.BodyA = blockA
+weldDef.BodyB = block
+weldDef.LocalAnchorA = New Vector2(0.0, -0.4)
+weldDef.LocalAnchorB = New Vector2(0.0, 0.4)
+weldDef.LinearHertz = 3.0
+weldDef.AngularHertz = 3.0
+Me.World.CreateWeldJoint(weldDef)
+End If
+blockA = block
+towerY = towerY + 0.82
+towerIndex = towerIndex + 1
+Wend
+
+# Turntable: a motor joint steering a platform pose, boxes riding it.
+Var turntableDef As New BodyDefinition
+turntableDef.Type = BodyType.DynamicBody
+turntableDef.Position = New Vector2(14.0, 0.6)
+Var turntable As Body = Me.World.CreateBody(turntableDef)
+turntable.CreatePolygon(shapeDef, Polygon.MakeBox(1.2, 0.15))
+Me.Tracked.Append(turntable)
+
+Var motorDef As New MotorJointDefinition
+motorDef.BodyA = ground
+motorDef.BodyB = turntable
+motorDef.MaxForce = 100.0
+motorDef.MaxTorque = 60.0
+Me.Turntable = Me.World.CreateMotorJoint(motorDef)
+
+Var riderDef As New BodyDefinition
+riderDef.Type = BodyType.DynamicBody
+riderDef.Position = New Vector2(14.0, 1.1)
+Var rider As Body = Me.World.CreateBody(riderDef)
+rider.CreatePolygon(shapeDef, Polygon.MakeBox(0.3, 0.3))
+Me.Tracked.Append(rider)
+
+# Trapeze: static hanger, distance-joint rope, swinging weight.
+Var hangerDef As New BodyDefinition
+Var hanger As Body = Me.World.CreateBody(hangerDef)
+hanger.CreatePolygon(New ShapeDefinition, Polygon.MakeOffsetBox(0.1, 0.1, New Vector2(18.0, 8.0), New Rot(1.0, 0.0)))
+Var weightDef As New BodyDefinition
+weightDef.Type = BodyType.DynamicBody
+weightDef.Position = New Vector2(18.0, 6.0)
+Var weight As Body = Me.World.CreateBody(weightDef)
+weight.CreatePolygon(shapeDef, Polygon.MakeBox(0.3, 0.3))
+Me.Tracked.Append(weight)
+
+Var ropeDef As New DistanceJointDefinition
+ropeDef.BodyA = hanger
+ropeDef.BodyB = weight
+ropeDef.LocalAnchorA = New Vector2(0.0, 0.0)
+ropeDef.LocalAnchorB = New Vector2(0.0, 0.0)
+ropeDef.Length = 2.0
+Me.Rope = Me.World.CreateDistanceJoint(ropeDef)
+
+# Dragged box with a retargeted mouse joint.
+Var draggedDef As New BodyDefinition
+draggedDef.Type = BodyType.DynamicBody
+draggedDef.Position = New Vector2(16.0, 3.0)
+Var dragged As Body = Me.World.CreateBody(draggedDef)
+dragged.CreatePolygon(shapeDef, Polygon.MakeBox(0.4, 0.4))
+Me.Tracked.Append(dragged)
+
+Var dragDef As New MouseJointDefinition
+dragDef.BodyA = ground
+dragDef.BodyB = dragged
+dragDef.Target = New Vector2(16.0, 3.0)
+dragDef.MaxForce = 200.0
+Me.Drag = Me.World.CreateMouseJoint(dragDef)
+
+# A filter joint suppresses one free pair's collisions.
+Var pairADef As New BodyDefinition
+pairADef.Type = BodyType.DynamicBody
+pairADef.Position = New Vector2(20.0, 0.5)
+Var pairA As Body = Me.World.CreateBody(pairADef)
+pairA.CreatePolygon(shapeDef, Polygon.MakeBox(0.4, 0.4))
+Me.Tracked.Append(pairA)
+Var pairBDef As New BodyDefinition
+pairBDef.Type = BodyType.DynamicBody
+pairBDef.Position = New Vector2(20.0, 1.5)
+Var pairB As Body = Me.World.CreateBody(pairBDef)
+pairB.CreatePolygon(shapeDef, Polygon.MakeBox(0.4, 0.4))
+Me.Tracked.Append(pairB)
+Var filterDef As New FilterJointDefinition
+filterDef.BodyA = pairA
+filterDef.BodyB = pairB
+Me.World.CreateFilterJoint(filterDef)
+
+# Free boxes the car plows into.
+Var freeIndex As Integer = 0
+While freeIndex < 20
+Var freeDef As New BodyDefinition
+freeDef.Type = BodyType.DynamicBody
+freeDef.Position = New Vector2(-6.0 + freeIndex * 1.2, 0.5 + 1.0 * (freeIndex Mod 3))
+Var freeBody As Body = Me.World.CreateBody(freeDef)
+freeBody.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Me.Tracked.Append(freeBody)
+freeIndex = freeIndex + 1
+Wend
+
+Me.Frames = 20
+Me.SubSteps = 1
+Me.World.UpdateBroadPhasePairs()
+End Sub
+
+## Wakes the machine, retargets every driver each frame, then folds
+## transforms.
+Sub RunKernels()
+Me.WakeAll()
+Var frame As Integer = 0
+While frame < Me.Frames
+Var driveSpeed As Double = 6.0 * Maths.Sin(frame * 0.2)
+Me.WheelLeft.SetMotorSpeed(driveSpeed)
+Me.WheelRight.SetMotorSpeed(driveSpeed)
+Me.Elevator.SetTargetTranslation(0.25 + 1.25 * (1.0 + Maths.Sin(frame * 0.15)))
+Me.PendulumMotor.SetMotorSpeed(2.0 * Maths.Sin(frame * 0.3))
+Me.Turntable.SetAngularOffset(0.1 * frame)
+Me.Rope.SetLength(2.0 + 0.5 * Maths.Sin(frame * 0.25))
+Me.Drag.SetTarget(16.0 + 2.0 * Maths.Sin(frame * 0.15), 3.0)
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+frame = frame + 1
+Wend
+Var checksum As Integer = 0
+Var count As Integer = Me.Tracked.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Tracked[i])
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.X)
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class
+
+# World clear/rebuild loops: each iteration clears a fully populated world
+# and rebuilds a pyramid, chain terrain, distance joints, and sensors, so
+# the whole create and destroy surface is measured including its
+# documented façade allocations.
+Class ClearRebuildWorkload
+## The rebuilt world.
+Property World As World
+## Bodies tracked for the checksum.
+Property Tracked As Array(Of Body)
+## Substep count per step call.
+Property SubSteps As Integer
+
+## Builds the world once so pools are warm before the first clear.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Me.SubSteps = 1
+Me.Rebuild()
+End Sub
+
+## Clears the world and rebuilds a moderate mixed scene.
+Sub Rebuild()
+Me.World.Clear()
+Me.Tracked = New Array(Of Body)
+
+Var groundDef As New BodyDefinition
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreatePolygon(New ShapeDefinition, Polygon.MakeBox(40.0, 0.5))
+
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.5
+Var rows As Integer = 12
+Var row As Integer = 0
+While row < rows
+Var column As Integer = 0
+While column < rows - row
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2((column - 0.5 * (rows - row - 1)) * 0.52, 0.25 + row * 0.51)
+Var body As Body = Me.World.CreateBody(def)
+body.CreatePolygon(shapeDef, Polygon.MakeBox(0.25, 0.25))
+Me.Tracked.Append(body)
+column = column + 1
+Wend
+row = row + 1
+Wend
+
+# A distance-joint rope hanging from a static hanger.
+Var hangerDef As New BodyDefinition
+Var hanger As Body = Me.World.CreateBody(hangerDef)
+hanger.CreatePolygon(New ShapeDefinition, Polygon.MakeOffsetBox(0.1, 0.1, New Vector2(0.0, 10.0), New Rot(1.0, 0.0)))
+Var ropeIndex As Integer = 0
+Var previous As Body = hanger
+While ropeIndex < 6
+Var def As New BodyDefinition
+def.Type = BodyType.DynamicBody
+def.Position = New Vector2(0.0, 9.5 - 0.5 * ropeIndex)
+Var link As Body = Me.World.CreateBody(def)
+link.CreatePolygon(shapeDef, Polygon.MakeBox(0.15, 0.15))
+Me.Tracked.Append(link)
+Var ropeDef As New DistanceJointDefinition
+ropeDef.BodyA = previous
+ropeDef.BodyB = link
+ropeDef.Length = 0.5
+Me.World.CreateDistanceJoint(ropeDef)
+previous = link
+ropeIndex = ropeIndex + 1
+Wend
+
+# A chain terrain segment and a sensor strip.
+Var chainDef As New ChainDefinition
+Var points() As Vector2 = [New Vector2(-20.0, 0.0), New Vector2(-10.0, 1.0), New Vector2(-5.0, 2.5), New Vector2(0.0, 3.0), New Vector2(5.0, 2.5), New Vector2(10.0, 1.0), New Vector2(20.0, 0.0)]
+chainDef.Points = points
+chainDef.IsLoop = False
+Me.World.CreateChain(chainDef)
+
+Var sensorShapeDef As New ShapeDefinition
+sensorShapeDef.IsSensor = True
+sensorShapeDef.EnableSensorEvents = True
+Var sensorIndex As Integer = 0
+While sensorIndex < 4
+Var def As New BodyDefinition
+def.Position = New Vector2(-6.0 + 4.0 * sensorIndex, 5.0)
+Var sensor As Body = Me.World.CreateBody(def)
+sensor.CreatePolygon(sensorShapeDef, Polygon.MakeBox(1.0, 1.0))
+Me.Tracked.Append(sensor)
+sensorIndex = sensorIndex + 1
+Wend
+End Sub
+
+## Clears, rebuilds, steps twice, and folds transforms.
+Sub RunKernels()
+Me.Rebuild()
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+Var checksum As Integer = 0
+Var count As Integer = Me.Tracked.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Tracked[i])
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.X)
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class
+
+# The demo's heaviest representative scene: the exact BenchmarkScene
+# geometry (segment ground, forty levels, one-point-two metre pitch) stepped
+# with the demo's four substeps and no drawing.
+Class DemoBenchmarkSceneWorkload
+## The stepped world.
+Property World As World
+## Bodies of the pyramid, bottom row first.
+Property Stack As Array(Of Body)
+## Substep count per step call, matching the demo window default.
+Property SubSteps As Integer
+## Frames stepped per measured iteration.
+Property Frames As Integer
+
+## Builds the demo benchmark pyramid exactly as the demo scene does.
+Sub Prepare()
+Me.World = New World
+Me.World.Gravity = New Vector2(0.0, -10.0)
+Var groundDef As New BodyDefinition
+Var ground As Body = Me.World.CreateBody(groundDef)
+ground.CreateSegment(New ShapeDefinition, New Segment(-30.0, 0.0, 30.0, 0.0))
+
+Var boxDef As New BodyDefinition
+boxDef.Type = BodyType.DynamicBody
+Var shapeDef As New ShapeDefinition
+shapeDef.Density = 1.0
+shapeDef.Material.Friction = 0.6
+
+Var halfWidth As Double = 0.5
+Var levels As Integer = 40
+Var level As Integer = 0
+Me.Stack = New Array(Of Body)
+Me.Stack.Reserve(820)
+While level < levels
+Var count As Integer = levels - level
+Var y As Double = -(halfWidth + level * (2.0 * halfWidth + 0.01))
+Var i As Integer = 0
+While i < count
+Var x As Double = (i - (count - 1) * 0.5) * (2.0 * halfWidth + 0.02)
+boxDef.Position = New Vector2(x, y)
+Var box As Body = Me.World.CreateBody(boxDef)
+box.CreatePolygon(shapeDef, Polygon.MakeBox(halfWidth, halfWidth))
+Me.Stack.Append(box)
+i = i + 1
+Wend
+level = level + 1
+Wend
+Me.SubSteps = 4
+Me.Frames = 8
+Me.World.UpdateBroadPhasePairs()
+End Sub
+
+## Steps the demo scene for its frame count, then folds transforms.
+Sub RunKernels()
+Var frame As Integer = 0
+While frame < Me.Frames
+Me.World.StepWorld(1.0 / 60.0, Me.SubSteps)
+frame = frame + 1
+Wend
+Var checksum As Integer = 0
+Var count As Integer = Me.Stack.Count
+Var i As Integer = 0
+While i < count
+Var transform As Transform = Me.World.GetBodyTransform(Me.Stack[i])
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.X)
+checksum = Stage12Fold.FoldDouble(checksum, transform.P.Y)
+i = i + 1
+Wend
+Me.ChecksumValue = checksum
+End Sub
+
+## The most recent folded checksum.
+Property ChecksumValue As Integer
+
+## Returns the folded checksum of the last iteration.
+Function Checksum() As Integer
+Return Me.ChecksumValue
+End Function
+End Class

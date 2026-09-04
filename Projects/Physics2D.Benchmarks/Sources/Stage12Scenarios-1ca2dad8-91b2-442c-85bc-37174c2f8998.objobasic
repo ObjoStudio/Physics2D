@@ -1,0 +1,451 @@
+# Stage 12 benchmark scenarios wrapping the optimisation-audit workloads.
+#
+# The long-horizon pyramid uses zero warm-up and two measured iterations
+# because one iteration alone runs 256 simulated frames; everything else
+# follows the standard three warm-up and four-to-eight measured pattern.
+Import Physics2D
+
+Class Stage12Pyramid256Scenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As Pyramid256Workload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage12-pyramid-256"
+Me.Description = "Steps a 40-level box pyramid (820 bodies) for 256 frames per iteration at one substep; the long-horizon required scenario."
+Me.WarmupIterations = 0
+Me.MeasuredIterations = 2
+Me.mWorkload = New Pyramid256Workload
+End Constructor
+
+## Describes the pyramid parameters.
+Override Function Parameters() As String
+Return "levels=40,boxes=820,steps=256,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class
+
+Class Stage12SleepWakeScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As SleepWakeStacksWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage12-sleep-wake-600"
+Me.Description = "Cycles a 600-body stacked wall through wake, four solved frames, island-aware forced sleep, and one asleep frame per iteration."
+Me.WarmupIterations = 1
+Me.MeasuredIterations = 4
+Me.mWorkload = New SleepWakeStacksWorkload
+End Constructor
+
+## Describes the sleep/wake parameters.
+Override Function Parameters() As String
+Return "bodies=600,steps=5/cycle,wake=sleep-per-iteration,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class
+
+Class Stage12TumblerScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As TumblerWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage12-tumbler-create-destroy"
+Me.Description = "Steps a motor-driven tumbler for 30 frames per iteration with continuous box creation and destruction."
+Me.WarmupIterations = 1
+Me.MeasuredIterations = 4
+Me.mWorkload = New TumblerWorkload
+End Constructor
+
+## Describes the tumbler parameters.
+Override Function Parameters() As String
+Return "boxes<=40,steps=30,spawn=every-2-frames,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class
+
+Class Stage12DenseContactsScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As DenseContactsWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage12-dense-contacts-240"
+Me.Description = "Wakes and re-solves a dense 240-body pile of mixed boxes, circles, and capsules for six frames per iteration."
+Me.WarmupIterations = 1
+Me.MeasuredIterations = 4
+Me.mWorkload = New DenseContactsWorkload
+End Constructor
+
+## Describes the pile parameters.
+Override Function Parameters() As String
+Return "bodies=240,mixed=box/circle/capsule,steps=6,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class
+
+Class Stage12BulletCcdScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As BulletCcdWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage12-bullet-ccd-24"
+Me.Description = "Recycles 24 fast bullet circles against a thin wall and static clutter for 30 frames per iteration with continuous collision on."
+Me.WarmupIterations = 1
+Me.MeasuredIterations = 4
+Me.mWorkload = New BulletCcdWorkload
+End Constructor
+
+## Describes the bullet parameters.
+Override Function Parameters() As String
+Return "bullets=24,speed=60m/s,steps=30,ccd=on,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class
+
+Class Stage12WorldQueriesScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As WorldQueriesWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage12-world-queries"
+Me.Description = "Runs 9000 world queries per iteration over a 2500-shape static grid through the allocation-free Into forms."
+Me.WarmupIterations = 1
+Me.MeasuredIterations = 4
+Me.mWorkload = New WorldQueriesWorkload
+End Constructor
+
+## Describes the query mix.
+Override Function Parameters() As String
+Return "rays=4000,rayAll=1000,shapeCast=1000,shapeOverlap=1000,boundsOverlap=2000,shapes=2500"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class
+
+Class Stage12SensorFieldScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As SensorFieldWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage12-sensor-field"
+Me.Description = "Steps 200 recycled movers through a 100-sensor field with event publication for 30 frames per iteration."
+Me.WarmupIterations = 1
+Me.MeasuredIterations = 4
+Me.mWorkload = New SensorFieldWorkload
+End Constructor
+
+## Describes the sensor parameters.
+Override Function Parameters() As String
+Return "sensors=100,movers=200,steps=30,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class
+
+Class Stage12JointMachineScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As JointMachineWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage12-joint-machine"
+Me.Description = "Steps a mixed machine with all seven solver families, per-frame retargets, and free-contact churn for 20 frames per iteration."
+Me.WarmupIterations = 1
+Me.MeasuredIterations = 4
+Me.mWorkload = New JointMachineWorkload
+End Constructor
+
+## Describes the machine parameters.
+Override Function Parameters() As String
+Return "bodies=51,joints=17,families=7,steps=20,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class
+
+Class Stage12ClearRebuildScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As ClearRebuildWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage12-clear-rebuild"
+Me.Description = "Clears and rebuilds a 105-body mixed scene with joints, a chain, and sensors, then steps twice, per iteration."
+Me.WarmupIterations = 2
+Me.MeasuredIterations = 8
+Me.mWorkload = New ClearRebuildWorkload
+End Constructor
+
+## Describes the rebuild parameters.
+Override Function Parameters() As String
+Return "bodies=99,chain=7,joints=6,sensors=4,steps=2"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class
+
+Class Stage12DemoBenchmarkScenario Inherits BenchmarkScenario
+## Wrapped workload.
+Private Property mWorkload As DemoBenchmarkSceneWorkload
+
+## Creates the scenario.
+Constructor()
+Super.Constructor()
+Me.Name = "stage12-demo-benchmark-pyramid"
+Me.Description = "Steps the demo's exact BenchmarkScene pyramid (segment ground, 40 levels) with the demo's four substeps for 8 frames per iteration without drawing."
+Me.WarmupIterations = 1
+Me.MeasuredIterations = 3
+Me.mWorkload = New DemoBenchmarkSceneWorkload
+End Constructor
+
+## Describes the demo parameters.
+Override Function Parameters() As String
+Return "levels=40,boxes=820,steps=8,substeps=4,hz=60"
+End Function
+
+## Builds workload state.
+Override Sub Prepare()
+Me.mWorkload.Prepare()
+End Sub
+
+## Runs one measured iteration.
+Override Sub Run()
+Me.mWorkload.RunKernels()
+End Sub
+
+## Returns the workload's folded checksum.
+Override Function Checksum() As Integer
+Return Me.mWorkload.Checksum()
+End Function
+End Class
+
+# Per-stage profiler for the optimisation audit.
+#
+# Runs a fixed number of steps per workload after a short warm-up and prints
+# accumulated World.Profile() stage times, mean milliseconds per step, final
+# world counters, and the allocation count over the profiled steps. This is
+# a diagnostic mode (the scenarios never read the clock); it only reads the
+# public Profile and Counters records.
+Class Stage12Profiler
+## Warms up one prepared workload, then profiles its steps and prints one
+## report row.
+Shared Sub ProfileWorld(name As String, world As World, subSteps As Integer, warmupSteps As Integer, profiledSteps As Integer)
+Var warmup As Integer = 0
+While warmup < warmupSteps
+world.StepWorld(1.0 / 60.0, subSteps)
+warmup = warmup + 1
+Wend
+
+Var pairs As Double = 0.0
+Var collide As Double = 0.0
+Var solve As Double = 0.0
+Var sensors As Double = 0.0
+Var total As Double = 0.0
+Var allocations As Integer = System.AllocationCount
+Var stepIndex As Integer = 0
+While stepIndex < profiledSteps
+world.StepWorld(1.0 / 60.0, subSteps)
+Var profile As WorldProfile = world.Profile()
+pairs = pairs + profile.PairsMs
+collide = collide + profile.CollideMs
+solve = solve + profile.SolveMs
+sensors = sensors + profile.SensorsMs
+total = total + profile.StepMs
+stepIndex = stepIndex + 1
+Wend
+allocations = System.AllocationCount - allocations
+
+Var meanStep As Double = total / profiledSteps.ToDouble()
+Var meanPairs As Double = pairs / profiledSteps.ToDouble()
+Var meanCollide As Double = collide / profiledSteps.ToDouble()
+Var meanSolve As Double = solve / profiledSteps.ToDouble()
+Var meanSensors As Double = sensors / profiledSteps.ToDouble()
+Var counters As WorldCounters = world.Counters()
+
+Print(name + " steps=" + profiledSteps.ToString() + " substeps=" + subSteps.ToString() + " ms/step=" + Maths.Round(meanStep, 2).ToString())
+Print("  pairs " + Maths.Round(meanPairs, 2).ToString() + "ms (" + Integer(Maths.Round(100.0 * meanPairs / meanStep)).ToString() + "%)  collide " + Maths.Round(meanCollide, 2).ToString() + "ms (" + Integer(Maths.Round(100.0 * meanCollide / meanStep)).ToString() + "%)  solve " + Maths.Round(meanSolve, 2).ToString() + "ms (" + Integer(Maths.Round(100.0 * meanSolve / meanStep)).ToString() + "%)  sensors " + Maths.Round(meanSensors, 2).ToString() + "ms (" + Integer(Maths.Round(100.0 * meanSensors / meanStep)).ToString() + "%)")
+Print("  bodies=" + counters.BodyCount.ToString() + " shapes=" + counters.ShapeCount.ToString() + " contacts=" + counters.ContactCount.ToString() + " joints=" + counters.JointCount.ToString() + " islands=" + counters.IslandCount.ToString() + " treeH=" + counters.TreeHeight.ToString() + " staticH=" + counters.StaticTreeHeight.ToString() + " profile-allocs=" + allocations.ToString())
+End Sub
+
+## Profiles every step workload with representative parameters.
+Shared Sub RunAll(profiledSteps As Integer)
+Print("stage12 profile: " + profiledSteps.ToString() + " profiled steps per workload after 5 warm-up steps")
+
+Var pyramid As New Pyramid256Workload
+pyramid.Prepare()
+ProfileWorld("pyramid-40 (1 substep)", pyramid.World, pyramid.SubSteps, 5, profiledSteps)
+
+Var sleepWake As New SleepWakeStacksWorkload
+sleepWake.Prepare()
+sleepWake.WakeAll()
+ProfileWorld("sleep-wake-600 awake (1 substep)", sleepWake.World, sleepWake.SubSteps, 5, profiledSteps)
+
+Var tumbler As New TumblerWorkload
+tumbler.Prepare()
+# Populate the box supply so the profiled steps carry the real workload.
+tumbler.RunKernels()
+tumbler.RunKernels()
+ProfileWorld("tumbler (1 substep)", tumbler.World, tumbler.SubSteps, 5, profiledSteps)
+
+Var dense As New DenseContactsWorkload
+dense.Prepare()
+dense.WakeAll()
+ProfileWorld("dense-contacts-240 awake (1 substep)", dense.World, dense.SubSteps, 5, profiledSteps)
+
+Var bullets As New BulletCcdWorkload
+bullets.Prepare()
+# Let the bullet stream reach the wall so the profiled steps carry CCD load.
+bullets.RunKernels()
+bullets.RunKernels()
+ProfileWorld("bullet-ccd-24 (1 substep)", bullets.World, bullets.SubSteps, 5, profiledSteps)
+
+Var sensors As New SensorFieldWorkload
+sensors.Prepare()
+ProfileWorld("sensor-field (1 substep)", sensors.World, sensors.SubSteps, 5, profiledSteps)
+
+Var machine As New JointMachineWorkload
+machine.Prepare()
+machine.WakeAll()
+ProfileWorld("joint-machine awake (1 substep)", machine.World, machine.SubSteps, 5, profiledSteps)
+
+Var demo As New DemoBenchmarkSceneWorkload
+demo.Prepare()
+ProfileWorld("demo-benchmark-pyramid (4 substeps)", demo.World, demo.SubSteps, 3, profiledSteps)
+End Sub
+End Class

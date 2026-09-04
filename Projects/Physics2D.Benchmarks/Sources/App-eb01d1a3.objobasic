@@ -9,7 +9,7 @@ Event Run(args() As String) As Integer
 Var outputDirectory As String = "benchmarks/results"
 Var runName As String = "local"
 Var onlyFilter As String = ""
-Pragma Unused onlyFilter
+Var profileSteps As Integer = 0
 
 Var i As Integer = 0
 While i < args.Count
@@ -28,6 +28,11 @@ While i < args.Count
     i += 1
     If i < args.Count Then
       onlyFilter = args[i]
+    End If
+  Case "--profile"
+    i += 1
+    If i < args.Count Then
+      profileSteps = Integer.Parse(args[i])
     End If
   Else
     System.ErrorPrint("Unknown argument: " + args[i])
@@ -67,6 +72,25 @@ runner.Add(New Stage9RevoluteScenario())
 runner.Add(New Stage9PrismaticScenario())
 runner.Add(New Stage9WeldScenario())
 runner.Add(New Stage9WheelScenario())
+runner.Add(New Stage12Pyramid256Scenario())
+runner.Add(New Stage12SleepWakeScenario())
+runner.Add(New Stage12TumblerScenario())
+runner.Add(New Stage12DenseContactsScenario())
+runner.Add(New Stage12BulletCcdScenario())
+runner.Add(New Stage12WorldQueriesScenario())
+runner.Add(New Stage12SensorFieldScenario())
+runner.Add(New Stage12JointMachineScenario())
+runner.Add(New Stage12ClearRebuildScenario())
+runner.Add(New Stage12DemoBenchmarkScenario())
+
+If profileSteps > 0 Then
+Stage12Profiler.RunAll(profileSteps)
+Return 0
+End If
+
+If onlyFilter.Length > 0 Then
+runner.KeepMatching(onlyFilter)
+End If
 
 Var results() As BenchmarkResult = runner.RunAll()
 

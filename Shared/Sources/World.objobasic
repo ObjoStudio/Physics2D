@@ -1768,31 +1768,43 @@ Me.mContactStateBits.SetCountAndClear(Me.ContactIdPool.IdCapacity())
 Var colorIndex As Integer = 0
 While colorIndex < PhysicsConstants.GRAPH_COLOUR_COUNT
 Var color As GraphColor = graph.Colors[colorIndex]
-Var simCount As Integer = color.ContactSims.Count()
+Var contactSims As ContactSims = color.ContactSims
+Var simCount As Integer = contactSims.Count()
 Var i As Integer = 0
 While i < simCount
-Me.CollideOneContact(color.ContactSims.ContactId.Items[i], color.ContactSims)
+Me.CollideOneContact(contactSims.ContactId.Items[i], contactSims)
 i = i + 1
 Wend
 colorIndex = colorIndex + 1
 Wend
 Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
-Var awakeContactCount As Integer = awakeSet.ContactSims.Count()
+Var awakeContactSims As ContactSims = awakeSet.ContactSims
+Var awakeContactCount As Integer = awakeContactSims.Count()
 Var j As Integer = 0
 While j < awakeContactCount
-Me.CollideOneContact(awakeSet.ContactSims.ContactId.Items[j], awakeSet.ContactSims)
+Me.CollideOneContact(awakeContactSims.ContactId.Items[j], awakeContactSims)
 j = j + 1
 Wend
 
 # Serial contact state changes, ported from the contact_state zone. The
-# bit set yields contact ids in ascending order for determinism.
-Var bitCount As Integer = Me.mContactStateBits.WordCount * 64
-Var contactId As Integer = 0
-While contactId < bitCount
-If Me.mContactStateBits.GetBit(contactId) Then
-Me.ApplyContactStateChange(Me.Contacts[contactId])
+# bit set yields contact ids in ascending order for determinism. The scan
+# skips zero words so a large world with few transitions stays cheap.
+Var words As Array(Of Integer) = Me.mContactStateBits.Words
+Var wordCount As Integer = Me.mContactStateBits.WordCount
+Var wordIndex As Integer = 0
+While wordIndex < wordCount
+Var word As Integer = words[wordIndex]
+If word <> 0 Then
+Var baseId As Integer = wordIndex * 64
+Var bit As Integer = 0
+While bit < 64
+If word.BitAnd(1.ShiftLeft(bit)) <> 0 Then
+Me.ApplyContactStateChange(Me.Contacts[baseId + bit])
 End If
-contactId = contactId + 1
+bit = bit + 1
+Wend
+End If
+wordIndex = wordIndex + 1
 Wend
 End Sub
 
@@ -1800,52 +1812,71 @@ End Sub
 ## b2CollideTask.
 Private Sub CollideOneContact(contactId As Integer, sims As ContactSims)
 Var contact As Contact = Me.Contacts[contactId]
-Var shapeA As Shape = Me.Shapes[contact.ShapeIdA]
-Var shapeB As Shape = Me.Shapes[contact.ShapeIdB]
+Var shapes As Array(Of Shape) = Me.Shapes
+Var shapeA As Shape = shapes[contact.ShapeIdA]
+Var shapeB As Shape = shapes[contact.ShapeIdB]
+Var localIndex As Integer = contact.LocalIndex
+Var flags As IntegerList = sims.SimFlags
+Var simFlags As Integer = flags.Items[localIndex]
 
 If AABB.Overlaps(shapeA.FatAABB, shapeB.FatAABB) = False Then
-sims.SimFlags.Items[contact.LocalIndex] = sims.SimFlags.Items[contact.LocalIndex].BitOr(Integer(ContactFlags.SimDisjoint))
-sims.SimFlags.Items[contact.LocalIndex] = sims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag).BitNot())
+flags.Items[localIndex] = simFlags.BitOr(Integer(ContactFlags.SimDisjoint)).BitAnd(Integer(ContactFlags.SimTouchingFlag).BitNot())
 Me.mContactStateBits.SetBit(contactId)
 Return
 End If
 
-Var bodyA As Body = Me.Bodies[shapeA.BodyId]
-Var bodyB As Body = Me.Bodies[shapeB.BodyId]
-Var bodySimA As BodySims = Me.GetBodySim(bodyA)
-Var bodySimB As BodySims = Me.GetBodySim(bodyB)
+# The list references are hoisted because every chained access costs a
+# property get plus a bounds-checked array read in the VM; the contacts
+# loop runs once per live contact per step.
+Var bodies As Array(Of Body) = Me.Bodies
+Var bodyA As Body = bodies[shapeA.BodyId]
+Var bodyB As Body = bodies[shapeB.BodyId]
+Var bodySimA As BodySims = Me.SolverSets[bodyA.SetIndex].Sims
+Var bodySimB As BodySims = Me.SolverSets[bodyB.SetIndex].Sims
+Var localA As Integer = bodyA.LocalIndex
+Var localB As Integer = bodyB.LocalIndex
 
 # Refresh mass terms so the solver reads current values.
-sims.BodySimIndexA.Items[contact.LocalIndex] = PhysicsConstants.NULL_INDEX
 If bodyA.SetIndex = PhysicsConstants.AWAKE_SET Then
-sims.BodySimIndexA.Items[contact.LocalIndex] = bodyA.LocalIndex
+sims.BodySimIndexA.Items[localIndex] = localA
+Else
+sims.BodySimIndexA.Items[localIndex] = PhysicsConstants.NULL_INDEX
 End If
-sims.InvMassA.Items[contact.LocalIndex] = bodySimA.InvMass.Items[bodyA.LocalIndex]
-sims.InvIA.Items[contact.LocalIndex] = bodySimA.InvInertia.Items[bodyA.LocalIndex]
-sims.BodySimIndexB.Items[contact.LocalIndex] = PhysicsConstants.NULL_INDEX
+sims.InvMassA.Items[localIndex] = bodySimA.InvMass.Items[localA]
+sims.InvIA.Items[localIndex] = bodySimA.InvInertia.Items[localA]
 If bodyB.SetIndex = PhysicsConstants.AWAKE_SET Then
-sims.BodySimIndexB.Items[contact.LocalIndex] = bodyB.LocalIndex
+sims.BodySimIndexB.Items[localIndex] = localB
+Else
+sims.BodySimIndexB.Items[localIndex] = PhysicsConstants.NULL_INDEX
 End If
-sims.InvMassB.Items[contact.LocalIndex] = bodySimB.InvMass.Items[bodyB.LocalIndex]
-sims.InvIB.Items[contact.LocalIndex] = bodySimB.InvInertia.Items[bodyB.LocalIndex]
+sims.InvMassB.Items[localIndex] = bodySimB.InvMass.Items[localB]
+sims.InvIB.Items[localIndex] = bodySimB.InvInertia.Items[localB]
 
-Var wasTouching As Boolean = sims.SimFlags.Items[contact.LocalIndex].BitAnd(Integer(ContactFlags.SimTouchingFlag)) <> 0
-Me.GetBodyTransformTo(bodyA, Me.mTransformScratch)
-Me.GetBodyTransformTo(bodyB, Me.mTransformScratchB)
+Var wasTouching As Boolean = simFlags.BitAnd(Integer(ContactFlags.SimTouchingFlag)) <> 0
+
+# Fill the reused transform records straight from the dense rows instead
+# of calling GetBodyTransformTo, which would repeat both solver-set
+# lookups per contact.
+Me.mTransformScratch.P.Set(bodySimA.PX.Items[localA], bodySimA.PY.Items[localA])
+Me.mTransformScratch.Q.SetComponents(bodySimA.QC.Items[localA], bodySimA.QS.Items[localA])
+Me.mTransformScratchB.P.Set(bodySimB.PX.Items[localB], bodySimB.PY.Items[localB])
+Me.mTransformScratchB.Q.SetComponents(bodySimB.QC.Items[localB], bodySimB.QS.Items[localB])
 Var transformA As Transform = Me.mTransformScratch
 Var transformB As Transform = Me.mTransformScratchB
-Var centerOffsetAX As Double = bodySimA.CenterX.Items[bodyA.LocalIndex] - bodySimA.PX.Items[bodyA.LocalIndex]
-Var centerOffsetAY As Double = bodySimA.CenterY.Items[bodyA.LocalIndex] - bodySimA.PY.Items[bodyA.LocalIndex]
-Var centerOffsetBX As Double = bodySimB.CenterX.Items[bodyB.LocalIndex] - bodySimB.PX.Items[bodyB.LocalIndex]
-Var centerOffsetBY As Double = bodySimB.CenterY.Items[bodyB.LocalIndex] - bodySimB.PY.Items[bodyB.LocalIndex]
+Var centerOffsetAX As Double = bodySimA.CenterX.Items[localA] - bodySimA.PX.Items[localA]
+Var centerOffsetAY As Double = bodySimA.CenterY.Items[localA] - bodySimA.PY.Items[localA]
+Var centerOffsetBX As Double = bodySimB.CenterX.Items[localB] - bodySimB.PX.Items[localB]
+Var centerOffsetBY As Double = bodySimB.CenterY.Items[localB] - bodySimB.PY.Items[localB]
 
 Var touching As Boolean = ContactMethods.UpdateContact(Me, contact, shapeA, transformA, centerOffsetAX, centerOffsetAY, shapeB, transformB, centerOffsetBX, centerOffsetBY)
 
 If touching And wasTouching = False Then
-sims.SimFlags.Items[contact.LocalIndex] = sims.SimFlags.Items[contact.LocalIndex].BitOr(Integer(ContactFlags.SimStartedTouching))
+# Re-read the live row: UpdateContact just refreshed SimTouchingFlag,
+# and the transition write must preserve that bit.
+flags.Items[localIndex] = flags.Items[localIndex].BitOr(Integer(ContactFlags.SimStartedTouching))
 Me.mContactStateBits.SetBit(contactId)
 ElseIf touching = False And wasTouching Then
-sims.SimFlags.Items[contact.LocalIndex] = sims.SimFlags.Items[contact.LocalIndex].BitOr(Integer(ContactFlags.SimStoppedTouching))
+flags.Items[localIndex] = flags.Items[localIndex].BitOr(Integer(ContactFlags.SimStoppedTouching))
 Me.mContactStateBits.SetBit(contactId)
 End If
 End Sub
@@ -1859,20 +1890,21 @@ sims = Me.ConstraintGraph.Colors[contact.ColorIndex].ContactSims
 Else
 sims = Me.SolverSets[contact.SetIndex].ContactSims
 End If
-Var simFlags As Integer = sims.SimFlags.Items[contact.LocalIndex]
+Var flags As IntegerList = sims.SimFlags
+Var simFlags As Integer = flags.Items[contact.LocalIndex]
 Var shapeIdA As Integer = contact.ShapeIdA
 Var shapeIdB As Integer = contact.ShapeIdB
 Var genA As Integer = Me.ShapeGenerations.Items[shapeIdA]
 Var genB As Integer = Me.ShapeGenerations.Items[shapeIdB]
 
 If simFlags.BitAnd(Integer(ContactFlags.SimDisjoint)) <> 0 Then
-sims.SimFlags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimDisjoint).BitNot())
+flags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimDisjoint).BitNot())
 ContactMethods.DestroyContact(Me, contact, False)
 Return
 End If
 
 If simFlags.BitAnd(Integer(ContactFlags.SimStartedTouching)) <> 0 Then
-sims.SimFlags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimStartedTouching).BitNot())
+flags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimStartedTouching).BitNot())
 contact.Flags = contact.Flags.BitOr(Integer(ContactFlags.TouchingFlag))
 
 # Contact begin event with a manifold snapshot, ported from
@@ -1895,7 +1927,7 @@ Return
 End If
 
 If simFlags.BitAnd(Integer(ContactFlags.SimStoppedTouching)) <> 0 Then
-sims.SimFlags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimStoppedTouching).BitNot())
+flags.Items[contact.LocalIndex] = simFlags.BitAnd(Integer(ContactFlags.SimStoppedTouching).BitNot())
 contact.Flags = contact.Flags.BitAnd(Integer(ContactFlags.TouchingFlag).BitNot())
 
 # Contact end event, ported from b2World_Step's contact state loop.

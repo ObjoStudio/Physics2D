@@ -1,0 +1,16 @@
+{
+  "Version": 4,
+  "Name": "Stage12Support",
+  "Id": "2aeab36e-86a7-442b-b328-8cf599f8b164",
+  "Kind": "Class",
+  "BuildScope": "Application",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "Stage12Support-2aeab36e-86a7-442b-b328-8cf599f8b164.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}
