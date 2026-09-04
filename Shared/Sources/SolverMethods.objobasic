@@ -151,60 +151,45 @@ Var maxAngularSpeed As Double = PhysicsConstants.MAX_ROTATION * context.InvDt
 Var maxLinearSpeedSquared As Double = maxLinearSpeed * maxLinearSpeed
 Var maxAngularSpeedSquared As Double = maxAngularSpeed * maxAngularSpeed
 
-# Dense-list references are hoisted out of the body loop; each chained
-# access through the record costs property gets in the VM.
-Var lvx As DoubleList = states.LVX
-Var lvy As DoubleList = states.LVY
-Var angularVelocity As DoubleList = states.AngularVelocity
-Var linearDamping As DoubleList = sims.LinearDamping
-Var angularDamping As DoubleList = sims.AngularDamping
-Var invMass As DoubleList = sims.InvMass
-Var invInertia As DoubleList = sims.InvInertia
-Var gravityScale As DoubleList = sims.GravityScale
-Var forceX As DoubleList = sims.ForceX
-Var forceY As DoubleList = sims.ForceY
-Var allowFastRotation As IntegerList = sims.AllowFastRotation
-Var isSpeedCapped As IntegerList = sims.IsSpeedCapped
-
 For i As Integer = 0 To count - 1
-Var vX As Double = lvx.Items[i]
-Var vY As Double = lvy.Items[i]
-Var w As Double = angularVelocity.Items[i]
+Var vX As Double = states.LVX.Items[i]
+Var vY As Double = states.LVY.Items[i]
+Var w As Double = states.AngularVelocity.Items[i]
 
 # Damping uses the Padé approximation of exponential decay.
-Var linearDampingFactor As Double = 1.0 / (1.0 + h * linearDamping.Items[i])
-Var angularDampingFactor As Double = 1.0 / (1.0 + h * angularDamping.Items[i])
+Var linearDamping As Double = 1.0 / (1.0 + h * sims.LinearDamping.Items[i])
+Var angularDamping As Double = 1.0 / (1.0 + h * sims.AngularDamping.Items[i])
 
 # Gravity scale is zero for kinematic bodies via invMass.
-Var bodyGravityScale As Double = 0.0
-If invMass.Items[i] > 0.0 Then
-bodyGravityScale = gravityScale.Items[i]
+Var gravityScale As Double = 0.0
+If sims.InvMass.Items[i] > 0.0 Then
+gravityScale = sims.GravityScale.Items[i]
 End If
 
-Var linearDeltaX As Double = h * invMass.Items[i] * forceX.Items[i] + h * bodyGravityScale * gravityX
-Var linearDeltaY As Double = h * invMass.Items[i] * forceY.Items[i] + h * bodyGravityScale * gravityY
-Var angularDelta As Double = h * invInertia.Items[i] * sims.Torque.Items[i]
+Var linearDeltaX As Double = h * sims.InvMass.Items[i] * sims.ForceX.Items[i] + h * gravityScale * gravityX
+Var linearDeltaY As Double = h * sims.InvMass.Items[i] * sims.ForceY.Items[i] + h * gravityScale * gravityY
+Var angularDelta As Double = h * sims.InvInertia.Items[i] * sims.Torque.Items[i]
 
-vX = linearDeltaX + linearDampingFactor * vX
-vY = linearDeltaY + linearDampingFactor * vY
-w = angularDelta + angularDampingFactor * w
+vX = linearDeltaX + linearDamping * vX
+vY = linearDeltaY + linearDamping * vY
+w = angularDelta + angularDamping * w
 
 If vX * vX + vY * vY > maxLinearSpeedSquared Then
 Var ratio As Double = maxLinearSpeed / Maths.Sqrt(vX * vX + vY * vY)
 vX = ratio * vX
 vY = ratio * vY
-isSpeedCapped.Items[i] = 1
+sims.IsSpeedCapped.Items[i] = 1
 End If
 
-If w * w > maxAngularSpeedSquared And allowFastRotation.Items[i] = 0 Then
+If w * w > maxAngularSpeedSquared And sims.AllowFastRotation.Items[i] = 0 Then
 Var angularRatio As Double = maxAngularSpeed / Maths.Abs(w)
 w = angularRatio * w
-isSpeedCapped.Items[i] = 1
+sims.IsSpeedCapped.Items[i] = 1
 End If
 
-lvx.Items[i] = vX
-lvy.Items[i] = vY
-angularVelocity.Items[i] = w
+states.LVX.Items[i] = vX
+states.LVY.Items[i] = vY
+states.AngularVelocity.Items[i] = w
 Next i
 End Sub
 
@@ -215,17 +200,10 @@ Shared Sub IntegratePositions(world As World, context As StepContext)
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
 Var count As Integer = states.LVX.Count
 Var h As Double = context.H
-Var dpx As DoubleList = states.DPX
-Var dpy As DoubleList = states.DPY
-Var drc As DoubleList = states.DRC
-Var drs As DoubleList = states.DRS
-Var lvx As DoubleList = states.LVX
-Var lvy As DoubleList = states.LVY
-Var angularVelocity As DoubleList = states.AngularVelocity
 For i As Integer = 0 To count - 1
-Var deltaAngle As Double = h * angularVelocity.Items[i]
-Var c As Double = drc.Items[i]
-Var s As Double = drs.Items[i]
+Var deltaAngle As Double = h * states.AngularVelocity.Items[i]
+Var c As Double = states.DRC.Items[i]
+Var s As Double = states.DRS.Items[i]
 Var nc As Double = c - deltaAngle * s
 Var ns As Double = s + deltaAngle * c
 Var mag As Double = Maths.Sqrt(ns * ns + nc * nc)
@@ -233,10 +211,10 @@ Var invMag As Double = 0.0
 If mag > 0.0 Then
 invMag = 1.0 / mag
 End If
-drc.Items[i] = nc * invMag
-drs.Items[i] = ns * invMag
-dpx.Items[i] = dpx.Items[i] + h * lvx.Items[i]
-dpy.Items[i] = dpy.Items[i] + h * lvy.Items[i]
+states.DRC.Items[i] = nc * invMag
+states.DRS.Items[i] = ns * invMag
+states.DPX.Items[i] = states.DPX.Items[i] + h * states.LVX.Items[i]
+states.DPY.Items[i] = states.DPY.Items[i] + h * states.LVY.Items[i]
 Next i
 End Sub
 End Class

@@ -8,8 +8,8 @@
 # Input: BitSet-32ba5db1-d4a3-41d8-978f-6020100c45db.objobasic 1625c50d37848f57f6d82ee58302562750774ebbebf4243d84ea610e95d630d7
 # Input: Body.objobasic 6a0630449039ad36f2b85514756a22318182b3763fe684a48f4700f0e707f89a
 # Input: BodyDefinition.objobasic 1800aac54e0524a02133b8e773c6c6429aa7d5d9795a0c1f0b22bf1e8b15262f
-# Input: BodySims.objobasic 8cc8fd052c363a3df4c31a10e66c51895e66bd3c194c80b34840261b943104a3
-# Input: BodyStates.objobasic 34ecdd2493c9d76ce09a4fd975cbfa86af0ffbb5eb1de0eb66b9017bce409282
+# Input: BodySims.objobasic a5485d1e47fb8c939ae151cc9e72b4f3cd3b20695a310aab63d10c5fb5dc40f3
+# Input: BodyStates.objobasic f333caabb6481f002f3a95e7ae9313781a70195fccce1cd16d032a117c4939ba
 # Input: BodyType-ee3f0727-fa8d-4967-b4d7-d603cf4d360f.objobasic bfcfff5fa273c0dd6e1cf4df8a120cbf91a278dbedccda64660f9667bf92404c
 # Input: BroadPhase-0a5f096e-e982-43bf-8d21-9bd30be75593.objobasic eca1edfbb8c0f9e00a78c28502ab242a6c10d1d4930d0c7fc9a1b9e60820311f
 # Input: BroadPhasePairSink-51b85b57-7ae5-4b25-b19d-f2416a1ec73c.objobasic 9d84130a2512bfd860c5f24780a9dc86e206e5647df7afddb5d988bc237efb77
@@ -32,7 +32,7 @@
 # Input: ContactConstraint.objobasic 035f5e6d9b00737fb1e0d05aed0821441452bf5ae04bd2018caa8b7648a1e517
 # Input: ContactFlags.objobasic 60d159f6cf6e942332b1ff941019e78a96e3c4aab637f56f8f431ad2651221d1
 # Input: ContactMethods.objobasic 63a0d002259e9746a8462c091d63f2be59815a9822388754eda8833fd5ae390a
-# Input: ContactSims.objobasic b31940bb990363eee0262f2d28811808838285f5678f0cace13fc9f58a7ca0bf
+# Input: ContactSims.objobasic b7e3397d6be1f3e63b00efd9a85024007ddf28f47db981d01ac35376c22fd098
 # Input: ContactSolver.objobasic 7656cbea54cb438fef2d8fe60975cd85169aa0ca25068de19dc260c3745670a1
 # Input: ContinuousContext.objobasic 4d6fe8a572e0a7e900ced991d880f52e796a5a6690cb25aaad17473607101362
 # Input: ContinuousQueryCallback.objobasic f459556a905ab9b0a21cecf54239cdd2588ad7ce9a6c8403429ec437bf1d98b5
@@ -65,12 +65,12 @@
 # Input: IdPool-fbf7c609-ee86-443b-8d23-078728df5ac9.objobasic 626645c06f0424bccaa91f2354eb2c1e8c952ca239b17686b7bfbe1631e11c27
 # Input: IntegerList-76ca8a3e-5730-4585-8ad6-90163340b90f.objobasic 06e2286b9a41f031f70e68405029de8b49fe4d120aa27a8fdacee7bcd5995485
 # Input: Island.objobasic 44f9b035b888e2dbbec81e2c88390bd8081257a3f57a52efc6fffdddabb10fa4
-# Input: IslandMethods.objobasic 20833e02e72df2d6818e0ebd92de184099fb656f56a10b14b7df86353eda2f6d
+# Input: IslandMethods.objobasic 900e04553e8081cc9ed2fa0e3bc9f73fed063ac03425a145646ec20147740227
 # Input: Joint.objobasic 8b085db32362fe1ab382aabf74259c2846958062954fe36ef71489bae1e367bb
 # Input: JointSims.objobasic e67ea5f4802c2bdce3aeded684b073f1c730e56ba8569d18e4ea8ac5f70b9b3d
 # Input: JointSolver.objobasic 8b28cb9d7cd20a8de2afe81133abffa72ee016c3522c3930b70901d3b9e12fd1
 # Input: JointType-856da3bd-dadf-41a2-af79-4e1fcc92c642.objobasic 595178f214846dc7716badeb118dfb5729356f738f99204ff34b849f6fd14838
-# Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 2204114b1a588c77c29b945afd4b19ad7c68f56bce9f68f6a6ee47f5e8463787
+# Input: Manifold-873e2a35-8712-4155-9adc-9cb274496aea.objobasic 9c5ad5aca4175fbace6a2e4f2c1fbdd21a36192d73cadc0af70016557011f3d0
 # Input: ManifoldPoint-4919f944-ff63-47d4-8257-511ba2d376f4.objobasic dcebd68c0b3500bb6ab7688775a8056b75304728e39537252715a4309cc96402
 # Input: MassData-cd26f83f-962d-4695-aa00-893f86fd1099.objobasic 954cf89f8f01ac0ba9e4d378506536bbb64de2e1630351bf9373731366488987
 # Input: MotorJoint.objobasic ea21c6179216c79e6189262613e9865eba867e21fbddad904c55d19ea703fe22
@@ -112,7 +112,7 @@
 # Input: SimplexCache-127a7d32-e86d-4494-a0be-9112299a62fc.objobasic 82bc4694e90f396c176e50cbe8196ea7c809da4842781d5f9750137a1d087314
 # Input: SimplexVertex-d5584077-050d-4a6b-98d4-c3c28f8be736.objobasic 7c911da9871051f8580713a107d379e349bdc89cf9f9f0e9968f07c29e2f19da
 # Input: Softness.objobasic 06211852d8bbb70e4c5f5479756606be96bb2667bd617c4f635f76a661e47d4a
-# Input: SolverMethods.objobasic cfb4af3d61ee10d90ebe9315f571e430176b340b85bb3dd9f64bbfb1a6e3557d
+# Input: SolverMethods.objobasic 108aac71856209741f7c3ea5e109d84a25626055ec02f873437d16d53af17fa2
 # Input: SolverSet.objobasic ae57d26036c92d75a660f380cae829c6ef353d45bbba3876779bf1689234a922
 # Input: StepContext.objobasic 0d6a04f453555a2ff4207c21b9cacba5f3f2103f22c2d8ac4dd8c449f7b67e12
 # Input: SurfaceMaterial.objobasic 0de44c5c934f2fe37e1265a96cb48ecbb36b2b9f2ebb93b2b776cc1e32dbac85
@@ -133,7 +133,7 @@
 # Input: WeldJointDefinition.objobasic ea139cf3f58765c855fbf67d5509ca2d5912e3e3facd4f59d20c46410d29a23c
 # Input: WheelJoint.objobasic 063db7c796ee6df9b2ed0d4db36d51dec921e3a61ec1b001cd6ab07308136b4d
 # Input: WheelJointDefinition.objobasic 1ae60874c31b501cb219d8af36f26398fea1ad6a74eb924c08d53b70109e0641
-# Input: World.objobasic a737bc7923f10d52131b584cae3b3e90b9b93e59ab319b361970f10fd808bc7e
+# Input: World.objobasic 75ad04174998ea3bbc611a58f0ae47520d16651de05a8f3da9511aac25408cfd
 # Input: WorldCastCallback.objobasic 17cc834c2797dcc3c33c6f0c30507d5078f1ac2609fba09d6097eb46ea23ee99
 # Input: WorldCounters.objobasic d77a7a134e677e6c387b086034e1ec984829d66679d8887753fcaa6254cdffb7
 # Input: WorldDebugDrawContext.objobasic 9e81237a6e02df019c321f4f4dc24003b822c22b3c3325758f818f0dcae56de2
@@ -142,13 +142,13 @@
 # Input: WorldMoverCollideContext.objobasic 852413232a33ce66c6abbb3cebe1f62b55710e2f5a2fb75dbc13b1db58f5d641
 # Input: WorldMoverPlaneCallback.objobasic 6083e6e711ac09d6c3f5366294b90be6701b858be4d97e421abc1efbe3e0af8f
 # Input: WorldOverlapCallback.objobasic 6d2c53d9749b404a68901028f1d05a5cae232b0ef8a483d2c27c918b9239ddd2
-# Input: WorldOverlapContext.objobasic d6427a128c7da4c7c28607ce9ce2938ee735594398b6d8bddeaffa2f0f678585
+# Input: WorldOverlapContext.objobasic d96896018b22f98c2c8c7bb0076a89cf41444d39eb1957e08a1eeaaefd892d88
 # Input: WorldProfile.objobasic 4a1c944e1651b2fe5b3ce69c0f02fc5a1f7d7d80982aa6d4ca976f6c742bcf60
-# Input: WorldRayCastContext.objobasic 7c4264d0297661dbf4824b319ee8829160c85017c99cd14f565d93c505c22614
+# Input: WorldRayCastContext.objobasic 1ef20724a5623b4652c4d7c810cb7cadfda5fddd76e2e3f7e45a8ca1d21df4f1
 # Input: WorldSettings.objobasic f73d54a410b29ef5c09ab96a59110acd2df47ba17e3332379fead7ab7d80cefe
-# Input: WorldShapeCastContext.objobasic 515d97512607640266a9ed705d22e7661dccf085bb349c9f73e6cb7b89c86f56
+# Input: WorldShapeCastContext.objobasic 560a1c040fa0a8ce87b09b3a52d6ad382295226014c80595a457b94fd9471ecf
 #
-# Source content checksum (SHA-256): e03113fff6fe0d6801f4b57b03a7083518f2ba13c45bdd4aaf12c1120a9c2e4d
+# Source content checksum (SHA-256): f5841102f240433a91c7a87d9de807096031d3f6f2faa8e138f13a4cec2ae891
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -1384,6 +1384,40 @@ Function Count() As Integer
 Return Me.BodyId.Count
 End Function
 
+## Ensures every column can hold at least `rows` rows without reallocating.
+## Transfer paths call this with the known incoming row count so a first
+## wake or sleep transfer into a store allocates nothing.
+Sub Reserve(rows As Integer)
+Me.PX.Reserve(rows)
+Me.PY.Reserve(rows)
+Me.QC.Reserve(rows)
+Me.QS.Reserve(rows)
+Me.CenterX.Reserve(rows)
+Me.CenterY.Reserve(rows)
+Me.R0C.Reserve(rows)
+Me.R0S.Reserve(rows)
+Me.C0X.Reserve(rows)
+Me.C0Y.Reserve(rows)
+Me.LCX.Reserve(rows)
+Me.LCY.Reserve(rows)
+Me.ForceX.Reserve(rows)
+Me.ForceY.Reserve(rows)
+Me.Torque.Reserve(rows)
+Me.InvMass.Reserve(rows)
+Me.InvInertia.Reserve(rows)
+Me.MinExtent.Reserve(rows)
+Me.MaxExtent.Reserve(rows)
+Me.LinearDamping.Reserve(rows)
+Me.AngularDamping.Reserve(rows)
+Me.GravityScale.Reserve(rows)
+Me.BodyId.Reserve(rows)
+Me.IsBullet.Reserve(rows)
+Me.IsFast.Reserve(rows)
+Me.IsSpeedCapped.Reserve(rows)
+Me.AllowFastRotation.Reserve(rows)
+Me.EnlargeAABB.Reserve(rows)
+End Sub
+
 ## Appends a zeroed sim record and returns its local index. The caller fills
 ## position, rotation, extents, damping, gravity scale, and body identity.
 Function Add() As Integer
@@ -1561,6 +1595,20 @@ End Constructor
 Function Count() As Integer
 Return Me.Flags.Count
 End Function
+
+## Ensures every column can hold at least `rows` rows without reallocating.
+## Wake transfers call this with the incoming row count so a first wake
+## into the awake set allocates nothing.
+Sub Reserve(rows As Integer)
+Me.LVX.Reserve(rows)
+Me.LVY.Reserve(rows)
+Me.AngularVelocity.Reserve(rows)
+Me.Flags.Reserve(rows)
+Me.DPX.Reserve(rows)
+Me.DPY.Reserve(rows)
+Me.DRC.Reserve(rows)
+Me.DRS.Reserve(rows)
+End Sub
 
 ## Appends an identity state, ported from upstream b2_identityBodyState, and
 ## returns its local index.
@@ -6152,12 +6200,18 @@ End Class
 # selects parallel scalar arrays, so every scalar field is one list indexed
 # by the contact's local index within the set.
 #
-# The manifold and simplex cache are heap objects drawn from append-only
-# pools through an LIFO free list. Pool objects survive RemoveSwap and
-# Clear, so the warm create/destroy path allocates nothing and the narrow
-# phase writes manifolds in place through the Collide To-forms. Which pool
-# object a row reuses never affects solver results because pools are pure
-# scratch slots.
+# The manifold and simplex cache are heap objects drawn from the
+# world-shared append-only pools (World.ContactManifoldPool and
+# World.ContactCachePool) through world-shared LIFO free lists; this
+# store's ManifoldPool/CachePool/FreeManifolds/FreeCaches properties are
+# references to those shared lists, wired by World.WireSharedContactPools.
+# Pool objects survive RemoveSwap and Clear, so the warm create/destroy
+# path allocates nothing and the narrow phase writes manifolds in place
+# through the Collide To-forms. Sharing one pool across every store is
+# what makes that warm path real: contact rows migrate between stores
+# every step, and per-store free lists scattered recycled slots away from
+# the store that needed them next. Which pool object a row reuses never
+# affects solver results because pools are pure scratch slots.
 Class ContactSims
 ## Cold contact slot of each sim.
 Property ContactId As IntegerList
@@ -6192,13 +6246,13 @@ Property SimFlags As IntegerList
 Property ManifoldSlots As IntegerList
 ## Pool slot of each row's reusable simplex cache.
 Property CacheSlots As IntegerList
-## Append-only pool of reusable manifold objects.
+## Append-only world-shared pool of reusable manifold objects.
 Property ManifoldPool As Array(Of Manifold)
-## Append-only pool of reusable simplex cache objects.
+## Append-only world-shared pool of reusable simplex cache objects.
 Property CachePool As Array(Of SimplexCache)
-## LIFO free list of manifold pool slots.
+## World-shared LIFO free list of manifold pool slots.
 Property FreeManifolds As IntegerList
-## LIFO free list of cache pool slots.
+## World-shared LIFO free list of cache pool slots.
 Property FreeCaches As IntegerList
 
 ## Creates an empty store.
@@ -6229,6 +6283,30 @@ End Constructor
 Function Count() As Integer
 Return Me.ContactId.Count
 End Function
+
+## Ensures every column can hold at least `rows` rows without reallocating.
+## Sleep and wake transfers call this with the known incoming row count so
+## a first transfer into a store allocates nothing. The shared pool free
+## lists are not touched: rows appended after a Reserve reuse pooled
+## objects exactly like any other append.
+Sub Reserve(rows As Integer)
+Me.ContactId.Reserve(rows)
+Me.ShapeIdA.Reserve(rows)
+Me.ShapeIdB.Reserve(rows)
+Me.BodySimIndexA.Reserve(rows)
+Me.BodySimIndexB.Reserve(rows)
+Me.InvMassA.Reserve(rows)
+Me.InvIA.Reserve(rows)
+Me.InvMassB.Reserve(rows)
+Me.InvIB.Reserve(rows)
+Me.Friction.Reserve(rows)
+Me.Restitution.Reserve(rows)
+Me.RollingResistance.Reserve(rows)
+Me.TangentSpeed.Reserve(rows)
+Me.SimFlags.Reserve(rows)
+Me.ManifoldSlots.Reserve(rows)
+Me.CacheSlots.Reserve(rows)
+End Sub
 
 ## Returns the manifold object owned by the given local row. The narrow
 ## phase writes into it in place; no caller may keep the reference across
@@ -6367,28 +6445,11 @@ Me.TangentSpeed.Clear()
 Me.SimFlags.Clear()
 Me.ManifoldSlots.Clear()
 Me.CacheSlots.Clear()
-Me.FreeManifolds.Clear()
-Me.FreeCaches.Clear()
-# Return every pooled object that still lives in this store to its free
-# list so a recycled store (for example a reused sleeping solver set) fills
-# new rows without allocating. Slots whose objects were adopted by another
-# store hold Nothing and stay dead holes.
-Var manifoldSlot As Integer = 0
-While manifoldSlot < Me.ManifoldPool.Count
-If Me.ManifoldPool[manifoldSlot] <> Nothing Then
-Me.ManifoldPool[manifoldSlot].Reset()
-Me.FreeManifolds.Append(manifoldSlot)
-End If
-manifoldSlot = manifoldSlot + 1
-Wend
-Var cacheSlot As Integer = 0
-While cacheSlot < Me.CachePool.Count
-If Me.CachePool[cacheSlot] <> Nothing Then
-Me.CachePool[cacheSlot].Clear()
-Me.FreeCaches.Append(cacheSlot)
-End If
-cacheSlot = cacheSlot + 1
-Wend
+# FreeManifolds and FreeCaches are the world-shared free lists and are NOT
+# cleared or rebuilt here: this store holds no live rows (every row leaves
+# through RemoveSwap, which recycles its slots), and other stores may hold
+# live rows whose slots must stay out of reach. World.Clear rebuilds the
+# shared free lists after all stores are empty.
 End Sub
 End Class
 
@@ -12296,7 +12357,11 @@ Return
 End If
 
 Var bodyCount As Integer = baseIsland.BodyCount
-Var bodyIds As New Array(Of Integer)
+# World-owned reusable scratch: island splits run every step in resting
+# scenes, so allocating per split would break the zero-allocation step
+# path. Both lists retain capacity across splits.
+Var bodyIds As IntegerList = world.SplitBodyIdsScratch
+bodyIds.Clear()
 Var nextBody As Integer = baseIsland.HeadBody
 While nextBody <> PhysicsConstants.NULL_INDEX
 bodyIds.Append(nextBody)
@@ -12326,12 +12391,15 @@ DestroyIsland(world, baseId)
 
 Var i As Integer = 0
 While i < bodyCount
-Var seedIndex As Integer = bodyIds[i]
+Var seedIndex As Integer = bodyIds.Items[i]
 Var seed As Body = world.Bodies[seedIndex]
 If seed.IsMarked = False Then
 Var island As Island = CreateIsland(world, PhysicsConstants.AWAKE_SET)
 Var islandId As Integer = island.IslandId
-Var stack As New Array(Of Integer)
+# The DFS stack reuses the world-owned scratch list; Clear retains
+# capacity so repeated splits of similar size allocate nothing.
+Var stack As IntegerList = world.SplitStackScratch
+stack.Clear()
 stack.Append(seedIndex)
 seed.IsMarked = True
 
@@ -12346,7 +12414,7 @@ End Sub
 
 ## Adds one body to a freshly split island and pushes its touching
 ## neighbours, ported from the depth-first search body of b2SplitIsland.
-Private Shared Sub DfsVisitBody(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As Array(Of Integer))
+Private Shared Sub DfsVisitBody(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As IntegerList)
 Var body As Body = world.Bodies[bodyId]
 body.IslandId = islandId
 If island.TailBody <> PhysicsConstants.NULL_INDEX Then
@@ -12408,7 +12476,7 @@ End Sub
 ## Walks the joints attached to one body during island split DFS, marking
 ## unmarked joints, pushing awake unmarked neighbours, and appending the
 ## joint to the new island's list.
-Private Shared Sub DfsVisitJoints(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As Array(Of Integer))
+Private Shared Sub DfsVisitJoints(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As IntegerList)
 Var body As Body = world.Bodies[bodyId]
 Var jointKey As Integer = body.HeadJointKey
 While jointKey <> PhysicsConstants.NULL_INDEX
@@ -16591,7 +16659,12 @@ Me.RollingImpulse = 0.0
 Me.Point1 = New ManifoldPoint
 Me.Point2 = New ManifoldPoint
 Me.PointCount = 0
-Me.mScratch = Nothing
+# The collision scratch is created eagerly so a pooled manifold never
+# allocates on its first narrow-phase use: pool objects are recycled into
+# rows that may collide in the same step they are adopted, and a lazy
+# scratch would push the allocation into a measured zero-allocation step
+# window.
+Me.mScratch = New CollideScratch
 End Constructor
 
 ## Resets the manifold to the empty state in place and returns it.
@@ -20798,9 +20871,21 @@ Shared Sub PrepareColorContacts(world As World, context As StepContext, colorInd
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
 Var count As Integer = color.ContactSims.Count()
 Var constraints As Array(Of ContactConstraint) = color.Constraints
-While constraints.Count < count
+# Amortised fill growth: the constraint records form a per-colour pool
+# whose fill level is the historical high-water mark of this colour's
+# active contacts. Growing the fill by exactly `count` made resting
+# contact churn allocate one record every time the wake transient inched
+# past the previous mark; doubling the fill on growth keeps sub-doubling
+# transients allocation-free.
+If constraints.Count < count Then
+Var grownFill As Integer = constraints.Count * 2
+If grownFill < count Then
+grownFill = count
+End If
+While constraints.Count < grownFill
 constraints.Append(New ContactConstraint)
 Wend
+End If
 color.ConstraintCount = count
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
 For i As Integer = 0 To count - 1
@@ -22365,6 +22450,26 @@ Private Property mLocalCastInput As ShapeCastInput
 Private Property mLocalProxy As ShapeProxy
 ## Reused scratch point for local space conversions.
 Private Property mLocalPoint As Vector2
+## Reused cast output for the world's query leaf visits. Engine internal;
+## values are copied out before the next leaf reuses it.
+Private Property mQueryCastOutput As CastOutput
+## Reused shape transform for the world's query leaf visits. Engine
+## internal; only one query traversal may hold it across a leaf visit.
+Private Property mQueryTransform As Transform
+## Reused shape-side proxy for shape-cast leaf visits (one or two points).
+Private Property mCastShapeProxy As ShapeProxy
+## Reused proxy for polygon shape-cast leaf visits; its Points field is
+## reassigned to each polygon's live vertex array (read-only use) so no
+## copy is made. Kept separate from mCastShapeProxy because the two-point
+## proxy writes into its owned records.
+Private Property mPolygonCastProxy As ShapeProxy
+## Reused pair input for shape-cast leaf visits.
+Private Property mShapeCastPairInput As ShapeCastPairInput
+## Reused ray input for the world's ray queries. Engine internal; the
+## fresh TreeStats return value remains part of the public contract.
+Private Property mQueryRayInput As RayCastInput
+## Reused shape-cast input for the world's shape casts. Engine internal.
+Private Property mQueryShapeCastInput As ShapeCastInput
 
 # Warm-path scratch records owned by the world. Reused across body and
 # shape creation so a warm rebuild after World.Clear allocates only the
@@ -22400,11 +22505,11 @@ Private Property mSolverSetPool As Array(Of SolverSet)
 ## Scratch list reused by island splitting. Island splitting runs whenever
 ## a contact or joint is removed from an awake island, so this list is
 ## world-owned and cleared per use. Internal solver bookkeeping.
-Property SplitBodyIdsScratch As Array(Of Integer)
+Property SplitBodyIdsScratch As IntegerList
 
 ## DFS stack for island splitting, paired with SplitBodyIdsScratch.
 ## Internal solver bookkeeping.
-Property SplitStackScratch As Array(Of Integer)
+Property SplitStackScratch As IntegerList
 ## Opt-in pre-solve manifold editor consulted during the narrow phase.
 Property PreSolve As CustomPreSolve
 ## Opt-in material mixer consulted when contacts compute friction and
@@ -22490,6 +22595,7 @@ Property MoveEventQCs As DoubleList
 Property MoveEventQSs As DoubleList
 ## Moved-body event fell-asleep flags. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property MoveEventFellAsleep As IntegerList
+
 
 ## Reusable event view over this world's buffers.
 ## Rebuilds the static tree with a full quality build, ported from
@@ -22918,6 +23024,21 @@ End Sub
 ## b2World_GetContactEvents, b2World_GetSensorEvents, and
 ## b2World_GetBodyEvents.
 Property Events As WorldEvents
+
+## World-shared pool of reusable contact manifold objects. Every solver-set
+## and graph-colour contact store indexes this pool, so a slot freed by any
+## store is immediately reusable by any other store's row append. Per-store
+## pools were replaced because contact rows migrate between stores every
+## step (touch begins/ends, wake/sleep transfers, island merges) and
+## per-store free lists scattered recycled slots away from the store that
+## needed them next, forcing fresh pool objects on nearly every begin.
+Property ContactManifoldPool As Array(Of Manifold)
+## World-shared pool of reusable simplex cache objects paired with ContactManifoldPool.
+Property ContactCachePool As Array(Of SimplexCache)
+## LIFO free list of ContactManifoldPool slots shared by every contact store.
+Property FreeContactManifoldSlots As IntegerList
+## LIFO free list of ContactCachePool slots shared by every contact store.
+Property FreeContactCacheSlots As IntegerList
 ## Scratch bit set marking sensors with stale overlap lists.
 Private Property mSensorEventBits As BitSet
 ## Scratch sweep context reused by continuous collision.
@@ -23023,13 +23144,25 @@ Me.Shapes = New Array(Of Shape)
 Me.Chains = New Array(Of Chain)
 Me.SolverSets = New Array(Of SolverSet)
 Me.mSolverSetPool = New Array(Of SolverSet)
-Me.SplitBodyIdsScratch = New Array(Of Integer)
-Me.SplitStackScratch = New Array(Of Integer)
+Me.ContactManifoldPool = New Array(Of Manifold)
+Me.ContactCachePool = New Array(Of SimplexCache)
+Me.FreeContactManifoldSlots = New IntegerList
+Me.FreeContactCacheSlots = New IntegerList
+Me.SplitBodyIdsScratch = New IntegerList
+Me.SplitStackScratch = New IntegerList
 # Upstream allocates sets zero to two from the solver-set id pool at world
 # creation so per-island sleeping sets start at three.
 Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), False))
 Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), False))
 Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), True))
+Me.WireSharedContactPools(Me.SolverSets[0].ContactSims)
+Me.WireSharedContactPools(Me.SolverSets[1].ContactSims)
+Me.WireSharedContactPools(Me.SolverSets[2].ContactSims)
+Var graphColourIndex As Integer = 0
+While graphColourIndex < Me.ConstraintGraph.Colors.Count
+Me.WireSharedContactPools(Me.ConstraintGraph.Colors[graphColourIndex].ContactSims)
+graphColourIndex = graphColourIndex + 1
+Wend
 Me.mOverlapContext = New WorldOverlapContext
 Me.mRayCastContext = New WorldRayCastContext
 Me.mShapeCastContext = New WorldShapeCastContext
@@ -23051,6 +23184,15 @@ Me.DebugDrawQuad.Append(New Vector2)
 Me.DebugDrawQuad.Append(New Vector2)
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
+Me.mQueryCastOutput = New CastOutput
+Me.mQueryTransform = New Transform
+Me.mCastShapeProxy = New ShapeProxy
+Me.mCastShapeProxy.Points.Append(New Vector2)
+Me.mCastShapeProxy.Points.Append(New Vector2)
+Me.mPolygonCastProxy = New ShapeProxy
+Me.mShapeCastPairInput = New ShapeCastPairInput
+Me.mQueryRayInput = New RayCastInput
+Me.mQueryShapeCastInput = New ShapeCastInput
 Me.mTransformScratchB = New Transform
 Me.mStepScratch = New StepContext
 Me.mContactStateBits = New BitSet(256)
@@ -23269,6 +23411,7 @@ Var stepStart As Double = System.Ticks
 Var stageStart As Double = stepStart
 
 # Discover new contacts from moved proxies.
+stageStart = System.Ticks
 Me.UpdateBroadPhasePairs()
 Me.mProfile.PairsMs = (System.Ticks - stageStart) * 1000.0
 
@@ -23879,34 +24022,46 @@ End Sub
 Private Sub ApplyContinuousHit(bodySimIndex As Integer, fastBody As Body, context As ContinuousContext)
 Var sims As BodySims = Me.SolverSets[PhysicsConstants.AWAKE_SET].Sims
 Var sweep As Sweep = context.Sweep
-Var q As Rot = Rot.NLerp(sweep.Q1, sweep.Q2, context.Fraction)
-Var lerped As Vector2 = Vector2.Lerp(sweep.C1, sweep.C2, context.Fraction)
-Var cx As Double = lerped.X
-Var cy As Double = lerped.Y
-Var px As Double = cx - (q.C * sweep.LocalCenter.X - q.S * sweep.LocalCenter.Y)
-Var py As Double = cy - (q.S * sweep.LocalCenter.X + q.C * sweep.LocalCenter.Y)
+# Scalarised Rot.NLerp and Vector2.Lerp (bit-identical operation order:
+# NLerp is omt*q1 + t*q2 normalised by 1/mag; Lerp is a + (b - a) * t) so a
+# continuous hit advances a body without allocating interpolation objects.
+Var fraction As Double = context.Fraction
+Var omt As Double = 1.0 - fraction
+Var rawC As Double = omt * sweep.Q1.C + fraction * sweep.Q2.C
+Var rawS As Double = omt * sweep.Q1.S + fraction * sweep.Q2.S
+Var mag As Double = Maths.Sqrt(rawS * rawS + rawC * rawC)
+Var invMag As Double = 0.0
+If mag > 0.0 Then
+invMag = 1.0 / mag
+End If
+Var qC As Double = rawC * invMag
+Var qS As Double = rawS * invMag
+Var cx As Double = sweep.C1.X + (sweep.C2.X - sweep.C1.X) * fraction
+Var cy As Double = sweep.C1.Y + (sweep.C2.Y - sweep.C1.Y) * fraction
+Var px As Double = cx - (qC * sweep.LocalCenter.X - qS * sweep.LocalCenter.Y)
+Var py As Double = cy - (qS * sweep.LocalCenter.X + qC * sweep.LocalCenter.Y)
 
 # Advance the body.
-sims.QC.Items[bodySimIndex] = q.C
-sims.QS.Items[bodySimIndex] = q.S
+sims.QC.Items[bodySimIndex] = qC
+sims.QS.Items[bodySimIndex] = qS
 sims.PX.Items[bodySimIndex] = px
 sims.PY.Items[bodySimIndex] = py
 sims.CenterX.Items[bodySimIndex] = cx
 sims.CenterY.Items[bodySimIndex] = cy
-sims.R0C.Items[bodySimIndex] = q.C
-sims.R0S.Items[bodySimIndex] = q.S
+sims.R0C.Items[bodySimIndex] = qC
+sims.R0S.Items[bodySimIndex] = qS
 sims.C0X.Items[bodySimIndex] = cx
 sims.C0Y.Items[bodySimIndex] = cy
 
 # Update the body move event.
 Me.mTransformScratch.P.Set(px, py)
-Me.mTransformScratch.Q.SetComponents(q.C, q.S)
+Me.mTransformScratch.Q.SetComponents(qC, qS)
 Var moveIndex As Integer = fastBody.MoveEventIndex
 If moveIndex >= 0 Then
 Me.MoveEventPXs.Items[moveIndex] = px
 Me.MoveEventPYs.Items[moveIndex] = py
-Me.MoveEventQCs.Items[moveIndex] = q.C
-Me.MoveEventQSs.Items[moveIndex] = q.S
+Me.MoveEventQCs.Items[moveIndex] = qC
+Me.MoveEventQSs.Items[moveIndex] = qS
 End If
 
 # Refresh shape AABBs at the interpolated transform.
@@ -24609,6 +24764,15 @@ End If
 body.Name = name
 End Sub
 
+## Points one contact store's pooled object references at the world-shared
+## contact pools. See ContactManifoldPool for why the pools are shared.
+Private Sub WireSharedContactPools(sims As ContactSims)
+sims.ManifoldPool = Me.ContactManifoldPool
+sims.CachePool = Me.ContactCachePool
+sims.FreeManifolds = Me.FreeContactManifoldSlots
+sims.FreeCaches = Me.FreeContactCacheSlots
+End Sub
+
 ## Allocates a per-island sleeping solver set, ported from the sleeping set
 ## creation inside b2CreateBody.
 Private Function AllocSleepingSet() As Integer
@@ -24621,6 +24785,7 @@ Else
 solverSet = New SolverSet(setId, False)
 End If
 solverSet.SetIndex = setId
+Me.WireSharedContactPools(solverSet.ContactSims)
 If setId = Me.SolverSets.Count Then
 Me.SolverSets.Append(solverSet)
 Else
@@ -25667,6 +25832,15 @@ End If
 Var solverSet As SolverSet = Me.SolverSets[setIndex]
 Var awakeSet As SolverSet = Me.SolverSets[2]
 Var disabledSet As SolverSet = Me.SolverSets[1]
+
+# Pre-size the awake set for the incoming rows so a first large wake
+# allocates nothing. Disabled non-touching contacts are unbounded here and
+# warm through use.
+awakeSet.Sims.Reserve(awakeSet.Sims.Count() + solverSet.Sims.Count())
+If awakeSet.States <> Nothing Then
+awakeSet.States.Reserve(awakeSet.States.Count() + solverSet.Sims.Count())
+End If
+awakeSet.ContactSims.Reserve(awakeSet.ContactSims.Count() + solverSet.ContactSims.Count())
 While solverSet.Sims.Count() > 0
 Var bodyId As Integer = solverSet.Sims.BodyId.Items[0]
 Var body As Body = Me.Bodies[bodyId]
@@ -25746,6 +25920,11 @@ Var sleepSetId As Integer = Me.AllocSleepingSet()
 Var sleepSet As SolverSet = Me.SolverSets[sleepSetId]
 Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
 Var disabledSet As SolverSet = Me.SolverSets[PhysicsConstants.DISABLED_SET]
+
+# Pre-size the sleeping set's stores from the island's known row counts so
+# the first transfer into a fresh sleeping solver set allocates nothing.
+sleepSet.Sims.Reserve(island.BodyCount)
+sleepSet.ContactSims.Reserve(island.ContactCount)
 
 # Move the island's bodies and their non-touching contacts.
 Var bodyId As Integer = island.HeadBody
@@ -25906,6 +26085,11 @@ End If
 Var targetSet As SolverSet = Me.SolverSets[setId1]
 Var sourceSet As SolverSet = Me.SolverSets[setId2]
 
+# Pre-size the target store rows for the incoming counts so a first merge
+# into a fresh sleeping set allocates nothing.
+targetSet.Sims.Reserve(targetSet.Sims.Count() + sourceSet.Sims.Count())
+targetSet.ContactSims.Reserve(targetSet.ContactSims.Count() + sourceSet.ContactSims.Count())
+
 Var bodyCount As Integer = sourceSet.Sims.Count()
 For i As Integer = 0 To bodyCount - 1
 Var bodyId As Integer = sourceSet.Sims.BodyId.Items[i]
@@ -26012,6 +26196,19 @@ End Function
 ## classes like ContinuousHitTest.
 Function GetShapeTransform(shape As Shape) As Transform
 Return Me.GetBodyTransform(Me.Bodies[shape.BodyId])
+End Function
+
+## Engine-internal reuse form of GetShapeTransform for the world's query
+## contexts: fills the caller-owned transform and returns it. Omitted from
+## the public reference like the other engine-internal members.
+Function GetShapeTransformTo(shape As Shape, out As Transform) As Transform
+Return Me.GetBodyTransformTo(Me.Bodies[shape.BodyId], out)
+End Function
+
+## Engine-internal reuse form of GetBodyTransformById for the world's
+## query contexts: fills the caller-owned transform and returns it.
+Function GetBodyTransformByIdTo(bodyId As Integer, out As Transform) As Transform
+Return Me.GetBodyTransformTo(Me.Bodies[bodyId], out)
 End Function
 
 ## The linear velocity of the centre of mass, ported from
@@ -27542,7 +27739,7 @@ End Function
 ## b2RayCastShape. The reused-output form for warm traversals.
 Private Function RayCastShapeTo(input As RayCastInput, shape As Shape, out As CastOutput) As CastOutput
 out.Reset()
-Var xf As Transform = Me.GetShapeTransform(shape)
+Var xf As Transform = Me.GetShapeTransformTo(shape, Me.mQueryTransform)
 Me.mLocalRayInput.MaxFraction = input.MaxFraction
 Me.mLocalRayInput.Origin.Set(0.0, 0.0)
 Transform.InvTransformPointTo(xf, input.Origin, Me.mLocalRayInput.Origin)
@@ -27563,10 +27760,10 @@ Return out
 End If
 
 If out.Hit Then
-Var worldPoint As Vector2 = Transform.TransformPoint(xf, out.Point)
-Var worldNormal As Vector2 = Rot.RotateVector(xf.Q, out.Normal)
-out.Point.Set(worldPoint.X, worldPoint.Y)
-out.Normal.Set(worldNormal.X, worldNormal.Y)
+# In-place world-space conversion; TransformPointTo and RotateVectorTo
+# are single-expression reads, so aliasing out.Point/out.Normal is safe.
+Transform.TransformPointTo(xf, out.Point, out.Point)
+Rot.RotateVectorTo(xf.Q, out.Normal, out.Normal)
 End If
 Return out
 End Function
@@ -27579,52 +27776,98 @@ Me.ShapeCastShapeTo(input, shape, out)
 Return out
 End Function
 
+## Engine-internal reuse form of ShapeCastShape for the world's shape-cast
+## context: casts into the world's reusable output and returns it. Values
+## must be consumed before the next leaf visit. Omitted from the public
+## reference like the other engine-internal members.
+Function ShapeCastShapeInto(input As ShapeCastInput, shape As Shape) As CastOutput
+Return Me.ShapeCastShapeTo(input, shape, Me.mQueryCastOutput)
+End Function
+
+## Engine-internal reuse form of RayCastShape for the world's ray-cast
+## context: casts into the world's reusable output and returns it. Values
+## must be consumed before the next leaf visit.
+Function RayCastShapeInto(input As RayCastInput, shape As Shape) As CastOutput
+Return Me.RayCastShapeTo(input, shape, Me.mQueryCastOutput)
+End Function
+
 ## Casts a shape against a shape into the caller-owned output, ported from
-## b2ShapeCastShape. The reused-output form for warm traversals.
+## b2ShapeCastShape. The reused-output form for warm traversals: the local
+## query proxy, the shape-side proxy, the pair input, and the world transform
+## are world-owned scratch, so a warmed leaf visit allocates nothing.
 Private Function ShapeCastShapeTo(input As ShapeCastInput, shape As Shape, out As CastOutput) As CastOutput
 out.Reset()
-Var xf As Transform = Me.GetShapeTransform(shape)
+Var xf As Transform = Me.GetShapeTransformTo(shape, Me.mQueryTransform)
 
-# Build the local proxy by inverse-transforming every caller point.
-Me.mLocalProxy.Points.Clear()
-Me.mLocalProxy.Count = 0
+# Build the local query proxy by inverse-transforming every caller point
+# into reused proxy point records.
+Var proxyPoints As Array(Of Vector2) = Me.mLocalProxy.Points
+Var proxyCount As Integer = input.Proxy.Count
+While proxyPoints.Count < proxyCount
+proxyPoints.Append(New Vector2)
+Wend
+Var pointIndex As Integer = 0
+While pointIndex < proxyCount
+Transform.InvTransformPointTo(xf, input.Proxy.Points[pointIndex], proxyPoints[pointIndex])
+pointIndex = pointIndex + 1
+Wend
+Me.mLocalProxy.Count = proxyCount
 Me.mLocalProxy.Radius = input.Proxy.Radius
-For i As Integer = 0 To input.Proxy.Count - 1
-Transform.InvTransformPointTo(xf, input.Proxy.Points[i], Me.mLocalPoint)
-Me.mLocalProxy.Points.Append(New Vector2(Me.mLocalPoint.X, Me.mLocalPoint.Y))
-Next i
-Me.mLocalProxy.Count = input.Proxy.Count
 Rot.InvRotateVectorTo(xf.Q, input.Translation, Me.mLocalCastInput.Translation)
 
 Me.mLocalCastInput.Proxy = Me.mLocalProxy
 Me.mLocalCastInput.MaxFraction = input.MaxFraction
 Me.mLocalCastInput.CanEncroach = input.CanEncroach
 
-# The per-shape casts allocate their own outputs; copy into out.
-Var temp As CastOutput = Nothing
+# Reduce the shape to its local point cloud in a reusable proxy and run
+# the pair cast's reused-output form; nothing here allocates once warmed.
+Var shapeProxy As ShapeProxy = Me.mCastShapeProxy
 If shape.Type = ShapeType.CapsuleShape Then
-temp = Casts.ShapeCastCapsule(Me.mLocalCastInput, shape.Capsule)
+Var shapePoints As Array(Of Vector2) = shapeProxy.Points
+shapePoints[0].Set(shape.Capsule.Center1.X, shape.Capsule.Center1.Y)
+shapePoints[1].Set(shape.Capsule.Center2.X, shape.Capsule.Center2.Y)
+shapeProxy.Count = 2
+shapeProxy.Radius = shape.Capsule.Radius
 ElseIf shape.Type = ShapeType.CircleShape Then
-temp = Casts.ShapeCastCircle(Me.mLocalCastInput, shape.Circle)
-ElseIf shape.Type = ShapeType.PolygonShape Then
-temp = Casts.ShapeCastPolygon(Me.mLocalCastInput, shape.Polygon)
+Var circlePoints As Array(Of Vector2) = shapeProxy.Points
+circlePoints[0].Set(shape.Circle.Center.X, shape.Circle.Center.Y)
+shapeProxy.Count = 1
+shapeProxy.Radius = shape.Circle.Radius
 ElseIf shape.Type = ShapeType.SegmentShape Then
-temp = Casts.ShapeCastSegment(Me.mLocalCastInput, shape.Segment)
+Var segmentPoints As Array(Of Vector2) = shapeProxy.Points
+segmentPoints[0].Set(shape.Segment.Point1.X, shape.Segment.Point1.Y)
+segmentPoints[1].Set(shape.Segment.Point2.X, shape.Segment.Point2.Y)
+shapeProxy.Count = 2
+shapeProxy.Radius = 0.0
 ElseIf shape.Type = ShapeType.ChainSegmentShape Then
-temp = Casts.ShapeCastSegment(Me.mLocalCastInput, shape.ChainSegment.Segment)
-End If
-If temp = Nothing Then
+Var chainPoints As Array(Of Vector2) = shapeProxy.Points
+chainPoints[0].Set(shape.ChainSegment.Segment.Point1.X, shape.ChainSegment.Segment.Point1.Y)
+chainPoints[1].Set(shape.ChainSegment.Segment.Point2.X, shape.ChainSegment.Segment.Point2.Y)
+shapeProxy.Count = 2
+shapeProxy.Radius = 0.0
+ElseIf shape.Type = ShapeType.PolygonShape Then
+# Alias the polygon's live vertex array read-only; a dedicated proxy so
+# the two-point proxy's owned records are never pointed at shape data.
+shapeProxy = Me.mPolygonCastProxy
+shapeProxy.Points = shape.Polygon.Vertices
+shapeProxy.Count = shape.Polygon.Count
+shapeProxy.Radius = shape.Polygon.Radius
+Else
 Return out
 End If
-out.Hit = temp.Hit
-out.Fraction = temp.Fraction
-out.Point.Set(temp.Point.X, temp.Point.Y)
-out.Normal.Set(temp.Normal.X, temp.Normal.Y)
+
+Var pairInput As ShapeCastPairInput = Me.mShapeCastPairInput
+pairInput.ProxyA = shapeProxy
+pairInput.ProxyB = Me.mLocalProxy
+pairInput.TranslationB.Set(Me.mLocalCastInput.Translation.X, Me.mLocalCastInput.Translation.Y)
+pairInput.MaxFraction = Me.mLocalCastInput.MaxFraction
+pairInput.CanEncroach = Me.mLocalCastInput.CanEncroach
+Casts.ShapeCastTo(pairInput, out)
 If out.Hit Then
-Var worldPoint As Vector2 = Transform.TransformPoint(xf, out.Point)
-Var worldNormal As Vector2 = Rot.RotateVector(xf.Q, out.Normal)
-out.Point.Set(worldPoint.X, worldPoint.Y)
-out.Normal.Set(worldNormal.X, worldNormal.Y)
+# In-place world-space conversion; the To-forms are single-expression
+# reads, so aliasing out.Point/out.Normal is safe.
+Transform.TransformPointTo(xf, out.Point, out.Point)
+Rot.RotateVectorTo(xf.Q, out.Normal, out.Normal)
 End If
 Return out
 End Function
@@ -27789,9 +28032,11 @@ Me.mRayCastContext.UserCallback = callback
 Me.mRayCastContext.Hits = hits
 Me.mRayCastContext.ClosestHit = Nothing
 Me.mRayCastContext.Fraction = 1.0
-Var input As New RayCastInput
-input.Origin = New Vector2(origin.X, origin.Y)
-input.Translation = New Vector2(translation.X, translation.Y)
+# The reused world-owned input serves; the tree copies what it needs and
+# the public contract only promises a fresh TreeStats record.
+Var input As RayCastInput = Me.mQueryRayInput
+input.Origin.Set(origin.X, origin.Y)
+input.Translation.Set(translation.X, translation.Y)
 input.MaxFraction = 1.0
 For i As Integer = 0 To 2
 Me.BroadPhase.Trees[i].RayCastTo(input, filter.MaskBits, Me.mRayCastContext, stats)
@@ -27833,9 +28078,9 @@ hit.Point.Set(0.0, 0.0)
 hit.Normal.Set(0.0, 0.0)
 hit.Fraction = 1.0
 Var stats As New TreeStats
-Var input As New RayCastInput
-input.Origin = New Vector2(origin.X, origin.Y)
-input.Translation = New Vector2(translation.X, translation.Y)
+Var input As RayCastInput = Me.mQueryRayInput
+input.Origin.Set(origin.X, origin.Y)
+input.Translation.Set(translation.X, translation.Y)
 input.MaxFraction = 1.0
 For i As Integer = 0 To 2
 Me.BroadPhase.Trees[i].RayCastTo(input, filter.MaskBits, Me.mRayCastContext, stats)
@@ -27881,9 +28126,9 @@ Me.mShapeCastContext.Filter = filter
 Me.mShapeCastContext.UserCallback = callback
 Me.mShapeCastContext.Hits = hits
 Me.mShapeCastContext.Fraction = 1.0
-Var input As New ShapeCastInput
+Var input As ShapeCastInput = Me.mQueryShapeCastInput
 input.Proxy = proxy
-input.Translation = New Vector2(translation.X, translation.Y)
+input.Translation.Set(translation.X, translation.Y)
 input.MaxFraction = 1.0
 For i As Integer = 0 To 2
 Me.BroadPhase.Trees[i].ShapeCastTo(input, filter.MaskBits, Me.mShapeCastContext, stats)
@@ -28201,6 +28446,23 @@ While Me.SolverSets.Count > 3
 Me.SolverSets.RemoveAt(Me.SolverSets.Count - 1)
 Wend
 Me.mSolverSetPool.Clear()
+# Rebuild the shared contact object free lists: every contact row was
+# destroyed above, so every pooled slot is free. This keeps the shared
+# lists consistent regardless of which removal path each row took.
+Me.FreeContactManifoldSlots.Clear()
+Me.FreeContactCacheSlots.Clear()
+Var pooledManifoldSlot As Integer = 0
+While pooledManifoldSlot < Me.ContactManifoldPool.Count
+Me.ContactManifoldPool[pooledManifoldSlot].Reset()
+Me.FreeContactManifoldSlots.Append(pooledManifoldSlot)
+pooledManifoldSlot = pooledManifoldSlot + 1
+Wend
+Var pooledCacheSlot As Integer = 0
+While pooledCacheSlot < Me.ContactCachePool.Count
+Me.ContactCachePool[pooledCacheSlot].Clear()
+Me.FreeContactCacheSlots.Append(pooledCacheSlot)
+pooledCacheSlot = pooledCacheSlot + 1
+Wend
 Me.SplitBodyIdsScratch.Clear()
 Me.SplitStackScratch.Clear()
 Me.BroadPhase.Clear()
@@ -28559,6 +28821,9 @@ Property DistanceInput As DistanceInput
 Property Cache As SimplexCache
 ## Reused distance output for shape mode.
 Property DistanceOutput As DistanceOutput
+## Context-owned transform written through for each shape-mode leaf, so a
+## warmed overlap traversal allocates nothing.
+Property LeafTransform As Transform
 
 ## Creates an unbound context; the world fills the fields per query.
 Constructor()
@@ -28570,6 +28835,8 @@ Me.QueryProxy = Nothing
 Me.DistanceInput = New DistanceInput
 Me.Cache = New SimplexCache
 Me.DistanceOutput = New DistanceOutput
+Me.LeafTransform = New Transform
+Me.DistanceInput.TransformA = Me.LeafTransform
 End Constructor
 
 ## Tree leaf visit: filter, optional shape-overlap test, dispatch.
@@ -28586,8 +28853,7 @@ End If
 If Me.QueryProxy <> Nothing Then
 Me.DistanceInput.ProxyA = Me.QueryProxy
 Me.DistanceInput.ProxyB = shape.DistanceProxy
-Me.DistanceInput.TransformA = New Transform
-Me.DistanceInput.TransformB = Me.Owner.GetBodyTransformById(shape.BodyId)
+Me.Owner.GetBodyTransformByIdTo(shape.BodyId, Me.LeafTransform)
 Me.DistanceInput.UseRadii = True
 Me.Cache.Clear()
 Distance.ShapeDistanceTo(Me.DistanceInput, Me.Cache, Me.DistanceOutput)
@@ -28666,7 +28932,16 @@ If Not QueryFilter.ShouldCollide(shape.Filter, Me.Filter) Then
 Return input.MaxFraction
 End If
 
-Var output As CastOutput = Me.Owner.RayCastShape(input, shape)
+Var output As CastOutput
+If Me.UserCallback <> Nothing Then
+# The callback form keeps allocating outputs: a user callback may retain
+# the point and normal references beyond the visit.
+output = Me.Owner.RayCastShape(input, shape)
+Else
+# The Into and closest forms copy values out immediately, so the world's
+# reusable leaf output serves.
+output = Me.Owner.RayCastShapeInto(input, shape)
+End If
 If Not output.Hit Then
 Return input.MaxFraction
 End If
@@ -28786,7 +29061,16 @@ If Not QueryFilter.ShouldCollide(shape.Filter, Me.Filter) Then
 Return input.MaxFraction
 End If
 
-Var output As CastOutput = Me.Owner.ShapeCastShape(input, shape)
+Var output As CastOutput
+If Me.UserCallback <> Nothing Then
+# The callback form keeps allocating outputs: a user callback may retain
+# the point and normal references beyond the visit.
+output = Me.Owner.ShapeCastShape(input, shape)
+Else
+# The Into form copies values out immediately, so the world's reusable
+# leaf output serves.
+output = Me.Owner.ShapeCastShapeInto(input, shape)
+End If
 If Not output.Hit Then
 Return input.MaxFraction
 End If

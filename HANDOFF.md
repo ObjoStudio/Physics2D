@@ -4,6 +4,12 @@ This handoff was refreshed on 2026-09-04 after the previous Pi session
 stalled in a command_supervisor/auto-compaction loop. It is the
 authoritative recovery checkpoint for the current working tree.
 
+**UPDATE 2026-09-04 (night): Stage 12 is COMPLETE.** All §19 exit
+criteria pass; see the end of the Progress Log. The sections below
+describe the interrupted recovery state they were written in and are
+kept for provenance only. Stage 13 (documentation, distribution, release
+candidate) and the §22 final audit remain.
+
 Read AGENTS.md and IMPLEMENTATION_PLAN.md first. In particular, read all of
 §19 (Stage 12), §20 (Stage 13), §21 (the progress ledger), and §22 (the
 final autonomous audit) before changing anything.
@@ -413,6 +419,39 @@ criterion passes.
 12. Proceed to Stage 13 and finally the independent §22 audit.
 
 ## Progress Log
+
+### 2026-09-04 (night) — Stage 12 complete
+
+All §19 exit criteria pass:
+
+1. Accepted scenario record: benchmarks/results/stage12-final-2026-09-04T21-10-48.json
+   (all required scenarios, accepted raw results). Pre-optimisation
+   baseline preserved (stage12-before-candidate-2026-09-04T20-35-56.json,
+   recorded from dbde82c in an isolated worktree with identical scenario
+   sources) plus the candidate-only record as revert evidence.
+2. No normal-step subsystem allocates after warm-up: all four Stage 12
+   allocation gates plus every existing zero-alloc gate pass.
+3. No unexplained regression exceeds 5%: paired focused runs verified
+   tumbler and joint-machine parity (the cross-run full-suite deltas were
+   drift; documented in docs/PERFORMANCE.md).
+4. No dominant avoidable allocation or dispatch path remains: step-path
+   allocation attribution is zero on the gated paths; the hoisting
+   candidate did not beat noise and was reverted.
+5. All correctness and determinism tests pass after the final
+   optimisation: 336 Physics2D tests, 19 benchmark tests, all scenario
+   checksums identical across four full-suite runs.
+6. docs/PERFORMANCE.md documents capacity planning, no-allocation usage,
+   substep trade-offs, query/event reuse, profiling guidance, honest
+   limitations, and reproducible commands.
+
+Distribution and audits: dist regenerated (sha256 f5841102…),
+assemble_module.py --check clean, audit_api.py clean, clean-room
+distribution check passed.
+
+HANDOFF.md is retained until the Stage 13 documentation pass, which will
+remove it deliberately: with Stage 12 complete the recovery checkpoint is
+obsolete, and its progress log is preserved in git history while the
+evidence lives in the ledger, PERFORMANCE.md, and the raw result files.
 
 ### 2026-09-04 (night) — resume step 5 complete: world-queries right-sized and
 ### the world query path made allocation-free at the leaf level
