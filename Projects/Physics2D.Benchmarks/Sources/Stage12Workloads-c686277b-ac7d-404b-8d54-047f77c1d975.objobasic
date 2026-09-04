@@ -710,6 +710,10 @@ Me.Movers.Reserve(200)
 Var moverDef As New ShapeDefinition
 moverDef.Density = 0.5
 moverDef.Material.Restitution = 0.9
+# Visitors must enable sensor events themselves; SensorOverlapTest skips
+# any shape with EnableSensorEvents False, so without this flag the field
+# publishes nothing.
+moverDef.EnableSensorEvents = True
 Var i As Integer = 0
 While i < 200
 Var def As New BodyDefinition
@@ -1170,8 +1174,10 @@ previous = link
 ropeIndex = ropeIndex + 1
 Wend
 
-# A chain terrain segment and a sensor strip.
+# A chain terrain segment and a sensor strip. The chain attaches to the
+# static ground body, matching the documented one-body chain rule.
 Var chainDef As New ChainDefinition
+chainDef.Body = ground
 Var points() As Vector2 = [New Vector2(-20.0, 0.0), New Vector2(-10.0, 1.0), New Vector2(-5.0, 2.5), New Vector2(0.0, 3.0), New Vector2(5.0, 2.5), New Vector2(10.0, 1.0), New Vector2(20.0, 0.0)]
 chainDef.Points = points
 chainDef.IsLoop = False

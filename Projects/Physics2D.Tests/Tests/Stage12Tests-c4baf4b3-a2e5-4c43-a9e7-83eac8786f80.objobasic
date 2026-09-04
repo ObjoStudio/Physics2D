@@ -145,6 +145,9 @@ Wend
 
 Var moverDef As New ShapeDefinition
 moverDef.Density = 0.5
+# Sensor events require the flag on both sides: SensorOverlapTest ignores
+# a visitor whose EnableSensorEvents is False.
+moverDef.EnableSensorEvents = True
 Var movers As New Array(Of Body)
 movers.Reserve(24)
 Var moverIndex As Integer = 0

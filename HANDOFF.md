@@ -24,9 +24,13 @@ final autonomous audit) before changing anything.
 - The last accepted clean checkpoint at dbde82c had 332 Physics2D tests
   plus 19 benchmark tests passing, a current generated distribution, and a
   passing clean-room distribution check.
-- The current working tree compiles, but is deliberately not green:
-  332 of 336 Physics2D tests pass. The four failures and their diagnoses
-  are recorded below.
+- The current working tree compiles, but is deliberately not green.
+  On 2026-09-04 the two known invalid benchmark fixtures were fixed
+  (chain Body, sensor-event flags) and focused validation passed; see the
+  progress log below. The remaining failing Physics2D tests are the
+  expected stale-distribution checksum plus the three allocation gates:
+  sleep/wake 3,153, bullet 101, and sensor 626 (the sensor test now
+  publishes events and fails only on its allocation assertion).
 - Do not reset, clean, stash, overwrite, or discard this working tree.
   All current changes belong to the interrupted Stage 12 attempt.
 - The user explicitly requested that the recovered Stage 12 work and this
@@ -212,15 +216,15 @@ Commands used the in-development CLI:
 
 2. Stage12Tests.TestSensorOverlapAllocatesNothing
 
-   It fails before allocation measurement:
-   sensor events published during warm-up: Expected True, Actual False.
-
-   This has a concrete fixture error. The sensor shapes enable sensor
-   events, but the visiting mover shapes do not. The engine's documented
-   SensorOverlapTest ignores a visitor whose EnableSensorEvents is False,
-   and the established Stage 8 sensor tests enable the flag on both sides.
-   Set moverDef.EnableSensorEvents = True, rerun, and only then assess its
-   allocation result.
+   RESOLVED FIXTURE, OPEN ALLOCATION DIAGNOSIS. The fixture error is
+   fixed (2026-09-04): the mover shapes now set
+   moverDef.EnableSensorEvents = True, matching the engine rule that
+   SensorOverlapTest ignores a visitor whose EnableSensorEvents is
+   False. The test now publishes sensor events during warm-up and
+   reaches the allocation gate, failing with 626 allocations instead of
+   the warm-up assertion. Diagnose those 626 allocations (begin/end
+   buffer growth, event-bit traffic, or genuine engine allocation)
+   before touching engine code. Do not weaken the zero assertion.
 
 3. Stage12Tests.TestSleepWakeMigrationAllocatesNothing
 
@@ -243,28 +247,25 @@ Commands used the in-development CLI:
    Do not merely increase the warm-up until the source of the 101
    allocations is understood.
 
-### Focused benchmark failure
+### Focused benchmark failure — RESOLVED
 
-Running the current executable with:
+The clear/rebuild InvalidArgumentException is fixed (2026-09-04):
+ClearRebuildWorkload.Rebuild now sets chainDef.Body = ground before
+CreateChain, matching the documented one-body chain rule. Focused run:
 
-    --only stage12-clear-rebuild
+    Physics2D_Benchmarks --only stage12-clear-rebuild \
+      --output /tmp/physics2d-stage12 --name clear-rebuild-fix-check
+    exit 0; median 88.355 ms, p95 183.945 ms,
+    checksum -4364940994124906251
 
-fails immediately with:
+### Test-filter semantics — CONFIRMED
 
-    InvalidArgumentException: ChainDefinition.Body must not be Nothing
-
-The fixture creates chainDef, sets points and IsLoop, but never sets its
-owning body. The intended owner is almost certainly the already-created
-ground; set chainDef.Body = ground and verify against the public chain
-construction rules.
-
-### Filter warning
-
-objo test ... --filter Stage12Tests and --filter AllocatesNothing both
-selected zero tests even though 336 were discovered. Do not treat an
-exit-zero filtered run as evidence. Until the CLI filter syntax is
-confirmed, run the full Physics2D.Tests project and inspect its
-passed/failed summary.
+objo test --filter takes a glob matched with both ends anchored against
+QualifiedClass.TestMethod (Objo.Studio.Core TestSelection). Plain
+"Stage12Tests" therefore selects zero tests; the correct form is
+"Stage12Tests.*" (repeatable, case-insensitive, * and ? wildcards).
+Focused filtered runs are now trustworthy evidence; a zero-selection
+filtered run is still not evidence of anything passing.
 
 ## Benchmark Evidence And Caveats
 
@@ -378,18 +379,20 @@ criterion passes.
 
 ## Recommended Resume Order
 
-1. Read the Stage 12 plan and inspect the complete working diff. Preserve
-   all files and confirm the exact status above.
-2. Fix only the two known invalid fixtures first:
-   - set the clear/rebuild chain's Body;
-   - enable sensor events on the Stage 12 visitor shapes.
-3. Rebuild the benchmark app and run each affected scenario/test before a
-   full suite. Confirm the CLI's real test-filter semantics or use the full
-   Physics2D.Tests project.
-4. Diagnose the 3,153 sleep/wake allocations and 101 bullet allocations.
-   Decide from evidence whether each is inadequate warm-up/capacity
-   coverage or a real engine allocation. Keep zero as the required normal
-   path.
+1. [DONE 2026-09-04] Stage 12 plan read; checkpoint commit 956a73e
+   inspected; working tree confirmed clean at that commit.
+2. [DONE 2026-09-04] Both invalid fixtures fixed: chainDef.Body = ground
+   in ClearRebuildWorkload.Rebuild; moverDef.EnableSensorEvents = True in
+   SensorFieldWorkload and Stage12Tests.TestSensorOverlapAllocatesNothing.
+3. [DONE 2026-09-04] Benchmark app rebuilt; stage12-clear-rebuild passes
+   (exit 0, median 88.355 ms, checksum -4364940994124906251); filtered
+   Stage12Tests run with the confirmed "Stage12Tests.*" glob: pyramid
+   passes, sensor reaches its allocation gate (626), bullet (101) and
+   sleep/wake (3,153) unchanged; 19 benchmark-project tests pass.
+4. Diagnose the 3,153 sleep/wake allocations, the 101 bullet allocations,
+   and the 626 sensor allocations. Decide from evidence whether each is
+   inadequate warm-up/capacity coverage or a real engine allocation.
+   Keep zero as the required normal path.
 5. Right-size stage12-world-queries so it remains representative but takes
    seconds or low minutes, not 27 minutes. Review the two-sample,
    evolving-world pyramid methodology as well.
@@ -408,6 +411,30 @@ criterion passes.
 11. Write docs/PERFORMANCE.md, satisfy every Stage 12 exit criterion, then
     update the ledger and commit the coherent Stage 12 change.
 12. Proceed to Stage 13 and finally the independent §22 audit.
+
+## Progress Log
+
+### 2026-09-04 — resume steps 1-3 complete
+
+- Working tree confirmed clean at 956a73e (checkpoint commit is HEAD).
+- Fixture fixes applied (3 edits, +10/-1 lines, git diff --check clean):
+  - Stage12Workloads ClearRebuildWorkload.Rebuild: chainDef.Body = ground.
+  - Stage12Workloads SensorFieldWorkload.Prepare: moverDef.EnableSensorEvents = True.
+  - Stage12Tests TestSensorOverlapAllocatesNothing: moverDef.EnableSensorEvents = True.
+- Build: objo build Physics2D.objosln --project Physics2D.Benchmarks
+  --output build/benchmarks — success in 5 s.
+- Focused scenario: --only stage12-clear-rebuild → exit 0, median
+  88.355 ms, checksum -4364940994124906251, JSON in /tmp/physics2d-stage12.
+- Focused tests: objo test --project Physics2D.Tests --filter
+  "Stage12Tests.*" → 1 passed, 3 failed in 27.54 s. TestPyramidWarmStep-
+  AllocatesNothing passes. Sensor test now publishes warm-up events and
+  fails only on allocations (626). Bullet 101 and sleep/wake 3,153 match
+  the pre-fix counts, so the fixture fixes changed nothing else.
+- Benchmark project tests: 19 passed, 0 failed in 18.37 s.
+- CLI filter semantics confirmed from Objo.Studio.Core TestSelection:
+  anchored glob over QualifiedClass.TestMethod; use "Stage12Tests.*".
+- Next: resume step 4 (allocation diagnosis). No long benchmark runs have
+  been started yet; no baseline files have been re-recorded.
 
 ## Useful Commands
 
