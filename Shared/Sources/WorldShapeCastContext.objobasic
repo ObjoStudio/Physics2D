@@ -35,7 +35,16 @@ If Not QueryFilter.ShouldCollide(shape.Filter, Me.Filter) Then
 Return input.MaxFraction
 End If
 
-Var output As CastOutput = Me.Owner.ShapeCastShape(input, shape)
+Var output As CastOutput
+If Me.UserCallback <> Nothing Then
+# The callback form keeps allocating outputs: a user callback may retain
+# the point and normal references beyond the visit.
+output = Me.Owner.ShapeCastShape(input, shape)
+Else
+# The Into form copies values out immediately, so the world's reusable
+# leaf output serves.
+output = Me.Owner.ShapeCastShapeInto(input, shape)
+End If
 If Not output.Hit Then
 Return input.MaxFraction
 End If

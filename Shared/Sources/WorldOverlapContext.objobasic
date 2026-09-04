@@ -20,6 +20,9 @@ Property DistanceInput As DistanceInput
 Property Cache As SimplexCache
 ## Reused distance output for shape mode.
 Property DistanceOutput As DistanceOutput
+## Context-owned transform written through for each shape-mode leaf, so a
+## warmed overlap traversal allocates nothing.
+Property LeafTransform As Transform
 
 ## Creates an unbound context; the world fills the fields per query.
 Constructor()
@@ -31,6 +34,8 @@ Me.QueryProxy = Nothing
 Me.DistanceInput = New DistanceInput
 Me.Cache = New SimplexCache
 Me.DistanceOutput = New DistanceOutput
+Me.LeafTransform = New Transform
+Me.DistanceInput.TransformA = Me.LeafTransform
 End Constructor
 
 ## Tree leaf visit: filter, optional shape-overlap test, dispatch.
@@ -47,8 +52,7 @@ End If
 If Me.QueryProxy <> Nothing Then
 Me.DistanceInput.ProxyA = Me.QueryProxy
 Me.DistanceInput.ProxyB = shape.DistanceProxy
-Me.DistanceInput.TransformA = New Transform
-Me.DistanceInput.TransformB = Me.Owner.GetBodyTransformById(shape.BodyId)
+Me.Owner.GetBodyTransformByIdTo(shape.BodyId, Me.LeafTransform)
 Me.DistanceInput.UseRadii = True
 Me.Cache.Clear()
 Distance.ShapeDistanceTo(Me.DistanceInput, Me.Cache, Me.DistanceOutput)

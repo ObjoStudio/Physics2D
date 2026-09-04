@@ -592,12 +592,16 @@ Wend
 column = column + 1
 Wend
 Me.World.UpdateBroadPhasePairs()
+# The 2500 static shapes insert in column order, which degenerates the
+# static tree and dominated earlier runs at tens of milliseconds per
+# query; one full quality rebuild restores logarithmic queries.
+Me.World.RebuildStaticTree()
 
-Me.Rays = 4000
-Me.RayAlls = 1000
-Me.ShapeCasts = 1000
-Me.ShapeOverlaps = 1000
-Me.BoundsOverlaps = 2000
+Me.Rays = 1000
+Me.RayAlls = 250
+Me.ShapeCasts = 250
+Me.ShapeOverlaps = 250
+Me.BoundsOverlaps = 500
 End Sub
 
 ## Runs the five query families and folds their tallies.

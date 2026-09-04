@@ -188,7 +188,7 @@ Private Property mWorkload As WorldQueriesWorkload
 Constructor()
 Super.Constructor()
 Me.Name = "stage12-world-queries"
-Me.Description = "Runs 9000 world queries per iteration over a 2500-shape static grid through the allocation-free Into forms."
+Me.Description = "Runs 2250 world queries per iteration over a rebuilt 2500-shape static grid through the allocation-free Into forms."
 Me.WarmupIterations = 1
 Me.MeasuredIterations = 4
 Me.mWorkload = New WorldQueriesWorkload
@@ -196,7 +196,7 @@ End Constructor
 
 ## Describes the query mix.
 Override Function Parameters() As String
-Return "rays=4000,rayAll=1000,shapeCast=1000,shapeOverlap=1000,boundsOverlap=2000,shapes=2500"
+Return "rays=1000,rayAll=250,shapeCast=250,shapeOverlap=250,boundsOverlap=500,shapes=2500,rebuiltStaticTree=true"
 End Function
 
 ## Builds workload state.

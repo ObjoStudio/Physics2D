@@ -156,6 +156,26 @@ Private Property mLocalCastInput As ShapeCastInput
 Private Property mLocalProxy As ShapeProxy
 ## Reused scratch point for local space conversions.
 Private Property mLocalPoint As Vector2
+## Reused cast output for the world's query leaf visits. Engine internal;
+## values are copied out before the next leaf reuses it.
+Private Property mQueryCastOutput As CastOutput
+## Reused shape transform for the world's query leaf visits. Engine
+## internal; only one query traversal may hold it across a leaf visit.
+Private Property mQueryTransform As Transform
+## Reused shape-side proxy for shape-cast leaf visits (one or two points).
+Private Property mCastShapeProxy As ShapeProxy
+## Reused proxy for polygon shape-cast leaf visits; its Points field is
+## reassigned to each polygon's live vertex array (read-only use) so no
+## copy is made. Kept separate from mCastShapeProxy because the two-point
+## proxy writes into its owned records.
+Private Property mPolygonCastProxy As ShapeProxy
+## Reused pair input for shape-cast leaf visits.
+Private Property mShapeCastPairInput As ShapeCastPairInput
+## Reused ray input for the world's ray queries. Engine internal; the
+## fresh TreeStats return value remains part of the public contract.
+Private Property mQueryRayInput As RayCastInput
+## Reused shape-cast input for the world's shape casts. Engine internal.
+Private Property mQueryShapeCastInput As ShapeCastInput
 
 # Warm-path scratch records owned by the world. Reused across body and
 # shape creation so a warm rebuild after World.Clear allocates only the
@@ -870,6 +890,15 @@ Me.DebugDrawQuad.Append(New Vector2)
 Me.DebugDrawQuad.Append(New Vector2)
 Me.mLocalRayInput = New RayCastInput
 Me.mLocalCastInput = New ShapeCastInput
+Me.mQueryCastOutput = New CastOutput
+Me.mQueryTransform = New Transform
+Me.mCastShapeProxy = New ShapeProxy
+Me.mCastShapeProxy.Points.Append(New Vector2)
+Me.mCastShapeProxy.Points.Append(New Vector2)
+Me.mPolygonCastProxy = New ShapeProxy
+Me.mShapeCastPairInput = New ShapeCastPairInput
+Me.mQueryRayInput = New RayCastInput
+Me.mQueryShapeCastInput = New ShapeCastInput
 Me.mTransformScratchB = New Transform
 Me.mStepScratch = New StepContext
 Me.mContactStateBits = New BitSet(256)
@@ -3907,6 +3936,19 @@ Function GetShapeTransform(shape As Shape) As Transform
 Return Me.GetBodyTransform(Me.Bodies[shape.BodyId])
 End Function
 
+## Engine-internal reuse form of GetShapeTransform for the world's query
+## contexts: fills the caller-owned transform and returns it. Omitted from
+## the public reference like the other engine-internal members.
+Function GetShapeTransformTo(shape As Shape, out As Transform) As Transform
+Return Me.GetBodyTransformTo(Me.Bodies[shape.BodyId], out)
+End Function
+
+## Engine-internal reuse form of GetBodyTransformById for the world's
+## query contexts: fills the caller-owned transform and returns it.
+Function GetBodyTransformByIdTo(bodyId As Integer, out As Transform) As Transform
+Return Me.GetBodyTransformTo(Me.Bodies[bodyId], out)
+End Function
+
 ## The linear velocity of the centre of mass, ported from
 ## b2Body_GetLinearVelocity.
 Function GetBodyLinearVelocity(body As Body) As Vector2
@@ -5435,7 +5477,7 @@ End Function
 ## b2RayCastShape. The reused-output form for warm traversals.
 Private Function RayCastShapeTo(input As RayCastInput, shape As Shape, out As CastOutput) As CastOutput
 out.Reset()
-Var xf As Transform = Me.GetShapeTransform(shape)
+Var xf As Transform = Me.GetShapeTransformTo(shape, Me.mQueryTransform)
 Me.mLocalRayInput.MaxFraction = input.MaxFraction
 Me.mLocalRayInput.Origin.Set(0.0, 0.0)
 Transform.InvTransformPointTo(xf, input.Origin, Me.mLocalRayInput.Origin)
@@ -5456,10 +5498,10 @@ Return out
 End If
 
 If out.Hit Then
-Var worldPoint As Vector2 = Transform.TransformPoint(xf, out.Point)
-Var worldNormal As Vector2 = Rot.RotateVector(xf.Q, out.Normal)
-out.Point.Set(worldPoint.X, worldPoint.Y)
-out.Normal.Set(worldNormal.X, worldNormal.Y)
+# In-place world-space conversion; TransformPointTo and RotateVectorTo
+# are single-expression reads, so aliasing out.Point/out.Normal is safe.
+Transform.TransformPointTo(xf, out.Point, out.Point)
+Rot.RotateVectorTo(xf.Q, out.Normal, out.Normal)
 End If
 Return out
 End Function
@@ -5472,52 +5514,94 @@ Me.ShapeCastShapeTo(input, shape, out)
 Return out
 End Function
 
-## Casts a shape against a shape into the caller-owned output, ported from
-## b2ShapeCastShape. The reused-output form for warm traversals.
+## Engine-internal reuse form of ShapeCastShape for the world's shape-cast
+## context: casts into the world's reusable output and returns it. Values
+## must be consumed before the next leaf visit. Omitted from the public
+## reference like the other engine-internal members.
+Function ShapeCastShapeInto(input As ShapeCastInput, shape As Shape) As CastOutput
+Return Me.ShapeCastShapeTo(input, shape, Me.mQueryCastOutput)
+End Function
+
+## Engine-internal reuse form of RayCastShape for the world's ray-cast
+## context: casts into the world's reusable output and returns it. Values
+## must be consumed before the next leaf visit.
+Function RayCastShapeInto(input As RayCastInput, shape As Shape) As CastOutput
+Return Me.RayCastShapeTo(input, shape, Me.mQueryCastOutput)
+End Function
+
 Private Function ShapeCastShapeTo(input As ShapeCastInput, shape As Shape, out As CastOutput) As CastOutput
 out.Reset()
-Var xf As Transform = Me.GetShapeTransform(shape)
+Var xf As Transform = Me.GetShapeTransformTo(shape, Me.mQueryTransform)
 
-# Build the local proxy by inverse-transforming every caller point.
-Me.mLocalProxy.Points.Clear()
-Me.mLocalProxy.Count = 0
+# Build the local query proxy by inverse-transforming every caller point
+# into reused proxy point records.
+Var proxyPoints As Array(Of Vector2) = Me.mLocalProxy.Points
+Var proxyCount As Integer = input.Proxy.Count
+While proxyPoints.Count < proxyCount
+proxyPoints.Append(New Vector2)
+Wend
+Var pointIndex As Integer = 0
+While pointIndex < proxyCount
+Transform.InvTransformPointTo(xf, input.Proxy.Points[pointIndex], proxyPoints[pointIndex])
+pointIndex = pointIndex + 1
+Wend
+Me.mLocalProxy.Count = proxyCount
 Me.mLocalProxy.Radius = input.Proxy.Radius
-For i As Integer = 0 To input.Proxy.Count - 1
-Transform.InvTransformPointTo(xf, input.Proxy.Points[i], Me.mLocalPoint)
-Me.mLocalProxy.Points.Append(New Vector2(Me.mLocalPoint.X, Me.mLocalPoint.Y))
-Next i
-Me.mLocalProxy.Count = input.Proxy.Count
 Rot.InvRotateVectorTo(xf.Q, input.Translation, Me.mLocalCastInput.Translation)
 
 Me.mLocalCastInput.Proxy = Me.mLocalProxy
 Me.mLocalCastInput.MaxFraction = input.MaxFraction
 Me.mLocalCastInput.CanEncroach = input.CanEncroach
 
-# The per-shape casts allocate their own outputs; copy into out.
-Var temp As CastOutput = Nothing
+# Reduce the shape to its local point cloud in a reusable proxy and run
+# the pair cast's reused-output form; nothing here allocates once warmed.
+Var shapeProxy As ShapeProxy = Me.mCastShapeProxy
 If shape.Type = ShapeType.CapsuleShape Then
-temp = Casts.ShapeCastCapsule(Me.mLocalCastInput, shape.Capsule)
+Var shapePoints As Array(Of Vector2) = shapeProxy.Points
+shapePoints[0].Set(shape.Capsule.Center1.X, shape.Capsule.Center1.Y)
+shapePoints[1].Set(shape.Capsule.Center2.X, shape.Capsule.Center2.Y)
+shapeProxy.Count = 2
+shapeProxy.Radius = shape.Capsule.Radius
 ElseIf shape.Type = ShapeType.CircleShape Then
-temp = Casts.ShapeCastCircle(Me.mLocalCastInput, shape.Circle)
-ElseIf shape.Type = ShapeType.PolygonShape Then
-temp = Casts.ShapeCastPolygon(Me.mLocalCastInput, shape.Polygon)
+Var circlePoints As Array(Of Vector2) = shapeProxy.Points
+circlePoints[0].Set(shape.Circle.Center.X, shape.Circle.Center.Y)
+shapeProxy.Count = 1
+shapeProxy.Radius = shape.Circle.Radius
 ElseIf shape.Type = ShapeType.SegmentShape Then
-temp = Casts.ShapeCastSegment(Me.mLocalCastInput, shape.Segment)
+Var segmentPoints As Array(Of Vector2) = shapeProxy.Points
+segmentPoints[0].Set(shape.Segment.Point1.X, shape.Segment.Point1.Y)
+segmentPoints[1].Set(shape.Segment.Point2.X, shape.Segment.Point2.Y)
+shapeProxy.Count = 2
+shapeProxy.Radius = 0.0
 ElseIf shape.Type = ShapeType.ChainSegmentShape Then
-temp = Casts.ShapeCastSegment(Me.mLocalCastInput, shape.ChainSegment.Segment)
-End If
-If temp = Nothing Then
+Var chainPoints As Array(Of Vector2) = shapeProxy.Points
+chainPoints[0].Set(shape.ChainSegment.Segment.Point1.X, shape.ChainSegment.Segment.Point1.Y)
+chainPoints[1].Set(shape.ChainSegment.Segment.Point2.X, shape.ChainSegment.Segment.Point2.Y)
+shapeProxy.Count = 2
+shapeProxy.Radius = 0.0
+ElseIf shape.Type = ShapeType.PolygonShape Then
+# Alias the polygon's live vertex array read-only; a dedicated proxy so
+# the two-point proxy's owned records are never pointed at shape data.
+shapeProxy = Me.mPolygonCastProxy
+shapeProxy.Points = shape.Polygon.Vertices
+shapeProxy.Count = shape.Polygon.Count
+shapeProxy.Radius = shape.Polygon.Radius
+Else
 Return out
 End If
-out.Hit = temp.Hit
-out.Fraction = temp.Fraction
-out.Point.Set(temp.Point.X, temp.Point.Y)
-out.Normal.Set(temp.Normal.X, temp.Normal.Y)
+
+Var pairInput As ShapeCastPairInput = Me.mShapeCastPairInput
+pairInput.ProxyA = shapeProxy
+pairInput.ProxyB = Me.mLocalProxy
+pairInput.TranslationB.Set(Me.mLocalCastInput.Translation.X, Me.mLocalCastInput.Translation.Y)
+pairInput.MaxFraction = Me.mLocalCastInput.MaxFraction
+pairInput.CanEncroach = Me.mLocalCastInput.CanEncroach
+Casts.ShapeCastTo(pairInput, out)
 If out.Hit Then
-Var worldPoint As Vector2 = Transform.TransformPoint(xf, out.Point)
-Var worldNormal As Vector2 = Rot.RotateVector(xf.Q, out.Normal)
-out.Point.Set(worldPoint.X, worldPoint.Y)
-out.Normal.Set(worldNormal.X, worldNormal.Y)
+# In-place world-space conversion; the To-forms are single-expression
+# reads, so aliasing out.Point/out.Normal is safe.
+Transform.TransformPointTo(xf, out.Point, out.Point)
+Rot.RotateVectorTo(xf.Q, out.Normal, out.Normal)
 End If
 Return out
 End Function
@@ -5682,9 +5766,11 @@ Me.mRayCastContext.UserCallback = callback
 Me.mRayCastContext.Hits = hits
 Me.mRayCastContext.ClosestHit = Nothing
 Me.mRayCastContext.Fraction = 1.0
-Var input As New RayCastInput
-input.Origin = New Vector2(origin.X, origin.Y)
-input.Translation = New Vector2(translation.X, translation.Y)
+# The reused world-owned input serves; the tree copies what it needs and
+# the public contract only promises a fresh TreeStats record.
+Var input As RayCastInput = Me.mQueryRayInput
+input.Origin.Set(origin.X, origin.Y)
+input.Translation.Set(translation.X, translation.Y)
 input.MaxFraction = 1.0
 For i As Integer = 0 To 2
 Me.BroadPhase.Trees[i].RayCastTo(input, filter.MaskBits, Me.mRayCastContext, stats)
@@ -5726,9 +5812,9 @@ hit.Point.Set(0.0, 0.0)
 hit.Normal.Set(0.0, 0.0)
 hit.Fraction = 1.0
 Var stats As New TreeStats
-Var input As New RayCastInput
-input.Origin = New Vector2(origin.X, origin.Y)
-input.Translation = New Vector2(translation.X, translation.Y)
+Var input As RayCastInput = Me.mQueryRayInput
+input.Origin.Set(origin.X, origin.Y)
+input.Translation.Set(translation.X, translation.Y)
 input.MaxFraction = 1.0
 For i As Integer = 0 To 2
 Me.BroadPhase.Trees[i].RayCastTo(input, filter.MaskBits, Me.mRayCastContext, stats)
@@ -5774,9 +5860,9 @@ Me.mShapeCastContext.Filter = filter
 Me.mShapeCastContext.UserCallback = callback
 Me.mShapeCastContext.Hits = hits
 Me.mShapeCastContext.Fraction = 1.0
-Var input As New ShapeCastInput
+Var input As ShapeCastInput = Me.mQueryShapeCastInput
 input.Proxy = proxy
-input.Translation = New Vector2(translation.X, translation.Y)
+input.Translation.Set(translation.X, translation.Y)
 input.MaxFraction = 1.0
 For i As Integer = 0 To 2
 Me.BroadPhase.Trees[i].ShapeCastTo(input, filter.MaskBits, Me.mShapeCastContext, stats)

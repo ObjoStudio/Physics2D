@@ -414,6 +414,40 @@ criterion passes.
 
 ## Progress Log
 
+### 2026-09-04 (night) — resume step 5 complete: world-queries right-sized and
+### the world query path made allocation-free at the leaf level
+
+- stage12-world-queries took 27 minutes alone because its 2500-shape
+  static grid was inserted in column order (degenerate static tree) and it
+  ran 45,000 queries. Fixed: one World.RebuildStaticTree() after grid
+  construction and a 2,250-query mix per iteration (rays=1000,
+  rayAll=250, shapeCast=250, shapeOverlap=250, boundsOverlap=500).
+- Diagnosed ~276 allocations per query in the engine's leaf paths:
+  RayCastShape/ShapeCastShape allocated a CastOutput per leaf visit,
+  GetShapeTransform allocated a Transform per leaf, hit-tail
+  TransformPoint/RotateVector allocated Vector2 temporaries, the
+  shape-cast path rebuilt its local proxy with a fresh Vector2 per point
+  and ran the allocating Casts.ShapeCastViaProxy chain per leaf, and the
+  overlap context allocated New Transform + GetBodyTransformById per
+  leaf. All replaced with world-owned scratch (mQueryCastOutput,
+  mQueryTransform, mCastShapeProxy, mPolygonCastProxy,
+  mShapeCastPairInput, mQueryRayInput, mQueryShapeCastInput), reused
+  proxy point records, Casts.ShapeCastTo into the reusable output, and a
+  context-owned LeafTransform filled by GetBodyTransformByIdTo. Callback
+  forms keep allocating outputs (user callbacks may retain point/normal
+  references); Into and closest forms copy values out immediately.
+- stage12-world-queries: median 5,900 ms → 1,189 ms per iteration,
+  allocations 3,105,164 → 23,000 (remaining: grid Prepare plus the
+  documented fresh TreeStats per public query call), checksum unchanged
+  at -7148840557192300803 (bit-identical results).
+- Validation: full Physics2D suite 335 passed / 1 expected stale-dist
+  failure; 19 benchmark tests pass.
+
+Next: resume step 6 (stabilise the ten scenario definitions), then the
+isolated-worktree baseline (step 7), candidate accept/revert (step 8),
+dist regeneration and full gates (step 10), PERFORMANCE.md and the ledger
+(step 11).
+
 ### 2026-09-04 (evening) — resume step 4 complete: all four allocation gates pass
 
 Root causes diagnosed with per-stage allocation probes (temporary engine
