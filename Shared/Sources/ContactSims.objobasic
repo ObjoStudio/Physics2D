@@ -3,12 +3,18 @@
 # selects parallel scalar arrays, so every scalar field is one list indexed
 # by the contact's local index within the set.
 #
-# The manifold and simplex cache are heap objects drawn from append-only
-# pools through an LIFO free list. Pool objects survive RemoveSwap and
-# Clear, so the warm create/destroy path allocates nothing and the narrow
-# phase writes manifolds in place through the Collide To-forms. Which pool
-# object a row reuses never affects solver results because pools are pure
-# scratch slots.
+# The manifold and simplex cache are heap objects drawn from the
+# world-shared append-only pools (World.ContactManifoldPool and
+# World.ContactCachePool) through world-shared LIFO free lists; this
+# store's ManifoldPool/CachePool/FreeManifolds/FreeCaches properties are
+# references to those shared lists, wired by World.WireSharedContactPools.
+# Pool objects survive RemoveSwap and Clear, so the warm create/destroy
+# path allocates nothing and the narrow phase writes manifolds in place
+# through the Collide To-forms. Sharing one pool across every store is
+# what makes that warm path real: contact rows migrate between stores
+# every step, and per-store free lists scattered recycled slots away from
+# the store that needed them next. Which pool object a row reuses never
+# affects solver results because pools are pure scratch slots.
 Class ContactSims
 ## Cold contact slot of each sim.
 Property ContactId As IntegerList
@@ -43,13 +49,13 @@ Property SimFlags As IntegerList
 Property ManifoldSlots As IntegerList
 ## Pool slot of each row's reusable simplex cache.
 Property CacheSlots As IntegerList
-## Append-only pool of reusable manifold objects.
+## Append-only world-shared pool of reusable manifold objects.
 Property ManifoldPool As Array(Of Manifold)
-## Append-only pool of reusable simplex cache objects.
+## Append-only world-shared pool of reusable simplex cache objects.
 Property CachePool As Array(Of SimplexCache)
-## LIFO free list of manifold pool slots.
+## World-shared LIFO free list of manifold pool slots.
 Property FreeManifolds As IntegerList
-## LIFO free list of cache pool slots.
+## World-shared LIFO free list of cache pool slots.
 Property FreeCaches As IntegerList
 
 ## Creates an empty store.
@@ -80,6 +86,30 @@ End Constructor
 Function Count() As Integer
 Return Me.ContactId.Count
 End Function
+
+## Ensures every column can hold at least `rows` rows without reallocating.
+## Sleep and wake transfers call this with the known incoming row count so
+## a first transfer into a store allocates nothing. The shared pool free
+## lists are not touched: rows appended after a Reserve reuse pooled
+## objects exactly like any other append.
+Sub Reserve(rows As Integer)
+Me.ContactId.Reserve(rows)
+Me.ShapeIdA.Reserve(rows)
+Me.ShapeIdB.Reserve(rows)
+Me.BodySimIndexA.Reserve(rows)
+Me.BodySimIndexB.Reserve(rows)
+Me.InvMassA.Reserve(rows)
+Me.InvIA.Reserve(rows)
+Me.InvMassB.Reserve(rows)
+Me.InvIB.Reserve(rows)
+Me.Friction.Reserve(rows)
+Me.Restitution.Reserve(rows)
+Me.RollingResistance.Reserve(rows)
+Me.TangentSpeed.Reserve(rows)
+Me.SimFlags.Reserve(rows)
+Me.ManifoldSlots.Reserve(rows)
+Me.CacheSlots.Reserve(rows)
+End Sub
 
 ## Returns the manifold object owned by the given local row. The narrow
 ## phase writes into it in place; no caller may keep the reference across
@@ -218,27 +248,10 @@ Me.TangentSpeed.Clear()
 Me.SimFlags.Clear()
 Me.ManifoldSlots.Clear()
 Me.CacheSlots.Clear()
-Me.FreeManifolds.Clear()
-Me.FreeCaches.Clear()
-# Return every pooled object that still lives in this store to its free
-# list so a recycled store (for example a reused sleeping solver set) fills
-# new rows without allocating. Slots whose objects were adopted by another
-# store hold Nothing and stay dead holes.
-Var manifoldSlot As Integer = 0
-While manifoldSlot < Me.ManifoldPool.Count
-If Me.ManifoldPool[manifoldSlot] <> Nothing Then
-Me.ManifoldPool[manifoldSlot].Reset()
-Me.FreeManifolds.Append(manifoldSlot)
-End If
-manifoldSlot = manifoldSlot + 1
-Wend
-Var cacheSlot As Integer = 0
-While cacheSlot < Me.CachePool.Count
-If Me.CachePool[cacheSlot] <> Nothing Then
-Me.CachePool[cacheSlot].Clear()
-Me.FreeCaches.Append(cacheSlot)
-End If
-cacheSlot = cacheSlot + 1
-Wend
+# FreeManifolds and FreeCaches are the world-shared free lists and are NOT
+# cleared or rebuilt here: this store holds no live rows (every row leaves
+# through RemoveSwap, which recycles its slots), and other stores may hold
+# live rows whose slots must stay out of reach. World.Clear rebuilds the
+# shared free lists after all stores are empty.
 End Sub
 End Class

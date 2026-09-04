@@ -32,7 +32,12 @@ Me.RollingImpulse = 0.0
 Me.Point1 = New ManifoldPoint
 Me.Point2 = New ManifoldPoint
 Me.PointCount = 0
-Me.mScratch = Nothing
+# The collision scratch is created eagerly so a pooled manifold never
+# allocates on its first narrow-phase use: pool objects are recycled into
+# rows that may collide in the same step they are adopted, and a lazy
+# scratch would push the allocation into a measured zero-allocation step
+# window.
+Me.mScratch = New CollideScratch
 End Constructor
 
 ## Resets the manifold to the empty state in place and returns it.

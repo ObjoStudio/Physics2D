@@ -39,6 +39,20 @@ Function Count() As Integer
 Return Me.Flags.Count
 End Function
 
+## Ensures every column can hold at least `rows` rows without reallocating.
+## Wake transfers call this with the incoming row count so a first wake
+## into the awake set allocates nothing.
+Sub Reserve(rows As Integer)
+Me.LVX.Reserve(rows)
+Me.LVY.Reserve(rows)
+Me.AngularVelocity.Reserve(rows)
+Me.Flags.Reserve(rows)
+Me.DPX.Reserve(rows)
+Me.DPY.Reserve(rows)
+Me.DRC.Reserve(rows)
+Me.DRS.Reserve(rows)
+End Sub
+
 ## Appends an identity state, ported from upstream b2_identityBodyState, and
 ## returns its local index.
 Function Add() As Integer

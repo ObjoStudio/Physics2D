@@ -72,9 +72,21 @@ Shared Sub PrepareColorContacts(world As World, context As StepContext, colorInd
 Var color As GraphColor = world.ConstraintGraph.Colors[colorIndex]
 Var count As Integer = color.ContactSims.Count()
 Var constraints As Array(Of ContactConstraint) = color.Constraints
-While constraints.Count < count
+# Amortised fill growth: the constraint records form a per-colour pool
+# whose fill level is the historical high-water mark of this colour's
+# active contacts. Growing the fill by exactly `count` made resting
+# contact churn allocate one record every time the wake transient inched
+# past the previous mark; doubling the fill on growth keeps sub-doubling
+# transients allocation-free.
+If constraints.Count < count Then
+Var grownFill As Integer = constraints.Count * 2
+If grownFill < count Then
+grownFill = count
+End If
+While constraints.Count < grownFill
 constraints.Append(New ContactConstraint)
 Wend
+End If
 color.ConstraintCount = count
 Var states As BodyStates = world.SolverSets[PhysicsConstants.AWAKE_SET].States
 For i As Integer = 0 To count - 1

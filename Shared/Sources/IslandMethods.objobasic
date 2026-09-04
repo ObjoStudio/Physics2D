@@ -421,7 +421,11 @@ Return
 End If
 
 Var bodyCount As Integer = baseIsland.BodyCount
-Var bodyIds As New Array(Of Integer)
+# World-owned reusable scratch: island splits run every step in resting
+# scenes, so allocating per split would break the zero-allocation step
+# path. Both lists retain capacity across splits.
+Var bodyIds As IntegerList = world.SplitBodyIdsScratch
+bodyIds.Clear()
 Var nextBody As Integer = baseIsland.HeadBody
 While nextBody <> PhysicsConstants.NULL_INDEX
 bodyIds.Append(nextBody)
@@ -451,12 +455,15 @@ DestroyIsland(world, baseId)
 
 Var i As Integer = 0
 While i < bodyCount
-Var seedIndex As Integer = bodyIds[i]
+Var seedIndex As Integer = bodyIds.Items[i]
 Var seed As Body = world.Bodies[seedIndex]
 If seed.IsMarked = False Then
 Var island As Island = CreateIsland(world, PhysicsConstants.AWAKE_SET)
 Var islandId As Integer = island.IslandId
-Var stack As New Array(Of Integer)
+# The DFS stack reuses the world-owned scratch list; Clear retains
+# capacity so repeated splits of similar size allocate nothing.
+Var stack As IntegerList = world.SplitStackScratch
+stack.Clear()
 stack.Append(seedIndex)
 seed.IsMarked = True
 
@@ -471,7 +478,7 @@ End Sub
 
 ## Adds one body to a freshly split island and pushes its touching
 ## neighbours, ported from the depth-first search body of b2SplitIsland.
-Private Shared Sub DfsVisitBody(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As Array(Of Integer))
+Private Shared Sub DfsVisitBody(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As IntegerList)
 Var body As Body = world.Bodies[bodyId]
 body.IslandId = islandId
 If island.TailBody <> PhysicsConstants.NULL_INDEX Then
@@ -533,7 +540,7 @@ End Sub
 ## Walks the joints attached to one body during island split DFS, marking
 ## unmarked joints, pushing awake unmarked neighbours, and appending the
 ## joint to the new island's list.
-Private Shared Sub DfsVisitJoints(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As Array(Of Integer))
+Private Shared Sub DfsVisitJoints(world As World, island As Island, islandId As Integer, bodyId As Integer, stack As IntegerList)
 Var body As Body = world.Bodies[bodyId]
 Var jointKey As Integer = body.HeadJointKey
 While jointKey <> PhysicsConstants.NULL_INDEX

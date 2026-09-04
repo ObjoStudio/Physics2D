@@ -414,6 +414,75 @@ criterion passes.
 
 ## Progress Log
 
+### 2026-09-04 (evening) — resume step 4 complete: all four allocation gates pass
+
+Root causes diagnosed with per-stage allocation probes (temporary engine
+instrumentation, since removed), then fixed in the engine:
+
+1. Per-store manifold/cache pools scattered recycled slots away from the
+   store that needed them next (churn migrates rows between 12 colour
+   stores, the awake set, disabled set, and sleeping sets), so nearly every
+   contact begin grew a pool (~15 VM objects each). Fixed by world-shared
+   pools: World.ContactManifoldPool/ContactCachePool plus shared free
+   lists, wired by reference into every SolverSet and GraphColor
+   ContactSims; ContactSims.ClearAll no longer recycles shared slots and
+   World.Clear rebuilds the shared free lists.
+2. Manifold collision scratch was created lazily on first narrow-phase
+   use (~20 objects per fresh pool object). Now created eagerly in the
+   Manifold constructor so pool growth is the only allocation moment.
+3. IslandMethods.SplitIsland allocated fresh Array(Of Integer) scratch per
+   split (splits run every step at rest). Now uses world-owned
+   SplitBodyIdsScratch/SplitStackScratch, converted to IntegerList (Clear
+   retains capacity); DfsVisitBody/DfsVisitJoints take the IntegerList.
+4. First transfer into a fresh sleeping solver set grew 36 column lists
+   (sensor sleep: ~608 allocations). Added Reserve(rows) to BodySims (28
+   columns), BodyStates (8), ContactSims (16); TrySleepIsland pre-sizes
+   from island.BodyCount/island.ContactCount, WakeSolverSet and
+   MergeSolverSets pre-size their targets from incoming counts.
+5. Per-colour constraint pools grew their fill by exactly the needed
+   count, so the wake transient's creeping overflow peak allocated one
+   ContactConstraint per new peak element every cycle. PrepareColorContacts
+   now doubles the fill on growth (amortised; sub-doubling transients are
+   allocation-free).
+6. World.ApplyContinuousHit allocated Rot.NLerp and Vector2.Lerp
+   interpolation objects per continuous hit (2 per hit step in the bullet
+   gate). Scalarised with bit-identical operation order (NLerp:
+   omt*q1+t*q2 normalised; Lerp: a+(b-a)*t).
+
+Fixture warm-ups made representative (zero assertions unchanged):
+- Sleep/wake gate: wall rescaled 20x10 to 12x10 (120 bodies) to fit the
+  30s per-test timeout; four wake/36-step/forced-sleep warm-up cycles so
+  the per-colour constraint pools and transfer stores reach the high-water
+  marks the measured window observes.
+- Sensor gate: after the 180-step crossing warm-up, a forced
+  sleep/wake cycle plus 150 settle steps so the first sleeping-set creation
+  happens during warm-up and the recycled set serves later sleeps.
+- Bullet gate: three reset flights prime the swept-query scratch, TOI
+  buffers, and per-colour constraint high-water marks.
+
+Evidence trail (per-step stage attribution):
+- Sleep/wake: 3,153 → 153 after the shared pool → 147 after split-scratch
+  and reserves → 0 with representative warm-up + fill-doubling.
+- Bullet: 101 → 26 (shared pool) → 4 (scalarised hit) → 0 (three flights).
+- Sensor: 626 → 608 (reserves did not move it; the cost was first-use
+  store capacity inside SleepIslands) → 0 with the forced cycle warm-up.
+
+Validation after probe removal:
+- objo test --project Physics2D.Tests: 335 passed, 1 failed — the only
+  failure is the expected stale-distribution checksum
+  (DistributionTests.TestDistributionInputsMatchSharedSources); dist
+  regenerates once the optimisation work is accepted.
+- objo test --project Physics2D.Benchmarks: 19 passed, 0 failed.
+- All four Stage 12 allocation gates pass in the default 30s timeout
+  (sleep/wake 25.8s).
+- Temporary probe code and the Stage12DiagTests file were removed; the
+  working tree contains only the engine fixes and gate warm-up changes.
+
+Next: resume step 5 (right-size stage12-world-queries), then step 6
+(stabilise the ten scenario definitions), then the isolated-worktree
+baseline (step 7), candidate accept/revert (step 8), dist regeneration and
+full gates (step 10), PERFORMANCE.md and the ledger (step 11).
+
 ### 2026-09-04 — resume steps 1-3 complete
 
 - Working tree confirmed clean at 956a73e (checkpoint commit is HEAD).

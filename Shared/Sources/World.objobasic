@@ -191,11 +191,11 @@ Private Property mSolverSetPool As Array(Of SolverSet)
 ## Scratch list reused by island splitting. Island splitting runs whenever
 ## a contact or joint is removed from an awake island, so this list is
 ## world-owned and cleared per use. Internal solver bookkeeping.
-Property SplitBodyIdsScratch As Array(Of Integer)
+Property SplitBodyIdsScratch As IntegerList
 
 ## DFS stack for island splitting, paired with SplitBodyIdsScratch.
 ## Internal solver bookkeeping.
-Property SplitStackScratch As Array(Of Integer)
+Property SplitStackScratch As IntegerList
 ## Opt-in pre-solve manifold editor consulted during the narrow phase.
 Property PreSolve As CustomPreSolve
 ## Opt-in material mixer consulted when contacts compute friction and
@@ -281,6 +281,7 @@ Property MoveEventQCs As DoubleList
 Property MoveEventQSs As DoubleList
 ## Moved-body event fell-asleep flags. Internal event bookkeeping; read the batched WorldEvents view instead.
 Property MoveEventFellAsleep As IntegerList
+
 
 ## Reusable event view over this world's buffers.
 ## Rebuilds the static tree with a full quality build, ported from
@@ -709,6 +710,21 @@ End Sub
 ## b2World_GetContactEvents, b2World_GetSensorEvents, and
 ## b2World_GetBodyEvents.
 Property Events As WorldEvents
+
+## World-shared pool of reusable contact manifold objects. Every solver-set
+## and graph-colour contact store indexes this pool, so a slot freed by any
+## store is immediately reusable by any other store's row append. Per-store
+## pools were replaced because contact rows migrate between stores every
+## step (touch begins/ends, wake/sleep transfers, island merges) and
+## per-store free lists scattered recycled slots away from the store that
+## needed them next, forcing fresh pool objects on nearly every begin.
+Property ContactManifoldPool As Array(Of Manifold)
+## World-shared pool of reusable simplex cache objects paired with ContactManifoldPool.
+Property ContactCachePool As Array(Of SimplexCache)
+## LIFO free list of ContactManifoldPool slots shared by every contact store.
+Property FreeContactManifoldSlots As IntegerList
+## LIFO free list of ContactCachePool slots shared by every contact store.
+Property FreeContactCacheSlots As IntegerList
 ## Scratch bit set marking sensors with stale overlap lists.
 Private Property mSensorEventBits As BitSet
 ## Scratch sweep context reused by continuous collision.
@@ -814,13 +830,25 @@ Me.Shapes = New Array(Of Shape)
 Me.Chains = New Array(Of Chain)
 Me.SolverSets = New Array(Of SolverSet)
 Me.mSolverSetPool = New Array(Of SolverSet)
-Me.SplitBodyIdsScratch = New Array(Of Integer)
-Me.SplitStackScratch = New Array(Of Integer)
+Me.ContactManifoldPool = New Array(Of Manifold)
+Me.ContactCachePool = New Array(Of SimplexCache)
+Me.FreeContactManifoldSlots = New IntegerList
+Me.FreeContactCacheSlots = New IntegerList
+Me.SplitBodyIdsScratch = New IntegerList
+Me.SplitStackScratch = New IntegerList
 # Upstream allocates sets zero to two from the solver-set id pool at world
 # creation so per-island sleeping sets start at three.
 Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), False))
 Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), False))
 Me.SolverSets.Append(New SolverSet(Me.SolverSetIdPool.AllocId(), True))
+Me.WireSharedContactPools(Me.SolverSets[0].ContactSims)
+Me.WireSharedContactPools(Me.SolverSets[1].ContactSims)
+Me.WireSharedContactPools(Me.SolverSets[2].ContactSims)
+Var graphColourIndex As Integer = 0
+While graphColourIndex < Me.ConstraintGraph.Colors.Count
+Me.WireSharedContactPools(Me.ConstraintGraph.Colors[graphColourIndex].ContactSims)
+graphColourIndex = graphColourIndex + 1
+Wend
 Me.mOverlapContext = New WorldOverlapContext
 Me.mRayCastContext = New WorldRayCastContext
 Me.mShapeCastContext = New WorldShapeCastContext
@@ -1060,6 +1088,7 @@ Var stepStart As Double = System.Ticks
 Var stageStart As Double = stepStart
 
 # Discover new contacts from moved proxies.
+stageStart = System.Ticks
 Me.UpdateBroadPhasePairs()
 Me.mProfile.PairsMs = (System.Ticks - stageStart) * 1000.0
 
@@ -1670,34 +1699,46 @@ End Sub
 Private Sub ApplyContinuousHit(bodySimIndex As Integer, fastBody As Body, context As ContinuousContext)
 Var sims As BodySims = Me.SolverSets[PhysicsConstants.AWAKE_SET].Sims
 Var sweep As Sweep = context.Sweep
-Var q As Rot = Rot.NLerp(sweep.Q1, sweep.Q2, context.Fraction)
-Var lerped As Vector2 = Vector2.Lerp(sweep.C1, sweep.C2, context.Fraction)
-Var cx As Double = lerped.X
-Var cy As Double = lerped.Y
-Var px As Double = cx - (q.C * sweep.LocalCenter.X - q.S * sweep.LocalCenter.Y)
-Var py As Double = cy - (q.S * sweep.LocalCenter.X + q.C * sweep.LocalCenter.Y)
+# Scalarised Rot.NLerp and Vector2.Lerp (bit-identical operation order:
+# NLerp is omt*q1 + t*q2 normalised by 1/mag; Lerp is a + (b - a) * t) so a
+# continuous hit advances a body without allocating interpolation objects.
+Var fraction As Double = context.Fraction
+Var omt As Double = 1.0 - fraction
+Var rawC As Double = omt * sweep.Q1.C + fraction * sweep.Q2.C
+Var rawS As Double = omt * sweep.Q1.S + fraction * sweep.Q2.S
+Var mag As Double = Maths.Sqrt(rawS * rawS + rawC * rawC)
+Var invMag As Double = 0.0
+If mag > 0.0 Then
+invMag = 1.0 / mag
+End If
+Var qC As Double = rawC * invMag
+Var qS As Double = rawS * invMag
+Var cx As Double = sweep.C1.X + (sweep.C2.X - sweep.C1.X) * fraction
+Var cy As Double = sweep.C1.Y + (sweep.C2.Y - sweep.C1.Y) * fraction
+Var px As Double = cx - (qC * sweep.LocalCenter.X - qS * sweep.LocalCenter.Y)
+Var py As Double = cy - (qS * sweep.LocalCenter.X + qC * sweep.LocalCenter.Y)
 
 # Advance the body.
-sims.QC.Items[bodySimIndex] = q.C
-sims.QS.Items[bodySimIndex] = q.S
+sims.QC.Items[bodySimIndex] = qC
+sims.QS.Items[bodySimIndex] = qS
 sims.PX.Items[bodySimIndex] = px
 sims.PY.Items[bodySimIndex] = py
 sims.CenterX.Items[bodySimIndex] = cx
 sims.CenterY.Items[bodySimIndex] = cy
-sims.R0C.Items[bodySimIndex] = q.C
-sims.R0S.Items[bodySimIndex] = q.S
+sims.R0C.Items[bodySimIndex] = qC
+sims.R0S.Items[bodySimIndex] = qS
 sims.C0X.Items[bodySimIndex] = cx
 sims.C0Y.Items[bodySimIndex] = cy
 
 # Update the body move event.
 Me.mTransformScratch.P.Set(px, py)
-Me.mTransformScratch.Q.SetComponents(q.C, q.S)
+Me.mTransformScratch.Q.SetComponents(qC, qS)
 Var moveIndex As Integer = fastBody.MoveEventIndex
 If moveIndex >= 0 Then
 Me.MoveEventPXs.Items[moveIndex] = px
 Me.MoveEventPYs.Items[moveIndex] = py
-Me.MoveEventQCs.Items[moveIndex] = q.C
-Me.MoveEventQSs.Items[moveIndex] = q.S
+Me.MoveEventQCs.Items[moveIndex] = qC
+Me.MoveEventQSs.Items[moveIndex] = qS
 End If
 
 # Refresh shape AABBs at the interpolated transform.
@@ -2432,6 +2473,15 @@ End If
 body.Name = name
 End Sub
 
+## Points one contact store's pooled object references at the world-shared
+## contact pools. See ContactManifoldPool for why the pools are shared.
+Private Sub WireSharedContactPools(sims As ContactSims)
+sims.ManifoldPool = Me.ContactManifoldPool
+sims.CachePool = Me.ContactCachePool
+sims.FreeManifolds = Me.FreeContactManifoldSlots
+sims.FreeCaches = Me.FreeContactCacheSlots
+End Sub
+
 ## Allocates a per-island sleeping solver set, ported from the sleeping set
 ## creation inside b2CreateBody.
 Private Function AllocSleepingSet() As Integer
@@ -2444,6 +2494,7 @@ Else
 solverSet = New SolverSet(setId, False)
 End If
 solverSet.SetIndex = setId
+Me.WireSharedContactPools(solverSet.ContactSims)
 If setId = Me.SolverSets.Count Then
 Me.SolverSets.Append(solverSet)
 Else
@@ -3490,6 +3541,15 @@ End If
 Var solverSet As SolverSet = Me.SolverSets[setIndex]
 Var awakeSet As SolverSet = Me.SolverSets[2]
 Var disabledSet As SolverSet = Me.SolverSets[1]
+
+# Pre-size the awake set for the incoming rows so a first large wake
+# allocates nothing. Disabled non-touching contacts are unbounded here and
+# warm through use.
+awakeSet.Sims.Reserve(awakeSet.Sims.Count() + solverSet.Sims.Count())
+If awakeSet.States <> Nothing Then
+awakeSet.States.Reserve(awakeSet.States.Count() + solverSet.Sims.Count())
+End If
+awakeSet.ContactSims.Reserve(awakeSet.ContactSims.Count() + solverSet.ContactSims.Count())
 While solverSet.Sims.Count() > 0
 Var bodyId As Integer = solverSet.Sims.BodyId.Items[0]
 Var body As Body = Me.Bodies[bodyId]
@@ -3569,6 +3629,11 @@ Var sleepSetId As Integer = Me.AllocSleepingSet()
 Var sleepSet As SolverSet = Me.SolverSets[sleepSetId]
 Var awakeSet As SolverSet = Me.SolverSets[PhysicsConstants.AWAKE_SET]
 Var disabledSet As SolverSet = Me.SolverSets[PhysicsConstants.DISABLED_SET]
+
+# Pre-size the sleeping set's stores from the island's known row counts so
+# the first transfer into a fresh sleeping solver set allocates nothing.
+sleepSet.Sims.Reserve(island.BodyCount)
+sleepSet.ContactSims.Reserve(island.ContactCount)
 
 # Move the island's bodies and their non-touching contacts.
 Var bodyId As Integer = island.HeadBody
@@ -3728,6 +3793,11 @@ setId2 = tempId
 End If
 Var targetSet As SolverSet = Me.SolverSets[setId1]
 Var sourceSet As SolverSet = Me.SolverSets[setId2]
+
+# Pre-size the target store rows for the incoming counts so a first merge
+# into a fresh sleeping set allocates nothing.
+targetSet.Sims.Reserve(targetSet.Sims.Count() + sourceSet.Sims.Count())
+targetSet.ContactSims.Reserve(targetSet.ContactSims.Count() + sourceSet.ContactSims.Count())
 
 Var bodyCount As Integer = sourceSet.Sims.Count()
 For i As Integer = 0 To bodyCount - 1
@@ -6024,6 +6094,23 @@ While Me.SolverSets.Count > 3
 Me.SolverSets.RemoveAt(Me.SolverSets.Count - 1)
 Wend
 Me.mSolverSetPool.Clear()
+# Rebuild the shared contact object free lists: every contact row was
+# destroyed above, so every pooled slot is free. This keeps the shared
+# lists consistent regardless of which removal path each row took.
+Me.FreeContactManifoldSlots.Clear()
+Me.FreeContactCacheSlots.Clear()
+Var pooledManifoldSlot As Integer = 0
+While pooledManifoldSlot < Me.ContactManifoldPool.Count
+Me.ContactManifoldPool[pooledManifoldSlot].Reset()
+Me.FreeContactManifoldSlots.Append(pooledManifoldSlot)
+pooledManifoldSlot = pooledManifoldSlot + 1
+Wend
+Var pooledCacheSlot As Integer = 0
+While pooledCacheSlot < Me.ContactCachePool.Count
+Me.ContactCachePool[pooledCacheSlot].Clear()
+Me.FreeContactCacheSlots.Append(pooledCacheSlot)
+pooledCacheSlot = pooledCacheSlot + 1
+Wend
 Me.SplitBodyIdsScratch.Clear()
 Me.SplitStackScratch.Clear()
 Me.BroadPhase.Clear()

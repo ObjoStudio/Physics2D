@@ -98,6 +98,40 @@ Function Count() As Integer
 Return Me.BodyId.Count
 End Function
 
+## Ensures every column can hold at least `rows` rows without reallocating.
+## Transfer paths call this with the known incoming row count so a first
+## wake or sleep transfer into a store allocates nothing.
+Sub Reserve(rows As Integer)
+Me.PX.Reserve(rows)
+Me.PY.Reserve(rows)
+Me.QC.Reserve(rows)
+Me.QS.Reserve(rows)
+Me.CenterX.Reserve(rows)
+Me.CenterY.Reserve(rows)
+Me.R0C.Reserve(rows)
+Me.R0S.Reserve(rows)
+Me.C0X.Reserve(rows)
+Me.C0Y.Reserve(rows)
+Me.LCX.Reserve(rows)
+Me.LCY.Reserve(rows)
+Me.ForceX.Reserve(rows)
+Me.ForceY.Reserve(rows)
+Me.Torque.Reserve(rows)
+Me.InvMass.Reserve(rows)
+Me.InvInertia.Reserve(rows)
+Me.MinExtent.Reserve(rows)
+Me.MaxExtent.Reserve(rows)
+Me.LinearDamping.Reserve(rows)
+Me.AngularDamping.Reserve(rows)
+Me.GravityScale.Reserve(rows)
+Me.BodyId.Reserve(rows)
+Me.IsBullet.Reserve(rows)
+Me.IsFast.Reserve(rows)
+Me.IsSpeedCapped.Reserve(rows)
+Me.AllowFastRotation.Reserve(rows)
+Me.EnlargeAABB.Reserve(rows)
+End Sub
+
 ## Appends a zeroed sim record and returns its local index. The caller fills
 ## position, rotation, extents, damping, gravity scale, and body identity.
 Function Add() As Integer
