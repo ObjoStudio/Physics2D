@@ -84,10 +84,10 @@ distinct SHA-256 across the runs).
     `docs/GETTING_STARTED.md` and `docs/API.md` alone, built on the first
     attempt and smoke-run against the distribution module.
 11. **Demo scene cycling + manual pass** — the automated `--soak` gate cycled
-    all ten scenes for 30 simulated minutes with exit 0 and no errors. The
+    all eight scenes for 30 simulated minutes with exit 0 and no errors. The
     manual interaction pass requires an unlocked desktop session; the
     machine was locked during this audit, so that verification remains for
-    the user. Stage 11's orientation pass (screenshots of all ten scenes and
+    the user. Stage 11's orientation pass (screenshots of all eight scenes and
     the interaction controls) is the last recorded manual verification.
 12. **Teaching-quality documentation review** — README, GETTING_STARTED,
     CONTRIBUTING written this stage; API/ARCHITECTURE/DEMO/PERFORMANCE/

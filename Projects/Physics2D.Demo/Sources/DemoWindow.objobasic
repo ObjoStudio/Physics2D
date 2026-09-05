@@ -135,7 +135,6 @@ Me.mScenes.Append(New ContinuousScene)
 Me.mScenes.Append(New QueryScene)
 Me.mScenes.Append(New ChainsScene)
 Me.mScenes.Append(New MoverScene)
-Me.mScenes.Append(New BenchmarkScene)
 
 Me.mRenderer = New CanvasDebugRenderer
 Me.mRenderer.PixelsPerMetre = DemoWindow.PIXELS_PER_METRE

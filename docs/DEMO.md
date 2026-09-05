@@ -24,7 +24,7 @@ interactively. Any runtime error is logged with its stack to
 freeze watchdog appends scene switches, a heartbeat every 120 ticks, and
 any step or paint slower than 0.25 s to `/tmp/demo-trace.log`, so a
 stalled demo records its last completed phase. `--start N` opens on
-scene N (1–9).
+scene N (1–8).
 
 ## Where each feature lives
 
@@ -41,7 +41,6 @@ scene N (1–9).
 | `Sources/QueryScene.objobasic` | Cursor ray cast and overlap region |
 | `Sources/ChainsScene.objobasic` | Chain terrain, a loop, and ghost collision |
 | `Sources/MoverScene.objobasic` | Character capsule driven by CollideMover planes, Mover.SolvePlanes, and CastMover |
-| `Sources/BenchmarkScene.objobasic` | Forty level pyramid, one step per frame |
 | `Sources/CanvasDebugRenderer.objobasic` | Desktop adapter: world metres to canvas points |
 
 Scenes build their geometry for the window's gravity preset and never set
@@ -78,9 +77,7 @@ steps. When the cap bites, the window drops the leftover accumulator so
 a scene heavier than real time runs in slow motion instead of wedging
 the interface. Rendering reads the post-step state directly (no
 interpolation); the visual lag is under one step and the demo stays
-simple. The benchmark scene runs one substep and one fixed step per
-frame, so the forty level pyramid stays responsive; measurement happens
-in the Benchmarks project, never here.
+simple. Measurement happens in the Benchmarks project, never here.
 
 ## Metres to pixels
 
@@ -195,7 +192,7 @@ not garbage. Rules the demo follows:
 
 | Input | Action |
 |---|---|
-| `1`–`9` | Select scene 1–9 |
+| `1`–`8` | Select scene 1–8 |
 | `P` or Space | Pause or resume |
 | `S` | Single fixed step while paused |
 | `R` | Rebuild the current scene |
