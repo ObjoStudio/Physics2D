@@ -38,4 +38,16 @@ level = level + 1
 Wend
 world.Validate()
 End Sub
+
+## One substep per fixed step: the forty level pyramid is the stress view.
+Override Function Substeps() As Integer
+Return 1
+End Function
+
+## One fixed step per rendered frame: the pyramid is far heavier than
+## real time, so the window drops the backlog and the scene runs in slow
+## motion instead of wedging.
+Override Function MaximumStepsPerTick() As Integer
+Return 1
+End Function
 End Class

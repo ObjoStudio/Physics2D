@@ -73,13 +73,15 @@ mAccumulator = mAccumulator - 1.0 / 60.0
 Wend
 ```
 
-The 0.25 s clamp is the guard against the death spiral: after the app
-returns from being backgrounded, one catch-up burst never runs more than
-fifteen steps. Rendering reads the post-step state directly (no
-interpolation); the visual lag is under one step and the demo stays simple.
-The benchmark scene lowers `Substeps()` to one so the forty level pyramid
-stays interactive; measurement happens in the Benchmarks project, never
-here.
+The 0.25 s clamp bounds a single frame's measured time, and each scene
+bounds the burst itself: `MaximumStepsPerTick` defaults to four fixed
+steps. When the cap bites, the window drops the leftover accumulator so
+a scene heavier than real time runs in slow motion instead of wedging
+the interface. Rendering reads the post-step state directly (no
+interpolation); the visual lag is under one step and the demo stays
+simple. The benchmark scene runs one substep and one fixed step per
+frame, so the forty level pyramid stays responsive; measurement happens
+in the Benchmarks project, never here.
 
 ## Metres to pixels
 

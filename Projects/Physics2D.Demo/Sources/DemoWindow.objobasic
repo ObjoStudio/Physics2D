@@ -256,6 +256,7 @@ If Self.mSoakMode Then
 Self.mAccumulator = Self.mAccumulator + 0.25
 End If
 Self.mAccumulator = Self.mAccumulator + frame
+Var stepsRun As Integer = 0
 While Self.mAccumulator >= DemoWindow.FIXED_DT
 Var stepStart As Double = System.Ticks
 Self.mWorld.StepWorld(DemoWindow.FIXED_DT, Self.mScene.Substeps())
@@ -264,6 +265,7 @@ If stepCost > 0.25 Then
 Self.Trace("slow step " + stepCost.ToString("F2") + " s at tick " + Self.mTickCounter.ToString())
 End If
 Self.mStepTotal = Self.mStepTotal + 1
+stepsRun = stepsRun + 1
 Self.mAccumulator = Self.mAccumulator - DemoWindow.FIXED_DT
 If Self.mSoakMode Then
 Self.mSoakStepsLeft = Self.mSoakStepsLeft - 1
@@ -272,6 +274,12 @@ Self.mSceneElapsed = Self.mSceneElapsed + DemoWindow.FIXED_DT
 End If
 If Self.mPaused Then
 # A single step consumes exactly one fixed step.
+Self.mAccumulator = 0.0
+Exit While
+End If
+If Self.mSoakMode = False And stepsRun >= Self.mScene.MaximumStepsPerTick() Then
+# Cap reached: drop the backlog so a scene heavier than real time runs
+# in slow motion instead of wedging the event loop.
 Self.mAccumulator = 0.0
 Exit While
 End If

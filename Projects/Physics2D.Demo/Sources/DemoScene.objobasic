@@ -56,6 +56,15 @@ Function Substeps() As Integer
 Return 4
 End Function
 
+## Upper bound on fixed steps the window runs per rendered frame for this
+## scene. The default bounds a catch-up burst after a stall; scenes
+## heavier than real time override it (the benchmark pyramid uses one)
+## and the window drops the leftover accumulator, so the scene runs in
+## slow motion instead of wedging the interface.
+Function MaximumStepsPerTick() As Integer
+Return 4
+End Function
+
 ## Log lines shown under the HUD, such as recent sensor events. Scenes
 ## without a log return an empty array.
 Function EventLines() As Array(Of String)
