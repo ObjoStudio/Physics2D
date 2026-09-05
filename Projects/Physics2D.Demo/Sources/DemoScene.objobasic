@@ -1,8 +1,9 @@
 # Base class for the Physics2D demo scenes, part of the demo application
 # only. A scene owns no engine state: it populates a fresh world in Build,
-# runs per-frame logic in Update, and may draw query visuals in
-# PaintExtras. Scenes use only documented public Physics2D APIs so they
-# teach the same patterns as the user documentation.
+# runs per-frame logic in Update, may draw query visuals in PaintExtras,
+# and may consume scene-specific keys in HandleKey. Scenes use only
+# documented public Physics2D APIs so they teach the same patterns as the
+# user documentation.
 Abstract Class DemoScene
 ## Scene name shown in the HUD and the scene list.
 Property Title As String
@@ -14,16 +15,11 @@ Property Description As String
 ## for this scene.
 Property WantsCursorQuery As Boolean
 
-## Whether the window should draw the mover capsule and its planes for
-## this scene.
-Property WantsMover As Boolean
-
 ## Creates a scene with its title and explanation.
 Constructor(title As String, description As String)
 Me.Title = title
 Me.Description = description
 Me.WantsCursorQuery = False
-Me.WantsMover = False
 End Constructor
 
 ## Populates a fresh world with the scene's bodies. The world arrives with
@@ -45,6 +41,13 @@ Sub PaintExtras(world As World, renderer As CanvasDebugRenderer)
 Pragma Unused world
 Pragma Unused renderer
 End Sub
+
+## Consumes a scene-specific key after the window's global keys. Scenes
+## with extra controls, such as the mover's arrow keys, override this;
+## the default consumes nothing. Returns True when the key was used.
+Function HandleKey(keyName As String) As Boolean
+Return False
+End Function
 
 ## Physics substeps the window uses for this scene. Heavy scenes may
 ## reduce the count for interactivity; the default matches the

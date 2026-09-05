@@ -4,13 +4,13 @@
 # controllers. Screen convention: gravity pulls toward positive Y (down
 # the canvas), jumps push toward negative Y (up the canvas).
 Class MoverScene Inherits DemoScene
-## Horizontal mover input, -1 to 1, set by the window's arrow keys.
+## Horizontal mover input, -1 to 1, set by this scene's HandleKey from
+## the window's arrow keys.
 Property MoveInput As Double
 
 ## Creates the mover scene.
 Constructor()
 Super.Constructor("Character mover", "Arrow keys move the capsule. It sweeps with World.CastMover, registers planes with World.CollideMover, and hops with the up arrow.")
-Me.WantsMover = True
 Me.mVelocity = New Vector2(0.0, 0.0)
 Me.mFilter = New QueryFilter
 Me.mCollector = New MoverPlaneCollector
@@ -99,6 +99,38 @@ Wend
 # grounded state from floor-facing planes.
 Me.mVelocity = Mover.ClipVector(Me.mVelocity, Me.mCollector.Planes, Me.mCollector.PlanesCount)
 Me.mGrounded = Me.mCollector.SawFloor
+End Sub
+
+## Consumes the arrow keys that drive the capsule; other scenes never
+## see this override, so the window needs no type test or downcast.
+Override Function HandleKey(keyName As String) As Boolean
+If keyName = Key.Up Then
+Me.QueueJump()
+Return True
+End If
+If keyName = Key.Left Then
+Me.MoveInput = -1.0
+Return True
+End If
+If keyName = Key.Right Then
+Me.MoveInput = 1.0
+Return True
+End If
+If keyName = Key.Down Then
+Me.MoveInput = 0.0
+Return True
+End If
+Return False
+End Function
+
+## Draws the mover capsule: blue while grounded, orange while airborne.
+Override Sub PaintExtras(world As World, renderer As CanvasDebugRenderer)
+Pragma Unused world
+Var fill As Colour = Colour.RGB(90, 200, 250)
+If Me.mGrounded = False Then
+fill = Colour.RGB(230, 150, 90)
+End If
+renderer.DrawSolidCapsule(Me.mMover.Center1, Me.mMover.Center2, Me.mMover.Radius, fill)
 End Sub
 
 ## Queues a jump for the next update.

@@ -26,7 +26,7 @@ non-zero. `--start N` opens on scene N (1–10).
 |---|---|
 | `Sources/App-*.objobasic` | Application entry: parses `--soak`, creates and shows the window |
 | `Sources/DemoWindow.objobasic` | Window, fixed-timestep loop, input, HUD, scene switching |
-| `Sources/DemoScene.objobasic` | Scene base class: Build, Update, PaintExtras, Substeps, EventLines |
+| `Sources/DemoScene.objobasic` | Scene base class: Build, Update, PaintExtras, HandleKey, Substeps, EventLines |
 | `Sources/WelcomeScene.objobasic` | Playground: one body per shape family |
 | `Sources/PyramidScene.objobasic` | Sleeping pyramid with a delayed wrecking ball |
 | `Sources/MaterialsScene.objobasic` | Friction, restitution, rolling resistance, conveyor |

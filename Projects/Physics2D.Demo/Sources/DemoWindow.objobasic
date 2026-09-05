@@ -323,10 +323,6 @@ If Self.mScene.WantsCursorQuery And Self.mCursorInside Then
 Self.PaintCursorQuery(g)
 End If
 
-If Self.mScene.WantsMover Then
-Self.PaintMover(g)
-End If
-
 Self.PaintHud(g)
 Catch e As RuntimeException
 Self.mErrorCount = Self.mErrorCount + 1
@@ -359,18 +355,6 @@ quad[1].Set(bounds.UpperBound.X, bounds.LowerBound.Y)
 quad[2].Set(bounds.UpperBound.X, bounds.UpperBound.Y)
 quad[3].Set(bounds.LowerBound.X, bounds.UpperBound.Y)
 Me.mRenderer.DrawPolygon(quad, 4, Colour.RGB(255, 215, 0))
-End Sub
-
-## Paints the mover capsule and its grounded state.
-Private Sub PaintMover(g As Graphics)
-Pragma Unused g
-Var moverScene As MoverScene = MoverScene(Me.mScene)
-Var mover As Capsule = moverScene.GetMover()
-Var color As Colour = Colour.RGB(90, 200, 250)
-If moverScene.IsGrounded() = False Then
-color = Colour.RGB(230, 150, 90)
-End If
-Me.mRenderer.DrawSolidCapsule(mover.Center1, mover.Center2, mover.Radius, color)
 End Sub
 
 ## Paints the HUD lines over the scene.
@@ -470,21 +454,6 @@ If keyName = Key.W Then
 Self.mWorld.EnableSleeping = Not Self.mWorld.EnableSleeping
 Return True
 End If
-If keyName = Key.Up Then
-Var moverScene As MoverScene = MoverScene(Self.mScene)
-moverScene.QueueJump()
-Return True
-End If
-If keyName = Key.Left Then
-Var moverScene As MoverScene = MoverScene(Self.mScene)
-moverScene.MoveInput = -1.0
-Return True
-End If
-If keyName = Key.Right Then
-Var moverScene As MoverScene = MoverScene(Self.mScene)
-moverScene.MoveInput = 1.0
-Return True
-End If
 # F1-F8 toggle debug-draw layers.
 If keyName = Key.F1 Then
 Self.mOptions.DrawShapes = Not Self.mOptions.DrawShapes
@@ -518,15 +487,15 @@ If keyName = Key.F8 Then
 Self.mOptions.DrawIslands = Not Self.mOptions.DrawIslands
 Return True
 End If
-# Digits select scenes; Down and Up release mover input.
-If keyName = Key.Down Then
-Var moverScene As MoverScene = MoverScene(Self.mScene)
-moverScene.MoveInput = 0.0
-Return True
-End If
+# Digits select scenes.
 Var sceneKey As Integer = DemoWindow.SceneDigit(keyName)
 If sceneKey >= 0 Then
 Self.SelectScene(sceneKey)
+Return True
+End If
+# Scene-specific keys go to the active scene; scenes without extra
+# controls consume nothing.
+If Self.mScene.HandleKey(keyName) Then
 Return True
 End If
 Return False
