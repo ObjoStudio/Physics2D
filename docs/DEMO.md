@@ -17,14 +17,14 @@ fixed steps), counted per executed step so the gate terminates regardless
 of timer throttling. While soaking the loop runs flat out, executing a
 full catch-up budget of steps per tick, so the gate completes in a few
 wall minutes instead of thirty. Scene logic advances on simulated time
-while soaking, so scene timers — the pyramid's wrecking ball, the sensor
-drops, the CCD bullets — fire within each scene window exactly as they
-do interactively. Any runtime error is logged with its stack to
+while soaking, so scene timers — the sensor drops, the CCD bullets, the
+conveyor — fire within each scene window exactly as they do
+interactively. Any runtime error is logged with its stack to
 `/tmp/physics2d-demo-errors.log` and makes the gate exit non-zero. A
 freeze watchdog appends scene switches, a heartbeat every 120 ticks, and
 any step or paint slower than 0.25 s to `/tmp/demo-trace.log`, so a
 stalled demo records its last completed phase. `--start N` opens on
-scene N (1–10).
+scene N (1–9).
 
 ## Where each feature lives
 
@@ -32,9 +32,8 @@ scene N (1–10).
 |---|---|
 | `Sources/App-*.objobasic` | Application entry: parses `--soak`, creates and shows the window |
 | `Sources/DemoWindow.objobasic` | Window, fixed-timestep loop, input, HUD, scene switching |
-| `Sources/DemoScene.objobasic` | Scene base class: Build, Update, PaintExtras, HandleKey, Substeps, EventLines |
+| `Sources/DemoScene.objobasic` | Scene base class: Build, Update, PaintExtras, HandleKey, Substeps, MaximumStepsPerTick, EventLines |
 | `Sources/WelcomeScene.objobasic` | Playground: one body per shape family |
-| `Sources/PyramidScene.objobasic` | Sleeping pyramid with a delayed wrecking ball |
 | `Sources/MaterialsScene.objobasic` | Friction, restitution, rolling resistance, conveyor |
 | `Sources/SensorFilterScene.objobasic` | Sensor events, category/mask filters, group index |
 | `Sources/JointsScene.objobasic` | All seven joint families in one world |
@@ -196,7 +195,7 @@ not garbage. Rules the demo follows:
 
 | Input | Action |
 |---|---|
-| `1`–`9`, `0` | Select scene 1–10 |
+| `1`–`9` | Select scene 1–9 |
 | `P` or Space | Pause or resume |
 | `S` | Single fixed step while paused |
 | `R` | Rebuild the current scene |

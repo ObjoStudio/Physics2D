@@ -128,7 +128,6 @@ Me.mSoakSceneStepsLeft = DemoWindow.SOAK_SCENE_STEPS
 
 Me.mScenes = New Array(Of DemoScene)
 Me.mScenes.Append(New WelcomeScene)
-Me.mScenes.Append(New PyramidScene)
 Me.mScenes.Append(New MaterialsScene)
 Me.mScenes.Append(New SensorFilterScene)
 Me.mScenes.Append(New JointsScene)
@@ -173,8 +172,12 @@ AddHandler Me.Opened, AddressOf SelfOpened
 Me.SelectScene(0)
 End Constructor
 
-## Selects the starting scene before the window opens.
+## Selects the starting scene before the window opens. Out-of-range
+## indices from the command line are ignored and the first scene opens.
 Sub SetStartScene(index As Integer)
+If index < 0 Or index >= Me.mScenes.Count Then
+Return
+End If
 Me.SelectScene(index)
 End Sub
 
@@ -564,7 +567,7 @@ Return True
 End If
 # Digits select scenes.
 Var sceneKey As Integer = DemoWindow.SceneDigit(keyName)
-If sceneKey >= 0 Then
+If sceneKey >= 0 And sceneKey < Self.mScenes.Count Then
 Self.SelectScene(sceneKey)
 Return True
 End If
