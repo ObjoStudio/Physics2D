@@ -6,7 +6,6 @@ Class WelcomeScene Inherits DemoScene
 ## Creates the playground scene.
 Constructor()
 Super.Constructor("Welcome playground", "Right click spawns a box, middle click a circle. Drag bodies with the left button. Keys: P pause, S step, R reset.")
-Me.WantsSceneMenu = True
 End Constructor
 
 ## Drops one body of every shape family onto the ground. Screen demos

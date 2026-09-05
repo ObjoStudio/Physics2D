@@ -16,9 +16,15 @@ completes. The default is 30 minutes of simulated physics time (108,000
 fixed steps), counted per executed step so the gate terminates regardless
 of timer throttling. While soaking the loop runs flat out, executing a
 full catch-up budget of steps per tick, so the gate completes in a few
-wall minutes instead of thirty. Any runtime error is logged with its
-stack to `/tmp/physics2d-demo-errors.log` and makes the gate exit
-non-zero. `--start N` opens on scene N (1–10).
+wall minutes instead of thirty. Scene logic advances on simulated time
+while soaking, so scene timers — the pyramid's wrecking ball, the sensor
+drops, the CCD bullets — fire within each scene window exactly as they
+do interactively. Any runtime error is logged with its stack to
+`/tmp/physics2d-demo-errors.log` and makes the gate exit non-zero. A
+freeze watchdog appends scene switches, a heartbeat every 120 ticks, and
+any step or paint slower than 0.25 s to `/tmp/demo-trace.log`, so a
+stalled demo records its last completed phase. `--start N` opens on
+scene N (1–10).
 
 ## Where each feature lives
 
@@ -44,9 +50,10 @@ Scenes build their geometry for the window's gravity preset and never set
 chosen preset. The one exception is the continuous scene, which pins zero
 gravity because its bullet corridor is authored for weightless motion.
 
-The welcome playground draws a scene menu in the canvas's top-right corner
-listing the digit key and title of every other scene, so keyboard scene
-switching is discoverable before the user finds the help line.
+Every scene draws a scene menu in the canvas's top-right corner listing
+each scene's digit key and title, with the active scene marked by a
+chevron, so keyboard scene switching is discoverable without the help
+line.
 
 ## The fixed-timestep loop
 

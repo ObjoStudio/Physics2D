@@ -92,6 +92,17 @@ Private Property mSoakStepsLeft As Integer
 ## Remaining soak steps in the current scene before the next switch.
 Private Property mSoakSceneStepsLeft As Integer
 
+## Simulated seconds accrued since the last scene Update while soaking,
+## so scene timers fire on simulated time (a napped or flat-out timer
+## must not freeze scene logic like the wrecking-ball countdown).
+Private Property mSceneElapsed As Double
+
+## TEMPORARY DIAGNOSTICS: total fixed steps executed, for the trace log.
+Private Property mStepTotal As Integer
+
+## TEMPORARY DIAGNOSTICS: ticks since launch, for the trace log.
+Private Property mTickCounter As Integer
+
 ## Simulated seconds per scene while soaking, in fixed steps: 30 s at
 ## 60 steps per second.
 Private Shared Const SOAK_SCENE_STEPS As Integer = 1800
@@ -179,6 +190,7 @@ End Sub
 ## Selects a scene by index, rebuilding the world with the current
 ## gravity preset.
 Private Sub SelectScene(index As Integer)
+Self.Trace("select scene " + index.ToString())
 Me.mSceneIndex = index
 Me.mScene = Me.mScenes[index]
 Me.mWorld = DemoWindow.MakeWorld(Me.mGravityPreset)
@@ -215,9 +227,16 @@ Wend
 Return Nothing
 End Function
 
+## TEMPORARY DIAGNOSTICS: appends one line to /tmp/demo-trace.log.
+Private Sub Trace(line As String)
+Var file As FileSystemItem = New FileSystemItem("/tmp/demo-trace.log")
+file.AppendText(line + EndOfLine.Native)
+End Sub
+
 ## Advances the fixed-timestep loop, runs scene logic, and repaints.
 Private Sub FrameTick()
 Try
+Self.mTickCounter = Self.mTickCounter + 1
 Var now As Double = System.Ticks
 Var frame As Double = now - Self.mLastTicks
 Self.mLastTicks = now
@@ -238,11 +257,18 @@ Self.mAccumulator = Self.mAccumulator + 0.25
 End If
 Self.mAccumulator = Self.mAccumulator + frame
 While Self.mAccumulator >= DemoWindow.FIXED_DT
+Var stepStart As Double = System.Ticks
 Self.mWorld.StepWorld(DemoWindow.FIXED_DT, Self.mScene.Substeps())
+Var stepCost As Double = System.Ticks - stepStart
+If stepCost > 0.25 Then
+Self.Trace("slow step " + stepCost.ToString("F2") + " s at tick " + Self.mTickCounter.ToString())
+End If
+Self.mStepTotal = Self.mStepTotal + 1
 Self.mAccumulator = Self.mAccumulator - DemoWindow.FIXED_DT
 If Self.mSoakMode Then
 Self.mSoakStepsLeft = Self.mSoakStepsLeft - 1
 Self.mSoakSceneStepsLeft = Self.mSoakSceneStepsLeft - 1
+Self.mSceneElapsed = Self.mSceneElapsed + DemoWindow.FIXED_DT
 End If
 If Self.mPaused Then
 # A single step consumes exactly one fixed step.
@@ -272,9 +298,17 @@ Self.SelectScene(nextIndex)
 End If
 End If
 
+If Self.mSoakMode Then
+Self.mScene.Update(Self.mWorld, Self.mSceneElapsed)
+Self.mSceneElapsed = 0.0
+Else
 Self.mScene.Update(Self.mWorld, frame)
+End If
 
 Self.mCanvas.Refresh()
+If Self.mTickCounter Mod 120 = 0 Then
+Self.Trace("tick " + Self.mTickCounter.ToString() + " total-steps " + Self.mStepTotal.ToString() + " err " + Self.mErrorCount.ToString() + " fps " + Self.mFps.ToString("F1"))
+End If
 Catch e As RuntimeException
 Self.mErrorCount = Self.mErrorCount + 1
 Self.LogError(e, "tick")
@@ -283,6 +317,9 @@ End Sub
 
 ## Writes one runtime error and its stack to /tmp so swallowed event-loop
 ## exceptions stay diagnosable; the soak gate counts them in its exit code.
+## The same file family carries the freeze watchdog in Trace: scene
+## switches, a 120-tick heartbeat, and any step or paint slower than
+## 0.25 s, so a stalled run records its last completed phase.
 Private Sub LogError(e As RuntimeException, context As String)
 Var line As String = context + " | " + e.Message
 If e.ThrowSite <> Nothing Then
@@ -304,6 +341,7 @@ End Sub
 ## world; it never steps or mutates it.
 Private Sub CanvasPaint(g As Graphics)
 Try
+Var paintStart As Double = System.Ticks
 Self.mFrameCount = Self.mFrameCount + 1
 Var now As Double = System.Ticks
 If now - Self.mFpsWindowStart >= 0.5 Then
@@ -323,11 +361,12 @@ If Self.mScene.WantsCursorQuery And Self.mCursorInside Then
 Self.PaintCursorQuery(g)
 End If
 
-If Self.mScene.WantsSceneMenu Then
 Self.PaintSceneMenu(g)
-End If
-
 Self.PaintHud(g)
+Var paintCost As Double = System.Ticks - paintStart
+If paintCost > 0.25 Then
+Self.Trace("slow paint " + paintCost.ToString("F2") + " s frame " + Self.mFrameCount.ToString())
+End If
 Catch e As RuntimeException
 Self.mErrorCount = Self.mErrorCount + 1
 Self.LogError(e, "paint")
@@ -361,22 +400,25 @@ quad[3].Set(bounds.LowerBound.X, bounds.UpperBound.Y)
 Me.mRenderer.DrawPolygon(quad, 4, Colour.RGB(255, 215, 0))
 End Sub
 
-## Paints the scene picker menu: the digit key and title of every scene
-## except the active one, so keyboard scene switching is discoverable
-## without reading the help line. The keys mirror SceneDigit's mapping.
+## Paints the scene picker menu beside the world: the digit key and
+## title of every scene, with the active scene marked by a chevron so
+## the menu doubles as a current-scene indicator. The keys mirror
+## SceneDigit's mapping.
 Private Sub PaintSceneMenu(g As Graphics)
 g.DrawingColour = Colour.RGB(150, 158, 170)
 g.DrawText("Number keys:", Self.mCanvas.Width - 200.0, 8.0)
 Var i As Integer = 0
-Var row As Integer = 0
 While i < Self.mScenes.Count
-If i <> Self.mSceneIndex Then
 Var digit As Integer = (i + 1) Mod 10
+Var y As Double = 26.0 + i * 18.0
 g.DrawingColour = Colour.RGB(255, 210, 80)
-g.DrawText(digit.ToString(), Self.mCanvas.Width - 200.0, 26.0 + row * 18.0)
+g.DrawText(digit.ToString(), Self.mCanvas.Width - 200.0, y)
+If i = Self.mSceneIndex Then
+g.DrawingColour = Colour.RGB(240, 240, 240)
+g.DrawText("> " + Self.mScenes[i].Title, Self.mCanvas.Width - 178.0, y)
+Else
 g.DrawingColour = Colour.RGB(170, 180, 190)
-g.DrawText(Self.mScenes[i].Title, Self.mCanvas.Width - 178.0, 26.0 + row * 18.0)
-row = row + 1
+g.DrawText(Self.mScenes[i].Title, Self.mCanvas.Width - 178.0, y)
 End If
 i = i + 1
 Wend

@@ -15,17 +15,11 @@ Property Description As String
 ## for this scene.
 Property WantsCursorQuery As Boolean
 
-## Whether the window should draw the scene picker menu listing every
-## scene's number key. The welcome playground sets this so new users
-## discover keyboard scene switching.
-Property WantsSceneMenu As Boolean
-
 ## Creates a scene with its title and explanation.
 Constructor(title As String, description As String)
 Me.Title = title
 Me.Description = description
 Me.WantsCursorQuery = False
-Me.WantsSceneMenu = False
 End Constructor
 
 ## Populates a fresh world with the scene's bodies. The world arrives with
