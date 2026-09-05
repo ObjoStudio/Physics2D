@@ -68,7 +68,7 @@ Var seen As Boolean = False
 For j As Integer = 0 To unique.Count - 1
 If unique[j] = pairs[i] Then
 seen = True
-Break
+Exit For
 End If
 Next j
 If seen = False Then

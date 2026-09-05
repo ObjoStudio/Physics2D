@@ -171,9 +171,14 @@ in the Objo checkout remains authoritative.
   it allocates nothing. It comes from the Objo checkout at commit `485c4fab`
   (issue #1299) and is not yet in a released Studio; see the Minimum Objo
   Version section of `docs/PORTING.md`.
-- `Break` exits the innermost loop only. Inside `While ... For ... Break`,
-  the `Break` leaves the `For`, not the `While`; use a boolean flag when the
-  intent is to leave both.
+- `Exit` (optionally `Exit While`, `Exit For`, `Exit Do`) exits the innermost
+  loop; use a boolean flag when the intent is to leave nested loops. `Break`
+  does NOT exit loops: Objo commit `de96e932` ("Implement Break keyword as
+  programmatic breakpoint") made `Break` pause execution whenever a debugger
+  is attached and a no-op otherwise. Never use `Break` for loop control in
+  module, demo, or test sources; a reached `Break` turns every debug run into
+  a pause inside physics internals (engine commit
+  `de96e932b2b9f6a1ebe1344d2f9cd3fc26c73083`).
 - A property and a method cannot share a name in one class. The reuse pattern
   is a private-name property plus a public accessor, as in `Manifold`'s
   `mScratch` property and `Scratch()` method.

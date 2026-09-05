@@ -247,7 +247,7 @@ End If
 If Self.mPaused Then
 # A single step consumes exactly one fixed step.
 Self.mAccumulator = 0.0
-Break
+Exit While
 End If
 Wend
 Self.mStepOnce = False

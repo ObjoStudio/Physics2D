@@ -198,7 +198,8 @@ Var count As Integer = Me.MoveArray.Count
 For i As Integer = 0 To count - 1
 If Me.MoveArray.Items[i] = proxyKey Then
 Me.MoveArray.RemoveSwap(i)
-Break
+# Exit, not Break (Break is Objo's debugger-breakpoint statement).
+Exit For
 End If
 Next i
 End If

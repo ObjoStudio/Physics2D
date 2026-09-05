@@ -11,7 +11,7 @@
 # Input: BodySims.objobasic a5485d1e47fb8c939ae151cc9e72b4f3cd3b20695a310aab63d10c5fb5dc40f3
 # Input: BodyStates.objobasic f333caabb6481f002f3a95e7ae9313781a70195fccce1cd16d032a117c4939ba
 # Input: BodyType-ee3f0727-fa8d-4967-b4d7-d603cf4d360f.objobasic bfcfff5fa273c0dd6e1cf4df8a120cbf91a278dbedccda64660f9667bf92404c
-# Input: BroadPhase-0a5f096e-e982-43bf-8d21-9bd30be75593.objobasic eca1edfbb8c0f9e00a78c28502ab242a6c10d1d4930d0c7fc9a1b9e60820311f
+# Input: BroadPhase-0a5f096e-e982-43bf-8d21-9bd30be75593.objobasic be78f899853ff00703ff0d15a6ef38cf21c184a3392da8d3d39f79dc974d91c7
 # Input: BroadPhasePairSink-51b85b57-7ae5-4b25-b19d-f2416a1ec73c.objobasic 9d84130a2512bfd860c5f24780a9dc86e206e5647df7afddb5d988bc237efb77
 # Input: BroadPhaseQueryContext-6a904469-8dbf-4d77-a18a-13216ab74eac.objobasic 899e7564d5ad95a36cf7b34fca8d6a16d036fe8210f84a675d71335d6df00cd0
 # Input: Capsule-f9484042-9a35-4f26-b657-5c45a198eca0.objobasic 9c046142e6c3b300de364d2d9d34e9333b663ae115eda9cc38913c6edfa19b64
@@ -52,7 +52,7 @@
 # Input: DistanceOutput-d619ee17-034e-4a05-a8d7-d61257435965.objobasic 15dd3383c16f63efed47c74647dfe3949d0481fcb721b5300cd2b84b54fec98a
 # Input: DistanceScratch-b2490261-2e05-45e6-97e1-2d0a41723f65.objobasic f9e1514b2da2d9421f452082d7ddeb84aa9a1af10c333bc05ee6a01d7f050c04
 # Input: DoubleList-bf54ef29-8eae-4760-bd6b-fae9a46f6114.objobasic 88f6cd11834dcbdad3bd27ec627e3538f2f2427177020c6047c557ecb4019516
-# Input: DynamicTree-55542eb0-42a0-4347-b11f-3b7e2e8c53c6.objobasic ac6b68a02f16f857df7fa0607843ce77b76e57169086dccc5e8fa413bc9456d7
+# Input: DynamicTree-55542eb0-42a0-4347-b11f-3b7e2e8c53c6.objobasic 2111b9b4e0e915ded0b84e03ab848d650d8e8ffc132b31ab34f7930b43751f3d
 # Input: ExplosionContext.objobasic 50ac424b117e66bcfd9ebaccb41a3bc60459640a16f6c0033b0dd3718ae61cc3
 # Input: ExplosionDefinition.objobasic 4b0f80307b6eebaae79be6472388a61c0594699dd4cd2387f45b739062a74439
 # Input: Filter.objobasic 455187bd46728c62c4c2784de321128dacf43ccf7964a1352b88c042796bac78
@@ -205,7 +205,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# Source content checksum (SHA-256): 0316779bff23b3bd915d5d5e0462ae203723aa8d3307fbdbf2915e33ddf9a4ba
+# Source content checksum (SHA-256): 1424b5e315c9796c6ddeec2331f822f422bd83ac9e245326f9f2d0d474ce3d6e
 # Upstream algorithms: Box2D v3.1.1, commit
 # 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (MIT licence).
 # See THIRD_PARTY_NOTICES.md and docs/PORTING.md.
@@ -1923,7 +1923,8 @@ Var count As Integer = Me.MoveArray.Count
 For i As Integer = 0 To count - 1
 If Me.MoveArray.Items[i] = proxyKey Then
 Me.MoveArray.RemoveSwap(i)
-Break
+# Exit, not Break (Break is Objo's debugger-breakpoint statement).
+Exit For
 End If
 Next i
 End If
@@ -9316,7 +9317,10 @@ Var lowerCost1 As Double = Me.EvaluateChildCost(child1, lowerDX, lowerDY, upperD
 Var lowerCost2 As Double = Me.EvaluateChildCost(child2, lowerDX, lowerDY, upperDX, upperDY, inheritedCost, areaD)
 
 If Me.DoneDescending(child1, child2, leaf1, leaf2, lowerCost1, lowerCost2, centerDX, centerDY) Then
-Break
+# Exit, never Break: Objo's Break statement is a programmatic debugger
+# breakpoint, not a loop exit. Under the Studio debugger every reached
+# Break pauses the app, and without a debugger Break is a no-op.
+Exit While
 End If
 
 # Descend along the cheaper child.
@@ -9767,7 +9771,8 @@ parentNode.Flags = parentNode.Flags.BitOr(TreeNode.EnlargedFlag)
 parentIndex = parentNode.Parent
 
 If changed = False Then
-Break
+# Exit, not Break (Break is Objo's debugger-breakpoint statement).
+Exit While
 End If
 Wend
 
@@ -9776,7 +9781,8 @@ Var parentNode As TreeNode = nodes[parentIndex]
 If parentNode.IsEnlarged() Then
 # Early out because this ancestor was previously ascended and marked
 # as enlarged.
-Break
+# Exit, not Break (Break is Objo's debugger-breakpoint statement).
+Exit While
 End If
 
 parentNode.Flags = parentNode.Flags.BitOr(TreeNode.EnlargedFlag)

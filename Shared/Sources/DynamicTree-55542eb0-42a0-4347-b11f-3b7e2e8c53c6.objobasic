@@ -257,7 +257,10 @@ Var lowerCost1 As Double = Me.EvaluateChildCost(child1, lowerDX, lowerDY, upperD
 Var lowerCost2 As Double = Me.EvaluateChildCost(child2, lowerDX, lowerDY, upperDX, upperDY, inheritedCost, areaD)
 
 If Me.DoneDescending(child1, child2, leaf1, leaf2, lowerCost1, lowerCost2, centerDX, centerDY) Then
-Break
+# Exit, never Break: Objo's Break statement is a programmatic debugger
+# breakpoint, not a loop exit. Under the Studio debugger every reached
+# Break pauses the app, and without a debugger Break is a no-op.
+Exit While
 End If
 
 # Descend along the cheaper child.
@@ -708,7 +711,8 @@ parentNode.Flags = parentNode.Flags.BitOr(TreeNode.EnlargedFlag)
 parentIndex = parentNode.Parent
 
 If changed = False Then
-Break
+# Exit, not Break (Break is Objo's debugger-breakpoint statement).
+Exit While
 End If
 Wend
 
@@ -717,7 +721,8 @@ Var parentNode As TreeNode = nodes[parentIndex]
 If parentNode.IsEnlarged() Then
 # Early out because this ancestor was previously ascended and marked
 # as enlarged.
-Break
+# Exit, not Break (Break is Objo's debugger-breakpoint statement).
+Exit While
 End If
 
 parentNode.Flags = parentNode.Flags.BitOr(TreeNode.EnlargedFlag)

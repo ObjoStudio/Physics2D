@@ -1124,6 +1124,28 @@ After the gate passes, continue the remaining joint families in the order and
 vertical-slice workflow specified in Stage 9. Update this ledger only from
 fresh recorded evidence.
 
+### Post-completion repair (2026-09-04): `Exit`, never `Break`
+
+The demo's first debugger run paused inside `DynamicTree.FindBestSibling` at
+its `Break` statement before the window appeared. Engine commit `de96e932`
+("Implement Break keyword as programmatic breakpoint", 2026-02-10) defines
+`Break` as a programmatic debugger breakpoint — pause under a debugger,
+no-op otherwise — and never as a loop exit; loop exit is `Exit` (engine
+commit `d919565f`, 2026-02-08). The stale AGENTS.md note claiming `Break`
+exits loops (a Xojo-ism) had led six sites to use `Break` for loop control:
+`DynamicTree` x3 (`FindBestSibling` descent stop, both `EnlargeProxy`
+ascent early-outs), `BroadPhase` move-buffer removal scan, the demo's
+single-step accumulator loop, and a `BroadPhaseTests` duplicate scan. All
+six were silent no-ops: intended early exits never fired (extra hot-path
+work, no observable result change — the suite passes identically before and
+after), and every debug run paused at the first reached `Break`. Repair:
+replaced all six with `Exit While`/`Exit For` plus explanatory comments,
+corrected the AGENTS.md language note, and recorded decision 0007. Fresh
+evidence: `objo test --all-projects` 337 Physics2D + 19 benchmark tests, 0
+failed/skipped; dist regenerated (checksum `1424b5e3…`) and clean-room
+`tools/check_distribution.sh` passed; demo app rebuilt. `Exit` predates the
+documented minimum Objo 26.8.6, so `docs/PORTING.md` is unchanged.
+
 ## 22. Final Autonomous Audit
 
 Before declaring the port complete, perform one final audit independent of the
