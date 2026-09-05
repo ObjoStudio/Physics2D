@@ -44,6 +44,10 @@ Scenes build their geometry for the window's gravity preset and never set
 chosen preset. The one exception is the continuous scene, which pins zero
 gravity because its bullet corridor is authored for weightless motion.
 
+The welcome playground draws a scene menu in the canvas's top-right corner
+listing the digit key and title of every other scene, so keyboard scene
+switching is discoverable before the user finds the help line.
+
 ## The fixed-timestep loop
 
 Physics advances in fixed 1/60 s steps regardless of frame rate. The

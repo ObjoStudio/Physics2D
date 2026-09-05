@@ -323,6 +323,10 @@ If Self.mScene.WantsCursorQuery And Self.mCursorInside Then
 Self.PaintCursorQuery(g)
 End If
 
+If Self.mScene.WantsSceneMenu Then
+Self.PaintSceneMenu(g)
+End If
+
 Self.PaintHud(g)
 Catch e As RuntimeException
 Self.mErrorCount = Self.mErrorCount + 1
@@ -355,6 +359,27 @@ quad[1].Set(bounds.UpperBound.X, bounds.LowerBound.Y)
 quad[2].Set(bounds.UpperBound.X, bounds.UpperBound.Y)
 quad[3].Set(bounds.LowerBound.X, bounds.UpperBound.Y)
 Me.mRenderer.DrawPolygon(quad, 4, Colour.RGB(255, 215, 0))
+End Sub
+
+## Paints the scene picker menu: the digit key and title of every scene
+## except the active one, so keyboard scene switching is discoverable
+## without reading the help line. The keys mirror SceneDigit's mapping.
+Private Sub PaintSceneMenu(g As Graphics)
+g.DrawingColour = Colour.RGB(150, 158, 170)
+g.DrawText("Number keys:", Self.mCanvas.Width - 200.0, 8.0)
+Var i As Integer = 0
+Var row As Integer = 0
+While i < Self.mScenes.Count
+If i <> Self.mSceneIndex Then
+Var digit As Integer = (i + 1) Mod 10
+g.DrawingColour = Colour.RGB(255, 210, 80)
+g.DrawText(digit.ToString(), Self.mCanvas.Width - 200.0, 26.0 + row * 18.0)
+g.DrawingColour = Colour.RGB(170, 180, 190)
+g.DrawText(Self.mScenes[i].Title, Self.mCanvas.Width - 178.0, 26.0 + row * 18.0)
+row = row + 1
+End If
+i = i + 1
+Wend
 End Sub
 
 ## Paints the HUD lines over the scene.
