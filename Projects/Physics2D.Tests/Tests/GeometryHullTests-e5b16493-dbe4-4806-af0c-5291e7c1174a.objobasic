@@ -1,8 +1,8 @@
 # Golden fixture tests for convex hulls and polygons built from hulls.
 #
 # Consumes testdata/golden/hull.txt, which was generated from the pinned
-# Box2D 3.1.1 checkout. The point sets below mirror tools/fixture_gen/
-# fixture_gen.c exactly; the fixture holds the expected hull, polygon, and
+# Box2D 3.1.1 checkout. The point sets below mirror the upstream test
+# scene exactly; the fixture holds the expected hull, polygon, and
 # reference box outputs. Comparisons use the geometry tolerance classes
 # because the generator prints nine-digit float32 values.
 Import Physics2D

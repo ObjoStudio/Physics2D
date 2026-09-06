@@ -83,24 +83,23 @@ negative-Y gravity as above.
 
 ## Installation
 
-1. Copy `dist/Physics2D.objobasic` — one generated, self-contained
-   `Module Physics2D ... End Module` source — into your project as a Shared
-   Code module source item (in Objo Studio: add the file to the solution's
-   Shared Code and keep its `Kind` as Module).
-2. Add `Import Physics2D` to the sources that use it.
-3. Build and run. That is the whole install: the module has no other
-   component to download.
+Physics2D ships as an Objo Studio solution. Open `Physics2D.objosln` in
+Objo Studio to explore the module source, run the test suite, and launch
+the desktop demo.
 
-`dist/Physics2D.objobasic` is generated output — never edit it by hand. The
-canonical, navigable source lives in `Shared/Sources` inside this repository.
+To use the module inside your own solution, copy the `Physics2D` module and
+its nested source items from this solution's Shared Code into your own
+solution's Shared Code (each source item is one `.objobasic` file plus a
+`.source.json` sidecar), then add `Import Physics2D` to the sources that
+use it. That is the whole install: the module has no other component to
+download — no native code, no configuration.
 
 **Compatibility:** Objo Studio 26.8.6 or newer, including Objo issue #1302's
 standard-library additions (`Vector2.LeftPerpendicular`/`RightPerpendicular`,
 `Matrix.Inverse`/`InvertSelf`/`Solve`, `Double.IsFinite`) and the issue #1315
 constructor-inheritance fix. The module reports its version as
 `Physics2D.VERSION` (SemVer; currently `1.0.0-rc.1`), and the generated file's
-header repeats the compatibility record. See
-[docs/PORTING.md](docs/PORTING.md) for the full version table.
+header repeats the full compatibility record.
 
 ## Documentation map
 
@@ -109,48 +108,45 @@ header repeats the compatibility record. See
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Install the module, first world, fixed-step loop, bodies and shapes, events, destruction, common mistakes |
 | [docs/API.md](docs/API.md) | Generated reference for every public type and member, with units, defaults, ownership, and allocation notes |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Data layout, identity rules, broad phase, solver stages, CCD, and events |
-| [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | Benchmark method and results, zero-allocation patterns, capacity planning, profiling guidance |
 | [docs/DEMO.md](docs/DEMO.md) | The interactive desktop demo: scenes, controls, and the teaching code behind them |
-| [docs/PORTING.md](docs/PORTING.md) | Upstream provenance, symbol-by-symbol Box2D mapping, and deliberate differences |
-| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Tests, benchmarks, source style, generated artifacts, provenance rules |
 | [docs/decisions/](docs/decisions/) | Numbered design decisions, including the frozen version 1 API |
-| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | The staged porting plan, progress ledger, and exit criteria |
 | [AGENTS.md](AGENTS.md) | Repository rules for automated and human contributors |
 
-## Demo and smoke applications
+## Development
 
-- **Physics2D.Demo** — the interactive desktop teaching demo: ten scenes
-  (playground, pyramid, materials, sensors/filters, all joints, CCD,
-  queries, chains, character mover, benchmark pyramid), body dragging,
-  spawning, debug-draw layer toggles, and a `--soak` automated gate. Build
-  with `objo build Physics2D.objosln --project Physics2D.Demo --output
-  build/demo`; [docs/DEMO.md](docs/DEMO.md) is the guided tour.
-- **Physics2D.Smoke** — a command-line consumer that exercises the joint
-  families end to end, proving the module compiles and runs without any
-  desktop dependency.
-- **Physics2D.Tests** and **Physics2D.Benchmarks** — the correctness suite
-  (including Box2D-derived golden fixtures and zero-allocation gates) and the
-  Release-mode benchmark runner.
+The solution contains exactly three projects:
+
+- **Physics2D** (`Shared/Sources`) — the module itself; edit the canonical
+  source here.
+- **Physics2D.Tests** — the correctness suite, including Box2D-derived
+  golden fixtures (in `testdata/golden`) and the zero-allocation hot-path
+  gates.
+- **Physics2D.Demo** — the interactive desktop teaching demo: ten scenes,
+  body dragging, spawning, debug-draw layer toggles, and a `--soak`
+  automated gate; [docs/DEMO.md](docs/DEMO.md) is the guided tour.
+
+From the repository root (resolve `objo` per [AGENTS.md](AGENTS.md)):
+
+```sh
+objo check Physics2D.objosln                                # check the active project (Tests)
+objo test  Physics2D.objosln                                # run the test suite
+objo build Physics2D.objosln --project Physics2D.Demo --output build/demo
+```
 
 ## Performance statement
 
 Physics2D targets the fastest practical implementation in native Objo. After
-a short warm-up, `World.StepWorld` allocates nothing on the normal path
-(enforced by tests), dense indexed stores and generation-checked handles keep
-the solver cache-friendly, and every optimisation decision is backed by a
-committed Release-mode benchmark with a deterministic checksum. As one
-reference point on an Apple Silicon MacBook Pro: a 40-level pyramid (820
-bodies) steps in tens of milliseconds per frame with the default four
-substeps. The Objo VM is substantially slower than compiled C — absolute
-timings, the full results table, the drift band, and reproducible commands
-live in [docs/PERFORMANCE.md](docs/PERFORMANCE.md). Never trade correctness
-for a benchmark result.
+a short warm-up, `World.StepWorld` allocates nothing on the normal path — a
+property enforced by the test suite — and dense indexed stores with
+generation-checked handles keep the solver cache-friendly. The Objo VM is
+substantially slower than compiled C; never trade correctness for speed.
 
 ## Licence
 
 Physics2D is MIT licensed ([LICENSE](LICENSE)). It is a port of Box2D,
-which is also MIT licensed; the upstream notice and the pinned commit are
-preserved in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
-[docs/PORTING.md](docs/PORTING.md). The distribution is generated from
-[Box2D](https://github.com/erincatto/box2d) tag `v3.1.1` algorithms; no code
-from other physics ports (Forge2D, JBox2D, Xojo Physics) is included.
+which is also MIT licensed; the upstream notice and the pinned commit
+(`v3.1.1`, `8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3`) are preserved in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The distribution is
+generated from [Box2D](https://github.com/erincatto/box2d) tag `v3.1.1`
+algorithms; no code from other physics ports (Forge2D, JBox2D, Xojo Physics)
+is included.

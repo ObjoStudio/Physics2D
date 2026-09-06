@@ -1,22 +1,15 @@
 # Golden fixtures for Physics2D.
 #
 # All numeric fixtures were generated from Box2D tag v3.1.1, commit
-# 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3 (see docs/PORTING.md).
-#
-# Generation command (from the repository root, after building the tool):
-#   for f in maths hull distance raycast shapecast manifold mass scene_falling scene_pyramid scene_stack joint_distance joint_mouse joint_motor joint_revolute joint_prismatic joint_weld joint_wheel; do
-#     ./build/tools/fixture_gen $f > testdata/golden/$f.txt
-#   done
-#
-# The generator source is tools/fixture_gen/fixture_gen.c.
+# 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3, during the port. The generator
+# tooling was removed once the port completed; these files are frozen test
+# data and must not be hand-edited. The SHA-256 table below pins their exact
+# contents.
 
-## Tool checksums
-
-Generated on 2026-08-30.
+## Fixture checksums
 
 | File | SHA-256 |
 |---|---|
-| `tools/fixture_gen/fixture_gen.c` | 907c3b987bbb84e6ac3b46336572c72b1515a6bb2f289503c43f373b40f9a86c |
 | `testdata/golden/distance.txt` | e3308d9c1aa25d8cd5a715fd8103b28ceaa8a3964cbe513ad424ecdf4eabd26c |
 | `testdata/golden/hull.txt` | 48d12525c5a1a837349d3180c74b640769f56ae78139121be649f2c45a058121 |
 | `testdata/golden/joint_distance.txt` | ff5bf412c046aed8f4abf71d3855d977914ef770d7c1ae24c5ab24384d8f6a67 |

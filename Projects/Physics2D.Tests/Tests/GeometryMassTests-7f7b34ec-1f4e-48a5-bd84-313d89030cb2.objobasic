@@ -1,7 +1,7 @@
 # Golden fixture tests for mass computation.
 #
 # Consumes testdata/golden/mass.txt, generated from the pinned Box2D 3.1.1
-# checkout with the shapes in tools/fixture_gen/fixture_gen.c: a circle of
+# checkout with the documented upstream test shapes: a circle of
 # radius 1.5 at (0.25, -0.5), a capsule between (-1, 0.5) and (2, -0.5) with
 # radius 0.5, and a rounded pentagon built from a hull with radius 0.1.
 # Densities are 1.0, 2.5, and 0.0 per case index.

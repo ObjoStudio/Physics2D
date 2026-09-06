@@ -4,8 +4,9 @@
 
 Physics2D is an independent Objo implementation of the algorithms and behaviour
 of Box2D 3.1.1. Box2D is copyright Erin Catto and contributors and is used
-under the MIT licence. The exact upstream tag and commit are recorded in
-`docs/PORTING.md`. The upstream licence text follows.
+under the MIT licence. The exact upstream tag and commit are
+`v3.1.1`, commit `8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3`. The upstream
+licence text follows.
 
 ```text
 MIT License

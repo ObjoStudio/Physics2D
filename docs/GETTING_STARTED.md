@@ -8,13 +8,15 @@ module. Units are metres, kilograms, seconds, and radians throughout.
 
 ## 1. Install the module
 
-1. Copy `dist/Physics2D.objobasic` into your project as one Shared Code
-   module source item. In Objo Studio, add the file to the solution and keep
-   its item kind as **Module** — the file already wraps everything in
-   `Module Physics2D ... End Module`.
-2. In every source that uses physics, add `Import Physics2D` at the top.
-3. Build. The module has no other component: no downloads, no native code,
-   no configuration.
+Physics2D ships as an Objo Studio solution (`Physics2D.objosln`). Open the
+solution in Objo Studio to browse the module, run its test suite, and try
+the desktop demo. To use physics inside your own solution, copy the
+`Physics2D` module and its nested source items from the solution's Shared
+Code into your own solution's Shared Code.
+
+Then, in every source that uses physics, add `Import Physics2D` at the top.
+The module has no other component: no downloads, no native code, no
+configuration.
 
 The module requires Objo Studio 26.8.6 or newer (with Objo issue #1302's
 standard-library additions and the issue #1315 constructor-inheritance fix).
@@ -240,6 +242,4 @@ it if you do not need it.
 - [docs/API.md](API.md) — the full generated reference.
 - [docs/DEMO.md](DEMO.md) — the interactive demo as a guided tour, with
   a scene for each feature group.
-- [docs/PERFORMANCE.md](PERFORMANCE.md) — zero-allocation patterns,
-  capacity planning, and profiling guidance.
 - [docs/ARCHITECTURE.md](ARCHITECTURE.md) — how the engine works inside.

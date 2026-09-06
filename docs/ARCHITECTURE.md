@@ -3,8 +3,8 @@
 This document explains how Physics2D is structured inside the single
 `Physics2D` module: the data layout, the identity rules, and the reasoning
 behind non-obvious representations. Public API documentation lives in
-`docs/API.md`; upstream provenance and symbol mapping live in
-`docs/PORTING.md`.
+`docs/API.md`; the upstream provenance record lives in
+`THIRD_PARTY_NOTICES.md`.
 
 ```text
 Physics2D public API
@@ -414,9 +414,9 @@ system and worlds are ordinary Objo objects.
 
 ## Foundation Performance Envelope
 
-Release results on the Stage 2 reference machine (Mac, `objo` 26.9.1, see
-`benchmarks/results/stage3-foundation-2026-08-30T21-41-14.json`) keep every
-foundation container inside the Stage 2 representation envelope — per-element
+Release results recorded during the port (Mac, `objo` 26.9.1; raw result
+files preserved in the repository history) keep every foundation container
+inside the Stage 2 representation envelope — per-element
 costs at or below the accepted scalar-array kernel (~182 ms for the full
 10,000-body kernel set) and zero allocations in every measured scenario:
 
@@ -430,8 +430,8 @@ costs at or below the accepted scalar-array kernel (~182 ms for the full
 Growth and `Clear` costs are warm-up costs by design: capacity persists
 across `Clear`, so a warmed engine step never re-grows.
 
-Stage 4 adds the collision geometry envelope (same machine, see
-`benchmarks/results/` for the latest run). Every scenario is the steady-state
+Stage 4 adds the collision geometry envelope (same machine, recorded during
+the port). Every scenario is the steady-state
 reuse path after one warm-up query:
 
 | Scenario | Work per iteration | Median | Allocations |
@@ -442,8 +442,8 @@ reuse path after one warm-up query:
 | `stage4-time-of-impact` | 8 swept-capsule time-of-impact solves | 0.47 ms | 0 |
 | `stage4-plane-solver` | 8 mover solves against 3 planes | 0.13 ms | 0 |
 
-Stage 5 adds the spatial index and broad-phase envelope (same machine, see
-`benchmarks/results/` for the latest run). Tree mutation costs are dominated
+Stage 5 adds the spatial index and broad-phase envelope (same machine,
+recorded during the port). Tree mutation costs are dominated
 by the interpreted VM's scalar arithmetic; allocation gates still read zero:
 
 | Scenario | Work per iteration | Median | Allocations |

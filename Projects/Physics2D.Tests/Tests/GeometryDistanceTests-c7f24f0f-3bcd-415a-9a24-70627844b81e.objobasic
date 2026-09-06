@@ -3,7 +3,7 @@
 #
 # Consumes testdata/golden/distance.txt, generated from the pinned Box2D
 # 3.1.1 checkout. The segment cases and the circle-versus-box GJK case
-# mirror tools/fixture_gen/fixture_gen.c. Also ports the assertions of
+# mirror the upstream test scene. Also ports the assertions of
 # upstream test/test_distance.c.
 Import Physics2D
 

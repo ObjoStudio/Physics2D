@@ -2,7 +2,7 @@
 #
 # Consumes testdata/golden/manifold.txt, generated from the pinned Box2D
 # 3.1.1 checkout. Shapes and transforms mirror
-# tools/fixture_gen/fixture_gen.c exactly.
+# the upstream test scene exactly.
 Import Physics2D
 
 Class GeometryManifoldTests Inherits TestCase
