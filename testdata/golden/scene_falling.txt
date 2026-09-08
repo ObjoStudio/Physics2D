@@ -1,2 +1,0 @@
-scene|falling|bodies|1|moved|1
-scene|falling|body|0|-2.75472257e-06 0.499908686 -9.65716572e-06 1

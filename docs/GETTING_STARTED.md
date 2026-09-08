@@ -239,7 +239,7 @@ it if you do not need it.
 
 ## Where to next
 
-- [docs/API.md](API.md) — the full generated reference.
+- [docs/API.md](API.md) — the full consumer-facing API reference.
 - [docs/DEMO.md](DEMO.md) — the interactive demo as a guided tour, with
   a scene for each feature group.
 - [docs/ARCHITECTURE.md](ARCHITECTURE.md) — how the engine works inside.

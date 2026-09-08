@@ -24,32 +24,30 @@ Protected indexed core
 
 ## Design Rules
 
-1. **Parallel scalar arrays for hot state.** The Stage 2 bake-off (decision
-   0004) measured parallel x/y `Double` arrays fastest for body, solver,
-   contact, and joint state (185.1 ms median, zero allocations per
-   iteration) and node objects fastest for the dynamic tree (321.5 ms).
+1. **Parallel scalar arrays for hot state.** Benchmarks during the original
+   implementation selected parallel x/y `Double` arrays for body, solver,
+   contact, and joint state, and node objects for the dynamic tree.
    Foundation containers follow the same evidence: growable sequences keep
    one backing array plus a logical count, and the pair table keeps two
    parallel scalar arrays. Nothing in the hot path stores one object per
-   element. Stage 9 applies the rule to joints: `JointSims` stores one row
-   of parallel scalar columns per joint (base columns shared by every
-   family plus one column block per implemented family), so solver loops
-   index scalars and the per-step scratch lives in one reused
-   `DistanceJointScratch` record.
+   element. `JointSims` stores one row of parallel scalar columns per joint
+   (base columns shared by every family plus one column block per implemented
+   family), so solver loops index scalars and the per-step scratch lives in
+   one reused `DistanceJointScratch` record.
 2. **Zero steady-state allocation.** After a capacity warm-up, every
    container operation on this page allocates nothing: growth happens only
    in `Reserve`-style calls, `Clear` resets a logical count or zeroes in
    place, and removal is swap-based. Each container exposes a `Validate`
-   method used aggressively by tests and later by debug world validation.
+   method used aggressively by tests and debug world validation.
 3. **Determinism.** Container traversal and probe order are fixed by
    construction (linear probing with power-of-two capacity, ascending bit
    iteration, LIFO slot reuse). Trigonometry uses the ported upstream
    approximations rather than platform library calls, so results do not
    depend on the host maths library.
 4. **Internal names stay teachable.** The foundation classes below are
-   implementation infrastructure, not the stable public API; they may move
-   behind narrower visibility when the public surface freezes. Their names
-   still follow the public naming rules (no `b2` prefixes, full words).
+   implementation infrastructure, not the supported consumer API, and may
+   change without compatibility guarantees. Their names still use consistent
+   Objo conventions (no `b2` prefixes, full words).
 
 ## Foundation Containers
 
@@ -192,11 +190,11 @@ Determinism note: unlike the built-in `HashSet`, iteration and probe order
 here are fully determined by the keys and capacity, never by object
 hashing or insertion history beyond what the algorithm prescribes.
 
-## Collision Geometry (Stage 4)
+## Collision Geometry
 
-The Stage 4 sources port `hull.c`, `geometry.c`, `shape.c` (mass/AABB
+The collision geometry ports `hull.c`, `geometry.c`, `shape.c` (mass/AABB
 methods), `distance.c`, `manifold.c`, and `mover.c` on top of the
-deterministic maths from Stage 3. Three rules shape the layout:
+deterministic maths layer. Three rules shape the layout:
 
 1. **Cold/warm form pairs.** Every entry point that produces a result has an
    allocating convenience form and a reuse form that fills a caller-owned
@@ -210,8 +208,8 @@ deterministic maths from Stage 3. Three rules shape the layout:
    creates a scratch bundle (`DistanceOutput.Scratch()`, `CastOutput.Scratch()`,
    `TOIOutput.Scratch()`, `Manifold.Scratch()`) holding the growable lists,
    simplex workspace, and reused value objects the algorithm needs. Once
-   warm, a repeated query on the same output allocates nothing — the steady
-   state the zero-alloc benchmark gate enforces.
+   warm, a repeated query on the same output allocates nothing — a property
+   enforced by the allocation tests.
 3. **Index-based shapes.** `ShapeProxy` stores vertices, normals, and radius;
    collision functions address shapes by index pairs, mirroring the upstream
    index-based clip points and manifold ids so the golden fixtures compare
@@ -222,13 +220,13 @@ Chain segments get their own family (`CollideChainSegmentAnd*`,
 with ghost collisions differently from ordinary segments, including
 normal-flip bookkeeping during SAT selection and clipping.
 
-## Dynamic Tree and Broad Phase (Stage 5)
+## Dynamic Tree and Broad Phase
 
-Stage 5 ports `dynamic_tree.c` and `broad_phase.c` on top of the Stage 3
-containers. Four rules shape the layout:
+The dynamic tree and broad phase port `dynamic_tree.c` and `broad_phase.c`
+on top of the foundation containers. Four rules shape the layout:
 
-1. **Node objects with a free list.** Each `TreeNode` owns its `AABB Bounds`
-   (decision 0004): node arrays hold references, and `AllocateNode`/`FreeNode`
+1. **Node objects with a free list.** Each `TreeNode` owns its `AABB Bounds`:
+   node arrays hold references, and `AllocateNode`/`FreeNode`
    thread the free list through `Parent`. Every mutator keeps the tree valid
    incrementally, and `Validate`/`ValidateNoEnlarged` re-derive heights,
    bounds, category unions, and the enlarged-flag invariant from scratch.
@@ -247,11 +245,11 @@ containers. Four rules shape the layout:
    proxy id and body type (`(proxyId << 2) | type`). Moves buffer into a
    `PairKeySet` (key + 1, 0 reserved) plus an ordered array; pair generation
    queries the kinematic, static, and dynamic trees per moved proxy,
-   de-duplicates through the move set and the pair set (Stage 3 table), and
+   de-duplicates through the move set and the `PairKeySet`, and
    threads per-move candidate lists through parallel `IntegerList` pools that
    are consumed LIFO in deterministic move order. Pair reporting goes through
    a `BroadPhasePairSink`: `ShouldCollide` filters at record time and
-   `AcceptPair` receives survivors, letting the Stage 6 world register
+   `AcceptPair` receives survivors, letting the world register
    contacts without exposing the broad phase.
 
 Rebuild always uses the upstream median-split configuration
@@ -260,12 +258,12 @@ ported. A partial rebuild dissolves only the enlarged path and treats clean
 sibling subtrees as atomic leaves, so its returned leaf count is bounded by
 but not equal to the proxy count.
 
-## World Facade (Stage 6)
+## World Facade
 
-Stage 6 ports the world and lifecycle family of `box2d.h` plus `world.c`'s
-non-solving half: body, shape, and chain records; mass maintenance; proxy
-synchronisation; transforms; and the overlap/ray/shape-cast queries. Four
-rules shape the layout:
+The world facade ports the world and lifecycle family of `box2d.h` plus
+`world.c`'s non-solving half: body, shape, and chain records; mass
+maintenance; proxy synchronisation; transforms; and the
+overlap/ray/shape-cast queries. Four rules shape the layout:
 
 1. **Façade objects over flat state.** `Body`, `Shape`, and `Chain` are
    per-slot façade objects holding scalars plus identity (`Owner`, `Id`,
@@ -285,7 +283,7 @@ rules shape the layout:
    segment *i* to material *i + 1* (the upstream leading-point rule). The
    world raises `RuntimeException` when locked instead of upstream's silent
    early returns; `StepWorld` validates the time step, locks the world, and
-   drives the Stage 7 pipeline described below.
+   drives the solver pipeline described below.
 4. **Queries own nothing the caller did not pass.** The four `Into` forms
    reset only the caller's hit list, fill `ShapeHit` façades owned by the
    list, and apply category filtering through the broad-phase trees. The
@@ -302,12 +300,11 @@ rebuilding eight one-shape bodies allocates 136 objects — exactly the eight
 façade groups — because tree, sim, proxy, and id-pool capacity all survive
 `Clear`.
 
-## Soft Step Solver (Stage 7)
+## Soft Step Solver
 
-Stage 7 completes the simulation loop: `World.StepWorld` now runs pair
-discovery, the narrow phase, island maintenance, the Soft Step constraint
-solver, body finalisation, broad-phase refit, and island sleeping in
-upstream's exact stage order.
+`World.StepWorld` runs pair discovery, the narrow phase, island maintenance,
+the Soft Step constraint solver, body finalisation, broad-phase refit, and
+island sleeping in upstream's exact stage order.
 
 1. **Contacts and islands.** Contacts live in per-set `ContactSims` stores;
    touching contacts additionally occupy a constraint-graph colour row.
@@ -339,14 +336,12 @@ upstream's exact stage order.
    only when assigned, matching upstream's zero-overhead disabled path.
 
 Determinism rests on ascending-id serial stages, the fixed colour order,
-and the deterministic `PhysicsMaths` routines. The `stage7-pyramid-40`
-benchmark (820 bodies, four 60 Hz steps per iteration) is the first
-full-solver baseline and doubles as a checksum-pinned regression.
+and the deterministic `PhysicsMaths` routines.
 
-## Continuous Collision, Sensors, And Events (Stage 8)
+## Continuous Collision, Sensors, And Events
 
-Stage 8 adds high-speed collision handling and the post-step observation
-model without changing the solver.
+High-speed collision handling and the post-step observation model build on
+the same solver pipeline.
 
 1. **Continuous collision.** `FinalizeBodies` flags dynamic bodies whose
    `maxVelocity * dt` exceeds half their minimum extent (`ShapeExtent` via
@@ -379,10 +374,6 @@ model without changing the solver.
    next step or destructive world operation, and user code never runs
    while the world is locked.
 
-The pile golden in `SceneTests` was recomputed for Stage 8 because
-continuous collision now advances fast bodies to their exact impact
-positions.
-
 ## Deterministic Maths
 
 `PhysicsMaths` ports the upstream trigonometric approximations so
@@ -411,44 +402,3 @@ one metre per unit) and adds the identity sentinels from `src/core.h`:
 
 `B2_MAX_WORKERS` and `B2_MAX_WORLDS` are excluded: Physics2D has no task
 system and worlds are ordinary Objo objects.
-
-## Foundation Performance Envelope
-
-Release results recorded during the port (Mac, `objo` 26.9.1; raw result
-files preserved in the repository history) keep every foundation container
-inside the Stage 2 representation envelope — per-element
-costs at or below the accepted scalar-array kernel (~182 ms for the full
-10,000-body kernel set) and zero allocations in every measured scenario:
-
-| Scenario | Work per iteration | Median | Allocations |
-|---|---|---|---|
-| `stage3-slot-pool` | 4096 allocs + 1365 frees + 1365 reuses + fold | 10.8 ms | 0 |
-| `stage3-bit-set` | 16384 sets + 3277 clears + union + full iteration | 22.2 ms | 0 |
-| `stage3-pair-key-set` | 2000 adds + 500 removes + 1000 probes + 1000 re-adds | 6.5 ms | 0 |
-| `stage3-scratch-lists` | 20000 appends + 3000 swap removals + 200 pops | 7.1 ms | 0 |
-
-Growth and `Clear` costs are warm-up costs by design: capacity persists
-across `Clear`, so a warmed engine step never re-grows.
-
-Stage 4 adds the collision geometry envelope (same machine, recorded during
-the port). Every scenario is the steady-state
-reuse path after one warm-up query:
-
-| Scenario | Work per iteration | Median | Allocations |
-|---|---|---|---|
-| `stage4-distance` | 12 shape-distance queries on warmed outputs | 0.25 ms | 0 |
-| `stage4-manifold` | 8 polygon and capsule collision manifolds | 0.26 ms | 0 |
-| `stage4-cast` | 8 ray casts and 8 shape casts | 0.17 ms | 0 |
-| `stage4-time-of-impact` | 8 swept-capsule time-of-impact solves | 0.47 ms | 0 |
-| `stage4-plane-solver` | 8 mover solves against 3 planes | 0.13 ms | 0 |
-
-Stage 5 adds the spatial index and broad-phase envelope (same machine,
-recorded during the port). Tree mutation costs are dominated
-by the interpreted VM's scalar arithmetic; allocation gates still read zero:
-
-| Scenario | Work per iteration | Median | Allocations |
-|---|---|---|---|
-| `stage5-tree-churn` | 64 moves + 16 destroy/create pairs in a 2048-leaf tree | 11.1 ms | 0 |
-| `stage5-tree-query` | 4 queries, 4 rays, 1 shape cast on a 4096-leaf tree | 2.0 ms | 0 |
-| `stage5-tree-rebuild` | 32 enlarges + partial rebuild of a 2048-leaf tree | 12.2 ms | 0 |
-| `stage5-broadphase-pairs` | 32 of 512 dynamic proxies moved; pairs reported | 4.2 ms | 0 |

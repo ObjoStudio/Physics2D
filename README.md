@@ -98,38 +98,35 @@ download — no native code, no configuration.
 standard-library additions (`Vector2.LeftPerpendicular`/`RightPerpendicular`,
 `Matrix.Inverse`/`InvertSelf`/`Solve`, `Double.IsFinite`) and the issue #1315
 constructor-inheritance fix. The module reports its version as
-`Physics2D.VERSION` (SemVer; currently `1.0.0-rc.1`), and the generated file's
-header repeats the full compatibility record.
+`Physics2D.VERSION` (SemVer; currently `1.0.0-rc.1`).
 
 ## Documentation map
 
 | Document | Contents |
 |---|---|
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Install the module, first world, fixed-step loop, bodies and shapes, events, destruction, common mistakes |
-| [docs/API.md](docs/API.md) | Generated reference for every public type and member, with units, defaults, ownership, and allocation notes |
+| [docs/API.md](docs/API.md) | Reference for the consumer-facing types and members, with units, defaults, ownership, and allocation notes |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Data layout, identity rules, broad phase, solver stages, CCD, and events |
 | [docs/DEMO.md](docs/DEMO.md) | The interactive desktop demo: scenes, controls, and the teaching code behind them |
-| [docs/decisions/](docs/decisions/) | Numbered design decisions, including the frozen version 1 API |
-| [AGENTS.md](AGENTS.md) | Repository rules for automated and human contributors |
 
 ## Development
 
-The solution contains exactly three projects:
+The solution contains one shared module and two projects:
 
 - **Physics2D** (`Shared/Sources`) — the module itself; edit the canonical
   source here.
 - **Physics2D.Tests** — the correctness suite, including Box2D-derived
   golden fixtures (in `testdata/golden`) and the zero-allocation hot-path
   gates.
-- **Physics2D.Demo** — the interactive desktop teaching demo: ten scenes,
+- **Physics2D.Demo** — the interactive desktop teaching demo: eight scenes,
   body dragging, spawning, debug-draw layer toggles, and a `--soak`
   automated gate; [docs/DEMO.md](docs/DEMO.md) is the guided tour.
 
-From the repository root (resolve `objo` per [AGENTS.md](AGENTS.md)):
+From the repository root:
 
 ```sh
-objo check Physics2D.objosln                                # check the active project (Tests)
-objo test  Physics2D.objosln                                # run the test suite
+objo check Physics2D.objosln --project Physics2D.Tests
+objo test  Physics2D.objosln --project Physics2D.Tests --require-tests
 objo build Physics2D.objosln --project Physics2D.Demo --output build/demo
 ```
 
@@ -146,7 +143,6 @@ substantially slower than compiled C; never trade correctness for speed.
 Physics2D is MIT licensed ([LICENSE](LICENSE)). It is a port of Box2D,
 which is also MIT licensed; the upstream notice and the pinned commit
 (`v3.1.1`, `8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3`) are preserved in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The distribution is
-generated from [Box2D](https://github.com/erincatto/box2d) tag `v3.1.1`
-algorithms; no code from other physics ports (Forge2D, JBox2D, Xojo Physics)
-is included.
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Physics2D is based on
+[Box2D](https://github.com/erincatto/box2d) tag `v3.1.1`; no code from other
+physics ports (Forge2D, JBox2D, Xojo Physics) is included.

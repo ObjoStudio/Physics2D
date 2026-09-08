@@ -31,20 +31,20 @@ scene N (1–8).
 | File | Responsibility |
 |---|---|
 | `Sources/App-*.objobasic` | Application entry: parses `--soak`, creates and shows the window |
-| `Sources/DemoWindow.objobasic` | Window, fixed-timestep loop, input, HUD, scene switching |
-| `Sources/DemoScene.objobasic` | Scene base class: Build, Update, PaintExtras, HandleKey, Substeps, MaximumStepsPerTick, EventLines |
-| `Sources/WelcomeScene.objobasic` | Playground: one body per shape family |
-| `Sources/MaterialsScene.objobasic` | Friction, restitution, rolling resistance, conveyor |
-| `Sources/SensorFilterScene.objobasic` | Sensor events, category/mask filters, group index |
-| `Sources/JointsScene.objobasic` | All seven joint families in one world |
-| `Sources/ContinuousScene.objobasic` | Bullets versus thin walls with the CCD toggle |
-| `Sources/QueryScene.objobasic` | Cursor ray cast and overlap region |
-| `Sources/ChainsScene.objobasic` | Chain terrain, a loop, and ghost collision |
-| `Sources/MoverScene.objobasic` | Character capsule driven by CollideMover planes, Mover.SolvePlanes, and CastMover |
-| `Sources/CanvasDebugRenderer.objobasic` | Desktop adapter: world metres to canvas points |
+| `Sources/DemoWindow-*.objobasic` | Window, fixed-timestep loop, input, HUD, scene switching |
+| `Sources/DemoScene-*.objobasic` | Scene base class: Build, Update, PaintExtras, HandleKey, Substeps, MaximumStepsPerTick, EventLines |
+| `Sources/WelcomeScene-*.objobasic` | Playground: one body per shape family |
+| `Sources/MaterialsScene-*.objobasic` | Friction, restitution, rolling resistance, conveyor |
+| `Sources/SensorFilterScene-*.objobasic` | Sensor events, category/mask filters, group index |
+| `Sources/JointsScene-*.objobasic` | All seven joint families in one world |
+| `Sources/ContinuousScene-*.objobasic` | Bullets versus thin walls with the CCD toggle |
+| `Sources/QueryScene-*.objobasic` | Cursor ray cast and overlap region |
+| `Sources/ChainsScene-*.objobasic` | Chain terrain, a loop, and ghost collision |
+| `Sources/MoverScene-*.objobasic` | Character capsule driven by CollideMover planes, Mover.SolvePlanes, and CastMover |
+| `Sources/CanvasDebugRenderer-*.objobasic` | Desktop adapter: world metres to canvas points |
 
 Scenes build their geometry for the window's gravity preset and never set
-`World.Gravity` themselves, so the `G` key re-tars every scene with the
+`World.Gravity` themselves, so the `G` key rebuilds every scene with the
 chosen preset. The one exception is the continuous scene, which pins zero
 gravity because its bullet corridor is authored for weightless motion.
 
@@ -76,8 +76,7 @@ bounds the burst itself: `MaximumStepsPerTick` defaults to four fixed
 steps. When the cap bites, the window drops the leftover accumulator so
 a scene heavier than real time runs in slow motion instead of wedging
 the interface. Rendering reads the post-step state directly (no
-interpolation); the visual lag is under one step and the demo stays
-simple. Measurement happens in the Benchmarks project, never here.
+interpolation); the visual lag is under one step and the demo stays simple.
 
 ## Metres to pixels
 

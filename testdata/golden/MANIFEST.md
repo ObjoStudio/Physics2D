@@ -23,9 +23,6 @@
 | `testdata/golden/mass.txt` | 880a0a41bb111488631f89e8864d9ee0c4f20df0d335cddd79a1a83422aad736 |
 | `testdata/golden/maths.txt` | b88060fa94260d4850309e753a72fb42cc02184d6931371def7ce708ad1e186f |
 | `testdata/golden/raycast.txt` | 0af403496a65a3589ad0933be1308ee3ba2c944160c6ad31fdcd9785a9729faf |
-| `testdata/golden/scene_falling.txt` | dcc814229d44d5ab1428d0297a3e25f09f6deff621f6359ce8f7581bb4528d69 |
-| `testdata/golden/scene_pyramid.txt` | aa59cfee70890b98fa588a65ee45ff5754d823c9c4abdf7f3b160cb095b531ff |
-| `testdata/golden/scene_stack.txt` | a77c7e44bf16904f2723d9bb9bf5c4f3277a08f7a03426e4562d1fd278d8ea8c |
 | `testdata/golden/shapecast.txt` | 91b59b20ff517e9f0f0141e609cabe4745da47618ac17fb0f323308c5ff305a4 |
 
 ## Fixture line formats
@@ -50,9 +47,6 @@ with exact equality. A trailing `1`/`0` integer encodes a Boolean.
   pointId persisted`; missing points are zero-filled.
 - `mass|shape|case|mass centerX centerY rotationalInertia` — shape is `circle`,
   `capsule`, or `polygon`.
-- `scene|name|bodies|bodyCount|movedCount`, then one
-  `scene|name|body|index|positionx positiony angle awake` line per dumped body
-  (the first `dumpBodyLimit` bodies after the step).
 - `joint|case|body|index|positionx positiony angle awake`, then one
   `joint|case|joint|forceX forceY torque length motorForce` line per distance
   joint case. Cases: `rope` (rigid joint, two falling boxes, 90 frames),

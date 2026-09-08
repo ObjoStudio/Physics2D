@@ -1,6 +1,5 @@
-<!-- Reference for every public type and member of the Physics2D module.
-Do not edit the declaration sections by hand; change the module source in
-Shared/Sources and update this document to match. -->
+<!-- Consumer-facing reference for the Physics2D module. Keep this document
+in sync with the declarations and documentation in Shared/Sources. -->
 
 # Physics2D API Reference
 
@@ -54,6 +53,7 @@ Import Physics2D
 | Debug drawing | `World.DrawDebug`, options, colours, and the renderer interface |
 | Module constants | The module-level release version |
 | Internal infrastructure | Engine-owned classes that applications normally never touch |
+
 ## Module constants
 
 - `VERSION As String = "1.0.0-rc.1"` — Semantic version of this Physics2D module, following SemVer 2.0.0. The suffix `-rc.N` marks a release candidate; dropping the suffix is the release act. This is a plain constant: the module has no package manager, so the version travels with the source you install.
@@ -62,7 +62,7 @@ Import Physics2D
 
 ### World
 
-The Physics2D world: owns bodies, shapes, chains, contacts, islands, joints, and sensors, and advances them with a deterministic Soft Step solver. Constructed empty (zero gravity), with settings, or through the World.WithGravity factory; stepped with World.StepWorld using a fixed timestep. Bodies, shapes, chains, and joints are created through definitions and addressed through facade objects that stay stable across solver-set moves; destruction frees the slot and bumps the generation so stale facades fail IsValid and raise on use. After a short warm-up the fixed-timestep step allocates nothing on the normal path. Ported from the upstream equivalent in world.h plus the world and lifecycle API family in box2d.h. Storage follows upstream: bodies live in solver sets (static, disabled, awake, and per-island sleeping sets) with dense sim and state records in parallel scalar columns per decision 0004.
+The Physics2D world: owns bodies, shapes, chains, contacts, islands, joints, and sensors, and advances them with a deterministic Soft Step solver. Constructed empty (zero gravity), with settings, or through the World.WithGravity factory; stepped with World.StepWorld using a fixed timestep. Bodies, shapes, chains, and joints are created through definitions and addressed through facade objects that stay stable across solver-set moves; destruction frees the slot and bumps the generation so stale facades fail IsValid and raise on use. After a short warm-up the fixed-timestep step allocates nothing on the normal path. Ported from the upstream equivalent in world.h plus the world and lifecycle API family in box2d.h. Storage follows upstream: bodies live in solver sets (static, disabled, awake, and per-island sleeping sets) with dense sim and state records in parallel scalar columns.
 
 **Constructors**
 
@@ -80,9 +80,9 @@ The Physics2D world: owns bodies, shapes, chains, contacts, islands, joints, and
 - `MaximumLinearSpeed As Double` — Maximum linear velocity of any body (metres per second).
 - `EnableSleeping As Boolean` — Whether bodies may sleep.
 - `ContinuousEnabled As Boolean` — Whether continuous collision detection is enabled.
-- `WarmStartingEnabled As Boolean` — Whether warm starting is enabled. Solver-relevant from Stage 7.
-- `SpeculativeEnabled As Boolean` — Whether speculative contact margins are enabled. Solver-relevant from Stage 7.
-- `Locked As Boolean` — Whether the world refuses mutation, set during Step from Stage 7.
+- `WarmStartingEnabled As Boolean` — Whether warm starting is enabled.
+- `SpeculativeEnabled As Boolean` — Whether speculative contact margins are enabled.
+- `Locked As Boolean` — Whether the world refuses mutation while `StepWorld` is running.
 - `UserData As Integer` — User data owned by the application.
 - `Bodies As Array(Of Body)` — Sparse body façade store indexed by body slot.
 - `Shapes As Array(Of Shape)` — Sparse shape façade store indexed by shape slot.
@@ -488,7 +488,7 @@ Shape façade
 - `EnableContactEvents As Boolean` — Whether this shape reports contact events.
 - `EnableHitEvents As Boolean` — Whether this shape reports hit events.
 - `EnablePreSolveEvents As Boolean` — Whether this shape reports pre-solve events.
-- `IsSensorFlag As Boolean` — Whether this shape was created as a sensor. The sensor store itself arrives in Stage 8.
+- `IsSensorFlag As Boolean` — Whether this shape was created as a sensor.
 - `Circle As Circle` — Circle geometry when Type is CircleShape.
 - `Capsule As Capsule` — Capsule geometry when Type is CapsuleShape.
 - `Segment As Segment` — Segment geometry when Type is SegmentShape.
@@ -1686,4 +1686,3 @@ Colour palette for debug drawing
 These classes implement the engine: dense solver stores, the constraint graph, the broad phase and dynamic tree, foundation containers, and the geometry algorithms. They ship inside the module for the solver's benefit; applications use the facade API above instead. Their declarations and documentation live in the module source.
 
 `BitSet`, `BodySims`, `BodyStates`, `BroadPhase`, `BroadPhasePairSink`, `BroadPhaseQueryContext`, `CastOutput`, `CastScratch`, `Casts`, `ChainParams`, `Collide`, `CollideScratch`, `CollisionPlane`, `ConstraintGraph`, `Contact`, `ContactConstraint`, `ContactFlags`, `ContactMethods`, `ContactSims`, `ContactSolver`, `ContinuousContext`, `ContinuousQueryCallback`, `CosSin`, `DebugDrawMethods`, `Distance`, `DistanceInput`, `DistanceJointScratch`, `DistanceOutput`, `DistanceScratch`, `DoubleList`, `DynamicTree`, `ExplosionContext`, `GenerationalPool`, `GraphColor`, `GraphMethods`, `Hull`, `IdPool`, `IntegerList`, `Island`, `IslandMethods`, `JointSims`, `JointSolver`, `PairKeySet`, `PhysicsConstants`, `PhysicsMaths`, `Plane`, `PlaneSolverResult`, `RayCastInput`, `SegmentDistanceResult`, `Sensor`, `SensorQueryCallback`, `SeparationFunction`, `SeparationResult`, `ShapeCastInput`, `ShapeCastPairInput`, `ShapeExtent`, `Simplex`, `SimplexCache`, `SimplexVertex`, `Softness`, `SolverMethods`, `SolverSet`, `StepContext`, `Sweep`, `TOIInput`, `TOIOutput`, `TOIScratch`, `TOIState`, `TimeOfImpact`, `TreeNode`, `TreeQueryCallback`, `TreeRayCastCallback`, `TreeScratch`, `TreeShapeCastCallback`, `WorldDebugDrawContext`, `WorldMoverCastContext`, `WorldMoverCollideContext`, `WorldOverlapContext`, `WorldRayCastContext`, `WorldShapeCastContext`.
-
