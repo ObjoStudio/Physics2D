@@ -28,7 +28,7 @@ End Function
 Function NextInt(minValue As Integer, maxValue As Integer) As Integer
 Var range As Integer = maxValue - minValue + 1
 If range <= 0 Then
-  Return minValue
+Return minValue
 End If
 # Unsigned-style modulo via shift to keep the distribution uniform.
 Var sample As Integer = NextValue().ShiftRight(1)

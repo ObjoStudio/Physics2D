@@ -9,7 +9,7 @@ Function Near(expected As Double, actual As Double, absTol As Double, relTol As 
 Var scale As Double = Maths.Abs(expected)
 Var actualScale As Double = Maths.Abs(actual)
 If actualScale > scale Then
-  scale = actualScale
+scale = actualScale
 End If
 Var tolerance As Double = absTol + relTol * scale
 Assert.True((actual - expected).Abs() <= tolerance, message + " expected=" + expected.ToString() + " actual=" + actual.ToString() + " tolerance=" + tolerance.ToString())
@@ -45,10 +45,10 @@ Var text As String = file.ReadAllText()
 Var allLines() As String = text.Split(Chr(10))
 Var lines() As String
 For Each line As String In allLines
-  Var trimmed As String = line.Trim()
-  If trimmed.Length > 0 Then
-    lines.Append(trimmed)
-  End If
+Var trimmed As String = line.Trim()
+If trimmed.Length > 0 Then
+lines.Append(trimmed)
+End If
 Next line
 Return lines
 End Function
@@ -65,28 +65,28 @@ Function RepoPath(relativePath As String) As String
 Var candidate As FileSystemItem
 Var root As String = System.EnvironmentVariable("PHYSICS2D_REPO_ROOT")
 If root.Length > 0 Then
-  candidate = ResolveChild(New FileSystemItem(root), relativePath)
-  If candidate.Exists Then
-    Return candidate.Path
-  End If
+candidate = ResolveChild(New FileSystemItem(root), relativePath)
+If candidate.Exists Then
+Return candidate.Path
+End If
 End If
 
 Var folder As FileSystemItem = New FileSystemItem(".")
 For i As Integer = 0 To 6
-  candidate = ResolveChild(folder, relativePath)
-  If candidate.Exists Then
-    Return candidate.Path
-  End If
-  folder = folder.Parent
-  If folder = Nothing Then
-    Exit For
-  End If
+candidate = ResolveChild(folder, relativePath)
+If candidate.Exists Then
+Return candidate.Path
+End If
+folder = folder.Parent
+If folder = Nothing Then
+Exit For
+End If
 Next i
 
 Var home As FileSystemItem = SpecialFolder.Home.Child("Repos").Child("Physics2D")
 candidate = ResolveChild(home, relativePath)
 If candidate.Exists Then
-  Return candidate.Path
+Return candidate.Path
 End If
 
 Return relativePath
@@ -97,10 +97,10 @@ Function ResolveChild(startFolder As FileSystemItem, relativePath As String) As 
 Var current As FileSystemItem = startFolder
 Var segments() As String = relativePath.Split("/")
 For Each segment As String In segments
-  If segment.Length = 0 Or segment = "." Then
-    Continue
-  End If
-  current = current.Child(segment)
+If segment.Length = 0 Or segment = "." Then
+Continue
+End If
+current = current.Child(segment)
 Next segment
 Return current
 End Function
@@ -122,10 +122,10 @@ Function FoldInteger(checksum As Integer, value As Integer) As Integer
 # FNV-1a over the little-end bytes of the 64-bit value.
 Var hash As Integer = checksum
 For i As Integer = 0 To 7
-  Var octet As Integer = value.BitAnd(255)
-  hash = hash.BitXor(octet)
-  hash = hash * 1099511628211
-  value = value.ShiftRight(8)
+Var octet As Integer = value.BitAnd(255)
+hash = hash.BitXor(octet)
+hash = hash * 1099511628211
+value = value.ShiftRight(8)
 Next i
 Return hash
 End Function
@@ -133,7 +133,7 @@ End Function
 Function FoldIntegers(checksum As Integer, values() As Integer) As Integer
 Var hash As Integer = checksum
 For Each value As Integer In values
-  hash = FoldInteger(hash, value)
+hash = FoldInteger(hash, value)
 Next value
 Return hash
 End Function

@@ -1,22 +1,22 @@
 {
-  "Version": 4,
+  "Version": 5,
   "Id": "31edb2df-8f22-4248-99a4-33ada5e05107",
   "Name": "Physics2D",
-  "LastSavedStudioVersion": "26.8.6",
+  "LastSavedStudioVersion": "26.9.1",
   "ActiveProject": "Physics2D.Tests",
   "ApplicationProjectId": "22c7d65c-2beb-433b-aa40-100d85db5984",
   "Projects": [
-    {
-      "Id": "2367c6ca-0dfa-4809-9e6e-ee1b0ea76d4e",
-      "Path": "Projects/Physics2D.Tests",
-      "Name": "Physics2D.Tests",
-      "Type": "CommandLine"
-    },
     {
       "Id": "22c7d65c-2beb-433b-aa40-100d85db5984",
       "Path": "Projects/Physics2D.Demo",
       "Name": "Physics2D.Demo",
       "Type": "Desktop"
+    },
+    {
+      "Id": "2367c6ca-0dfa-4809-9e6e-ee1b0ea76d4e",
+      "Path": "Projects/Physics2D.Tests",
+      "Name": "Physics2D.Tests",
+      "Type": "CommandLine"
     }
   ],
   "EmptyFolders": [],

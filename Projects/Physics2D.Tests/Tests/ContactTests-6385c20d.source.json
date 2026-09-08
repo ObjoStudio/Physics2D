@@ -1,0 +1,16 @@
+{
+  "Version": 5,
+  "Name": "ContactTests",
+  "Id": "6385c20d-861b-4919-9fef-d0c90347d92e",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "ContactTests-6385c20d.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}

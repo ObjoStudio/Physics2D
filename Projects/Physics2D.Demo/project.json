@@ -1,5 +1,5 @@
 {
-  "Version": 4,
+  "Version": 5,
   "Id": "22c7d65c-2beb-433b-aa40-100d85db5984",
   "Name": "Physics2D.Demo",
   "Type": "Desktop",
@@ -10,8 +10,71 @@
     "PatchVersion": 0,
     "CommandLineArgs": "",
     "TargetRids": [],
+    "IncludeODBCSupport": false,
     "WorkerProjectIds": [],
-    "DefaultWindow": ""
+    "DefaultWindow": "",
+    "DefaultWebPage": ""
+  },
+  "Metadata": {
+    "Identity": {
+      "ApplicationIdentifier": "",
+      "BundleIdentifier": "",
+      "DisplayName": "",
+      "PublisherName": "",
+      "Copyright": ""
+    },
+    "DesktopBehavior": {
+      "AllowMultipleInstances": false,
+      "TrackRecentDocuments": true
+    },
+    "ControlLibrary": {
+      "ViewMode": "Alphabetical",
+      "IncludeUiControlSubclasses": true,
+      "IncludeOptInClasses": false
+    },
+    "WebAppearance": {
+      "ThemeMode": "System",
+      "AccentColour": "#2563EB"
+    },
+    "WebHosting": {
+      "DevelopmentPort": 0,
+      "OpenBrowserOnRun": true,
+      "DeploymentPort": 8080,
+      "DeploymentNetworkAccess": "AllInterfaces",
+      "PublicUrl": "",
+      "OpenBrowserOnDeployment": false
+    },
+    "FileAssociations": [],
+    "UrlSchemes": [],
+    "Signing": {
+      "MacOS": {
+        "SigningIdentity": "",
+        "TeamId": "",
+        "EntitlementsFile": "",
+        "NotarizationProfile": ""
+      },
+      "Windows": {
+        "AzureEndpoint": "",
+        "AzureAccountName": "",
+        "AzureCertificateProfileName": "",
+        "AzureCorrelationId": "",
+        "TimestampUrl": "",
+        "PackagePublisher": ""
+      },
+      "Linux": {
+        "SigningIdentity": ""
+      }
+    },
+    "Installer": {
+      "InstallDirectoryName": "",
+      "CreateDesktopShortcut": false,
+      "MacDmgBackground": "",
+      "WindowsPackageDisplayName": "",
+      "LinuxDesktopEntryName": "",
+      "LinuxCategories": "Utility;"
+    },
+    "DefaultLocale": "en-GB",
+    "SupportedLocales": []
   },
   "EmptyFolders": []
 }

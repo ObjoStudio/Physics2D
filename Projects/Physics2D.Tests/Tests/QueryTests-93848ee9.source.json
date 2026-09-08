@@ -1,0 +1,16 @@
+{
+  "Version": 5,
+  "Name": "QueryTests",
+  "Id": "93848ee9-6799-42b0-a582-33e3ec0ae017",
+  "Kind": "Class",
+  "BuildScope": "Test",
+  "Namespace": "",
+  "Folder": "",
+  "ParentModule": "",
+  "ParentModuleId": "",
+  "AvailableInDesigner": false,
+  "CodeFile": "QueryTests-93848ee9.objobasic",
+  "LayoutFile": "",
+  "Notes": [],
+  "InspectorBehaviour": []
+}
